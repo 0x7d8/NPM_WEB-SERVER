@@ -1,6 +1,6 @@
-<h1 align="center">Welcome to paperstudios-api 👋</h1>
+<h1 align="center">Welcome to rjweb-server 👋</h1>
 <center>
-  <a href="https://www.npmjs.com/package/web-server" target="_blank">
+  <a href="https://www.npmjs.com/package/rjweb-server" target="_blank">
     <img alt="Version" src="https://img.shields.io/npm/v/web-server.svg">
   </a>
   <a href="https://github.com/rotvproHD/NPM_WEB-SERVER#readme" target="_blank">
@@ -18,7 +18,7 @@
 ## Install
 
 ```sh
-npm i web-server
+npm i rjweb-server
 ```
 
 ## Usage
@@ -31,7 +31,7 @@ Initialize Server
 // You shouldnt use the current
 // State for Production Use
 
-const webserver = require('web-server')
+const webserver = require('rjweb-server')
 const urls = new webserver.URLgen()
 
 urls.set('/hello', async(req, res) => {
