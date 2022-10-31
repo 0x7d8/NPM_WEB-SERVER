@@ -1,0 +1,19 @@
+{
+  "name": "web-server",
+  "version": "0.0.1",
+  "description": "Easy Way to create a Web Server in Node.js",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/rotvproHD/NPM_WEB-SERVER.git"
+  },
+  "author": "0x4096",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/rotvproHD/NPM_WEB-SERVER/issues"
+  },
+  "homepage": "https://github.com/rotvproHD/NPM_WEB-SERVER#readme"
+}

@@ -23,7 +23,26 @@ npm i web-server
 
 ## Usage
 
-Work In Progress
+Initialize Server
+```js
+/* ************ *
+ * EXPERIMENTAL *
+ * ************ */
+// You shouldnt use the current
+// State for Production Use
+
+const webserver = require('web-server')
+const urls = new webserver.URLgen()
+
+urls.set('/hello', async(req, res) => {
+  res.write('hello world!')
+})
+
+const port = 5000
+webserver.start(port, urls).then(() => {
+  console.log(`webserver started on port ${port}`)
+})
+```
 
 ## Author
 
