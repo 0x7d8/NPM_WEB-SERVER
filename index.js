@@ -9,8 +9,10 @@ module.exports = {
         get: 'GET'
     },
 
-    async start(port, urls) {
-        urls = urls.list()
+    async start(options) {
+        const urls = options.urls.list() || {}
+        const bind = options.bind || '0.0.0.0'
+        const port = options.port || 5002
 
         const server = http.createServer(async(req, res) => {
             const reqUrl = url.parse(req.url)
@@ -62,18 +64,25 @@ module.exports = {
                     }); return res.end()
                 }
 
-                let pageDisplay = ''
-                Object.keys(urls).forEach(function(url) {
-                    pageDisplay = pageDisplay + `[-] [${urls[url].type}] ${url}`
-                })
+                if (!options.hasOwnProperty('notfound')) {
+                    let pageDisplay = ''
+                    Object.keys(urls).forEach(function(url) {
+                        pageDisplay = pageDisplay + `[-] [${urls[url].type}] ${url}`
+                    })
 
-                res.statusCode = 404
-                res.write(`[!] COULDNT FIND ${reqUrl.pathname.toUpperCase()}\n[i] AVAILABLE PAGES:\n\n${pageDisplay}`)
-                res.end()
+                    res.statusCode = 404
+                    res.write(`[!] COULDNT FIND ${reqUrl.pathname.toUpperCase()}\n[i] AVAILABLE PAGES:\n\n${pageDisplay}`)
+                    res.end()
+                } else {
+                    await options.notfound(ctr).catch((e) => {
+                        res.write(e.message)
+                        res.end()
+                    }); return res.end()
+                }
             }
         })
 
-        server.listen(port)
-        return { success: true, message: 'WEBSERVER STARTED' }
+        server.listen(port, bind)
+        return { success: true, port, message: 'WEBSERVER STARTED' }
     }
 }

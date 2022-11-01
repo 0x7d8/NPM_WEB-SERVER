@@ -32,16 +32,41 @@ Initialize Server
 // State for Production Use
 
 const webserver = require('rjweb-server')
-const urls = new webserver.RouteList()
+const routes = new webserver.RouteList()
 
 // ctr.query.get... is ?name=
-urls.set(webserver.types.get, '/hello', async(ctr) => {
+routes.set(webserver.types.get, '/hello', async(ctr) => {
   ctr.print(`Hello, ${ctr.query.get("name")}! How are you doing?`)
 })
 
 const port = 5000
-webserver.start(port, urls).then(() => {
-  console.log(`webserver started on port ${port}`)
+webserver.start({
+  bind: '0.0.0.0',
+  port: port,
+  urls: routes
+}).then((res) => {
+  console.log(`webserver started on port ${res.port}`)
+})
+```
+
+Custom Not found page
+```js
+/* ************ *
+ * EXPERIMENTAL *
+ * ************ */
+// You shouldnt use the current
+// State for Production Use
+
+webserver.start({
+  bind: '0.0.0.0',
+  port: port,
+  urls: routes,
+  notfound: async(ctr) {
+    ctr.status(404)
+    ctr.print(`page "${ctr.requestPath.pathname}" not found`)
+  }
+}).then((res) => {
+  console.log(`webserver started on port ${res.port}`)
 })
 ```
 
