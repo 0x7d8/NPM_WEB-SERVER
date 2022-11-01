@@ -32,10 +32,11 @@ Initialize Server
 // State for Production Use
 
 const webserver = require('rjweb-server')
-const urls = new webserver.URLgen()
+const urls = new webserver.RouteList()
 
-urls.set('/hello', async(req, res) => {
-  res.write('hello world!')
+// ctr.query.get... is ?name=
+urls.set('/hello', async(ctr) => {
+  ctr.print(`hello, ${ctr.query.get("name")}!`)
 })
 
 const port = 5000
