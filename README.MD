@@ -35,8 +35,8 @@ const webserver = require('rjweb-server')
 const urls = new webserver.RouteList()
 
 // ctr.query.get... is ?name=
-urls.set('/hello', async(ctr) => {
-  ctr.print(`hello, ${ctr.query.get("name")}!`)
+urls.set(webserver.types.get, '/hello', async(ctr) => {
+  ctr.print(`Hello, ${ctr.query.get("name")}! How are you doing?`)
 })
 
 const port = 5000
