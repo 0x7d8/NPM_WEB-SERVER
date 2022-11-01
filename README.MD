@@ -39,17 +39,22 @@ routes.set(webserver.types.get, '/hello', async(ctr) => {
   ctr.print(`Hello, ${ctr.query.get("name")}! How are you doing?`)
 })
 
-const port = 5000
+// ctr.param.get... is :name, example /hello/0x4096
+routes.set(webserver.types.get, '/hello/:name', async(ctr) => {
+  ctr.print(`Hello, ${ctr.param.get("name")}! How are you doing?`)
+})
+
 webserver.start({
   bind: '0.0.0.0',
-  port: port,
+  cors: false,
+  port: 5000,
   urls: routes
 }).then((res) => {
   console.log(`webserver started on port ${res.port}`)
 })
 ```
 
-Custom Not found page
+Custom 404 Page
 ```js
 /* ************ *
  * EXPERIMENTAL *
@@ -59,6 +64,7 @@ Custom Not found page
 
 webserver.start({
   bind: '0.0.0.0',
+  cors: false,
   port: port,
   urls: routes,
   notfound: async(ctr) {

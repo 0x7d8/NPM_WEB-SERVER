@@ -10,12 +10,61 @@ module.exports = {
     },
 
     async start(options) {
-        const urls = options.urls.list() || {}
+        const urls = options.urls.list() || []
         const bind = options.bind || '0.0.0.0'
+        const cors = options.cors || false
         const port = options.port || 5002
 
         const server = http.createServer(async(req, res) => {
             const reqUrl = url.parse(req.url)
+            let executeUrl = ''
+
+            // Cors Headers
+            let corsHeaders = {}
+            if (cors) {
+                corsHeaders = {
+                    'Access-Control-Allow-Origin': '*',
+                    'Access-Control-Allow-Methods': 'OPTIONS, POST, GET',
+                    'Access-Control-Max-Age': 2592000
+                }
+            }
+
+            // Check if URL exists
+            let params = new Map()
+            let exists = false
+            const actualUrl = reqUrl.pathname.split('/')
+            for (let element in urls) {
+                if (element in urls && element === reqUrl.pathname) {
+                    executeUrl = reqUrl.pathname
+                    exists = true
+
+                    break
+                }
+                element = urls[element]
+                
+                if (element.array.length !== actualUrl.length) continue
+
+                let urlCount = 0
+                for (const subUrl of element.array) {
+                    const urlParam = element.array[urlCount]
+                    const reqParam = actualUrl[urlCount]
+                    urlCount++
+
+                    if (urlParam === reqParam) {
+                        continue
+                    } else if (urlParam.startsWith(':')) {
+                        params.set(urlParam.replace(':', ''), reqParam)
+                        executeUrl = element.array.join('/')
+                        exists = true
+
+                        continue
+                    }
+
+                    continue
+                }
+
+                continue
+            }
 
             // Create Answer Object
             const headers = new Map()
@@ -26,11 +75,11 @@ module.exports = {
             for (const [query, value] of new URLSearchParams(reqUrl.search)) {
                 queries.set(query, value)
             }; const cookies = new Map()
-            if (!!req.headers.cookie) { req.headers.cookie.split(`;`).forEach(function(cookie) {
-                let [ name, ...rest] = cookie.split(`=`)
+            if (!!req.headers.cookie) { req.headers.cookie.split(';').forEach(function(cookie) {
+                let [ name, ...rest ] = cookie.split('=')
                 name = name?.trim()
                 if (!name) return
-                const value = rest.join(`=`).trim()
+                const value = rest.join('=').trim()
                 if (!value) return
                 cookies.set(name, decodeURIComponent(value))
             })}
@@ -39,6 +88,7 @@ module.exports = {
                 // Properties
                 header: headers,
                 cookie: cookies,
+                param: params,
                 query: queries,
 
                 // Variables
@@ -51,18 +101,14 @@ module.exports = {
                 status(code) { res.statusCode = code }
             }
 
-            if (urls.hasOwnProperty(reqUrl.pathname) && urls[reqUrl.pathname].type === req.method) {
-                await urls[reqUrl.pathname].code(ctr).catch((e) => {
+            if (exists) {
+                res.writeHead(200, corsHeaders)
+
+                await urls[executeUrl].code(ctr).catch((e) => {
                     res.write(e.message)
                     res.end()
                 }); return res.end()
             } else {
-                if (urls.hasOwnProperty('*')) {
-                    await urls['*'].code(ctr).catch((e) => {
-                        res.write(e.message)
-                        res.end()
-                    }); return res.end()
-                }
 
                 if (!options.hasOwnProperty('notfound')) {
                     let pageDisplay = ''
@@ -71,6 +117,7 @@ module.exports = {
                     })
 
                     res.statusCode = 404
+                    res.writeHead(404, corsHeaders)
                     res.write(`[!] COULDNT FIND ${reqUrl.pathname.toUpperCase()}\n[i] AVAILABLE PAGES:\n\n${pageDisplay}`)
                     res.end()
                 } else {
