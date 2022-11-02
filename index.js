@@ -131,7 +131,7 @@ module.exports = {
                 res.writeHead(200, corsHeaders)
 
                 await urls[executeUrl].code(ctr).catch((e) => {
-                    if (!reqError in pages) {
+                    if (!'reqError' in pages) {
                         res.statusCode = 500
                         res.write(e.message)
                         res.end()
@@ -146,7 +146,7 @@ module.exports = {
                 }); return res.end()
             } else {
 
-                if (!notFound in pages) {
+                if (!'notFound' in pages) {
                     let pageDisplay = ''
                     Object.keys(urls).forEach(function(url) {
                         pageDisplay = pageDisplay + `[-] [${urls[url].type}] ${url}\n`
@@ -158,7 +158,7 @@ module.exports = {
                     res.end()
                 } else {
                     await options.pages.notFound(ctr).catch((e) => {
-                        if (!reqError in pages) {
+                        if (!'reqError' in pages) {
                             res.statusCode = 500
                             res.write(e.message)
                             res.end()
