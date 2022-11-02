@@ -131,22 +131,37 @@ module.exports = {
                 res.writeHead(200, corsHeaders)
 
                 await urls[executeUrl].code(ctr).catch((e) => {
-                    if (!'reqError' in pages) {
-                        res.statusCode = 500
-                        res.write(e.message)
-                        res.end()
-                    } else {
+                    if ('reqError' in pages) {
                         ctr.error = e.message
                         options.pages.reqError(ctr).catch((e) => {
                             res.statusCode = 500
                             res.write('error errored')
                             res.end()
                         }); return res.end()
+                    } else {
+                        res.statusCode = 500
+                        res.write(e.message)
+                        res.end()
                     }
                 }); return res.end()
             } else {
 
-                if (!'notFound' in pages) {
+                if ('notFound' in pages) {
+                    await options.pages.notFound(ctr).catch((e) => {
+                        if ('reqError' in pages) {
+                            ctr.error = e.message
+                            options.pages.reqError(ctr).catch((e) => {
+                                res.statusCode = 500
+                                res.write('error errored')
+                                res.end()
+                            }); return res.end()
+                        } else {
+                            res.statusCode = 500
+                            res.write(e.message)
+                            res.end()
+                        }
+                    }); return res.end()
+                } else {
                     let pageDisplay = ''
                     Object.keys(urls).forEach(function(url) {
                         pageDisplay = pageDisplay + `[-] [${urls[url].type}] ${url}\n`
@@ -156,21 +171,6 @@ module.exports = {
                     res.writeHead(404, corsHeaders)
                     res.write(`[!] COULDNT FIND ${reqUrl.pathname.toUpperCase()}\n[i] AVAILABLE PAGES:\n\n${pageDisplay}`)
                     res.end()
-                } else {
-                    await options.pages.notFound(ctr).catch((e) => {
-                        if (!'reqError' in pages) {
-                            res.statusCode = 500
-                            res.write(e.message)
-                            res.end()
-                        } else {
-                            ctr.error = e.message
-                            options.pages.reqError(ctr).catch((e) => {
-                                res.statusCode = 500
-                                res.write('error errored')
-                                res.end()
-                            }); return res.end()
-                        }
-                    }); return res.end()
                 }
             }
         })
