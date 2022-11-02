@@ -1,4 +1,5 @@
 const types = [
+    'POST',
     'GET'
 ]
 

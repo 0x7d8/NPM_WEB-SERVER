@@ -6,6 +6,7 @@ const url = require('node:url')
 module.exports = {
     RouteList,
     types: {
+        post: 'POST',
         get: 'GET'
     },
 
@@ -53,7 +54,7 @@ module.exports = {
                     if (urlParam === reqParam) {
                         continue
                     } else if (urlParam.startsWith(':')) {
-                        params.set(urlParam.replace(':', ''), reqParam)
+                        params.set(urlParam.replace(':', ''), decodeURIComponent(reqParam))
                         executeUrl = element.array.join('/')
                         exists = true
 
@@ -83,6 +84,18 @@ module.exports = {
                 if (!value) return
                 cookies.set(name, decodeURIComponent(value))
             })}
+
+            // Get POST Body
+            /*res.write('')
+            let reqBody = '';
+
+            res.on('data', (data) => {
+                reqBody += data.toString()
+            })
+
+            await new Promise((resolve) => {
+                res.once('end', resolve)
+            })*/
 
             const ctr = {
                 // Properties
