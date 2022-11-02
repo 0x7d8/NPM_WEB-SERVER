@@ -11,6 +11,7 @@ module.exports = {
 
     async start(options) {
         const pages = options.pages || {}
+        const events = options.events || {}
         const urls = options.urls.list() || []
         const bind = options.bind || '0.0.0.0'
         const cors = options.cors || false
@@ -127,6 +128,25 @@ module.exports = {
                 status(code) { res.statusCode = code }
             }
 
+            // Execute Custom Run Function
+            if ('request' in events) {
+                await events.request(ctr).catch((e) => {
+                    if ('reqError' in pages) {
+                        ctr.error = e.message
+                        options.pages.reqError(ctr).catch((e) => {
+                            res.statusCode = 500
+                            res.write('error errored')
+                            return res.end()
+                        }); return res.end()
+                    } else {
+                        res.statusCode = 500
+                        res.write(e.message)
+                        return res.end()
+                    }
+                })
+            }
+
+            // Execute Page
             if (exists) {
                 res.writeHead(200, corsHeaders)
 

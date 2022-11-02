@@ -83,6 +83,29 @@ webserver.start({
 })
 ```
 
+Custom Function on every request
+```js
+/* ************ *
+ * EXPERIMENTAL *
+ * ************ */
+// You shouldnt use the current
+// State for Production Use
+
+webserver.start({
+  bind: '0.0.0.0',
+  cors: false,
+  port: port,
+  urls: routes,
+  events: {
+    request: async(ctr) => {
+      console.log(`request made to ${ctr.requestPath.pathname}`) // DO NOT write any data or end the request
+    }
+  }
+}).then((res) => {
+  console.log(`webserver started on port ${res.port}`)
+})
+```
+
 ## Author
 
 👤 **0x4096**
