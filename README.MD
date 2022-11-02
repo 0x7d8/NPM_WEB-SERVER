@@ -2,7 +2,7 @@
 <center>
   <a href="https://www.npmjs.com/package/rjweb-server" target="_blank">
     <img alt="Version" src="https://img.shields.io/npm/v/rjweb-server.svg">
-  </a>0
+  </a>
   <a href="https://github.com/rotvproHD/NPM_WEB-SERVER#readme" target="_blank">
     <img alt="Documentation" src="https://img.shields.io/badge/documentation-yes-brightgreen.svg" />
   </a>

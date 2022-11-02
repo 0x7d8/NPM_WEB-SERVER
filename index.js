@@ -33,6 +33,7 @@ module.exports = {
             let params = new Map()
             let exists = false
             const actualUrl = reqUrl.pathname.split('/')
+            if (actualUrl[actualUrl.length - 1] === '') actualUrl.pop()
             for (const elementName in urls) {
                 if (elementName in urls && elementName === reqUrl.pathname && urls[elementName].type === req.method) {
                     executeUrl = reqUrl.pathname
@@ -42,6 +43,7 @@ module.exports = {
                 }
                 
                 const element = urls[elementName]
+                if (element.type !== req.method) continue
                 if (element.array.length !== actualUrl.length) continue
 
                 let urlCount = 0
