@@ -110,7 +110,21 @@ module.exports = {
                 requestPath: reqUrl,
 
                 // Functions
-                print(msg) { res.write(JSON.stringify(msg)) },
+                print(msg) {
+                    let isJSON = true
+                    try {
+                        JSON.parse(msg)
+                    } catch (e) {
+                        isJSON = false
+                    }
+
+                    if (isJSON) {
+                        res.writeHead(200, { 'Content-Type': 'application/json' })
+                        res.write(JSON.parse(msg))
+                    } else {
+                        res.write(msg)
+                    }
+                },
                 status(code) { res.statusCode = code }
             }
 
