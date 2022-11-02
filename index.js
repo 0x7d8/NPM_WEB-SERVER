@@ -97,7 +97,7 @@ module.exports = {
                 res.once('end', resolve)
             })*/
 
-            const ctr = {
+            let ctr = {
                 // Properties
                 header: headers,
                 cookie: cookies,
@@ -121,16 +121,27 @@ module.exports = {
                 status(code) { res.statusCode = code }
             }
 
+            res.setHeader('X-Powered-By', 'rjweb-server')
             if (exists) {
                 res.writeHead(200, corsHeaders)
 
                 await urls[executeUrl].code(ctr).catch((e) => {
-                    res.write(e.message)
-                    res.end()
+                    if (!options.hasOwnProperty('reqError')) {
+                        res.statusCode = 500
+                        res.write(e.message)
+                        res.end()
+                    } else {
+                        ctr.error = e.message
+                        options.reqError(ctr).catch((e) => {
+                            res.statusCode = 500
+                            res.write('error errored')
+                            res.end()
+                        }); return res.end()
+                    }
                 }); return res.end()
             } else {
 
-                if (!options.hasOwnProperty('notfound')) {
+                if (!options.hasOwnProperty('notFound')) {
                     let pageDisplay = ''
                     Object.keys(urls).forEach(function(url) {
                         pageDisplay = pageDisplay + `[-] [${urls[url].type}] ${url}`
@@ -141,9 +152,19 @@ module.exports = {
                     res.write(`[!] COULDNT FIND ${reqUrl.pathname.toUpperCase()}\n[i] AVAILABLE PAGES:\n\n${pageDisplay}`)
                     res.end()
                 } else {
-                    await options.notfound(ctr).catch((e) => {
-                        res.write(e.message)
-                        res.end()
+                    await options.notFound(ctr).catch((e) => {
+                        if (!options.hasOwnProperty('reqError')) {
+                            res.statusCode = 500
+                            res.write(e.message)
+                            res.end()
+                        } else {
+                            ctr.error = e.message
+                            options.reqError(ctr).catch((e) => {
+                                res.statusCode = 500
+                                res.write('error errored')
+                                res.end()
+                            }); return res.end()
+                        }
                     }); return res.end()
                 }
             }

@@ -54,7 +54,7 @@ webserver.start({
 })
 ```
 
-Custom 404 Page
+Custom 404 / 500 Page
 ```js
 /* ************ *
  * EXPERIMENTAL *
@@ -67,9 +67,12 @@ webserver.start({
   cors: false,
   port: port,
   urls: routes,
-  notfound: async(ctr) {
+  notFound: async(ctr) {
     ctr.status(404)
     ctr.print(`page "${ctr.requestPath.pathname}" not found`)
+  }, reqError: async(ctr) => {
+    ctr.status(500)
+    ctr.print(`ERROR!!! ${ctr.error}`)
   }
 }).then((res) => {
   console.log(`webserver started on port ${res.port}`)
