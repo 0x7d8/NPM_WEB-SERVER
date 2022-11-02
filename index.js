@@ -110,7 +110,7 @@ module.exports = {
                 requestPath: reqUrl,
 
                 // Functions
-                print(msg) { res.write(msg) },
+                print(msg) { res.write(JSON.stringify(msg)) },
                 status(code) { res.statusCode = code }
             }
 
