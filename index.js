@@ -10,6 +10,7 @@ module.exports = {
     },
 
     async start(options) {
+        const pages = options.pages || {}
         const urls = options.urls.list() || []
         const bind = options.bind || '0.0.0.0'
         const cors = options.cors || false
@@ -130,12 +131,12 @@ module.exports = {
                 res.writeHead(200, corsHeaders)
 
                 await urls[executeUrl].code(ctr).catch((e) => {
-                    if (!options.pages.reqError) {
+                    if (!reqError in pages) {
                         res.statusCode = 500
                         res.write(e.message)
                         res.end()
                     } else {
-                        ctr['error'] = e.message
+                        ctr.error = e.message
                         options.pages.reqError(ctr).catch((e) => {
                             res.statusCode = 500
                             res.write('error errored')
@@ -145,7 +146,7 @@ module.exports = {
                 }); return res.end()
             } else {
 
-                if (!options.pages.notFound) {
+                if (!notFound in pages) {
                     let pageDisplay = ''
                     Object.keys(urls).forEach(function(url) {
                         pageDisplay = pageDisplay + `[-] [${urls[url].type}] ${url}\n`
@@ -157,12 +158,12 @@ module.exports = {
                     res.end()
                 } else {
                     await options.pages.notFound(ctr).catch((e) => {
-                        if (!options.pages.reqError) {
+                        if (!reqError in pages) {
                             res.statusCode = 500
                             res.write(e.message)
                             res.end()
                         } else {
-                            ctr['error'] = e.message
+                            ctr.error = e.message
                             options.pages.reqError(ctr).catch((e) => {
                                 res.statusCode = 500
                                 res.write('error errored')
