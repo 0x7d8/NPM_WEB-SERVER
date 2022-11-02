@@ -33,15 +33,15 @@ module.exports = {
             let params = new Map()
             let exists = false
             const actualUrl = reqUrl.pathname.split('/')
-            for (let element in urls) {
-                if (element in urls && element === reqUrl.pathname) {
+            for (const elementName in urls) {
+                if (elementName in urls && elementName === reqUrl.pathname && urls[elementName].type === req.method) {
                     executeUrl = reqUrl.pathname
                     exists = true
 
                     break
                 }
-                element = urls[element]
                 
+                const element = urls[elementName]
                 if (element.array.length !== actualUrl.length) continue
 
                 let urlCount = 0
@@ -133,7 +133,7 @@ module.exports = {
                         res.write(e.message)
                         res.end()
                     } else {
-                        ctr.error = e.message
+                        ctr['error'] = e.message
                         options.pages.reqError(ctr).catch((e) => {
                             res.statusCode = 500
                             res.write('error errored')
@@ -160,7 +160,7 @@ module.exports = {
                             res.write(e.message)
                             res.end()
                         } else {
-                            ctr.error = e.message
+                            ctr['error'] = e.message
                             options.pages.reqError(ctr).catch((e) => {
                                 res.statusCode = 500
                                 res.write('error errored')

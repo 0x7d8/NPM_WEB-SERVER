@@ -1,8 +1,8 @@
 <h1 align="center">Welcome to rjweb-server 👋</h1>
 <center>
   <a href="https://www.npmjs.com/package/rjweb-server" target="_blank">
-    <img alt="Version" src="https://img.shields.io/npm/v/web-server.svg">
-  </a>
+    <img alt="Version" src="https://img.shields.io/npm/v/rjweb-server.svg">
+  </a>0
   <a href="https://github.com/rotvproHD/NPM_WEB-SERVER#readme" target="_blank">
     <img alt="Documentation" src="https://img.shields.io/badge/documentation-yes-brightgreen.svg" />
   </a>
@@ -37,7 +37,7 @@ const routes = new webserver.RouteList()
 // ctr.query.get... is ?name=
 routes.set(webserver.types.get, '/hello', async(ctr) => {
   if (!ctr.query.has("name")) return ctr.print('please supply the name query!!')
-  
+
   ctr.print(`Hello, ${ctr.query.get("name")}! How are you doing?`)
 })
 

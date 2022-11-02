@@ -9,9 +9,8 @@ class RouteList {
     }
 
     set(type, url, code) {
-        if (!types.includes(type)) throw TypeError('No Valid Request Type: ' + type)
+        if (!types.includes(type)) throw TypeError(`No Valid Request Type: ${type}\nPossible Values: ${types.toString()}`)
         this.urls[url] = {
-            hasParams: (url.match(/[\:]([A-Za-z0-9]+)/g) === null ? false : true),
             array: url.split('/'),
             type,
             code
