@@ -111,16 +111,9 @@ module.exports = {
 
                 // Functions
                 print(msg) {
-                    let isJSON = true
-                    try {
-                        JSON.parse(msg)
-                    } catch (e) {
-                        isJSON = false
-                    }
-
-                    if (isJSON) {
+                    if (typeof msg === 'object') {
                         res.writeHead(200, { 'Content-Type': 'application/json' })
-                        res.write(JSON.parse(msg))
+                        res.write(JSON.stringify(msg))
                     } else {
                         res.write(msg)
                     }
