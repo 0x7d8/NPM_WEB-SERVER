@@ -1,4 +1,3 @@
-const sleep = (milliseconds) => Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, milliseconds)
 const { RouteList } = require('./utils/RouteList')
 const http = require('node:http')
 const url = require('node:url')
@@ -109,6 +108,10 @@ module.exports = {
                 hostPort: req.socket.remotePort,
                 requestPath: reqUrl,
 
+                // Raw Values
+                rawReq: req,
+                rawRes: res,
+
                 // Functions
                 print(msg) {
                     if (typeof msg === 'object') {
@@ -125,13 +128,13 @@ module.exports = {
                 res.writeHead(200, corsHeaders)
 
                 await urls[executeUrl].code(ctr).catch((e) => {
-                    if (!options.hasOwnProperty('reqError')) {
+                    if (!options.pages.reqError) {
                         res.statusCode = 500
                         res.write(e.message)
                         res.end()
                     } else {
                         ctr.error = e.message
-                        options.reqError(ctr).catch((e) => {
+                        options.pages.reqError(ctr).catch((e) => {
                             res.statusCode = 500
                             res.write('error errored')
                             res.end()
@@ -140,10 +143,10 @@ module.exports = {
                 }); return res.end()
             } else {
 
-                if (!options.hasOwnProperty('notFound')) {
+                if (!options.pages.notFound) {
                     let pageDisplay = ''
                     Object.keys(urls).forEach(function(url) {
-                        pageDisplay = pageDisplay + `[-] [${urls[url].type}] ${url}`
+                        pageDisplay = pageDisplay + `[-] [${urls[url].type}] ${url}\n`
                     })
 
                     res.statusCode = 404
@@ -151,14 +154,14 @@ module.exports = {
                     res.write(`[!] COULDNT FIND ${reqUrl.pathname.toUpperCase()}\n[i] AVAILABLE PAGES:\n\n${pageDisplay}`)
                     res.end()
                 } else {
-                    await options.notFound(ctr).catch((e) => {
-                        if (!options.hasOwnProperty('reqError')) {
+                    await options.pages.notFound(ctr).catch((e) => {
+                        if (!options.pages.reqError) {
                             res.statusCode = 500
                             res.write(e.message)
                             res.end()
                         } else {
                             ctr.error = e.message
-                            options.reqError(ctr).catch((e) => {
+                            options.pages.reqError(ctr).catch((e) => {
                                 res.statusCode = 500
                                 res.write('error errored')
                                 res.end()

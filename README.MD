@@ -36,6 +36,8 @@ const routes = new webserver.RouteList()
 
 // ctr.query.get... is ?name=
 routes.set(webserver.types.get, '/hello', async(ctr) => {
+  if (!ctr.query.has("name")) return ctr.print('please supply the name query!!')
+  
   ctr.print(`Hello, ${ctr.query.get("name")}! How are you doing?`)
 })
 
@@ -67,12 +69,14 @@ webserver.start({
   cors: false,
   port: port,
   urls: routes,
-  notFound: async(ctr) {
-    ctr.status(404)
-    ctr.print(`page "${ctr.requestPath.pathname}" not found`)
-  }, reqError: async(ctr) => {
-    ctr.status(500)
-    ctr.print(`ERROR!!! ${ctr.error}`)
+  pages: {
+    notFound: async(ctr) {
+      ctr.status(404)
+      ctr.print(`page "${ctr.requestPath.pathname}" not found`)
+    }, reqError: async(ctr) => {
+      ctr.status(500)
+      ctr.print(`ERROR!!! ${ctr.error}`)
+    }
   }
 }).then((res) => {
   console.log(`webserver started on port ${res.port}`)
