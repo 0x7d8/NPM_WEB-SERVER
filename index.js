@@ -121,7 +121,6 @@ module.exports = {
                 status(code) { res.statusCode = code }
             }
 
-            res.setHeader('X-Powered-By', 'rjweb-server')
             if (exists) {
                 res.writeHead(200, corsHeaders)
 
