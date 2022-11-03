@@ -1,4 +1,5 @@
 const { getAllFiles, getAllFilesFilter } = require('./utils/getAllFiles.js')
+const path = require('node:path')
 const http = require('node:http')
 const url = require('node:url')
 const fs = require('node:fs')
@@ -46,7 +47,7 @@ module.exports = {
             const files = getAllFilesFilter(folder, '.js')
     
             for (const file of files) {
-                const route = require(file.replace('./', '/'))
+                const route = require(path.resolve(file))
     
                 if (
                     !route.hasOwnProperty('path') ||
