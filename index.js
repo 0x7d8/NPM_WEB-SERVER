@@ -185,7 +185,7 @@ module.exports = {
                     let pageDisplay = ''
                     Object.keys(urls).forEach(function(url) {
                         const type = (urls[url].type === 'STATIC' ? 'GET' : urls[url].type)
-                        
+
                         pageDisplay = pageDisplay + `[-] [${type}] ${url}\n`
                     })
 

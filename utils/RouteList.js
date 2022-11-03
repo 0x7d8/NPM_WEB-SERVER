@@ -32,6 +32,7 @@ class RouteList {
             }
         }
     }
+    
     list() {
         return this.urls
     }

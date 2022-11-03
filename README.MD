@@ -121,7 +121,7 @@ webserver.start({
   urls: routes,
   events: {
     request: async(ctr) => {
-      console.log(`request made to ${ctr.requestPath.pathname}`) // DO NOT write any data or end the request
+      console.log(`request made to ${decodeURI(ctr.requestPath.pathname)}`) // DO NOT write any data or end the request
     }
   }
 }).then((res) => {
