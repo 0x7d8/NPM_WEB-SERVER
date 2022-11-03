@@ -46,7 +46,7 @@ module.exports = {
             const files = getAllFilesFilter(folder, '.js')
     
             for (const file of files) {
-                const route = require(file)
+                const route = require(file.replace('./', '/'))
     
                 if (
                     !route.hasOwnProperty('path') ||
