@@ -46,6 +46,11 @@ routes.set(webserver.types.get, '/hello/:name', async(ctr) => {
   ctr.print(`Hello, ${ctr.param.get("name")}! How are you doing?`)
 })
 
+// ctr.param.get... is :name, example /hello/0x4096
+routes.set(webserver.types.post, '/post', async(ctr) => {
+  ctr.print(`Hello, ${ctr.reqBody}! How are you doing?`)
+})
+
 webserver.start({
   bind: '0.0.0.0',
   cors: false,
@@ -95,10 +100,11 @@ webserver.start({
   pages: {
     notFound: async(ctr) {
       ctr.status(404)
-      ctr.print(`page "${ctr.requestPath.pathname}" not found`)
+      ctr.print(`page "${ctr.reqUrl.pathname}" not found`)
     }, reqError: async(ctr) => {
       ctr.status(500)
-      ctr.print(`ERROR!!! ${ctr.error}`)
+      ctr.print(`ERROR!!! ${ctr.error.message}`)
+      console.log(ctr.error)
     }
   }
 }).then((res) => {
@@ -121,7 +127,7 @@ webserver.start({
   urls: routes,
   events: {
     request: async(ctr) => {
-      console.log(`request made to ${decodeURI(ctr.requestPath.pathname)}`) // DO NOT write any data or end the request
+      console.log(`request made to ${decodeURI(ctr.reqUrl.pathname)}`) // DO NOT write any data or end the request
     }
   }
 }).then((res) => {
