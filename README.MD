@@ -161,7 +161,7 @@ webserver.start({
 
 Making a function File
 ```js
-const webserser = require('rjweb-server')
+const webserver = require('rjweb-server')
 
 module.exports = {
   type: webserver.types.get,

@@ -1,9 +1,72 @@
-const { RouteList } = require('./utils/RouteList')
+const { getAllFiles, getAllFilesFilter } = require('./utils/getAllFiles.js')
 const http = require('node:http')
 const url = require('node:url')
+const fs = require('node:fs')
+
+const types = [
+    'STATIC',
+    'POST',
+    'GET'
+]
 
 module.exports = {
-    RouteList,
+    RouteList: class RouteList {
+        constructor() {
+            this.urls = []
+        }
+    
+        set(type, url, code) {
+            if (!types.includes(type)) throw TypeError(`No Valid Request Type: ${type}\nPossible Values: ${types.toString()}`)
+            this.urls[url] = {
+                array: url.split('/'),
+                type,
+                code
+            }
+        }; static(path, folder) {
+            const files = getAllFiles(folder)
+    
+            for (const file of files) {
+                const fileName = file.replace(folder, '')
+                let urlName = ''
+                if (fileName.replace('/', '') === 'index.html') {
+                    urlName = (path).replace('//', '/')
+                } else if (fileName.replace('/', '').endsWith('.html')) {
+                    urlName = (path + fileName).replace('//', '/').replace('.html', '')
+                } else {
+                    urlName = (path + fileName).replace('//', '/')
+                }
+    
+                this.urls[urlName] = {
+                    array: fileName.split('/'),
+                    type: 'STATIC',
+                    content: fs.readFileSync(file, 'utf8')
+                }
+            }
+        }; load(folder) {
+            const files = getAllFilesFilter(folder, '.js')
+    
+            for (const file of files) {
+                const route = require(file)
+    
+                if (
+                    !route.hasOwnProperty('path') ||
+                    !route.hasOwnProperty('type') ||
+                    !route.hasOwnProperty('code')
+                ) continue
+                if (!types.includes(route.type)) throw TypeError(`No Valid Request Type: ${route.type}\nPossible Values: ${types.toString()}`)
+    
+                this.urls[route.path] = {
+                    array: route.path.split('/'),
+                    type: route.type,
+                    code: route.code
+                }
+            }
+        }
+        
+        list() {
+            return this.urls
+        }
+    },
     types: {
         post: 'POST',
         get: 'GET'
@@ -59,6 +122,7 @@ module.exports = {
                     const element = urls[elementName]
                     if (element.type !== req.method) continue
                     if (element.array.length !== actualUrl.length) continue
+                    if (exists && element.array.join('/') !== executeUrl) break
 
                     let urlCount = 0
                     for (const subUrl of element.array) {
@@ -66,6 +130,7 @@ module.exports = {
                         const reqParam = actualUrl[urlCount]
                         urlCount++
 
+                        if (!urlParam.startsWith(':') && reqParam !== urlParam) break
                         if (urlParam === reqParam) {
                             continue
                         } else if (urlParam.startsWith(':')) {
