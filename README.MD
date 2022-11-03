@@ -135,6 +135,44 @@ webserver.start({
 })
 ```
 
+### Cleaning Up Functions
+Load Functions from Directory
+```js
+/* ************ *
+ * EXPERIMENTAL *
+ * ************ */
+// You shouldnt use the current
+// State for Production Use
+
+const webserver = require('rjweb-server')
+const routes = new webserver.RouteList()
+
+routes.load('./functions') // The functions folder is in the root directory
+
+webserver.start({
+  bind: '0.0.0.0',
+  cors: false,
+  port: 5000,
+  urls: routes
+}).then((res) => {
+  console.log(`webserver started on port ${res.port}`)
+})
+```
+
+Making a function File
+```js
+const webserser = require('rjweb-server')
+
+module.exports = {
+  type: webserver.types.get,
+  path: '/say/:word',
+
+  async code(ctr) {
+    ctr.print(ctr.param.get('word'))
+  }
+}
+```
+
 ## Author
 
 👤 **0x4096**

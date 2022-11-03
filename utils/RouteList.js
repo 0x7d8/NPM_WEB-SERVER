@@ -1,4 +1,4 @@
-const { getAllFiles } = require('./getAllFiles.js')
+const { getAllFiles, getAllFilesFilter } = require('./getAllFiles.js')
 const fs = require('node:fs')
 
 const types = [
@@ -37,6 +37,25 @@ class RouteList {
                 array: fileName.split('/'),
                 type: 'STATIC',
                 content: fs.readFileSync(file, 'utf8')
+            }
+        }
+    }; load(folder) {
+        const files = getAllFilesFilter(folder, '.js')
+
+        for (const file of files) {
+            const route = require('.' + file)
+
+            if (
+                !route.hasOwnProperty('path') ||
+                !route.hasOwnProperty('type') ||
+                !route.hasOwnProperty('code')
+            ) continue
+            if (!types.includes(route.type)) throw TypeError(`No Valid Request Type: ${route.type}\nPossible Values: ${types.toString()}`)
+
+            this.urls[route.path] = {
+                array: route.path.split('/'),
+                type: route.type,
+                code: route.code
             }
         }
     }
