@@ -1,4 +1,8 @@
+const { getAllFiles } = require('./getAllFiles.js')
+const fs = require('node:fs')
+
 const types = [
+    'STATIC',
     'POST',
     'GET'
 ]
@@ -15,7 +19,20 @@ class RouteList {
             type,
             code
         }
-    }; list() {
+    }; static(path, folder) {
+        const files = getAllFiles(folder)
+
+        for (const file of files) {
+            const fileName = file.replace(folder, '')
+
+            this.urls[path + fileName] = {
+                array: fileName.split('/'),
+                type: 'STATIC',
+                content: fs.readFileSync(file, 'utf8')
+            }
+        }
+    }
+    list() {
         return this.urls
     }
 }

@@ -33,12 +33,19 @@ module.exports = {
 
             // Check if URL exists
             let params = new Map()
-            let exists = false
+            let exists, isStatic = false
             const actualUrl = reqUrl.pathname.split('/')
             if (actualUrl[actualUrl.length - 1] === '') actualUrl.pop()
             for (const elementName in urls) {
                 if (elementName in urls && elementName === reqUrl.pathname && urls[elementName].type === req.method) {
                     executeUrl = reqUrl.pathname
+                    isStatic = false
+                    exists = true
+
+                    break
+                }; if (elementName in urls && elementName === reqUrl.pathname && urls[elementName].type === 'STATIC') {
+                    executeUrl = reqUrl.pathname
+                    isStatic = true
                     exists = true
 
                     break
@@ -88,18 +95,6 @@ module.exports = {
                 cookies.set(name, decodeURIComponent(value))
             })}
 
-            // Get POST Body
-            /*res.write('')
-            let reqBody = '';
-
-            res.on('data', (data) => {
-                reqBody += data.toString()
-            })
-
-            await new Promise((resolve) => {
-                res.once('end', resolve)
-            })*/
-
             let ctr = {
                 // Properties
                 header: headers,
@@ -135,7 +130,7 @@ module.exports = {
                         ctr.error = e.message
                         options.pages.reqError(ctr).catch((e) => {
                             res.statusCode = 500
-                            res.write('error errored')
+                            res.write(e.message)
                             return res.end()
                         }); return res.end()
                     } else {
@@ -150,20 +145,25 @@ module.exports = {
             if (exists) {
                 res.writeHead(200, corsHeaders)
 
-                await urls[executeUrl].code(ctr).catch((e) => {
-                    if ('reqError' in pages) {
-                        ctr.error = e.message
-                        options.pages.reqError(ctr).catch((e) => {
+                if (!isStatic) {
+                    await urls[executeUrl].code(ctr).catch((e) => {
+                        if ('reqError' in pages) {
+                            ctr.error = e.message
+                            options.pages.reqError(ctr).catch((e) => {
+                                res.statusCode = 500
+                                res.write(e.message)
+                                res.end()
+                            }); return res.end()
+                        } else {
                             res.statusCode = 500
-                            res.write('error errored')
+                            res.write(e.message)
                             res.end()
-                        }); return res.end()
-                    } else {
-                        res.statusCode = 500
-                        res.write(e.message)
-                        res.end()
-                    }
-                }); return res.end()
+                        }
+                    }); return res.end()
+                } else {
+                    res.write(urls[executeUrl].content)
+                    return res.end()
+                }
             } else {
 
                 if ('notFound' in pages) {
@@ -172,7 +172,7 @@ module.exports = {
                             ctr.error = e.message
                             options.pages.reqError(ctr).catch((e) => {
                                 res.statusCode = 500
-                                res.write('error errored')
+                                res.write(e.message)
                                 res.end()
                             }); return res.end()
                         } else {
@@ -184,7 +184,9 @@ module.exports = {
                 } else {
                     let pageDisplay = ''
                     Object.keys(urls).forEach(function(url) {
-                        pageDisplay = pageDisplay + `[-] [${urls[url].type}] ${url}\n`
+                        const type = (urls[url].type === 'STATIC' ? 'GET' : urls[url].type)
+                        
+                        pageDisplay = pageDisplay + `[-] [${type}] ${url}\n`
                     })
 
                     res.statusCode = 404

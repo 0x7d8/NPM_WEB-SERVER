@@ -56,6 +56,29 @@ webserver.start({
 })
 ```
 
+Serve Static Files
+```js
+/* ************ *
+ * EXPERIMENTAL *
+ * ************ */
+// You shouldnt use the current
+// State for Production Use
+
+const webserver = require('rjweb-server')
+const routes = new webserver.RouteList()
+
+routes.static('/', './html') // The html folder is in the root directory
+
+webserver.start({
+  bind: '0.0.0.0',
+  cors: false,
+  port: 5000,
+  urls: routes
+}).then((res) => {
+  console.log(`webserver started on port ${res.port}`)
+})
+```
+
 Custom 404 / 500 Page
 ```js
 /* ************ *
