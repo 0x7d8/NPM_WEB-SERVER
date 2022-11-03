@@ -24,8 +24,16 @@ class RouteList {
 
         for (const file of files) {
             const fileName = file.replace(folder, '')
+            let urlName = ''
+            if (fileName.replace('/', '') === 'index.html') {
+                urlName = (path).replace('//', '/')
+            } else if (fileName.replace('/', '').endsWith('.html')) {
+                urlName = (path + fileName).replace('//', '/').replace('.html', '')
+            } else {
+                urlName = (path + fileName).replace('//', '/')
+            }
 
-            this.urls[path + fileName] = {
+            this.urls[urlName] = {
                 array: fileName.split('/'),
                 type: 'STATIC',
                 content: fs.readFileSync(file, 'utf8')
