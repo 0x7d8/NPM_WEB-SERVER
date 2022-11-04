@@ -91,13 +91,11 @@ module.exports = {
                 let executeUrl = ''
 
                 // Cors Headers
-                let corsHeaders = {}
                 if (cors) {
-                    corsHeaders = {
-                        'Access-Control-Allow-Origin': '*',
-                        'Access-Control-Allow-Methods': 'OPTIONS, POST, GET',
-                        'Access-Control-Max-Age': 2592000
-                    }
+                    res.setHeader('Access-Control-Allow-Origin', '*')
+	                res.setHeader('Access-Control-Request-Method', '*')
+	                res.setHeader('Access-Control-Allow-Methods', 'OPTIONS, GET')
+	                res.setHeader('Access-Control-Allow-Headers', '*')
                 }
 
                 // Check if URL exists
@@ -219,7 +217,7 @@ module.exports = {
 
                 // Execute Page
                 if (exists) {
-                    res.writeHead(200, corsHeaders)
+                    res.writeHead(200)
 
                     if (!isStatic) {
                         await urls[executeUrl].code(ctr).catch((e) => {
@@ -270,7 +268,7 @@ module.exports = {
                         })
 
                         res.statusCode = 404
-                        res.writeHead(404, corsHeaders)
+                        res.writeHead(404)
                         res.write(`[!] COULDNT FIND ${reqUrl.pathname.toUpperCase()}\n[i] AVAILABLE PAGES:\n\n${pageDisplay}`)
                         res.end()
                     }
