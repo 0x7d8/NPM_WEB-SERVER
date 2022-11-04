@@ -184,7 +184,7 @@ module.exports = {
                     // Functions
                     print(msg) {
                         if (typeof msg === 'object') {
-                            res.writeHead(200, { 'Content-Type': 'application/json' })
+                            res.setHeader(200, 'Content-Type', 'application/json')
                             res.write(JSON.stringify(msg))
                         } else {
                             res.write(msg)
@@ -217,8 +217,6 @@ module.exports = {
 
                 // Execute Page
                 if (exists) {
-                    res.writeHead(200)
-
                     if (!isStatic) {
                         await urls[executeUrl].code(ctr).catch((e) => {
                             if ('reqError' in pages) {
@@ -268,7 +266,6 @@ module.exports = {
                         })
 
                         res.statusCode = 404
-                        res.writeHead(404)
                         res.write(`[!] COULDNT FIND ${reqUrl.pathname.toUpperCase()}\n[i] AVAILABLE PAGES:\n\n${pageDisplay}`)
                         res.end()
                     }
