@@ -184,7 +184,7 @@ module.exports = {
                     // Functions
                     print(msg) {
                         if (typeof msg === 'object') {
-                            res.setHeader(200, 'Content-Type', 'application/json')
+                            res.setHeader('Content-Type', 'application/json')
                             res.write(JSON.stringify(msg))
                         } else {
                             res.write(msg)
