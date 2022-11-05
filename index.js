@@ -90,6 +90,10 @@ module.exports = {
                 const reqUrl = url.parse(req.url)
                 let executeUrl = ''
 
+                // Parse Request Body
+                try { reqBody = JSON.parse(reqBody)
+                } catch (e) { }
+
                 // Cors Headers
                 if (cors) {
                     res.setHeader('Access-Control-Allow-Origin', '*')
