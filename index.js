@@ -23,7 +23,8 @@ module.exports = {
                 type,
                 code
             }
-        }; static(path, folder) {
+        }; static(path, folder, preload) {
+            preload = preload || false
             const files = getAllFiles(folder)
     
             for (const file of files) {
@@ -36,12 +37,12 @@ module.exports = {
                 } else {
                     urlName = (path + fileName).replace('//', '/')
                 }
-    
-                this.urls[urlName] = {
+
+                this.urls[urlName]= {
+                    file,
                     array: fileName.split('/'),
-                    type: 'STATIC',
-                    content: fs.readFileSync(file, 'utf8')
-                }
+                    type: 'STATIC'
+                }; if (preload) this.urls[urlName].content = fs.readFileSync(file)
             }
         }; load(folder) {
             const files = getAllFilesFilter(folder, '.js')
@@ -74,6 +75,7 @@ module.exports = {
     },
 
     async start(options) {
+        const preload = options.preload || false
         const pages = options.pages || {}
         const events = options.events || {}
         const urls = options.urls.list() || []
@@ -193,8 +195,7 @@ module.exports = {
                         } else {
                             res.write(msg)
                         }
-                    },
-                    status(code) { res.statusCode = code }
+                    }, status(code) { res.statusCode = code }
                 }
 
                 // Execute Custom Run Function
@@ -239,7 +240,17 @@ module.exports = {
                             }
                         }); return res.end()
                     } else {
-                        res.write(urls[executeUrl].content)
+                        if (!('content' in urls[executeUrl])) {
+                            let content
+                            const filePath = path.resolve(urls[executeUrl].file)
+                            try { content = fs.readFileSync(filePath) }
+                            catch (e) { console.log(e); return res.end() }
+
+                            res.write(content, 'binary')
+                            return res.end()
+                        }
+
+                        res.write(urls[executeUrl].content, 'binary')
                         return res.end()
                     }
                 } else {
