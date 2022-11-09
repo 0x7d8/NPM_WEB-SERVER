@@ -52,10 +52,11 @@ routes.set(webserver.types.post, '/post', async(ctr) => {
 })
 
 webserver.start({
-  bind: '0.0.0.0',
-  cors: false,
-  port: 5000,
-  urls: routes
+  bind: '0.0.0.0', // The IP thats bound to
+  body: 20, // The Max POST Body in MB
+  cors: false, // If Cors Headers will be added
+  port: 5000, // The Port which the Server runs on
+  urls: routes // The Routes Object
 }).then((res) => {
   console.log(`webserver started on port ${res.port}`)
 })

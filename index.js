@@ -5,8 +5,11 @@ const url = require('node:url')
 const fs = require('node:fs')
 
 const types = [
+    'DELETE',
+    'PATCH',
     'STATIC',
     'POST',
+    'PUT',
     'GET'
 ]
 
@@ -51,9 +54,9 @@ module.exports = {
                 const route = require(path.resolve(file))
     
                 if (
-                    !route.hasOwnProperty('path') ||
-                    !route.hasOwnProperty('type') ||
-                    !route.hasOwnProperty('code')
+                    !('path' in route) ||
+                    !('type' in route) ||
+                    !('code' in route)
                 ) continue
                 if (!types.includes(route.type)) throw TypeError(`No Valid Request Type: ${route.type}\nPossible Values: ${types.toString()}`)
     
@@ -70,21 +73,47 @@ module.exports = {
         }
     },
     types: {
+        delete: 'DELETE',
+        patch: 'PATCH',
         post: 'POST',
+        put: 'PUT',
         get: 'GET'
     },
 
+    /**
+    * Start Server
+    *
+    * @typedef {Object} startOptions { pages: Object, events: Object, urls: RouteList, bind: String, cors: Boolean, port: Number }
+    * @prop {Object} pages List of Custom Pages ( 404 / 500 )
+    * @prop {Object} events List of Custom Events ( On Request, etc... )
+    * @prop {Array} urls List of Webserver Urls ( Added by RouteList )
+    * @prop {String} bind IP the Server should be bound to ( default 0.0.0.0 )
+    * @prop {Number} port The Port the Server should listen on ( default 5002 )
+    * @prop {Number} body The Maximum Body Size in MB ( default 5 )
+    * 
+    * @param {startOptions} options
+    */
     async start(options) {
-        const preload = options.preload || false
         const pages = options.pages || {}
         const events = options.events || {}
         const urls = options.urls.list() || []
         const bind = options.bind || '0.0.0.0'
         const cors = options.cors || false
         const port = options.port || 5002
+        const body = options.body || 20
 
         const server = http.createServer(async(req, res) => {
             let reqBody = ''
+
+            if (!!req.headers['content-length']) {
+                const bodySize = parseInt(req.headers['content-length'])
+
+                if (bodySize >= (body * 1000000)) {
+                    res.statusCode = 413
+                    res.write('Payload Too Large')
+                    return res.end()
+                }
+            }
 
             req.on('data', (data) => {
                 reqBody += data
@@ -170,6 +199,7 @@ module.exports = {
                     cookies.set(name, decodeURIComponent(value))
                 })}
 
+                res.setHeader('X-Powered-By', 'rjweb-server')
                 let ctr = {
                     // Properties
                     header: headers,
@@ -195,7 +225,8 @@ module.exports = {
                         } else {
                             res.write(msg)
                         }
-                    }, status(code) { res.statusCode = code }
+                    }, status(code) { res.statusCode = code },
+                    setHeader: res.setHeader
                 }
 
                 // Execute Custom Run Function
@@ -204,13 +235,13 @@ module.exports = {
                     await events.request(ctr).catch((e) => {
                         if ('reqError' in pages) {
                             ctr.error = e
-                            options.pages.reqError(ctr).catch((e) => {
-                                errorStop = true
+                            Promise.resolve(options.pages.reqError(ctr)).catch((e) => {
                                 console.log(e)
                                 res.statusCode = 500
-                                return res.end()
-                            }); errorStop = true
-                            return res.end()
+                                res.write(e)
+                                res.end()
+                            }).then(() => res.end())
+                            errorStop = true
                         } else {
                             errorStop = true
                             console.log(e)
@@ -223,22 +254,22 @@ module.exports = {
                 // Execute Page
                 if (exists) {
                     if (!isStatic) {
-                        await urls[executeUrl].code(ctr).catch((e) => {
+                        Promise.resolve(urls[executeUrl].code(ctr)).catch((e) => {
                             if ('reqError' in pages) {
                                 ctr.error = e
-                                options.pages.reqError(ctr).catch((e) => {
+                                Promise.resolve(options.pages.reqError(ctr)).catch((e) => {
                                     console.log(e)
                                     res.statusCode = 500
                                     res.write(e)
                                     res.end()
-                                }); return res.end()
+                                }).then(() => res.end())
                             } else {
                                 console.log(e)
                                 res.statusCode = 500
                                 res.write(e)
                                 res.end()
                             }
-                        }); return res.end()
+                        }).then(() => res.end())
                     } else {
                         if (!('content' in urls[executeUrl])) {
                             let content
@@ -254,9 +285,8 @@ module.exports = {
                         return res.end()
                     }
                 } else {
-
                     if ('notFound' in pages) {
-                        await options.pages.notFound(ctr).catch((e) => {
+                        Promise.resolve(options.pages.notFound(ctr)).catch((e) => {
                             if ('reqError' in pages) {
                                 ctr.error = e
                                 options.pages.reqError(ctr).catch((e) => {
@@ -264,17 +294,17 @@ module.exports = {
                                     res.statusCode = 500
                                     res.write(e)
                                     res.end()
-                                }); return res.end()
+                                }).then(() => res.end())
                             } else {
                                 console.log(e)
                                 res.statusCode = 500
                                 res.write(e)
                                 res.end()
                             }
-                        }); return res.end()
+                        }).then(() => res.end())
                     } else {
                         let pageDisplay = ''
-                        Object.keys(urls).forEach(function(url) {
+                        Object.keys(urls).forEach((url) => {
                             const type = (urls[url].type === 'STATIC' ? 'GET' : urls[url].type)
 
                             pageDisplay = pageDisplay + `[-] [${type}] ${url}\n`
@@ -287,7 +317,15 @@ module.exports = {
                 }
             })
         })
-            
+        
+        server.on('upgrade', (req, socket, head) => {
+            socket.write('HTTP/1.1 101 Web Socket Protocol Handshake\r\n' +
+                         'Upgrade: WebSocket\r\n' +
+                         'Connection: Upgrade\r\n' +
+                         '\r\n')
+          
+            socket.pipe(socket)
+        })
 
         server.listen(port, bind)
         return { success: true, port, message: 'WEBSERVER STARTED' }
