@@ -19,6 +19,13 @@ module.exports = {
             this.urls = []
         }
     
+        /**
+        * Set URL
+        *
+        * @param {String} type Request Type ( GET, POST, etc... )
+        * @prop {String} url Url on which the Code will run
+        * @prop {Function} code Your Async Code
+        */
         set(type, url, code) {
             if (!types.includes(type)) throw TypeError(`No Valid Request Type: ${type}\nPossible Values: ${types.toString()}`)
             this.urls[url] = {
@@ -26,7 +33,16 @@ module.exports = {
                 type,
                 code
             }
-        }; static(path, folder, preload) {
+        }
+        
+        /**
+        * Serve Static Files
+        *
+        * @param {String} path Path on which all files will be served under
+        * @prop {String} folder Path to the Folder with the static files
+        * @prop {Boolean} preload If Enabled will load every file into memory
+        */
+        static(path, folder, preload) {
             preload = preload || false
             const files = getAllFiles(folder)
     
@@ -47,7 +63,14 @@ module.exports = {
                     type: 'STATIC'
                 }; if (preload) this.urls[urlName].content = fs.readFileSync(file)
             }
-        }; load(folder) {
+        }
+        
+        /**
+        * Load Function Files
+        *
+        * @prop {String} folder Path to the Folder with the function files
+        */
+        load(folder) {
             const files = getAllFilesFilter(folder, '.js')
     
             for (const file of files) {
@@ -323,7 +346,7 @@ module.exports = {
                          'Upgrade: WebSocket\r\n' +
                          'Connection: Upgrade\r\n' +
                          '\r\n')
-          
+
             socket.pipe(socket)
         })
 
