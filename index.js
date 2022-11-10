@@ -23,8 +23,8 @@ module.exports = {
         * Set URL
         *
         * @param {String} type Request Type ( GET, POST, etc... )
-        * @prop {String} url Url on which the Code will run
-        * @prop {Function} code Your Async Code
+        * @param {String} url Url on which the Code will run
+        * @param {Function} code Your Async Code
         */
         set(type, url, code) {
             if (!types.includes(type)) throw TypeError(`No Valid Request Type: ${type}\nPossible Values: ${types.toString()}`)
@@ -39,8 +39,8 @@ module.exports = {
         * Serve Static Files
         *
         * @param {String} path Path on which all files will be served under
-        * @prop {String} folder Path to the Folder with the static files
-        * @prop {Boolean} preload If Enabled will load every file into memory
+        * @param {String} folder Path to the Folder with the static files
+        * @param {Boolean} preload If Enabled will load every file into memory
         */
         static(path, folder, preload) {
             preload = preload || false
@@ -68,7 +68,7 @@ module.exports = {
         /**
         * Load Function Files
         *
-        * @prop {String} folder Path to the Folder with the function files
+        * @param {String} folder Path to the Folder with the function files
         */
         load(folder) {
             const files = getAllFilesFilter(folder, '.js')
@@ -127,6 +127,15 @@ module.exports = {
 
         const server = http.createServer(async(req, res) => {
             let reqBody = ''
+
+            server.on('upgrade', (req, socket, head) => {
+                socket.write('HTTP/1.1 101 Web Socket Protocol Handshake\r\n' +
+                             'Upgrade: WebSocket\r\n' +
+                             'Connection: Upgrade\r\n' +
+                             '\r\n')
+    
+                socket.pipe(socket)
+            })
 
             if (!!req.headers['content-length']) {
                 const bodySize = parseInt(req.headers['content-length'])
@@ -206,14 +215,14 @@ module.exports = {
 
                 // Create Answer Object
                 const headers = new Map()
-                Object.keys(req.headers).forEach(function(header) {
+                Object.keys(req.headers).forEach((header) => {
                     headers.set(header, req.headers[header])
                 }); headers.delete('cookie')
                 const queries = new Map()
                 for (const [query, value] of new URLSearchParams(reqUrl.search)) {
                     queries.set(query, value)
                 }; const cookies = new Map()
-                if (!!req.headers.cookie) { req.headers.cookie.split(';').forEach(function(cookie) {
+                if (!!req.headers.cookie) { req.headers.cookie.split(';').forEach((cookie) => {
                     let [ name, ...rest ] = cookie.split('=')
                     name = name?.trim()
                     if (!name) return
@@ -241,6 +250,7 @@ module.exports = {
                     rawRes: res,
 
                     // Functions
+                    setHeader: res.setHeader,
                     print(msg) {
                         if (typeof msg === 'object') {
                             res.setHeader('Content-Type', 'application/json')
@@ -249,7 +259,11 @@ module.exports = {
                             res.write(msg)
                         }
                     }, status(code) { res.statusCode = code },
-                    setHeader: res.setHeader
+                    printFile(file) {
+                        const content = fs.readFileSync(file)
+
+                        res.write(content, 'binary')
+                    }
                 }
 
                 // Execute Custom Run Function
@@ -339,15 +353,6 @@ module.exports = {
                     }
                 }
             })
-        })
-        
-        server.on('upgrade', (req, socket, head) => {
-            socket.write('HTTP/1.1 101 Web Socket Protocol Handshake\r\n' +
-                         'Upgrade: WebSocket\r\n' +
-                         'Connection: Upgrade\r\n' +
-                         '\r\n')
-
-            socket.pipe(socket)
         })
 
         server.listen(port, bind)
