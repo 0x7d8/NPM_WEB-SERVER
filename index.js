@@ -155,7 +155,7 @@ module.exports = {
 
                 // Parse Request Body
                 try { reqBody = JSON.parse(reqBody)
-                } catch (e) { }
+                } catch(e) { }
 
                 // Cors Headers
                 if (cors) {
@@ -252,16 +252,50 @@ module.exports = {
                     // Functions
                     setHeader: res.setHeader,
                     print(msg) {
-                        if (typeof msg === 'object') {
-                            res.setHeader('Content-Type', 'application/json')
-                            res.write(JSON.stringify(msg))
-                        } else {
-                            res.write(msg)
+                        switch (typeof msg) {
+                            case 'object':
+                                res.setHeader('Content-Type', 'application/json')
+                                res.write(JSON.stringify(msg))
+                                break
+
+                            case 'bigint':
+                            case 'number':
+                            case 'boolean':
+                                res.write(msg.toString())
+                                break
+
+                            case 'function':
+                                this.print(msg())
+                                break
+
+                            case 'undefined':
+                                res.write('')
+                                break
+
+                            default:
+                                try {
+                                    res.write(msg)
+                                } catch(e) {
+                                    if ('reqError' in pages) {
+                                        ctr.error = e
+                                        Promise.resolve(options.pages.reqError(ctr)).catch((e) => {
+                                            console.log(e)
+                                            res.statusCode = 500
+                                            res.write(e)
+                                            res.end()
+                                        }).then(() => res.end())
+                                        errorStop = true
+                                    } else {
+                                        errorStop = true
+                                        console.log(e)
+                                        res.statusCode = 500
+                                        return res.end()
+                                    }
+                                }
                         }
                     }, status(code) { res.statusCode = code },
                     printFile(file) {
                         const content = fs.readFileSync(file)
-
                         res.write(content, 'binary')
                     }
                 }
@@ -312,7 +346,7 @@ module.exports = {
                             let content
                             const filePath = path.resolve(urls[executeUrl].file)
                             try { content = fs.readFileSync(filePath) }
-                            catch (e) { console.log(e); return res.end() }
+                            catch(e) { console.log(e); return res.end() }
 
                             res.write(content, 'binary')
                             return res.end()

@@ -102,11 +102,11 @@ webserver.start({
   pages: {
     notFound: async(ctr) {
       ctr.status(404)
-      ctr.print(`page "${ctr.reqUrl.pathname}" not found`)
+      return ctr.print(`page "${ctr.reqUrl.pathname}" not found`)
     }, reqError: async(ctr) => {
       ctr.status(500)
       ctr.print(`ERROR!!! ${ctr.error.message}`)
-      console.log(ctr.error)
+      return console.log(ctr.error)
     }
   }
 }).then((res) => {
@@ -129,7 +129,7 @@ webserver.start({
   urls: routes,
   events: {
     request: async(ctr) => {
-      console.log(`request made to ${decodeURI(ctr.reqUrl.pathname)}`) // DO NOT write any data or end the request
+      console.log(`request made to ${decodeURI(ctr.reqUrl.pathname)} by ${ctr.hostIp}`) // DO NOT write any data or end the request
     }
   }
 }).then((res) => {
@@ -170,7 +170,9 @@ module.exports = {
   path: '/say/:word',
 
   async code(ctr) {
-    ctr.print(ctr.param.get('word'))
+    const word = ctr.param.get('word')
+
+    ctr.print(`I will say it!!!\n${word}`)
   }
 }
 ```
