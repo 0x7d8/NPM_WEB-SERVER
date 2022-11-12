@@ -28,7 +28,7 @@ module.exports = {
         */
         set(type, url, code) {
             if (!types.includes(type)) throw TypeError(`No Valid Request Type: ${type}\nPossible Values: ${types.toString()}`)
-            this.urls[url] = {
+            this.urls[type + url] = {
                 array: url.split('/'),
                 type,
                 code
@@ -57,7 +57,7 @@ module.exports = {
                     urlName = (path + fileName).replace('//', '/')
                 }
 
-                this.urls[urlName]= {
+                this.urls['GET' + urlName]= {
                     file,
                     array: fileName.split('/'),
                     type: 'STATIC'
@@ -83,7 +83,7 @@ module.exports = {
                 ) continue
                 if (!types.includes(route.type)) throw TypeError(`No Valid Request Type: ${route.type}\nPossible Values: ${types.toString()}`)
     
-                this.urls[route.path] = {
+                this.urls[route.type + route.path] = {
                     array: route.path.split('/'),
                     type: route.type,
                     code: route.code
@@ -172,14 +172,14 @@ module.exports = {
                 const actualUrl = reqUrl.pathname.split('/')
                 if (actualUrl[actualUrl.length - 1] === '') actualUrl.pop()
                 for (const elementName in urls) {
-                    if (elementName in urls && elementName === reqUrl.pathname && urls[elementName].type === req.method) {
-                        executeUrl = reqUrl.pathname
+                    if (elementName in urls && elementName.replace(req.method, '') === reqUrl.pathname && urls[elementName].type === req.method) {
+                        executeUrl = req.method + reqUrl.pathname
                         isStatic = false
                         exists = true
 
                         break
-                    }; if (elementName in urls && elementName === reqUrl.pathname && urls[elementName].type === 'STATIC') {
-                        executeUrl = reqUrl.pathname
+                    }; if (elementName in urls && elementName.replace(req.method, '') === reqUrl.pathname && urls[elementName].type === 'STATIC') {
+                        executeUrl = req.method + reqUrl.pathname
                         isStatic = true
                         exists = true
 
@@ -202,7 +202,7 @@ module.exports = {
                             continue
                         } else if (urlParam.startsWith(':')) {
                             params.set(urlParam.replace(':', ''), decodeURIComponent(reqParam))
-                            executeUrl = element.array.join('/')
+                            executeUrl = req.method + element.array.join('/')
                             exists = true
 
                             continue
