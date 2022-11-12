@@ -216,7 +216,7 @@ module.exports = {
 
                 // Get Correct Host IP
                 let hostIp
-                if (proxy && !!req.headers['X-Forwarded-For']) hostIp = req.headers['X-Forwarded-For']
+                if (proxy && !!req.headers['X-Real-IP']) hostIp = req.headers['X-Real-IP']
                 else hostIp = req.socket.remoteAddress
 
                 // Create Answer Object
@@ -261,7 +261,7 @@ module.exports = {
                         switch (typeof msg) {
                             case 'object':
                                 res.setHeader('Content-Type', 'application/json')
-                                res.write(JSON.stringify(msg))
+                                res.write(JSON.stringify(msg, undefined, 1))
                                 break
 
                             case 'bigint':
