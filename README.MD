@@ -32,7 +32,7 @@ Initialize Server
 // State for Production Use
 
 const webserver = require('rjweb-server')
-const routes = new webserver.RouteList()
+const routes = new webserver.routeList()
 
 // ctr.query.get... is ?name=
 routes.set(webserver.types.get, '/hello', async(ctr) => {
@@ -77,7 +77,7 @@ Serve Static Files
 // State for Production Use
 
 const webserver = require('rjweb-server')
-const routes = new webserver.RouteList()
+const routes = new webserver.routeList()
 
 routes.static('/', './html', false) // The html folder is in the root directory
 // The false is File Preloading, if enabled it loads every file into memory to serve
@@ -156,7 +156,7 @@ Load Functions from Directory
 // State for Production Use
 
 const webserver = require('rjweb-server')
-const routes = new webserver.RouteList()
+const routes = new webserver.routeList()
 
 routes.load('./functions') // The functions folder is in the root directory
 

@@ -15,9 +15,9 @@ const getAllFiles = (dirPath, arrayOfFiles) => {
 }
 
 const getAllFilesFilter = (dirPath, suffix, arrayOfFiles) => {
-    arrayOfFiles = getAllFiles(dirPath, arrayOfFiles).filter(file => file.endsWith(suffix))
+    arrayOfFiles = getAllFiles(dirPath, arrayOfFiles).filter((file) => file.endsWith(suffix))
     return arrayOfFiles
 }
 
-exports.getAllFilesFilter = getAllFilesFilter
-exports.getAllFiles = getAllFiles
+module.exports.getAllFilesFilter = getAllFilesFilter
+module.exports.getAllFiles = getAllFiles

@@ -1,8 +1,8 @@
 {
   "name": "rjweb-server",
-  "version": "0.7.1",
+  "version": "0.7.2",
   "description": "Easy and Lightweight Way to create a Web Server in Node.js",
-  "main": "index.js",
+  "main": "src/index.js",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/rotvproHD/NPM_WEB-SERVER.git"
@@ -12,7 +12,13 @@
     "web-server",
     "lightweight",
     "server",
-    "easy"
+    "restful",
+    "rest",
+    "node",
+    "http",
+    "easy",
+    "api",
+    "web"
   ],
   "author": "0x4096 (Robert Jansen)",
   "license": "MIT",
