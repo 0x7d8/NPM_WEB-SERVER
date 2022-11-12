@@ -131,15 +131,6 @@ module.exports = {
         const server = http.createServer(async(req, res) => {
             let reqBody = ''
 
-            server.on('upgrade', (req, socket, head) => {
-                socket.write('HTTP/1.1 101 Web Socket Protocol Handshake\r\n' +
-                             'Upgrade: WebSocket\r\n' +
-                             'Connection: Upgrade\r\n' +
-                             '\r\n')
-    
-                socket.pipe(socket)
-            })
-
             if (!!req.headers['content-length']) {
                 const bodySize = parseInt(req.headers['content-length'])
 
@@ -160,12 +151,13 @@ module.exports = {
                 try { reqBody = JSON.parse(reqBody)
                 } catch(e) { }
 
-                // Cors Headers
+                // Cors Stuff
                 if (cors) {
+                    res.setHeader('Access-Control-Allow-Headers', '*')
                     res.setHeader('Access-Control-Allow-Origin', '*')
 	                res.setHeader('Access-Control-Request-Method', '*')
 	                res.setHeader('Access-Control-Allow-Methods', types.join(','))
-	                res.setHeader('Access-Control-Allow-Headers', '*')
+                    if (req.method === 'OPTIONS') res.end('')
                 }
 
                 // Check if URL exists
@@ -258,8 +250,9 @@ module.exports = {
                     rawRes: res,
 
                     // Functions
-                    setHeader: res.setHeader,
-                    print(msg) {
+                    setHeader(name, value) {
+                        res.setHeader(name, value)
+                    }, print(msg) {
                         switch (typeof msg) {
                             case 'object':
                                 res.setHeader('Content-Type', 'application/json')
@@ -395,6 +388,15 @@ module.exports = {
                     }
                 }
             })
+        })
+
+        server.on('upgrade', (req, socket, head) => {
+            socket.write('HTTP/1.1 101 Web Socket Protocol Handshake\r\n' +
+                         'Upgrade: WebSocket\r\n' +
+                         'Connection: Upgrade\r\n' +
+                         '\r\n')
+
+            socket.pipe(socket)
         })
 
         server.listen(port, bind)
