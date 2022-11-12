@@ -120,6 +120,7 @@ module.exports = {
         const pages = options.pages || {}
         const events = options.events || {}
         const urls = options.urls.list() || []
+        const proxy = options.proxy || false
         const bind = options.bind || '0.0.0.0'
         const cors = options.cors || false
         const port = options.port || 5002
@@ -140,7 +141,7 @@ module.exports = {
             if (!!req.headers['content-length']) {
                 const bodySize = parseInt(req.headers['content-length'])
 
-                if (bodySize >= (body * 1000000)) {
+                if (bodySize >= (body * 1e6)) {
                     res.statusCode = 413
                     res.write('Payload Too Large')
                     return res.end()
@@ -213,6 +214,11 @@ module.exports = {
                     continue
                 }
 
+                // Get Correct Host IP
+                let hostIp
+                if (proxy && !!req.headers['X-Forwarded-For']) hostIp = req.headers['X-Forwarded-For']
+                else hostIp = req.socket.remoteAddress
+
                 // Create Answer Object
                 const headers = new Map()
                 Object.keys(req.headers).forEach((header) => {
@@ -240,10 +246,10 @@ module.exports = {
                     query: queries,
 
                     // Variables
-                    hostIp: req.socket.remoteAddress,
                     hostPort: req.socket.remotePort,
-                    reqUrl,
+                    hostIp,
                     reqBody,
+                    reqUrl,
 
                     // Raw Values
                     rawReq: req,

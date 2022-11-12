@@ -10,7 +10,7 @@
     <img alt="Maintenance" src="https://img.shields.io/badge/Maintained%3F-yes-green.svg" />
   </a>
 
-  Easy Way to create a web Server in node.js
+  Easy and Lightweight Way to create a Web Server in Node.js
 </center>
 
 ### 🏠 [Homepage](https://github.com/rotvproHD/NPM_WEB-SERVER#readme)
@@ -38,17 +38,22 @@ const routes = new webserver.RouteList()
 routes.set(webserver.types.get, '/hello', async(ctr) => {
   if (!ctr.query.has("name")) return ctr.print('please supply the name query!!')
 
-  ctr.print(`Hello, ${ctr.query.get("name")}! How are you doing?`)
+  return ctr.print(`Hello, ${ctr.query.get("name")}! How are you doing?`)
 })
 
 // ctr.param.get... is :name, example /hello/0x4096
 routes.set(webserver.types.get, '/hello/:name', async(ctr) => {
-  ctr.print(`Hello, ${ctr.param.get("name")}! How are you doing?`)
+  return ctr.print(`Hello, ${ctr.param.get("name")}! How are you doing?`)
 })
 
 // ctr.param.get... is :name, example /hello/0x4096
 routes.set(webserver.types.post, '/post', async(ctr) => {
-  ctr.print(`Hello, ${ctr.reqBody}! How are you doing?`)
+  return ctr.print(`Hello, ${ctr.reqBody}! How are you doing?`)
+})
+
+routes.set(webserver.types.get, '/profile/:user', async(ctr) => {
+  ctr.setHeader('Content-Type', 'image/png')
+  return ctr.printFile(`../images/profile/${ctr.param.get('user')}.png`)
 })
 
 webserver.start({
@@ -56,7 +61,8 @@ webserver.start({
   body: 20, // The Max POST Body in MB
   cors: false, // If Cors Headers will be added
   port: 5000, // The Port which the Server runs on
-  urls: routes // The Routes Object
+  urls: routes, // The Routes Object
+  proxy: true // If enabled, alternate IPs will be shown
 }).then((res) => {
   console.log(`webserver started on port ${res.port}`)
 })
@@ -80,7 +86,8 @@ webserver.start({
   bind: '0.0.0.0',
   cors: false,
   port: 5000,
-  urls: routes
+  urls: routes,
+  proxy: true
 }).then((res) => {
   console.log(`webserver started on port ${res.port}`)
 })
@@ -99,6 +106,7 @@ webserver.start({
   cors: false,
   port: port,
   urls: routes,
+  proxy: true,
   pages: {
     notFound: async(ctr) {
       ctr.status(404)
@@ -127,9 +135,10 @@ webserver.start({
   cors: false,
   port: port,
   urls: routes,
+  proxy: true,
   events: {
     request: async(ctr) => {
-      console.log(`request made to ${decodeURI(ctr.reqUrl.pathname)} by ${ctr.hostIp}`) // DO NOT write any data or end the request
+      return console.log(`request made to ${decodeURI(ctr.reqUrl.pathname)} by ${ctr.hostIp}`) // DO NOT write any data or end the request
     }
   }
 }).then((res) => {
@@ -155,7 +164,8 @@ webserver.start({
   bind: '0.0.0.0',
   cors: false,
   port: 5000,
-  urls: routes
+  urls: routes,
+  proxy: true,
 }).then((res) => {
   console.log(`webserver started on port ${res.port}`)
 })
@@ -172,7 +182,7 @@ module.exports = {
   async code(ctr) {
     const word = ctr.param.get('word')
 
-    ctr.print(`I will say it!!!\n${word}`)
+    return ctr.print(`I will say it!!!\n${word}`)
   }
 }
 ```
