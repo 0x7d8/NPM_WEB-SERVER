@@ -1,6 +1,6 @@
-const getAllFiles = (dirPath, arrayOfFiles) => {
-    const fs = require('node:fs')
-    
+const fs = require('node:fs')
+
+const getAllFiles = (dirPath, arrayOfFiles) => {    
     const files = fs.readdirSync(dirPath)
     arrayOfFiles = arrayOfFiles || []
     files.forEach((file) => {
@@ -10,8 +10,7 @@ const getAllFiles = (dirPath, arrayOfFiles) => {
             let filePath = dirPath + '/' + file
             arrayOfFiles.push(filePath)
         }
-    })
-    return arrayOfFiles
+    }); return arrayOfFiles
 }
 
 const getAllFilesFilter = (dirPath, suffix, arrayOfFiles) => {

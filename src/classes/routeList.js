@@ -48,11 +48,11 @@ module.exports = class routeList {
             else if (fileName.replace('/', '').endsWith('.html') && remHTML) urlName = (path + fileName).replace('//', '/').replace('.html', '')
             else urlName = (path + fileName).replace('//', '/')
 
-            this.urls['GET' + urlName]= {
+            this.urls['GET' + urlName] = {
                 file,
                 array: fileName.split('/'),
                 type: 'STATIC'
-            }; if (preload) this.urls[urlName].content = fs.readFileSync(file)
+            }; if (preload) this.urls['GET' + urlName].content = fs.readFileSync(file)
         }
     }
     
