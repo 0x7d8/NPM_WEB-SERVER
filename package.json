@@ -1,6 +1,6 @@
 {
   "name": "rjweb-server",
-  "version": "0.7.3",
+  "version": "0.7.4",
   "description": "Easy and Lightweight Way to create a Web Server in Node.js",
   "main": "src/index.js",
   "repository": {

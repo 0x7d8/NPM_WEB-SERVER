@@ -2,6 +2,7 @@ const { getAllFiles, getAllFilesFilter } = require('../misc/getAllFiles')
 const types = require('../misc/types')
 
 const path = require('node:path')
+const fs = require('node:fs')
 
 module.exports = class routeList {
     constructor() {
@@ -29,7 +30,6 @@ module.exports = class routeList {
     *
     * @param {String} path Path on which all files will be served under
     * @param {String} folder Path to the Folder with the static files
-    * @param {Object} options Some Additional Options
     * 
     * @typedef {Object} staticOptions { preload: Boolean, remHTML: Boolean }
     * @prop {Boolean} preload Whether to preload static files into Memory
