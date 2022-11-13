@@ -79,8 +79,10 @@ Serve Static Files
 const webserver = require('rjweb-server')
 const routes = new webserver.routeList()
 
-routes.static('/', './html', false) // The html folder is in the root directory
-// The false is File Preloading, if enabled it loads every file into memory to serve
+routes.static('/', './html', {
+  preload: false, // If enabled will load every static files content into Memory
+  remHTML: true // If enabled will remove the html ending from files when serving
+}) // The html folder is in the root directory
 
 webserver.start({
   bind: '0.0.0.0',

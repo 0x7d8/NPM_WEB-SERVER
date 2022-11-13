@@ -29,22 +29,24 @@ module.exports = class routeList {
     *
     * @param {String} path Path on which all files will be served under
     * @param {String} folder Path to the Folder with the static files
-    * @param {Boolean} preload If Enabled will load every file into memory
+    * @param {Object} options Some Additional Options
+    * 
+    * @typedef {Object} staticOptions { preload: Boolean, remHTML: Boolean }
+    * @prop {Boolean} preload Whether to preload static files into Memory
+    * @prop {Object} remHTML Whether to remove the .html ending from the static files
+    * 
+    * @param {staticOptions} options
     */
-    static(path, folder, preload) {
-        preload = preload || false
-        const files = getAllFiles(folder)
+    static(path, folder, options) {
+        const preload = options.preload || false
+        const remHTML = options.remHTML || false
 
-        for (const file of files) {
+        for (const file of getAllFiles(folder)) {
             const fileName = file.replace(folder, '')
             let urlName = ''
-            if (fileName.replace('/', '') === 'index.html') {
-                urlName = (path).replace('//', '/')
-            } else if (fileName.replace('/', '').endsWith('.html')) {
-                urlName = (path + fileName).replace('//', '/').replace('.html', '')
-            } else {
-                urlName = (path + fileName).replace('//', '/')
-            }
+            if (fileName.replace('/', '') === 'index.html' && remHTML) urlName = path.replace('//', '/')
+            else if (fileName.replace('/', '').endsWith('.html') && remHTML) urlName = (path + fileName).replace('//', '/').replace('.html', '')
+            else urlName = (path + fileName).replace('//', '/')
 
             this.urls['GET' + urlName]= {
                 file,

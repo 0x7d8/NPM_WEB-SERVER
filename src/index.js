@@ -1,4 +1,4 @@
-const routeList = require('./classes/routelist')
+const routeList = require('./classes/routeList')
 const types = require('./misc/types')
 
 const path = require('node:path')
@@ -21,7 +21,7 @@ module.exports = {
     /**
     * Start Server
     *
-    * @typedef {Object} startOptions { pages: Object, events: Object, urls: RouteList, bind: String, cors: Boolean, port: Number }
+    * @typedef {Object} startOptions { pages: Object, events: Object, urls: RouteList, bind: String, cors: Boolean, port: Number, body: Number }
     * @prop {Object} pages List of Custom Pages ( 404 / 500 )
     * @prop {Object} events List of Custom Events ( On Request, etc... )
     * @prop {Array} urls List of Webserver Urls ( Added by RouteList )
