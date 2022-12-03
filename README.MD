@@ -21,16 +21,34 @@
 npm i rjweb-server
 ```
 
+or
+
+```sh
+yarn add rjweb-server
+```
+
+## Typescript
+
+Importing
+```ts
+import * as webserver from "rjweb-server"
+```
+
+Interface for ctr Object
+```ts
+import ctrInterface from "rjweb-server/interfaces/ctr"
+
+routes.set(webserver.types.get, '/hello', async(ctr: ctrInterface) => {
+  if (!ctr.query.has("name")) return ctr.print('please supply the name query!!')
+
+  return ctr.print(`Hello, ${ctr.query.get("name")}! How are you doing?`)
+})
+```
+
 ## Usage
 
 Initialize Server
 ```js
-/* ************ *
- * EXPERIMENTAL *
- * ************ */
-// You shouldnt use the current
-// State for Production Use
-
 const webserver = require('rjweb-server')
 const routes = new webserver.routeList()
 
@@ -70,12 +88,6 @@ webserver.start({
 
 Serve Static Files
 ```js
-/* ************ *
- * EXPERIMENTAL *
- * ************ */
-// You shouldnt use the current
-// State for Production Use
-
 const webserver = require('rjweb-server')
 const routes = new webserver.routeList()
 
@@ -97,12 +109,6 @@ webserver.start({
 
 Custom 404 / 500 Page
 ```js
-/* ************ *
- * EXPERIMENTAL *
- * ************ */
-// You shouldnt use the current
-// State for Production Use
-
 webserver.start({
   bind: '0.0.0.0',
   cors: false,
@@ -126,12 +132,6 @@ webserver.start({
 
 Custom Function on every request
 ```js
-/* ************ *
- * EXPERIMENTAL *
- * ************ */
-// You shouldnt use the current
-// State for Production Use
-
 webserver.start({
   bind: '0.0.0.0',
   cors: false,
@@ -151,12 +151,6 @@ webserver.start({
 ### Cleaning Up Functions
 Load Functions from Directory
 ```js
-/* ************ *
- * EXPERIMENTAL *
- * ************ */
-// You shouldnt use the current
-// State for Production Use
-
 const webserver = require('rjweb-server')
 const routes = new webserver.routeList()
 
@@ -203,7 +197,7 @@ Contributions, issues and feature requests are welcome!<br />Feel free to check 
 
 ## Show your support
 
-Give a ⭐️ if this project helped you!
+Give a Star if this project helped you!
 
 ## 📝 License
 

@@ -289,7 +289,7 @@ module.exports = {
                         }).then(() => res.end())
                     } else {
                         let pageDisplay = ''
-                        Object.keys(urls).forEach((url) => {
+                        urls.forEach((url) => {
                             const type = (urls[url].type === 'STATIC' ? 'GET' : urls[url].type)
 
                             pageDisplay = pageDisplay + `[-] [${type}] ${url}\n`
