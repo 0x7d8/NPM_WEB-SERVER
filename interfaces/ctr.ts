@@ -27,7 +27,7 @@ export default interface ctr {
     rawReq: any
     rawRes: any
 
-    error: Error | null
+    error?: Error
 
     setHeader: (name: string, value: string) => null
     print: (msg: any) => null

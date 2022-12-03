@@ -31,18 +31,22 @@ yarn add rjweb-server
 
 Importing
 ```ts
-import * as webserver from "rjweb-server"
+import { default as webserver } from "rjweb-server"
 ```
 
 Interface for ctr Object
 ```ts
 import ctrInterface from "rjweb-server/interfaces/ctr"
 
+const routes = new webserver.routeList()
+
 routes.set(webserver.types.get, '/hello', async(ctr: ctrInterface) => {
   if (!ctr.query.has("name")) return ctr.print('please supply the name query!!')
 
   return ctr.print(`Hello, ${ctr.query.get("name")}! How are you doing?`)
 })
+
+// ...
 ```
 
 ## Usage
