@@ -24,6 +24,11 @@ export default interface ctr {
         href: string
     }
 
+    rawReq: any
+    rawRes: any
+
+    error: Error | null
+
     setHeader: (name: string, value: string) => null
     print: (msg: any) => null
     status: (code: number) => null
