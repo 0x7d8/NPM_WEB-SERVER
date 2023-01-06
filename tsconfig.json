@@ -1,0 +1,19 @@
+{
+  "compilerOptions": {
+    "module": "CommonJS",
+    "skipLibCheck": true,
+    "declaration": true,
+    "declarationMap": true,
+    "target": "ES6",
+    "moduleResolution": "node",
+    "esModuleInterop": true,
+    "sourceMap": true,
+    "outDir": "lib",
+    "baseUrl": "src",
+    "downlevelIteration": true
+  },
+  "include": [
+    "src/**/*",
+    "src/interfaces"
+  ]
+}

@@ -31,16 +31,16 @@ yarn add rjweb-server
 
 Importing
 ```ts
-import { default as webserver } from "rjweb-server"
+import * as webserver from "rjweb-server"
 ```
 
 Interface for ctr Object
 ```ts
-import ctrInterface from "rjweb-server/interfaces/ctr"
+import { ctr } from "rjweb-server/interfaces"
 
 const routes = new webserver.routeList()
 
-routes.set(webserver.types.get, '/hello', async(ctr: ctrInterface) => {
+routes.set(webserver.types.get, '/hello', async(ctr: ctr) => {
   if (!ctr.query.has("name")) return ctr.print('please supply the name query!!')
 
   return ctr.print(`Hello, ${ctr.query.get("name")}! How are you doing?`)
@@ -152,6 +152,71 @@ webserver.start({
 })
 ```
 
+### Rate Limits
+With Database (EXAMPLE, PLEASE EDIT)
+```js
+webserver.start({
+  bind: '0.0.0.0',
+  cors: false,
+  port: port,
+  urls: routes,
+  proxy: true,
+  rateLimits: {
+    enabled: true,
+    message: 'You are being rate limited',
+    list: [
+      {
+        path: '/auth',
+        times: 5,
+        timeout: 10000
+      },
+      {
+        path: '/fetch',
+        times: 3,
+        timeout: 5000
+      }
+    ], functions: {
+      set: async(key, value) => (await db.query('update ratelimits set value = ? where key = ?;', [value, key])),
+      get: async(key) => ((await db.query('select value from ratelimits where key = ?;', [key])).data.rows[0].value),
+      del: async(key, value) => (await db.query('delete from ratelimits where key = ?;', [key]))
+    }
+  }
+}).then((res) => {
+  console.log(`webserver started on port ${res.port}`)
+})
+```
+
+With Map
+```js
+const rateLimits = new Map()
+
+webserver.start({
+  bind: '0.0.0.0',
+  cors: false,
+  port: port,
+  urls: routes,
+  proxy: true,
+  rateLimits: {
+    enabled: true,
+    message: 'You are being rate limited',
+    list: [
+      {
+        path: '/auth',
+        times: 5,
+        timeout: 10000
+      },
+      {
+        path: '/fetch',
+        times: 3,
+        timeout: 5000
+      }
+    ], functions: rateLimits
+  }
+}).then((res) => {
+  console.log(`webserver started on port ${res.port}`)
+})
+```
+
 ### Cleaning Up Functions
 Load Functions from Directory
 ```js
@@ -175,6 +240,7 @@ Making a function File
 ```js
 const webserver = require('rjweb-server')
 
+// For Typescript just use `export =` instead
 module.exports = {
   type: webserver.types.get,
   path: '/say/:word',
