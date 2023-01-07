@@ -41,7 +41,9 @@ export = {
 	types: typesInterface,
 
 	// Start
-	async start(options: startOptions) {
+	async start(
+		/** Required Options */ options: startOptions
+	) {
 		const pages = options?.pages || {}
 		const events = options?.events || {}
 		const urls = options?.urls.list() || []
@@ -68,7 +70,8 @@ export = {
 			req.on('data', (data: any) => {
 				reqBody += data
 			}).on('end', async () => {
-				const reqUrl = url.parse(req.url)
+				let reqUrl = url.parse(req.url)
+				if (reqUrl.path.endsWith('/')) reqUrl.path = reqUrl.path.slice(0, -1)
 				let executeUrl = ''
 
 				// Parse Request Body

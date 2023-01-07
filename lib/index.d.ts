@@ -30,9 +30,7 @@ interface startOptions {
     /** The Maximum Body Size in MB */ body?: number;
 }
 declare const _default: {
-    routeList: {
-        new (): routeList;
-    };
+    routeList: typeof routeList;
     types: typeof typesInterface;
     start(options: startOptions): Promise<{
         success: boolean;

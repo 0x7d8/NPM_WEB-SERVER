@@ -1,4 +1,5 @@
 import { getAllFiles, getAllFilesFilter } from "../misc/getAllFiles"
+import typesInterface from "../interfaces/types"
 import page from "../interfaces/page"
 import ctr from "../interfaces/ctr"
 import types from "../misc/types"
@@ -12,14 +13,23 @@ interface staticOptions {
 	/** If true then some Content Types will be added automatically */ addTypes?: boolean
 }
 
-export = class routeList {
+export default class routeList {
 	urls: page[]
 
-	constructor() {
-		this.urls = []
+	/** List of Routes */
+	constructor(
+		/** Routes to Import */ routes?: page[]
+	) {
+		routes = routes || []
+		this.urls = routes
 	}
 
-	set(/** The Request Type */ type: typeof types[number], /** The Path on which this will be available */ path: string, /** The Async Code to run on a Request */ code: (ctr: ctr) => Promise<void>) {
+	/** Set A Route Manually */
+	set(
+		/** The Request Type */ type: typesInterface,
+		/** The Path on which this will be available */ path: string,
+		/** The Async Code to run on a Request */ code: (ctr: ctr) => Promise<void>
+	) {
 		if (!types.includes(type)) throw TypeError(`No Valid Request Type: ${type}\nPossible Values: ${types.join(', ')}`)
 		this.urls[type + path] = {
 			array: path.split('/'),
@@ -29,8 +39,13 @@ export = class routeList {
 			code
 		}
 	}
-	
-	static(/** The Path to serve the Files on */ path: string, /** The Location of the Folder to load from */ folder: string, options?: staticOptions) {
+
+	/** Serve Static Files */
+	static(
+		/** The Path to serve the Files on */ path: string,
+		/** The Location of the Folder to load from */ folder: string,
+		/** Additional Options */ options?: staticOptions
+	) {
 		const preload = options?.preload || false
 		const remHTML = options?.remHTML || false
 		const addTypes = options?.addTypes || true
@@ -52,7 +67,10 @@ export = class routeList {
 		}
 	}
 
-	load(/** The Location of the Folder to load from */ folder: string) {
+	/** Load External Function Files */
+	load(
+		/** The Location of the Folder to load from */ folder: string
+	) {
 		const files = getAllFilesFilter(folder, '.js')
 
 		for (const file of files) {
@@ -74,7 +92,8 @@ export = class routeList {
 			}
 		}
 	}
-	
+
+	/** Internal Function */
 	list() {
 		return this.urls
 	}
