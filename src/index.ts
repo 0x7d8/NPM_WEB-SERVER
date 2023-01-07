@@ -29,7 +29,7 @@ interface startOptions {
 	}
 
 	/** Where the Server should bind to */ bind?: string
-	/** If true x-real-ip will be shown as hostIp */ proxy?: boolean
+	/** If true x-forwarded-for will be shown as hostIp */ proxy?: boolean
 	/** If true all cors headers are set */ cors?: boolean
 	/** Where the Server should start at */ port?: number
 	/** The Maximum Body Size in MB */ body?: number
@@ -137,8 +137,8 @@ export = {
 				}
 
 				// Get Correct Host IP
-				let hostIp: any
-				if (proxy && !!req.headers['x-real-ip']) hostIp = req.headers['x-real-ip']
+				let hostIp: string
+				if (proxy && req.headers['x-forwarded-for']) hostIp = req.headers['x-forwarded-for'] as string
 				else hostIp = req.socket.remoteAddress
 
 				// Create Answer Object
@@ -339,7 +339,6 @@ export = {
 						}).then(() => res.end())
 					} else {
 						let pageDisplay = ''
-						console.log(urls)
 						for (const rawUrl in urls) {
 							const url = urls[rawUrl]
 							const type = (url.type === 'STATIC' ? 'GET' : url.type)

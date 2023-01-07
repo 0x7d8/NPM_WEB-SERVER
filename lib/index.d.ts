@@ -24,7 +24,7 @@ interface startOptions {
         } | Map<any, any>;
     };
     /** Where the Server should bind to */ bind?: string;
-    /** If true x-real-ip will be shown as hostIp */ proxy?: boolean;
+    /** If true x-forwarded-for will be shown as hostIp */ proxy?: boolean;
     /** If true all cors headers are set */ cors?: boolean;
     /** Where the Server should start at */ port?: number;
     /** The Maximum Body Size in MB */ body?: number;
