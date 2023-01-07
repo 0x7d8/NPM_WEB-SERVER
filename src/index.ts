@@ -1,5 +1,7 @@
 import ctr from "./interfaces/ctr"
 import routeList from "./classes/routeList"
+import rateLimitRule from "./interfaces/ratelimitRule"
+import typesInterface from "./interfaces/types"
 import page from "./interfaces/page"
 import types from "./misc/types"
 
@@ -7,12 +9,6 @@ import * as path from "path"
 import * as http from "http"
 import * as url from "url"
 import * as fs from "fs"
-
-interface rateLimitRule {
-	/** The Path of the Rule */ path: string
-	/** How often a User can request */ times: number
-	/** How Long a Request stays counted */ timeout: number
-}
 
 interface startOptions {
 	pages?: {
@@ -29,8 +25,7 @@ interface startOptions {
 		/** The RateLimit Functions */ functions: {
 			set: (key: string, value: any) => Promise<any>
 			get: (key: string) => Promise<any>
-			del: (key: string) => Promise<any>
-		}
+		} | Map<any, any>
 	}
 
 	/** Where the Server should bind to */ bind?: string
@@ -42,16 +37,8 @@ interface startOptions {
 
 export = {
 	// Misc
-	RouteList: routeList,
 	routeList,
-	types: {
-		options: 'OPTIONS',
-		delete: 'DELETE',
-		patch: 'PATCH',
-		post: 'POST',
-		put: 'PUT',
-		get: 'GET'
-	},
+	types: typesInterface,
 
 	// Start
 	async start(options: startOptions) {
@@ -302,6 +289,20 @@ export = {
 							}
 						}).then(() => res.end())
 					} else {
+						// Add Content Types
+						if (urls[executeUrl].addTypes) {
+							if (urls[executeUrl].path.endsWith('.pdf')) ctr.setHeader('Content-Type', 'application/pdf')
+							if (urls[executeUrl].path.endsWith('.js')) ctr.setHeader('Content-Type', 'text/javascript')
+							if (urls[executeUrl].path.endsWith('.html')) ctr.setHeader('Content-Type', 'text/html')
+							if (urls[executeUrl].path.endsWith('.css')) ctr.setHeader('Content-Type', 'text/css')
+							if (urls[executeUrl].path.endsWith('.csv')) ctr.setHeader('Content-Type', 'text/csv')
+							if (urls[executeUrl].path.endsWith('.mpeg')) ctr.setHeader('Content-Type', 'video/mpeg')
+							if (urls[executeUrl].path.endsWith('.mp4')) ctr.setHeader('Content-Type', 'video/mp4')
+							if (urls[executeUrl].path.endsWith('.webm')) ctr.setHeader('Content-Type', 'video/webm')
+							if (urls[executeUrl].path.endsWith('.bmp')) ctr.setHeader('Content-Type', 'image/bmp')
+						}
+
+						// Read Content
 						if (!('content' in urls[executeUrl])) {
 							let content: any
 							const filePath = path.resolve(urls[executeUrl].file)

@@ -1,11 +1,8 @@
 import ctr from "./interfaces/ctr";
 import routeList from "./classes/routeList";
+import rateLimitRule from "./interfaces/ratelimitRule";
+import typesInterface from "./interfaces/types";
 import page from "./interfaces/page";
-interface rateLimitRule {
-    /** The Path of the Rule */ path: string;
-    /** How often a User can request */ times: number;
-    /** How Long a Request stays counted */ timeout: number;
-}
 interface startOptions {
     pages?: {
         /** When a Route is not found */ notFound?: (ctr: ctr) => Promise<void>;
@@ -24,8 +21,7 @@ interface startOptions {
         /** The RateLimit Functions */ functions: {
             set: (key: string, value: any) => Promise<any>;
             get: (key: string) => Promise<any>;
-            del: (key: string) => Promise<any>;
-        };
+        } | Map<any, any>;
     };
     /** Where the Server should bind to */ bind?: string;
     /** If true x-real-ip will be shown as hostIp */ proxy?: boolean;
@@ -34,20 +30,10 @@ interface startOptions {
     /** The Maximum Body Size in MB */ body?: number;
 }
 declare const _default: {
-    RouteList: {
-        new (): routeList;
-    };
     routeList: {
         new (): routeList;
     };
-    types: {
-        options: string;
-        delete: string;
-        patch: string;
-        post: string;
-        put: string;
-        get: string;
-    };
+    types: typeof typesInterface;
     start(options: startOptions): Promise<{
         success: boolean;
         port: number;

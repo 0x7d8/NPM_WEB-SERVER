@@ -7,8 +7,9 @@ import * as path from "path"
 import * as fs from "fs"
 
 interface staticOptions {
-	/** If true then files will be loaded into RAM */ preload: boolean
-	/** If true then .html will be removed automatically */ remHTML: boolean
+	/** If true then files will be loaded into RAM */ preload?: boolean
+	/** If true then .html will be removed automatically */ remHTML?: boolean
+	/** If true then some Content Types will be added automatically */ addTypes?: boolean
 }
 
 export = class routeList {
@@ -22,15 +23,17 @@ export = class routeList {
 		if (!types.includes(type)) throw TypeError(`No Valid Request Type: ${type}\nPossible Values: ${types.join(', ')}`)
 		this.urls[type + path] = {
 			array: path.split('/'),
+			addTypes: false,
 			path,
 			type,
 			code
 		}
 	}
 	
-	static(/** The Path to serve the Files on */ path: string, /** The Location of the Folder to load from */ folder: string, options: staticOptions) {
+	static(/** The Path to serve the Files on */ path: string, /** The Location of the Folder to load from */ folder: string, options?: staticOptions) {
 		const preload = options?.preload || false
 		const remHTML = options?.remHTML || false
+		const addTypes = options?.addTypes || true
 
 		for (const file of getAllFiles(folder)) {
 			const fileName = file.replace(folder, '')
@@ -42,6 +45,7 @@ export = class routeList {
 			this.urls['GET' + urlName] = {
 				file,
 				array: urlName.split('/'),
+				addTypes,
 				path: urlName,
 				type: 'STATIC'
 			}; if (preload) this.urls['GET' + urlName].content = fs.readFileSync(file)
@@ -63,6 +67,7 @@ export = class routeList {
 
 			this.urls[route.type + route.path] = {
 				array: route.path.split('/'),
+				addTypes: false,
 				path: route.path,
 				type: route.type,
 				code: route.code
