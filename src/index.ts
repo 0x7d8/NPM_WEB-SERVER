@@ -1,11 +1,9 @@
-require('module-alias').addAlias("@", __dirname + "/");
-
-import ctr, { ctrError } from "@/interfaces/ctr"
-import routeList from "@/classes/routeList"
-import rateLimitRule from "@/interfaces/ratelimitRule"
-import typesEnum from "@/interfaces/types"
-import page from "@/interfaces/page"
-import types from "@/misc/types"
+import ctr, { ctrError } from "./interfaces/ctr"
+import routeList from "./classes/routeList"
+import rateLimitRule from "./interfaces/ratelimitRule"
+import typesEnum from "./interfaces/types"
+import page from "./interfaces/page"
+import types from "./misc/types"
 
 import * as path from "path"
 import * as http from "http"

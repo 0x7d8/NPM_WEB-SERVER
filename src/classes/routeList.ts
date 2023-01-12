@@ -1,8 +1,8 @@
-import { getAllFiles, getAllFilesFilter } from "@/misc/getAllFiles"
-import { types as typesInterface } from "@/interfaces/types"
-import page from "@/interfaces/page"
-import ctr from "@/interfaces/ctr"
-import types from "@/misc/types"
+import { getAllFiles, getAllFilesFilter } from "../misc/getAllFiles"
+import { types as typesInterface } from "../interfaces/types"
+import page from "../interfaces/page"
+import ctr from "../interfaces/ctr"
+import types from "../misc/types"
 
 import * as path from "path"
 import * as fs from "fs"

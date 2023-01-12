@@ -1,8 +1,8 @@
-import ctr, { ctrError } from "@/interfaces/ctr";
-import routeList from "@/classes/routeList";
-import rateLimitRule from "@/interfaces/ratelimitRule";
-import typesEnum from "@/interfaces/types";
-import page from "@/interfaces/page";
+import ctr, { ctrError } from "./interfaces/ctr";
+import routeList from "./classes/routeList";
+import rateLimitRule from "./interfaces/ratelimitRule";
+import typesEnum from "./interfaces/types";
+import page from "./interfaces/page";
 interface startOptions {
     pages?: {
         /** When a Route is not found */ notFound?: (ctr: ctr) => Promise<any>;

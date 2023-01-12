@@ -11,9 +11,6 @@
     "outDir": "lib",
     "downlevelIteration": true,
     "baseUrl": "src",
-    "paths": {
-      "@/*": ["./*"]
-    }
   },
   "include": ["src/**/*"]
 }
