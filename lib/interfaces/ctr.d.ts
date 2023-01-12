@@ -2,7 +2,7 @@
 /// <reference types="node" />
 import { IncomingMessage, ServerResponse } from "http";
 import { UrlWithStringQuery } from "url";
-import { types } from "@/interfaces/types";
+import { types } from "./types";
 export default interface ctr {
     /** A Map of all Headers */ header: Map<any, any>;
     /** A Map of all Cookies */ cookie: Map<any, any>;

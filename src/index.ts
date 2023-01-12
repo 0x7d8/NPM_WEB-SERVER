@@ -14,10 +14,10 @@ import * as fs from "fs"
 
 interface startOptions {
 	pages?: {
-		/** When a Route is not found */ notFound?: (ctr: ctr) => Promise<void>
-		/** When an Error occurs in a Route */ reqError?: (ctr: ctrError) => Promise<void>
+		/** When a Route is not found */ notFound?: (ctr: ctr) => Promise<any>
+		/** When an Error occurs in a Route */ reqError?: (ctr: ctrError) => Promise<any>
 	}, events?: {
-		/** On Every Request */ request?: (ctr: ctr) => Promise<void>
+		/** On Every Request */ request?: (ctr: ctr) => Promise<any>
 	}, urls?: {
 		list: () => page[]
 	}, rateLimits?: {

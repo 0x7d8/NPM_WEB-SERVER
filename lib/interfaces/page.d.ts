@@ -1,5 +1,5 @@
-import { types } from "@/interfaces/types";
-import ctr from "@/interfaces/ctr";
+import { types } from "./types";
+import ctr from "./ctr";
 export default interface page {
     /** An Array of the URL split by slashes */ array: string[];
     /** The URL as normal String */ path: string;
