@@ -2,15 +2,27 @@ import typesInterface from "../interfaces/types";
 import page from "../interfaces/page";
 import ctr from "../interfaces/ctr";
 interface staticOptions {
-    /** If true then files will be loaded into RAM */ preload?: boolean;
-    /** If true then .html will be removed automatically */ remHTML?: boolean;
-    /** If true then some Content Types will be added automatically */ addTypes?: boolean;
+    /**
+     * If true then files will be loaded into RAM
+     * @default false
+    */ preload?: boolean;
+    /**
+     * If true then .html will be removed automatically
+     * @default false
+    */ remHTML?: boolean;
+    /**
+     * If true then some Content Types will be added automatically
+     * @default true
+    */ addTypes?: boolean;
 }
 export default class routeList {
-    urls: page[];
+    private urls;
     /** List of Routes */
     constructor(
-    /** Routes to Import */ routes?: page[]);
+    /**
+     * Routes to Import
+     * @default []
+     */ routes?: page[]);
     /** Set A Route Manually */
     set(
     /** The Request Type */ type: typesInterface, 
@@ -24,7 +36,7 @@ export default class routeList {
     /** Load External Function Files */
     load(
     /** The Location of the Folder to load from */ folder: string): void;
-    /** Internal Function */
+    /** Internal Function to access all URLs as Array */
     list(): page[];
 }
 export {};

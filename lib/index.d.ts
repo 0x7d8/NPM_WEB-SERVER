@@ -15,19 +15,43 @@ interface startOptions {
         list: () => page[];
     };
     rateLimits?: {
-        /** If true Ratelimits are enabled */ enabled: boolean;
-        /** The Message that gets sent when a ratelimit maxes out */ message?: any;
-        /** The List of Ratelimit Rules */ list: rateLimitRule[];
+        /**
+         * If true Ratelimits are enabled
+         * @default false
+        */ enabled: boolean;
+        /**
+         * The Message that gets sent when a ratelimit maxes out
+         * @default "Rate Limited"
+        */ message?: any;
+        /**
+         * The List of Ratelimit Rules
+         * @default []
+        */ list: rateLimitRule[];
         /** The RateLimit Functions */ functions: {
             set: (key: string, value: any) => Promise<any>;
             get: (key: string) => Promise<any>;
         } | Map<any, any>;
     };
-    /** Where the Server should bind to */ bind?: string;
-    /** If true x-forwarded-for will be shown as hostIp */ proxy?: boolean;
-    /** If true all cors headers are set */ cors?: boolean;
-    /** Where the Server should start at */ port?: number;
-    /** The Maximum Body Size in MB */ body?: number;
+    /**
+     * Where the Server should bind to
+     * @default "0.0.0.0"
+    */ bind?: string;
+    /**
+     * If true X-Forwarded-For will be shown as hostIp
+     * @default false
+    */ proxy?: boolean;
+    /**
+     * If true all cors headers are set
+     * @default false
+    */ cors?: boolean;
+    /**
+     * Where the Server should start at
+     * @default 5002
+    */ port?: number;
+    /**
+     * The Maximum Body Size in MB
+     * @default 20
+    */ body?: number;
 }
 declare const _default: {
     routeList: typeof routeList;

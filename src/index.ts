@@ -19,20 +19,44 @@ interface startOptions {
 	}, urls?: {
 		list: () => page[]
 	}, rateLimits?: {
-		/** If true Ratelimits are enabled */ enabled: boolean
-		/** The Message that gets sent when a ratelimit maxes out */ message?: any
-		/** The List of Ratelimit Rules */ list: rateLimitRule[]
+		/**
+		 * If true Ratelimits are enabled
+		 * @default false
+		*/ enabled: boolean
+		/**
+		 * The Message that gets sent when a ratelimit maxes out
+		 * @default "Rate Limited"
+		*/ message?: any
+		/**
+		 * The List of Ratelimit Rules
+		 * @default []
+		*/ list: rateLimitRule[]
 		/** The RateLimit Functions */ functions: {
 			set: (key: string, value: any) => Promise<any>
 			get: (key: string) => Promise<any>
 		} | Map<any, any>
 	}
 
-	/** Where the Server should bind to */ bind?: string
-	/** If true x-forwarded-for will be shown as hostIp */ proxy?: boolean
-	/** If true all cors headers are set */ cors?: boolean
-	/** Where the Server should start at */ port?: number
-	/** The Maximum Body Size in MB */ body?: number
+	/**
+	 * Where the Server should bind to
+	 * @default "0.0.0.0"
+	*/ bind?: string
+	/**
+	 * If true X-Forwarded-For will be shown as hostIp
+	 * @default false
+	*/ proxy?: boolean
+	/**
+	 * If true all cors headers are set
+	 * @default false
+	*/ cors?: boolean
+	/**
+	 * Where the Server should start at
+	 * @default 5002
+	*/ port?: number
+	/**
+	 * The Maximum Body Size in MB
+	 * @default 20
+	*/ body?: number
 }
 
 export = {
@@ -44,17 +68,17 @@ export = {
 	async start(
 		/** Required Options */ options: startOptions
 	) {
-		const pages = options?.pages || {}
-		const events = options?.events || {}
-		const urls = options?.urls.list() || []
-		const proxy = options?.proxy || false
-		const rateLimits = options?.rateLimits || { enabled: false, list: [] }
-		const bind = options?.bind || '0.0.0.0'
-		const cors = options?.cors || false
-		const port = options?.port || 5002
-		const body = options?.body || 20
+		const pages = options?.pages ?? {}
+		const events = options?.events ?? {}
+		const urls = options?.urls.list() ?? []
+		const proxy = options?.proxy ?? false
+		const rateLimits = options?.rateLimits ?? { enabled: false, list: [] }
+		const bind = options?.bind ?? '0.0.0.0'
+		const cors = options?.cors ?? false
+		const port = options?.port ?? 5002
+		const body = options?.body ?? 20
 
-		const server = http.createServer(async (req, res) => {
+		const server = http.createServer(async(req, res) => {
 			let reqBody = ''
 
 			if (!!req.headers['content-length']) {
@@ -67,7 +91,7 @@ export = {
 				}
 			}
 
-			req.on('data', (data: any) => {
+			req.on('data', (data: string) => {
 				reqBody += data
 			}).on('end', async () => {
 				let reqUrl = url.parse(req.url)
@@ -180,9 +204,10 @@ export = {
 					rawRes: res,
 
 					// Functions
-					setHeader(name, value) {
-						return res.setHeader(name, value)
-					}, print(msg) {
+					setHeader(name: string, value: string) {
+						res.setHeader(name, value)
+						return ctr
+					}, print(msg: any) {
 						switch (typeof msg) {
 							case 'object':
 								res.setHeader('Content-Type', 'application/json')
@@ -223,11 +248,14 @@ export = {
 										return res.end()
 									}
 								}
-						}
-					}, status(code: number) { res.statusCode = code },
-					printFile(file: string) {
+						}; return ctr
+					}, status(code: number) {
+						res.statusCode = code
+						return ctr
+					}, printFile(file: string) {
 						const content = fs.readFileSync(file)
-						return res.write(content, 'binary')
+						res.write(content, 'binary')
+						return ctr
 					}
 				}
 

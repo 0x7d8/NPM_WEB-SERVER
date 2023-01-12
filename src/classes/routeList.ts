@@ -8,19 +8,31 @@ import * as path from "path"
 import * as fs from "fs"
 
 interface staticOptions {
-	/** If true then files will be loaded into RAM */ preload?: boolean
-	/** If true then .html will be removed automatically */ remHTML?: boolean
-	/** If true then some Content Types will be added automatically */ addTypes?: boolean
+	/**
+	 * If true then files will be loaded into RAM
+	 * @default false
+	*/ preload?: boolean
+	/**
+	 * If true then .html will be removed automatically
+	 * @default false
+	*/ remHTML?: boolean
+	/**
+	 * If true then some Content Types will be added automatically
+	 * @default true
+	*/ addTypes?: boolean
 }
 
 export default class routeList {
-	urls: page[]
+	private urls: page[]
 
 	/** List of Routes */
 	constructor(
-		/** Routes to Import */ routes?: page[]
+		/**
+		 * Routes to Import
+		 * @default []
+		 */ routes?: page[]
 	) {
-		routes = routes || []
+		routes = routes ?? []
 		this.urls = routes
 	}
 
@@ -46,9 +58,9 @@ export default class routeList {
 		/** The Location of the Folder to load from */ folder: string,
 		/** Additional Options */ options?: staticOptions
 	) {
-		const preload = options?.preload || false
-		const remHTML = options?.remHTML || false
-		const addTypes = options?.addTypes || true
+		const preload = options?.preload ?? false
+		const remHTML = options?.remHTML ?? false
+		const addTypes = options?.addTypes ?? true
 
 		for (const file of getAllFiles(folder)) {
 			const fileName = file.replace(folder, '')
@@ -93,7 +105,7 @@ export default class routeList {
 		}
 	}
 
-	/** Internal Function */
+	/** Internal Function to access all URLs as Array */
 	list() {
 		return this.urls
 	}
