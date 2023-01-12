@@ -1,12 +1,12 @@
-import ctr from "./interfaces/ctr";
-import routeList from "./classes/routeList";
-import rateLimitRule from "./interfaces/ratelimitRule";
-import typesInterface from "./interfaces/types";
-import page from "./interfaces/page";
+import ctr, { ctrError } from "@/interfaces/ctr";
+import routeList from "@/classes/routeList";
+import rateLimitRule from "@/interfaces/ratelimitRule";
+import typesEnum from "@/interfaces/types";
+import page from "@/interfaces/page";
 interface startOptions {
     pages?: {
         /** When a Route is not found */ notFound?: (ctr: ctr) => Promise<void>;
-        /** When an Error occurs in a Route */ reqError?: (ctr: ctr) => Promise<void>;
+        /** When an Error occurs in a Route */ reqError?: (ctr: ctrError) => Promise<void>;
     };
     events?: {
         /** On Every Request */ request?: (ctr: ctr) => Promise<void>;
@@ -55,7 +55,7 @@ interface startOptions {
 }
 declare const _default: {
     routeList: typeof routeList;
-    types: typeof typesInterface;
+    types: typeof typesEnum;
     start(options: startOptions): Promise<{
         success: boolean;
         port: number;

@@ -1,16 +1,14 @@
 {
   "name": "rjweb-server",
-  "version": "1.1.5",
+  "version": "1.1.6",
   "description": "Easy and Lightweight Way to create a Web Server in Node.js",
   "main": "lib/index.js",
   "scripts": {
     "build": "rm -r lib && tsc --pretty false"
-  },
-  "repository": {
+  }, "repository": {
     "type": "git",
     "url": "git+https://github.com/rotvproHD/NPM_WEB-SERVER.git"
-  },
-  "keywords": [
+  }, "keywords": [
     "webserver",
     "web-server",
     "lightweight",
@@ -22,16 +20,15 @@
     "easy",
     "api",
     "web"
-  ],
-  "author": "0x4096 (Robert Jansen)",
+  ], "author": "0x4096 (Robert Jansen)",
   "license": "MIT",
   "bugs": {
     "url": "https://github.com/rotvproHD/NPM_WEB-SERVER/issues"
-  },
-  "homepage": "https://github.com/rotvproHD/NPM_WEB-SERVER#readme",
+  }, "homepage": "https://github.com/rotvproHD/NPM_WEB-SERVER#readme",
   "dependencies": {
-    "@types/node": "^18.11.18"
+    "module-alias": "^2.2.2"
   }, "devDependencies": {
+    "@types/node": "^18.11.18",
     "typescript": "^4.9.4"
   }
 }

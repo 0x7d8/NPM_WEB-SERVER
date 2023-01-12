@@ -1,6 +1,6 @@
-import typesInterface from "../interfaces/types";
-import page from "../interfaces/page";
-import ctr from "../interfaces/ctr";
+import { types as typesInterface } from "@/interfaces/types";
+import page from "@/interfaces/page";
+import ctr from "@/interfaces/ctr";
 interface staticOptions {
     /**
      * If true then files will be loaded into RAM

@@ -1,4 +1,4 @@
-enum types {
+enum HTTPtypes {
   /** HTTP Request Type */ options = 'OPTIONS',
   /** HTTP Request Type */ delete = 'DELETE',
   /** HTTP Request Type */ patch = 'PATCH',
@@ -8,4 +8,13 @@ enum types {
   /** Internal Request Type */ static = 'STATIC'
 }
 
-export default types
+export default HTTPtypes
+
+export type types =
+  'OPTIONS' |
+  'DELETE' |
+  'PATCH' |
+  'POST' |
+  'PUT' |
+  'GET' |
+  'STATIC'

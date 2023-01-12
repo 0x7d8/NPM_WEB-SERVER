@@ -1,9 +1,11 @@
-import ctr from "./interfaces/ctr"
-import routeList from "./classes/routeList"
-import rateLimitRule from "./interfaces/ratelimitRule"
-import typesInterface from "./interfaces/types"
-import page from "./interfaces/page"
-import types from "./misc/types"
+require('module-alias').addAlias("@", __dirname + "/");
+
+import ctr, { ctrError } from "@/interfaces/ctr"
+import routeList from "@/classes/routeList"
+import rateLimitRule from "@/interfaces/ratelimitRule"
+import typesEnum from "@/interfaces/types"
+import page from "@/interfaces/page"
+import types from "@/misc/types"
 
 import * as path from "path"
 import * as http from "http"
@@ -13,7 +15,7 @@ import * as fs from "fs"
 interface startOptions {
 	pages?: {
 		/** When a Route is not found */ notFound?: (ctr: ctr) => Promise<void>
-		/** When an Error occurs in a Route */ reqError?: (ctr: ctr) => Promise<void>
+		/** When an Error occurs in a Route */ reqError?: (ctr: ctrError) => Promise<void>
 	}, events?: {
 		/** On Every Request */ request?: (ctr: ctr) => Promise<void>
 	}, urls?: {
@@ -62,7 +64,7 @@ interface startOptions {
 export = {
 	// Misc
 	routeList,
-	types: typesInterface,
+	types: typesEnum,
 
 	// Start
 	async start(
@@ -94,7 +96,7 @@ export = {
 			req.on('data', (data: string) => {
 				reqBody += data
 			}).on('end', async () => {
-				let reqUrl = { ...url.parse(req.url), method: req.method }
+				let reqUrl = { ...url.parse(req.url), method: req.method as any }
 				if (reqUrl.path.endsWith('/')) reqUrl.path = reqUrl.path.slice(0, -1)
 				let executeUrl = ''
 
@@ -233,8 +235,8 @@ export = {
 									res.write(msg)
 								} catch (e) {
 									if ('reqError' in pages) {
-										ctr.error = e
-										Promise.resolve(options.pages.reqError(ctr)).catch((e) => {
+										(ctr as ctrError).error = e
+										Promise.resolve(options.pages.reqError(ctr as ctrError)).catch((e) => {
 											console.log(e)
 											res.statusCode = 500
 											res.write(e)
@@ -264,8 +266,8 @@ export = {
 				if ('request' in events) {
 					await events.request(ctr).catch((e) => {
 						if ('reqError' in pages) {
-							ctr.error = e
-							Promise.resolve(options.pages.reqError(ctr)).catch((e) => {
+							(ctr as ctrError).error = e
+							Promise.resolve(options.pages.reqError(ctr as ctrError)).catch((e) => {
 								console.log(e)
 								res.statusCode = 500
 								res.write(e)
@@ -305,8 +307,8 @@ export = {
 					if (!isStatic) {
 						Promise.resolve(urls[executeUrl].code(ctr)).catch((e) => {
 							if ('reqError' in pages) {
-								ctr.error = e
-								Promise.resolve(options.pages.reqError(ctr)).catch((e) => {
+								(ctr as any).error = e
+								Promise.resolve(options.pages.reqError(ctr as ctrError)).catch((e) => {
 									console.log(e)
 									res.statusCode = 500
 									res.write(e)
@@ -351,8 +353,8 @@ export = {
 					if ('notFound' in pages) {
 						Promise.resolve(options.pages.notFound(ctr)).catch((e) => {
 							if ('reqError' in pages) {
-								ctr.error = e
-								options.pages.reqError(ctr).catch((e) => {
+								(ctr as ctrError).error = e
+								options.pages.reqError(ctr as ctrError).catch((e) => {
 									console.log(e)
 									res.statusCode = 500
 									res.write(e)

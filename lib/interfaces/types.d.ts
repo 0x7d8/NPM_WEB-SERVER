@@ -1,4 +1,4 @@
-declare enum types {
+declare enum HTTPtypes {
     /** HTTP Request Type */ options = "OPTIONS",
     /** HTTP Request Type */ delete = "DELETE",
     /** HTTP Request Type */ patch = "PATCH",
@@ -7,5 +7,6 @@ declare enum types {
     /** HTTP Request Type */ get = "GET",
     /** Internal Request Type */ static = "STATIC"
 }
-export default types;
+export default HTTPtypes;
+export type types = 'OPTIONS' | 'DELETE' | 'PATCH' | 'POST' | 'PUT' | 'GET' | 'STATIC';
 //# sourceMappingURL=types.d.ts.map
