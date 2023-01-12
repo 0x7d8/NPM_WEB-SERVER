@@ -1,24 +1,24 @@
+import { IncomingMessage, ServerResponse } from "http"
 import { UrlWithStringQuery } from "url"
-const map = new Map()
 
 export default interface ctr {
-	header: typeof map
-	cookie: typeof map
-	param: typeof map
-	query: typeof map
+	/** A Map of all Headers */ header: Map<any, any>
+	/** A Map of all Cookies */ cookie: Map<any, any>
+	/** A Map of all Parameters */ param: Map<any, any>
+	/** A Map of all Queries */ query: Map<any, any>
 
-	hostPort: number
-	hostIp: string
-	reqBody?: string | { [key: string]: any }
-	reqUrl: UrlWithStringQuery
+	/** The Port that the Client is using */ hostPort: number
+	/** The Ip that the Client is using */ hostIp: string
+	/** The Request Body (JSON Automatically parsed) */ reqBody: any
+	/** The Requested URL */ reqUrl: UrlWithStringQuery & { method: string }
 
-	rawReq: any
-	rawRes: any
+	/** The Raw HTTP Server Req Variable */ rawReq: IncomingMessage
+	/** The Raw HTTP Server Res Variable */ rawRes: ServerResponse
 
-	error?: Error
+	/** The Error (If in the error event) */ error?: Error
 
-	setHeader: (name: string, value: string) => ctr
-	print: (msg: any) => ctr
-	status: (code: number) => ctr
-	printFile: (path: string) => ctr
+	/** Set an HTTP Header to add */ setHeader: (name: string, value: string) => ctr
+	/** Print a Message to the Client */ print: (msg: any) => ctr
+	/** The Request Status to Send */ status: (code: number) => ctr
+	/** Print the Content of a File to the Client */ printFile: (path: string) => ctr
 }

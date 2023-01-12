@@ -94,7 +94,7 @@ export = {
 			req.on('data', (data: string) => {
 				reqBody += data
 			}).on('end', async () => {
-				let reqUrl = url.parse(req.url)
+				let reqUrl = { ...url.parse(req.url), method: req.method }
 				if (reqUrl.path.endsWith('/')) reqUrl.path = reqUrl.path.slice(0, -1)
 				let executeUrl = ''
 
