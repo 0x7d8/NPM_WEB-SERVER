@@ -245,7 +245,7 @@ export = {
 										errorStop = true
 										console.log(e)
 										res.statusCode = 500
-										return res.end()
+										res.end()
 									}
 								}
 						}; return ctr

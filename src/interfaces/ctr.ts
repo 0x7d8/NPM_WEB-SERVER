@@ -17,8 +17,8 @@ export default interface ctr {
 
 	error?: Error
 
-	setHeader: (name: string, value: string) => void
-	print: (msg: any) => void
-	status: (code: number) => void
-	printFile: (path: string) => void
+	setHeader: (name: string, value: string) => ctr
+	print: (msg: any) => ctr
+	status: (code: number) => ctr
+	printFile: (path: string) => ctr
 }
