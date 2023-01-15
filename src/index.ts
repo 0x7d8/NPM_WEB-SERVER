@@ -204,9 +204,15 @@ export = {
 					rawReq: req,
 					rawRes: res,
 
+					// Custom Variables
+					'@': {},
+
 					// Functions
 					setHeader(name: string, value: string) {
 						res.setHeader(name, value)
+						return ctr
+					}, setCustom(name: string, value: any) {
+						ctr['@'][name] = value
 						return ctr
 					}, print(msg: any) {
 						switch (typeof msg) {

@@ -49,6 +49,42 @@ routes.set(webserver.types.get, '/hello', async(ctr: ctr) => {
 // ...
 ```
 
+Custom Properties in Ctr Object
+(This also works in JavaScript, just remove the interface logic)
+```ts
+import * as webserver from "rjweb-server"
+import { ctr as ctrPreset } from "rjweb-server/interfaces"
+interface Custom {
+  count: number
+}
+
+interface ctr extends ctrPreset<Custom> {}
+
+const routes = new webserver.routeList()
+
+routes.set(webserver.types.get, '/hello', async(ctr: ctr) => {
+  if (!ctr.query.has("name")) return ctr.print('please supply the name query!!')
+
+  return ctr.print(`Hello, ${ctr.query.get("name")}! You are Visit nr.${ctr['@'].count}`)
+})
+
+let count = 0
+webserver.start({
+  bind: '0.0.0.0', // The IP thats bound to
+  port: 5000, // The Port which the Server runs on
+  urls: routes, // The Routes Object
+  events: {
+    request: {
+      ctr.setCustom('count', ++count) 
+
+      console.log(`request made to ${decodeURI(ctr.reqUrl.pathname)} by ${ctr.hostIp}`)
+    }
+  }
+}).then((res) => {
+  console.log(`webserver started on port ${res.port}`)
+})
+```
+
 ## Usage
 
 Initialize Server
