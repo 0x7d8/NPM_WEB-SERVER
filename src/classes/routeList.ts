@@ -40,7 +40,7 @@ export default class routeList {
 	set(
 		/** The Request Type */ type: typesInterface,
 		/** The Path on which this will be available */ path: string,
-		/** The Async Code to run on a Request */ code: (ctr: ctr) => Promise<void>
+		/** The Async Code to run on a Request */ code: (ctr: ctr) => Promise<any>
 	) {
 		if (!types.includes(type)) throw TypeError(`No Valid Request Type: ${type}\nPossible Values: ${types.join(', ')}`)
 		this.urls[type + path] = {

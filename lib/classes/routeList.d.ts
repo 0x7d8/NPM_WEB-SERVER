@@ -27,7 +27,7 @@ export default class routeList {
     set(
     /** The Request Type */ type: typesInterface, 
     /** The Path on which this will be available */ path: string, 
-    /** The Async Code to run on a Request */ code: (ctr: ctr) => Promise<void>): void;
+    /** The Async Code to run on a Request */ code: (ctr: ctr) => Promise<any>): void;
     /** Serve Static Files */
     static(
     /** The Path to serve the Files on */ path: string, 
