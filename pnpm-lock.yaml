@@ -1,0 +1,25 @@
+lockfileVersion: 5.4
+
+specifiers:
+  '@types/node': ^18.11.18
+  typescript: ^4.9.4
+
+devDependencies:
+  '@types/node': registry.npmjs.org/@types/node/18.11.18
+  typescript: registry.npmjs.org/typescript/4.9.4
+
+packages:
+
+  registry.npmjs.org/@types/node/18.11.18:
+    resolution: {integrity: sha512-DHQpWGjyQKSHj3ebjFI/wRKcqQcdR+MoFBygntYOZytCqNfkd2ZC4ARDJ2DQqhjH5p85Nnd3jhUJIXrszFX/JA==, registry: https://registry.npmjs.cf/, tarball: https://registry.npmjs.org/@types/node/-/node-18.11.18.tgz}
+    name: '@types/node'
+    version: 18.11.18
+    dev: true
+
+  registry.npmjs.org/typescript/4.9.4:
+    resolution: {integrity: sha512-Uz+dTXYzxXXbsFpM86Wh3dKCxrQqUcVMxwU54orwlJjOpO3ao8L7j5lH+dWfTwgCwIuM9GQ2kvVotzYJMXTBZg==, registry: https://registry.npmjs.cf/, tarball: https://registry.npmjs.org/typescript/-/typescript-4.9.4.tgz}
+    name: typescript
+    version: 4.9.4
+    engines: {node: '>=4.2.0'}
+    hasBin: true
+    dev: true

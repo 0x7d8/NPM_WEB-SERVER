@@ -32,7 +32,7 @@ interface startOptions {
 		 * @default []
 		*/ list: rateLimitRule[]
 		/** The RateLimit Functions */ functions: {
-			set: (key: string, value: any) => Promise<any>
+			set: (key: string, value: number) => Promise<any>
 			get: (key: string) => Promise<any>
 		} | Map<any, any>
 	}
@@ -138,7 +138,7 @@ export = {
 					if (exists && element.array.join('/') !== executeUrl) break
 
 					let urlCount = 0
-					for (const subUrl of element.array) {
+					for (const urlPart of element.array) {
 						const urlParam = element.array[urlCount]
 						const reqParam = actualUrl[urlCount]
 						urlCount++
@@ -200,6 +200,7 @@ export = {
 					reqUrl,
 
 					// Raw Values
+					rawServer: server,
 					rawReq: req,
 					rawRes: res,
 

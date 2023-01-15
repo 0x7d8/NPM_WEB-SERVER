@@ -1,18 +1,19 @@
-import { IncomingMessage, ServerResponse } from "http"
+import { Server, IncomingMessage, ServerResponse } from "http"
 import { UrlWithStringQuery } from "url"
 import { types } from "./types"
 
 export default interface ctr {
-	/** A Map of all Headers */ header: Map<any, any>
-	/** A Map of all Cookies */ cookie: Map<any, any>
-	/** A Map of all Parameters */ param: Map<any, any>
-	/** A Map of all Queries */ query: Map<any, any>
+	/** A Map of all Headers */ readonly header: Map<any, any>
+	/** A Map of all Cookies */ readonly cookie: Map<any, any>
+	/** A Map of all Parameters */ readonly param: Map<any, any>
+	/** A Map of all Queries */ readonly query: Map<any, any>
 
-	/** The Port that the Client is using */ hostPort: number
-	/** The Ip that the Client is using */ hostIp: string
-	/** The Request Body (JSON Automatically parsed) */ reqBody: any
-	/** The Requested URL */ reqUrl: UrlWithStringQuery & { method: types }
+	/** The Port that the Client is using */ readonly hostPort: number
+	/** The Ip that the Client is using */ readonly hostIp: string
+	/** The Request Body (JSON Automatically parsed) */ readonly reqBody: any
+	/** The Requested URL */ readonly reqUrl: UrlWithStringQuery & { method: types }
 
+	/** The Raw HTTP Server Variable */ rawServer: Server
 	/** The Raw HTTP Server Req Variable */ rawReq: IncomingMessage
 	/** The Raw HTTP Server Res Variable */ rawRes: ServerResponse
 

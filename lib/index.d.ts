@@ -28,7 +28,7 @@ interface startOptions {
          * @default []
         */ list: rateLimitRule[];
         /** The RateLimit Functions */ functions: {
-            set: (key: string, value: any) => Promise<any>;
+            set: (key: string, value: number) => Promise<any>;
             get: (key: string) => Promise<any>;
         } | Map<any, any>;
     };
