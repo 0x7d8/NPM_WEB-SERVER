@@ -291,7 +291,11 @@ module.exports = {
 
 ## Full Example
 
+Javascript
 https://replit.com/@RobertJansen/aous
+
+Typescript
+https://replit.com/@RobertJansen/aous-ts
 
 ## Author
 

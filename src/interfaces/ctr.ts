@@ -18,7 +18,7 @@ export default interface ctr<Custom = any> {
 	/** The Raw HTTP Server Res Variable */ rawRes: ServerResponse
 
 	/** Set an HTTP Header to add */ setHeader: (name: string, value: string) => ctr
-	/** Set a Custom Variable */ setCustom: (name: string, value: any) => ctr
+	/** Set a Custom Variable */ setCustom: <Type extends keyof Custom>(name: Type, value: Custom[Type]) => ctr
 	/** Print a Message to the Client */ print: (msg: any) => ctr
 	/** The Request Status to Send */ status: (code: number) => ctr
 	/** Print the Content of a File to the Client */ printFile: (path: string) => ctr

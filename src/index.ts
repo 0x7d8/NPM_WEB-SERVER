@@ -208,13 +208,13 @@ export = {
 					'@': {},
 
 					// Functions
-					setHeader(name: string, value: string) {
+					setHeader(name, value) {
 						res.setHeader(name, value)
 						return ctr
-					}, setCustom(name: string, value: any) {
+					}, setCustom(name, value) {
 						ctr['@'][name] = value
 						return ctr
-					}, print(msg: any) {
+					}, print(msg) {
 						switch (typeof msg) {
 							case 'object':
 								res.setHeader('Content-Type', 'application/json')
@@ -256,10 +256,10 @@ export = {
 									}
 								}
 						}; return ctr
-					}, status(code: number) {
+					}, status(code) {
 						res.statusCode = code
 						return ctr
-					}, printFile(file: string) {
+					}, printFile(file) {
 						const content = fs.readFileSync(file)
 						res.write(content, 'binary')
 						return ctr
