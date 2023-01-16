@@ -56,11 +56,7 @@ interface startOptions {
 declare const _default: {
     routeList: typeof routeList;
     types: typeof typesEnum;
-    start(options: startOptions): Promise<{
-        success: boolean;
-        port: number;
-        message: string;
-    }>;
+    start(options: startOptions): Promise<unknown>;
 };
 export = _default;
 //# sourceMappingURL=index.d.ts.map

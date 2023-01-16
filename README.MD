@@ -123,6 +123,8 @@ webserver.start({
   proxy: true // If enabled, alternate IPs will be shown
 }).then((res) => {
   console.log(`webserver started on port ${res.port}`)
+}).catch((err) => {
+  console.log(err)
 })
 ```
 
@@ -144,6 +146,8 @@ webserver.start({
   proxy: true
 }).then((res) => {
   console.log(`webserver started on port ${res.port}`)
+}).catch((err) => {
+  console.log(err)
 })
 ```
 
@@ -167,6 +171,8 @@ webserver.start({
   }
 }).then((res) => {
   console.log(`webserver started on port ${res.port}`)
+}).catch((err) => {
+  console.log(err)
 })
 ```
 
@@ -185,6 +191,8 @@ webserver.start({
   }
 }).then((res) => {
   console.log(`webserver started on port ${res.port}`)
+}).catch((err) => {
+  console.log(err)
 })
 ```
 
@@ -219,6 +227,8 @@ webserver.start({
   }
 }).then((res) => {
   console.log(`webserver started on port ${res.port}`)
+}).catch((err) => {
+  console.log(err)
 })
 ```
 
@@ -250,6 +260,8 @@ webserver.start({
   }
 }).then((res) => {
   console.log(`webserver started on port ${res.port}`)
+}).catch((err) => {
+  console.log(err)
 })
 ```
 
@@ -269,6 +281,8 @@ webserver.start({
   proxy: true,
 }).then((res) => {
   console.log(`webserver started on port ${res.port}`)
+}).catch((err) => {
+  console.log(err)
 })
 ```
 

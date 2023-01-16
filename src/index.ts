@@ -214,11 +214,14 @@ export = {
 					}, setCustom(name, value) {
 						ctr['@'][name] = value
 						return ctr
-					}, print(msg) {
+					}, print(msg, options) {
+						const niceJSON = options?.niceJSON ?? false
+
 						switch (typeof msg) {
 							case 'object':
 								res.setHeader('Content-Type', 'application/json')
-								res.write(JSON.stringify(msg, undefined, 1))
+								if (niceJSON) res.write(JSON.stringify(msg, undefined, 1))
+								else res.write(JSON.stringify(msg))
 								break
 
 							case 'bigint':
@@ -228,7 +231,7 @@ export = {
 								break
 
 							case 'function':
-								this.print(msg())
+								res.write(msg())
 								break
 
 							case 'undefined':
@@ -241,7 +244,7 @@ export = {
 								} catch (e) {
 									if ('reqError' in pages) {
 										(ctr as ctrError).error = e
-										Promise.resolve(options.pages.reqError(ctr as ctrError)).catch((e) => {
+										Promise.resolve(pages.reqError(ctr as ctrError)).catch((e) => {
 											console.log(e)
 											res.statusCode = 500
 											res.write(e)
@@ -272,7 +275,7 @@ export = {
 					await events.request(ctr).catch((e) => {
 						if ('reqError' in pages) {
 							(ctr as ctrError).error = e
-							Promise.resolve(options.pages.reqError(ctr as ctrError)).catch((e) => {
+							Promise.resolve(pages.reqError(ctr as ctrError)).catch((e) => {
 								console.log(e)
 								res.statusCode = 500
 								res.write(e)
@@ -313,7 +316,7 @@ export = {
 						Promise.resolve(urls[executeUrl].code(ctr)).catch((e) => {
 							if ('reqError' in pages) {
 								(ctr as any).error = e
-								Promise.resolve(options.pages.reqError(ctr as ctrError)).catch((e) => {
+								Promise.resolve(pages.reqError(ctr as ctrError)).catch((e) => {
 									console.log(e)
 									res.statusCode = 500
 									res.write(e)
@@ -356,10 +359,10 @@ export = {
 					}
 				} else {
 					if ('notFound' in pages) {
-						Promise.resolve(options.pages.notFound(ctr)).catch((e) => {
+						Promise.resolve(pages.notFound(ctr)).catch((e) => {
 							if ('reqError' in pages) {
 								(ctr as ctrError).error = e
-								options.pages.reqError(ctr as ctrError).catch((e) => {
+								pages.reqError(ctr as ctrError).catch((e) => {
 									console.log(e)
 									res.statusCode = 500
 									res.write(e)
@@ -400,6 +403,9 @@ export = {
 		})
 
 		server.listen(port, bind)
-		return { success: true, port, message: 'WEBSERVER STARTED' }
+		return new Promise((resolve, reject) => {
+			server.once('listening', () => resolve({ success: true, port, message: 'WEBSERVER STARTED', rawServer: server }))
+			server.once('error', (error) => reject({ success: false, error, message: 'WEBSERVER ERRORED' }))
+		})
 	}
 }

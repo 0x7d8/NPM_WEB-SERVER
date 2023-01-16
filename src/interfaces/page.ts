@@ -2,7 +2,7 @@ import { types } from "./types"
 import ctr from "./ctr"
 
 export default interface page {
-	/** An Array of the URL split by slashes */ array: string[]
+	/** An Array of the URL split by Slashes */ array: string[]
   /** The URL as normal String */ path: string
 	/** The HTTP Request Type */ type: types
 	/** If true then some Content Types will be added automatically */ addTypes: boolean
