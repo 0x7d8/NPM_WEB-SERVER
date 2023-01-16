@@ -1,4 +1,4 @@
-import ctr, { ctrError } from "./interfaces/ctr"
+import ctr from "./interfaces/ctr"
 import routeList from "./classes/routeList"
 import rateLimitRule from "./interfaces/ratelimitRule"
 import typesEnum from "./interfaces/types"
@@ -13,14 +13,14 @@ import * as fs from "fs"
 interface startOptions {
 	pages?: {
 		/** When a Route is not found */ notFound?: (ctr: ctr) => Promise<any>
-		/** When an Error occurs in a Route */ reqError?: (ctr: ctrError) => Promise<any>
+		/** When an Error occurs in a Route */ reqError?: (ctr: ctr<any, true>) => Promise<any>
 	}, events?: {
 		/** On Every Request */ request?: (ctr: ctr) => Promise<any>
 	}, urls?: {
 		list: () => page[]
 	}, rateLimits?: {
 		/**
-		 * If true Ratelimits are enabled
+		 * Whether Ratelimits are enabled
 		 * @default false
 		*/ enabled: boolean
 		/**
@@ -34,7 +34,7 @@ interface startOptions {
 		/** The RateLimit Functions */ functions: {
 			set: (key: string, value: number) => Promise<any>
 			get: (key: string) => Promise<any>
-		} | Map<any, any>
+		} | Map<string, number>
 	}
 
 	/**
@@ -42,11 +42,11 @@ interface startOptions {
 	 * @default "0.0.0.0"
 	*/ bind?: string
 	/**
-	 * If true X-Forwarded-For will be shown as hostIp
+	 * Whether X-Forwarded-For will be shown as hostIp
 	 * @default false
 	*/ proxy?: boolean
 	/**
-	 * If true all cors headers are set
+	 * Whether all cors headers are set
 	 * @default false
 	*/ cors?: boolean
 	/**
@@ -174,7 +174,7 @@ export = {
 				for (const [query, value] of new URLSearchParams(reqUrl.search)) {
 					queries.set(query, value)
 				}; const cookies = new Map()
-				if (!!req.headers.cookie) {
+				if (req.headers.cookie) {
 					req.headers.cookie.split(';').forEach((cookie: string) => {
 						let [name, ...rest] = cookie.split('=')
 						name = name?.trim()
@@ -243,8 +243,8 @@ export = {
 									res.write(msg)
 								} catch (e) {
 									if ('reqError' in pages) {
-										(ctr as ctrError).error = e
-										Promise.resolve(pages.reqError(ctr as ctrError)).catch((e) => {
+										ctr.error = e
+										Promise.resolve(pages.reqError(ctr as unknown as ctr<any, true>)).catch((e) => {
 											console.log(e)
 											res.statusCode = 500
 											res.write(e)
@@ -274,8 +274,8 @@ export = {
 				if ('request' in events) {
 					await events.request(ctr).catch((e) => {
 						if ('reqError' in pages) {
-							(ctr as ctrError).error = e
-							Promise.resolve(pages.reqError(ctr as ctrError)).catch((e) => {
+							ctr.error = e
+							Promise.resolve(pages.reqError(ctr as unknown as ctr<any, true>)).catch((e) => {
 								console.log(e)
 								res.statusCode = 500
 								res.write(e)
@@ -315,8 +315,8 @@ export = {
 					if (!isStatic) {
 						Promise.resolve(urls[executeUrl].code(ctr)).catch((e) => {
 							if ('reqError' in pages) {
-								(ctr as any).error = e
-								Promise.resolve(pages.reqError(ctr as ctrError)).catch((e) => {
+								ctr.error = e
+								Promise.resolve(pages.reqError(ctr as unknown as ctr<any, true>)).catch((e) => {
 									console.log(e)
 									res.statusCode = 500
 									res.write(e)
@@ -361,8 +361,8 @@ export = {
 					if ('notFound' in pages) {
 						Promise.resolve(pages.notFound(ctr)).catch((e) => {
 							if ('reqError' in pages) {
-								(ctr as ctrError).error = e
-								pages.reqError(ctr as ctrError).catch((e) => {
+								ctr.error = e
+								pages.reqError(ctr as unknown as ctr<any, true>).catch((e) => {
 									console.log(e)
 									res.statusCode = 500
 									res.write(e)
@@ -406,6 +406,6 @@ export = {
 		return new Promise((resolve, reject) => {
 			server.once('listening', () => resolve({ success: true, port, message: 'WEBSERVER STARTED', rawServer: server }))
 			server.once('error', (error) => reject({ success: false, error, message: 'WEBSERVER ERRORED' }))
-		})
+		}) as Promise<{ success: boolean, port?: number, error?: Error, message: string, rawServer?: typeof server }>
 	}
 }

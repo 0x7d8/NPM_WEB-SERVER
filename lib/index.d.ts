@@ -1,12 +1,14 @@
-import ctr, { ctrError } from "./interfaces/ctr";
+/// <reference types="node" />
+import ctr from "./interfaces/ctr";
 import routeList from "./classes/routeList";
 import rateLimitRule from "./interfaces/ratelimitRule";
 import typesEnum from "./interfaces/types";
 import page from "./interfaces/page";
+import * as http from "http";
 interface startOptions {
     pages?: {
         /** When a Route is not found */ notFound?: (ctr: ctr) => Promise<any>;
-        /** When an Error occurs in a Route */ reqError?: (ctr: ctrError) => Promise<any>;
+        /** When an Error occurs in a Route */ reqError?: (ctr: ctr<any, true>) => Promise<any>;
     };
     events?: {
         /** On Every Request */ request?: (ctr: ctr) => Promise<any>;
@@ -16,7 +18,7 @@ interface startOptions {
     };
     rateLimits?: {
         /**
-         * If true Ratelimits are enabled
+         * Whether Ratelimits are enabled
          * @default false
         */ enabled: boolean;
         /**
@@ -30,18 +32,18 @@ interface startOptions {
         /** The RateLimit Functions */ functions: {
             set: (key: string, value: number) => Promise<any>;
             get: (key: string) => Promise<any>;
-        } | Map<any, any>;
+        } | Map<string, number>;
     };
     /**
      * Where the Server should bind to
      * @default "0.0.0.0"
     */ bind?: string;
     /**
-     * If true X-Forwarded-For will be shown as hostIp
+     * Whether X-Forwarded-For will be shown as hostIp
      * @default false
     */ proxy?: boolean;
     /**
-     * If true all cors headers are set
+     * Whether all cors headers are set
      * @default false
     */ cors?: boolean;
     /**
@@ -56,7 +58,13 @@ interface startOptions {
 declare const _default: {
     routeList: typeof routeList;
     types: typeof typesEnum;
-    start(options: startOptions): Promise<unknown>;
+    start(options: startOptions): Promise<{
+        success: boolean;
+        port?: number;
+        error?: Error;
+        message: string;
+        rawServer?: http.Server<typeof http.IncomingMessage, typeof http.ServerResponse>;
+    }>;
 };
 export = _default;
 //# sourceMappingURL=index.d.ts.map
