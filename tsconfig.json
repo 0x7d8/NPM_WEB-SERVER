@@ -1,14 +1,17 @@
 {
   "compilerOptions": {
+    "baseUrl": ".",
     "module": "CommonJS",
-    "skipLibCheck": true,
+    "moduleResolution": "Node16",
+    "pretty": false,
+    "resolveJsonModule": true,
+    "emitDeclarationOnly": true,
     "declaration": true,
-    "declarationMap": false,
-    "target": "ES2020",
-    "moduleResolution": "node",
     "esModuleInterop": true,
-    "sourceMap": false,
-    "outDir": "lib",
-    "baseUrl": "src",
-  }, "include": ["src/**/*"]
+    "target": "ES2018",
+    "outDir": "lib/typings",
+  },
+  "include": [
+    "src/**/*"
+  ]
 }
