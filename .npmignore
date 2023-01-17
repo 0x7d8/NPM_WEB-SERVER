@@ -1,12 +1,11 @@
 # TESTING
 test/
-src/index.ts
-src/classes/
-src/misc/
 
+# SOURCE
+src/
+
+# OTHER
 examples/
 .github/
-README.MD
-LICENSE
 pnpm-lock.yaml
 tsconfig.json

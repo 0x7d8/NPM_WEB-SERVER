@@ -1,4 +1,4 @@
-export { default as ctr } from "./src/interfaces/ctr"
-export { default as page } from "./src/interfaces/page"
-export { default as types } from "./src/interfaces/types"
-export { default as ratelimitRule } from "./src/interfaces/ratelimitRule"
+export { default as ctr } from "./lib/interfaces/ctr"
+export { default as page } from "./lib/interfaces/page"
+export { default as types } from "./lib/interfaces/types"
+export { default as ratelimitRule } from "./lib/interfaces/ratelimitRule"
