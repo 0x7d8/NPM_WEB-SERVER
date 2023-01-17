@@ -58,7 +58,7 @@ interface Custom {
   count: number
 }
 
-interface ctr extends ctrPreset<Custom> {}
+interface ctr<HasError = false> extends ctrPreset<Custom, HasError> {}
 
 const routes = new webserver.routeList()
 
@@ -78,6 +78,14 @@ webserver.start({
       ctr.setCustom('count', ++count) 
 
       console.log(`request made to ${decodeURI(ctr.reqUrl.pathname)} by ${ctr.hostIp}`)
+    }
+  }, pages: {
+    reqError: async(ctr: ctr<true>) {
+      console.log(`error on path ${decodeURI(ctr.reqUrl.pathname)}!!!`)
+      console.error(ctr.error.stack)
+
+      ctr.status(500)
+      ctr.print('server error')
     }
   }
 }).then((res) => {
@@ -304,10 +312,10 @@ module.exports = {
 
 ## Full Example
 
-Javascript
+### Javascript
 https://replit.com/@RobertJansen/aous
 
-Typescript
+### Typescript
 https://replit.com/@RobertJansen/aous-ts
 
 ## Author

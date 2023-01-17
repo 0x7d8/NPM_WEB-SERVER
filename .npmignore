@@ -6,3 +6,7 @@ src/misc/
 
 examples/
 .github/
+README.MD
+LICENSE
+pnpm-lock.yaml
+tsconfig.json
