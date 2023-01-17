@@ -9,4 +9,3 @@ export default interface page {
     /** The Async Code to run on a Request */ code: (ctr: ctr) => Promise<any>;
     /** The File Content (If Preloading) */ content?: Buffer;
 }
-//# sourceMappingURL=page.d.ts.map

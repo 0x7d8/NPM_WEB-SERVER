@@ -74,7 +74,7 @@ webserver.start({
   port: 5000, // The Port which the Server runs on
   urls: routes, // The Routes Object
   events: {
-    request: {
+    request: async(ctr: ctr) {
       ctr.setCustom('count', ++count) 
 
       console.log(`request made to ${decodeURI(ctr.reqUrl.pathname)} by ${ctr.hostIp}`)
@@ -221,8 +221,7 @@ webserver.start({
       }
     ], functions: {
       set: async(key, value) => (await db.query('update ratelimits set value = ? where key = ?;', [value, key])),
-      get: async(key) => ((await db.query('select value from ratelimits where key = ?;', [key])).data.rows[0].value),
-      del: async(key, value) => (await db.query('delete from ratelimits where key = ?;', [key]))
+      get: async(key) => ((await db.query('select value from ratelimits where key = ?;', [key])).data.rows[0].value)
     }
   }
 }).then((res) => {
@@ -325,5 +324,5 @@ Give a Star if this project helped you!
 
 ## 📝 License
 
-Copyright © 2022 [0x4096](https://github.com/rotvproHD).<br />
-This project is ISC licensed.
+Copyright © 2023 [0x4096](https://github.com/rotvproHD).<br />
+This project is MIT licensed.

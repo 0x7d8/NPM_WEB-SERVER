@@ -40,4 +40,3 @@ export default class routeList {
     list(): page[];
 }
 export {};
-//# sourceMappingURL=routeList.d.ts.map

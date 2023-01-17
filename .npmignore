@@ -1,2 +1,5 @@
 # TESTING
 test/
+src/
+examples/
+.github/

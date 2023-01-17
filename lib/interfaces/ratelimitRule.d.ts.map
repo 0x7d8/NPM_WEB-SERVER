@@ -1,1 +1,0 @@
-{"version":3,"file":"ratelimitRule.d.ts","sourceRoot":"","sources":["../../src/interfaces/ratelimitRule.ts"],"names":[],"mappings":"AAAA,MAAM,CAAC,OAAO,WAAW,aAAa;IACrC,2BAA2B,CAAC,IAAI,EAAE,MAAM,CAAA;IACxC,mCAAmC,CAAC,KAAK,EAAE,MAAM,CAAA;IACjD,uCAAuC,CAAC,OAAO,EAAE,MAAM,CAAA;CACvD"}

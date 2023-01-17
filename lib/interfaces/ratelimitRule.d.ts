@@ -3,4 +3,3 @@ export default interface rateLimitRule {
     /** How often a User can request */ times: number;
     /** How Long a Request stays counted */ timeout: number;
 }
-//# sourceMappingURL=ratelimitRule.d.ts.map

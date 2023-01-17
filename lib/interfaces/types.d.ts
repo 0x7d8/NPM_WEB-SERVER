@@ -9,4 +9,3 @@ declare enum HTTPtypes {
 }
 export default HTTPtypes;
 export type types = 'OPTIONS' | 'DELETE' | 'PATCH' | 'POST' | 'PUT' | 'GET' | 'STATIC';
-//# sourceMappingURL=types.d.ts.map

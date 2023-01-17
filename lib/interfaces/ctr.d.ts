@@ -32,4 +32,3 @@ export default interface ctr<Custom = {}, HasError = false> {
     /** Custom Variables that are Global */ '@': Custom;
 }
 export {};
-//# sourceMappingURL=ctr.d.ts.map

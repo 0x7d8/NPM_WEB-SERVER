@@ -1,10 +1,10 @@
 {
   "name": "rjweb-server",
-  "version": "1.2.5",
+  "version": "1.2.6",
   "description": "Easy and Lightweight Way to create a Web Server in Node.js",
   "main": "lib/index.js",
   "scripts": {
-    "build": "rm -r lib && tsc --pretty false"
+    "build": "rm -r lib && tsc --pretty false && uglifyjs-folder ./lib -e -x .js -o lib > /dev/null"
   }, "repository": {
     "type": "git",
     "url": "git+https://github.com/rotvproHD/NPM_WEB-SERVER.git"
@@ -27,6 +27,7 @@
   }, "homepage": "https://github.com/rotvproHD/NPM_WEB-SERVER#readme",
   "devDependencies": {
     "@types/node": "^18.11.18",
-    "typescript": "^4.9.4"
+    "typescript": "^4.9.4",
+    "uglifyjs-folder": "^3.2.0"
   }
 }
