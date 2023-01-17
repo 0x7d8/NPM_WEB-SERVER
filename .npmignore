@@ -1,5 +1,8 @@
 # TESTING
 test/
-src/
+src/index.ts
+src/classes/
+src/misc/
+
 examples/
 .github/

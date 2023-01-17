@@ -186,7 +186,7 @@ webserver.start({
   proxy: true,
   events: {
     request: async(ctr) => {
-      return console.log(`request made to ${decodeURI(ctr.reqUrl.pathname)} by ${ctr.hostIp}`) // DO NOT write any data or end the request
+      return console.log(`request made to ${decodeURI(ctr.reqUrl.href)} by ${ctr.hostIp}`) // DO NOT write any data or end the request
     }
   }
 }).then((res) => {
