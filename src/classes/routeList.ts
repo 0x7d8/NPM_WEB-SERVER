@@ -1,6 +1,7 @@
 import { getAllFiles, getAllFilesFilter } from "../misc/getAllFiles"
 import { types as typesInterface } from "../interfaces/types"
-import page from "../interfaces/page"
+import route from "../interfaces/route"
+import event, { events as eventsType } from "../interfaces/event"
 import ctr from "../interfaces/ctr"
 import types from "../misc/types"
 
@@ -23,33 +24,54 @@ interface staticOptions {
 }
 
 export default class routeList {
-	private urls: page[]
+	private routes: route[]
+	private events: event[]
 
 	/** List of Routes */
 	constructor(
 		/**
 		 * Routes to Import
 		 * @default []
-		 */ routes?: page[]
+		 */ routes?: route[],
+		/**
+		 * Events to Import
+		 * @default []
+		 */ events?: event[]
 	) {
 		routes = routes ?? []
-		this.urls = routes
+		events = events ?? []
+
+		this.routes = routes
+		this.events = events
+	}
+
+	/** Set An Event Manually */
+	event(
+		/** The Event Name */ event: eventsType,
+		/** The Async Code to run on a Request */ code: (ctr: ctr) => Promise<any>
+	) {
+		this.events.push({
+			event: event,
+			code: code
+		})
 	}
 
 	/** Set A Route Manually */
 	set(
-		/** The Request Type */ type: typesInterface,
+		/** The Request Method */ method: typesInterface,
 		/** The Path on which this will be available */ path: string,
 		/** The Async Code to run on a Request */ code: (ctr: ctr) => Promise<any>
 	) {
-		if (!types.includes(type)) throw TypeError(`No Valid Request Type: ${type}\nPossible Values: ${types.join(', ')}`)
-		this.urls[type + path] = {
-			array: path.split('/'),
-			addTypes: false,
-			path,
-			type,
-			code
-		}
+		if (!types.includes(method)) throw TypeError(`No Valid Request Type: ${method}\nPossible Values: ${types.join(', ')}`)
+		this.routes.push({
+			method: method,
+			path: path,
+			pathArray: path.split('/'),
+			code: code,
+			data: {
+				addTypes: false
+			}
+		})
 	}
 
 	/** Serve Static Files */
@@ -69,13 +91,16 @@ export default class routeList {
 			else if (fileName.replace('/', '').endsWith('.html') && remHTML) urlName = (path + fileName).replace('//', '/').replace('.html', '')
 			else urlName = (path + fileName).replace('//', '/')
 
-			this.urls['GET' + urlName] = {
-				file,
-				array: urlName.split('/'),
-				addTypes,
+			const index = this.routes.push({
+				method: 'STATIC',
 				path: urlName,
-				type: 'STATIC'
-			}; if (preload) this.urls['GET' + urlName].content = fs.readFileSync(file)
+				pathArray: urlName.split('/'),
+				code: async() => null,
+				data: {
+					addTypes,
+					file
+				}
+			}); if (preload) this.routes[index].data.content = fs.readFileSync(file)
 		}
 	}
 
@@ -86,27 +111,29 @@ export default class routeList {
 		const files = getAllFilesFilter(folder, '.js')
 
 		for (const file of files) {
-			const route = require(path.resolve(file))
+			const route: route & { type: typesInterface } = require(path.resolve(file))
 
 			if (
 				!('path' in route) ||
 				!('type' in route) ||
 				!('code' in route)
 			) continue
-			if (!types.includes(route.type)) throw TypeError(`No Valid Request Type: ${route.type}\nPossible Values: ${types.toString()}`)
+			if (!types.includes(route.type)) throw TypeError(`No Valid Request Type: ${route.type}\nPossible Values: ${types.join(', ')}`)
 
-			this.urls[route.type + route.path] = {
-				array: route.path.split('/'),
-				addTypes: false,
+			this.routes.push({
+				method: route.type,
 				path: route.path,
-				type: route.type,
-				code: route.code
-			}
+				pathArray: route.path.split('/'),
+				code: route.code,
+				data: {
+					addTypes: false
+				}
+			})
 		}
 	}
 
-	/** Internal Function to access all URLs as Array */
+	/** Internal Function to access all routes as Array */
 	list() {
-		return this.urls
+		return { routes: this.routes, events: this.events }
 	}
 }

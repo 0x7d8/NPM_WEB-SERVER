@@ -10,7 +10,7 @@ module.exports = {
 
   async code(ctr) {
     let emoji = ''
-    if (ctr.param.get('text') in emojis) emoji = emojis[ctr.param.get('text')]
+    if (ctr.params.get('text') in emojis) emoji = emojis[ctr.params.get('text')]
     else return ctr.print('couldnt find emoji')
 
     return ctr.print(emoji)

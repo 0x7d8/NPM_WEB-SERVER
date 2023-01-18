@@ -10,14 +10,16 @@ interface printOptions {
     */ niceJSON?: boolean;
 }
 export default interface ctr<Custom = {}, HasError = false> {
-    /** A Map of all Headers */ readonly header: Map<Lowercase<string>, string>;
-    /** A Map of all Cookies */ readonly cookie: Map<string, string>;
-    /** A Map of all Parameters */ readonly param: Map<string, string>;
-    /** A Map of all Queries */ readonly query: Map<string, string>;
-    /** The Port that the Client is using */ readonly hostPort: number;
-    /** The Ip that the Client is using */ readonly hostIp: string;
-    /** The Request Body (JSON Automatically parsed) */ readonly reqBody: any;
-    /** The Requested URL */ readonly reqUrl: UrlWithStringQuery & {
+    /** A Map of all Headers */ readonly headers: Map<Lowercase<string>, string>;
+    /** A Map of all Cookies */ readonly cookies: Map<string, string>;
+    /** A Map of all Parameters */ readonly params: Map<string, string>;
+    /** A Map of all Queries */ readonly queries: Map<string, string>;
+    /** Client Infos */ readonly client: {
+        /** The Port that the Client is using */ readonly port: number;
+        /** The Ip that the Client is using */ readonly ip: string;
+    };
+    /** The Request Body (JSON Automatically parsed) */ readonly body: any;
+    /** The Requested URL */ readonly url: UrlWithStringQuery & {
         method: Uppercase<types>;
     };
     /** The Raw HTTP Server Variable */ rawServer: Server;

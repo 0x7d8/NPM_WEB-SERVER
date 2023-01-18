@@ -2,7 +2,7 @@ import ctr from "./interfaces/ctr"
 import routeList from "./classes/routeList"
 import rateLimitRule from "./interfaces/ratelimitRule"
 import typesEnum from "./interfaces/types"
-import page from "./interfaces/page"
+import { events as eventsType } from "./interfaces/event"
 import types from "./misc/types"
 
 import * as path from "path"
@@ -11,18 +11,12 @@ import * as url from "url"
 import * as fs from "fs"
 
 interface startOptions {
-	pages?: {
-		/** When a Route is not found */ notFound?: (ctr: ctr) => Promise<any>
-		/** When an Error occurs in a Route */ reqError?: (ctr: ctr<any, true>) => Promise<any>
-	}, events?: {
-		/** On Every Request */ request?: (ctr: ctr) => Promise<any>
-	}, urls?: {
-		list: () => page[]
-	}, rateLimits?: {
+	/** The Routes for the Server */ routes: routeList
+	/** RateLimit Settings */ rateLimits?: {
 		/**
 		 * Whether Ratelimits are enabled
 		 * @default false
-		*/ enabled: boolean
+		*/ enabled?: boolean
 		/**
 		 * The Message that gets sent when a ratelimit maxes out
 		 * @default "Rate Limited"
@@ -30,7 +24,7 @@ interface startOptions {
 		/**
 		 * The List of Ratelimit Rules
 		 * @default []
-		*/ list: rateLimitRule[]
+		*/ list?: rateLimitRule[]
 		/** The RateLimit Functions */ functions: {
 			set: (key: string, value: number) => Promise<any>
 			get: (key: string) => Promise<number>
@@ -51,32 +45,111 @@ interface startOptions {
 	*/ cors?: boolean
 	/**
 	 * Where the Server should start at
-	 * @default 5002
+	 * @default 2023
 	*/ port?: number
 	/**
 	 * The Maximum Body Size in MB
 	 * @default 20
-	*/ body?: number
+	*/ maxBody?: number
+	/**
+	 * Add X-Powered-By Header
+	 * @default true
+	*/ poweredBy?: boolean
 }
 
 export = {
-	// Misc
+	/** The RouteList */
 	routeList,
+
+	/** The Request Types */
 	types: typesEnum,
 
-	// Start
+	/** Start The Webserver */
 	async start(
 		/** Required Options */ options: startOptions
 	) {
-		const pages = options?.pages ?? {}
-		const events = options?.events ?? {}
-		const urls = options?.urls.list() ?? []
+		const routes = options?.routes?.list().routes ?? []
+		const events = options?.routes?.list().events ?? []
 		const proxy = options?.proxy ?? false
 		const rateLimits = options?.rateLimits ?? { enabled: false, list: [] }
 		const bind = options?.bind ?? '0.0.0.0'
 		const cors = options?.cors ?? false
-		const port = options?.port ?? 5002
-		const body = options?.body ?? 20
+		const port = options?.port ?? 2023
+		const body = options?.maxBody ?? 20
+		const poweredBy = options?.poweredBy ?? true
+
+		const eventHandler = async(event: eventsType, ctr: ctr) => {
+			switch (event) {
+				case "error": {
+					const event = events.find((event) => (event.event === 'error'))
+
+					if (!event) {
+						// Default Error
+						console.log(ctr.error)
+						ctr.rawRes.write('An Error occurred\n')
+						ctr.rawRes.write((ctr.error as Error).stack)
+						ctr.status(500)
+						ctr.rawRes.end()
+					} else {
+						// Custom Error
+						Promise.resolve(event.code(ctr as unknown as ctr<{}, true>)).catch((e) => {
+							console.log(e)
+							ctr.status(500)
+							ctr.rawRes.write('An Error occured in your Error Event (what the hell?)\n')
+							ctr.rawRes.write(e.stack)
+							ctr.rawRes.end()
+						}).then(() => ctr.rawRes.end())
+					}
+				}
+
+				case "request": {
+					let errorStop = false
+					const event = events.find((event) => (event.event === 'request'))
+
+					if (event) {
+						// Custom Request
+						await Promise.resolve(event.code(ctr as unknown as ctr)).catch((e) => {
+							errorStop = true
+
+							console.log(e)
+							ctr.status(500)
+							ctr.rawRes.write('An Error occured in your Request Event\n')
+							ctr.rawRes.write(e.stack)
+							ctr.rawRes.end()
+						})
+					}; return errorStop
+				}
+
+				case "notfound": {
+					let errorStop = false
+					const event = events.find((event) => (event.event === 'notfound'))
+
+					if (!event) {
+						// Default NotFound
+						let pageDisplay = ''
+						for (const url of routes) {
+							const type = (url.method === 'STATIC' ? 'GET' : url.method)
+							pageDisplay += `[-] [${type}] ${url.path}\n`
+						}
+
+						ctr.status(404)
+						ctr.rawRes.write(`[!] COULDNT FIND ${ctr.url.pathname.toUpperCase()}\n[i] AVAILABLE PAGES:\n\n${pageDisplay}`)
+						ctr.rawRes.end()
+					} else {
+						// Custom NotFound
+						await Promise.resolve(event.code(ctr as unknown as ctr)).catch((e) => {
+							errorStop = true
+
+							console.log(e)
+							ctr.status(500)
+							ctr.rawRes.write('An Error occured in your NotFound Event\n')
+							ctr.rawRes.write(e.stack)
+							ctr.rawRes.end()
+						}).then(() => ctr.rawRes.end())
+					}; return errorStop
+				}
+			}
+		}
 
 		const server = http.createServer(async(req, res) => {
 			let reqBody = ''
@@ -93,10 +166,10 @@ export = {
 
 			req.on('data', (data: string) => {
 				reqBody += data
-			}).on('end', async () => {
+			}).on('end', async() => {
 				let reqUrl = { ...url.parse(req.url), method: req.method as any }
 				if (reqUrl.path.endsWith('/')) reqUrl.path = reqUrl.path.slice(0, -1)
-				let executeUrl = ''
+				let executeUrl: number
 
 				// Parse Request Body
 				try {
@@ -117,47 +190,42 @@ export = {
 				let exists: boolean, isStatic = false
 				const actualUrl = reqUrl.pathname.split('/')
 				if (actualUrl[actualUrl.length - 1] === '') actualUrl.pop()
-				for (const elementName in urls) {
-					if (elementName in urls && elementName.replace(req.method, '') === reqUrl.pathname && urls[elementName].type === req.method) {
-						executeUrl = req.method + reqUrl.pathname
+				for (let urlNumber = 1; urlNumber <= routes.length - 1; urlNumber++) {
+					const url = routes[urlNumber]
+
+					// Check for Static Paths
+					if (url.path === reqUrl.pathname && url.method === req.method) {
+						executeUrl = urlNumber
 						isStatic = false
 						exists = true
 
 						break
-					}; if (elementName in urls && elementName.replace(req.method, '') === reqUrl.pathname && urls[elementName].type === 'STATIC') {
-						executeUrl = req.method + reqUrl.pathname
+					} else if (url.path === reqUrl.pathname && url.method === 'STATIC') {
+						executeUrl = urlNumber
 						isStatic = true
 						exists = true
 
 						break
 					}
 
-					const element = urls[elementName]
-					if (element.type !== req.method) continue
-					if (element.array.length !== actualUrl.length) continue
-					if (exists && element.array.join('/') !== executeUrl) break
+					if (url.method !== req.method) continue
+					if (url.pathArray.length !== actualUrl.length) continue
+					if (exists && url.path !== routes[executeUrl].path) break
 
-					let urlCount = 0
-					for (const urlPart of element.array) {
-						const urlParam = element.array[urlCount]
-						const reqParam = actualUrl[urlCount]
-						urlCount++
+					for (let partNumber = 1; partNumber <= url.pathArray.length - 1; partNumber++) {
+						const urlParam = url.pathArray[partNumber]
+						const reqParam = actualUrl[partNumber]
 
 						if (!urlParam.startsWith(':') && reqParam !== urlParam) break
-						if (urlParam === reqParam) {
-							continue
-						} else if (urlParam.startsWith(':')) {
+						if (urlParam === reqParam) continue
+						else if (urlParam.startsWith(':')) {
 							params.set(urlParam.replace(':', ''), decodeURIComponent(reqParam))
-							executeUrl = req.method + element.array.join('/')
+							executeUrl = urlNumber
 							exists = true
 
 							continue
-						}
-
-						continue
-					}
-
-					continue
+						}; continue
+					}; continue
 				}
 
 				// Get Correct Host IP
@@ -165,7 +233,7 @@ export = {
 				if (proxy && req.headers['x-forwarded-for']) hostIp = req.headers['x-forwarded-for'] as string
 				else hostIp = req.socket.remoteAddress
 
-				// Create Answer Object
+				// Create ConText Response Object
 				const headers = new Map()
 				Object.keys(req.headers).forEach((header) => {
 					headers.set(header, req.headers[header])
@@ -185,19 +253,20 @@ export = {
 					})
 				}
 
-				res.setHeader('X-Powered-By', 'rjweb-server')
+				if (poweredBy) res.setHeader('X-Powered-By', 'rjweb-server')
 				let ctr: ctr = {
 					// Properties
-					header: headers,
-					cookie: cookies,
-					param: params,
-					query: queries,
+					headers,
+					cookies,
+					params,
+					queries,
 
 					// Variables
-					hostPort: req.socket.remotePort,
-					hostIp,
-					reqBody,
-					reqUrl,
+					client: {
+						port: req.socket.remotePort,
+						ip: hostIp
+					}, body: reqBody,
+					url: reqUrl,
 
 					// Raw Values
 					rawServer: server,
@@ -242,54 +311,28 @@ export = {
 								try {
 									res.write(msg)
 								} catch (e) {
-									if ('reqError' in pages) {
-										ctr.error = e
-										Promise.resolve(pages.reqError(ctr as unknown as ctr<any, true>)).catch((e) => {
-											console.log(e)
-											res.statusCode = 500
-											res.write(e)
-											res.end()
-										}).then(() => res.end())
-										errorStop = true
-									} else {
-										errorStop = true
-										console.log(e)
-										res.statusCode = 500
-										res.end()
-									}
+									ctr.error = e
+									errorStop = true
+									eventHandler('error', ctr)
 								}
 						}; return ctr
 					}, status(code) {
 						res.statusCode = code
 						return ctr
 					}, printFile(file) {
-						const content = fs.readFileSync(file)
+						let content: Buffer, errorStop = false
+						try { content = fs.readFileSync(file) }
+						catch (e) { errorStop = true; ctr.error = e; eventHandler('error', ctr) }
+
+						if (errorStop) return ctr
 						res.write(content, 'binary')
 						return ctr
 					}
 				}
 
 				// Execute Custom Run Function
-				let errorStop = false
-				if ('request' in events) {
-					await events.request(ctr).catch((e) => {
-						if ('reqError' in pages) {
-							ctr.error = e
-							Promise.resolve(pages.reqError(ctr as unknown as ctr<any, true>)).catch((e) => {
-								console.log(e)
-								res.statusCode = 500
-								res.write(e)
-								res.end()
-							}).then(() => res.end())
-							errorStop = true
-						} else {
-							errorStop = true
-							console.log(e)
-							res.statusCode = 500
-							return res.end()
-						}
-					})
-				}; if (errorStop) return
+				let errorStop = await eventHandler('request', ctr)
+				if (errorStop) return
 
 				// Rate Limiting
 				if (rateLimits.enabled) {
@@ -303,6 +346,7 @@ export = {
 							setTimeout(async() => { await rateLimits.functions.set(hostIp + rule.path, (await rateLimits.functions.get(hostIp + rule.path) ?? 0) - 1) }, rule.timeout)
 							if (await rateLimits.functions.get(hostIp + rule.path) > rule.times) {
 								res.statusCode = 429
+								errorStop = true
 								ctr.print(rateLimits.message ?? 'Rate Limited')
 								return res.end()
 							}
@@ -311,95 +355,47 @@ export = {
 				}
 
 				// Execute Page
-				if (exists) {
+				if (exists && !errorStop) {
 					if (!isStatic) {
-						Promise.resolve(urls[executeUrl].code(ctr)).catch((e) => {
-							if ('reqError' in pages) {
-								ctr.error = e
-								Promise.resolve(pages.reqError(ctr as unknown as ctr<any, true>)).catch((e) => {
-									console.log(e)
-									res.statusCode = 500
-									res.write(e)
-									res.end()
-								}).then(() => res.end())
-							} else {
-								console.log(e)
-								res.statusCode = 500
-								res.write(e)
-								res.end()
-							}
+						Promise.resolve(routes[executeUrl].code(ctr)).catch((e) => {
+							ctr.error = e
+							errorStop = true
+							eventHandler('error', ctr)
 						}).then(() => res.end())
 					} else {
 						// Add Content Types
-						if (urls[executeUrl].addTypes) {
-							if (urls[executeUrl].path.endsWith('.pdf')) ctr.setHeader('Content-Type', 'application/pdf')
-							if (urls[executeUrl].path.endsWith('.js')) ctr.setHeader('Content-Type', 'text/javascript')
-							if (urls[executeUrl].path.endsWith('.html')) ctr.setHeader('Content-Type', 'text/html')
-							if (urls[executeUrl].path.endsWith('.css')) ctr.setHeader('Content-Type', 'text/css')
-							if (urls[executeUrl].path.endsWith('.csv')) ctr.setHeader('Content-Type', 'text/csv')
-							if (urls[executeUrl].path.endsWith('.mpeg')) ctr.setHeader('Content-Type', 'video/mpeg')
-							if (urls[executeUrl].path.endsWith('.mp4')) ctr.setHeader('Content-Type', 'video/mp4')
-							if (urls[executeUrl].path.endsWith('.webm')) ctr.setHeader('Content-Type', 'video/webm')
-							if (urls[executeUrl].path.endsWith('.bmp')) ctr.setHeader('Content-Type', 'image/bmp')
+						if (routes[executeUrl].data.addTypes) {
+							if (routes[executeUrl].path.endsWith('.pdf')) ctr.setHeader('Content-Type', 'application/pdf')
+							if (routes[executeUrl].path.endsWith('.js')) ctr.setHeader('Content-Type', 'text/javascript')
+							if (routes[executeUrl].path.endsWith('.html')) ctr.setHeader('Content-Type', 'text/html')
+							if (routes[executeUrl].path.endsWith('.css')) ctr.setHeader('Content-Type', 'text/css')
+							if (routes[executeUrl].path.endsWith('.csv')) ctr.setHeader('Content-Type', 'text/csv')
+							if (routes[executeUrl].path.endsWith('.mpeg')) ctr.setHeader('Content-Type', 'video/mpeg')
+							if (routes[executeUrl].path.endsWith('.mp4')) ctr.setHeader('Content-Type', 'video/mp4')
+							if (routes[executeUrl].path.endsWith('.webm')) ctr.setHeader('Content-Type', 'video/webm')
+							if (routes[executeUrl].path.endsWith('.bmp')) ctr.setHeader('Content-Type', 'image/bmp')
 						}
 
 						// Read Content
-						if (!('content' in urls[executeUrl])) {
-							let content: any
-							const filePath = path.resolve(urls[executeUrl].file)
-							try { content = fs.readFileSync(filePath) }
-							catch (e) { console.log(e); return res.end() }
+						if (!('content' in routes[executeUrl].data)) {
+							const filePath = path.resolve(routes[executeUrl].data.file)
 
+							let content: Buffer, errorStop = false
+							try { content = fs.readFileSync(filePath) }
+							catch (e) { errorStop = true; ctr.error = e; eventHandler('error', ctr) }
+
+							if (errorStop) return
 							res.write(content, 'binary')
 							return res.end()
 						}
 
-						res.write(urls[executeUrl].content, 'binary')
+						res.write(routes[executeUrl].data.content, 'binary')
 						return res.end()
 					}
 				} else {
-					if ('notFound' in pages) {
-						Promise.resolve(pages.notFound(ctr)).catch((e) => {
-							if ('reqError' in pages) {
-								ctr.error = e
-								pages.reqError(ctr as unknown as ctr<any, true>).catch((e) => {
-									console.log(e)
-									res.statusCode = 500
-									res.write(e)
-									res.end()
-								}).then(() => res.end())
-							} else {
-								console.log(e)
-								res.statusCode = 500
-								res.write(e)
-								res.end()
-							}
-						}).then(() => res.end())
-					} else {
-						let pageDisplay = ''
-						for (const rawUrl in urls) {
-							const url = urls[rawUrl]
-							const type = (url.type === 'STATIC' ? 'GET' : url.type)
-							pageDisplay += `[-] [${type}] ${url.path}\n`
-						}
-
-						res.statusCode = 404
-						res.write(`[!] COULDNT FIND ${reqUrl.pathname.toUpperCase()}\n[i] AVAILABLE PAGES:\n\n${pageDisplay}`)
-						res.end()
-					}
+					eventHandler('notfound', ctr)
 				}
 			})
-		})
-
-		server.on('upgrade', (req, socket, head) => {
-			socket.write(
-				'HTTP/1.1 101 Web Socket Protocol Handshake\r\n' +
-				'Upgrade: WebSocket\r\n' +
-				'Connection: Upgrade\r\n' +
-				'\r\n'
-			)
-
-			socket.pipe(socket)
 		})
 
 		server.listen(port, bind)

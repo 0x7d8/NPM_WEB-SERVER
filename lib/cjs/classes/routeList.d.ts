@@ -1,5 +1,6 @@
 import { types as typesInterface } from "../interfaces/types";
-import page from "../interfaces/page";
+import route from "../interfaces/route";
+import event, { events as eventsType } from "../interfaces/event";
 import ctr from "../interfaces/ctr";
 interface staticOptions {
     /**
@@ -16,16 +17,25 @@ interface staticOptions {
     */ addTypes?: boolean;
 }
 export default class routeList {
-    private urls;
+    private routes;
+    private events;
     /** List of Routes */
     constructor(
     /**
      * Routes to Import
      * @default []
-     */ routes?: page[]);
+     */ routes?: route[], 
+    /**
+     * Events to Import
+     * @default []
+     */ events?: event[]);
+    /** Set An Event Manually */
+    event(
+    /** The Event Name */ event: eventsType, 
+    /** The Async Code to run on a Request */ code: (ctr: ctr) => Promise<any>): void;
     /** Set A Route Manually */
     set(
-    /** The Request Type */ type: typesInterface, 
+    /** The Request Method */ method: typesInterface, 
     /** The Path on which this will be available */ path: string, 
     /** The Async Code to run on a Request */ code: (ctr: ctr) => Promise<any>): void;
     /** Serve Static Files */
@@ -36,7 +46,10 @@ export default class routeList {
     /** Load External Function Files */
     load(
     /** The Location of the Folder to load from */ folder: string): void;
-    /** Internal Function to access all URLs as Array */
-    list(): page[];
+    /** Internal Function to access all routes as Array */
+    list(): {
+        routes: route[];
+        events: event[];
+    };
 }
 export {};

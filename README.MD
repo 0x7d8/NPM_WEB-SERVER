@@ -1,4 +1,4 @@
-<h1 align="center">Welcome to rjweb-server 👋</h1>
+<h1 align="center">Welcome to rjweb-server v2 👋</h1>
 <center>
   <a href="https://www.npmjs.com/package/rjweb-server" target="_blank">
     <img alt="Version" src="https://img.shields.io/npm/v/rjweb-server.svg">
@@ -27,6 +27,12 @@ or
 yarn add rjweb-server
 ```
 
+or
+
+```sh
+pnpm add rjweb-server
+```
+
 ## Typescript
 
 Importing
@@ -41,9 +47,9 @@ import { ctr } from "rjweb-server/interfaces"
 const routes = new webserver.routeList()
 
 routes.set(webserver.types.get, '/hello', async(ctr: ctr) => {
-  if (!ctr.query.has("name")) return ctr.print('please supply the name query!!')
+  if (!ctr.queries.has("name")) return ctr.print('please supply the name queries!!')
 
-  return ctr.print(`Hello, ${ctr.query.get("name")}! How are you doing?`)
+  return ctr.print(`Hello, ${ctr.queries.get("name")}! How are you doing?`)
 })
 
 // ...
@@ -63,31 +69,30 @@ interface ctr<HasError = false> extends ctrPreset<Custom, HasError> {}
 const routes = new webserver.routeList()
 
 routes.set(webserver.types.get, '/hello', async(ctr: ctr) => {
-  if (!ctr.query.has("name")) return ctr.print('please supply the name query!!')
+  if (!ctr.queries.has("name")) return ctr.print('please supply the name queries!!')
 
-  return ctr.print(`Hello, ${ctr.query.get("name")}! You are Visit nr.${ctr['@'].count}`)
+  return ctr.print(`Hello, ${ctr.queries.get("name")}! You are Visit nr.${ctr['@'].count}`)
 })
 
 let count = 0
+routes.event('request', async(ctr: ctr) => {
+  ctr.setCustom('count', ++count) 
+
+  console.log(`request made to ${decodeURI(ctr.url.pathname)} by ${ctr.client.ip}`)
+})
+
+routes.event('error', async(ctr: ctr<true>) => {
+  console.log(`error on path ${decodeURI(ctr.url.pathname)}!!!`)
+  console.error(ctr.error.stack)
+
+  ctr.status(500)
+  ctr.print('server error')
+})
+
 webserver.start({
   bind: '0.0.0.0', // The IP thats bound to
   port: 5000, // The Port which the Server runs on
-  urls: routes, // The Routes Object
-  events: {
-    request: async(ctr: ctr) {
-      ctr.setCustom('count', ++count) 
-
-      console.log(`request made to ${decodeURI(ctr.reqUrl.pathname)} by ${ctr.hostIp}`)
-    }
-  }, pages: {
-    reqError: async(ctr: ctr<true>) {
-      console.log(`error on path ${decodeURI(ctr.reqUrl.pathname)}!!!`)
-      console.error(ctr.error.stack)
-
-      ctr.status(500)
-      ctr.print('server error')
-    }
-  }
+  routes: routes // The Routes Object
 }).then((res) => {
   console.log(`webserver started on port ${res.port}`)
 })
@@ -100,26 +105,26 @@ Initialize Server
 const webserver = require('rjweb-server')
 const routes = new webserver.routeList()
 
-// ctr.query.get... is ?name=
+// ctr.queries.get... is ?name=
 routes.set(webserver.types.get, '/hello', async(ctr) => {
-  if (!ctr.query.has("name")) return ctr.print('please supply the name query!!')
+  if (!ctr.queries.has("name")) return ctr.print('please supply the name Query!!')
 
-  return ctr.print(`Hello, ${ctr.query.get("name")}! How are you doing?`)
+  return ctr.print(`Hello, ${ctr.queries.get("name")}! How are you doing?`)
 })
 
-// ctr.param.get... is :name, example /hello/0x4096
+// ctr.params.get... is :name, example /hello/0x4096
 routes.set(webserver.types.get, '/hello/:name', async(ctr) => {
-  return ctr.print(`Hello, ${ctr.param.get("name")}! How are you doing?`)
+  return ctr.print(`Hello, ${ctr.params.get("name")}! How are you doing?`)
 })
 
-// ctr.param.get... is :name, example /hello/0x4096
+// ctr.params.get... is :name, example /hello/0x4096
 routes.set(webserver.types.post, '/post', async(ctr) => {
-  return ctr.print(`Hello, ${ctr.reqBody}! How are you doing?`)
+  return ctr.print(`Hello, ${ctr.body}! How are you doing?`)
 })
 
 routes.set(webserver.types.get, '/profile/:user', async(ctr) => {
   ctr.setHeader('Content-Type', 'image/png')
-  return ctr.printFile(`../images/profile/${ctr.param.get('user')}.png`)
+  return ctr.printFile(`../images/profile/${ctr.params.get('user')}.png`)
 })
 
 webserver.start({
@@ -127,7 +132,7 @@ webserver.start({
   body: 20, // The Max POST Body in MB
   cors: false, // If Cors Headers will be added
   port: 5000, // The Port which the Server runs on
-  urls: routes, // The Routes Object
+  routes: routes, // The Routes Object
   proxy: true // If enabled, alternate IPs will be shown
 }).then((res) => {
   console.log(`webserver started on port ${res.port}`)
@@ -150,7 +155,7 @@ webserver.start({
   bind: '0.0.0.0',
   cors: false,
   port: 5000,
-  urls: routes,
+  routes: routes,
   proxy: true
 }).then((res) => {
   console.log(`webserver started on port ${res.port}`)
@@ -159,24 +164,27 @@ webserver.start({
 })
 ```
 
-Custom 404 / 500 Page
+Custom Not Found / Server Error Page
 ```js
+const routes = new webserver.routeList()
+
+routes.event('notfound', async(ctr) => {
+  ctr.status(404)
+  return ctr.print(`page "${ctr.url.pathname}" not found`)
+})
+
+routes.event('error', async(ctr) => {
+  ctr.status(500)
+  ctr.print(`ERROR!!! ${ctr.error.message}`)
+  return console.log(ctr.error)
+})
+
 webserver.start({
   bind: '0.0.0.0',
   cors: false,
   port: port,
-  urls: routes,
-  proxy: true,
-  pages: {
-    notFound: async(ctr) {
-      ctr.status(404)
-      return ctr.print(`page "${ctr.reqUrl.pathname}" not found`)
-    }, reqError: async(ctr) => {
-      ctr.status(500)
-      ctr.print(`ERROR!!! ${ctr.error.message}`)
-      return console.log(ctr.error)
-    }
-  }
+  routes: routes,
+  proxy: true
 }).then((res) => {
   console.log(`webserver started on port ${res.port}`)
 }).catch((err) => {
@@ -186,17 +194,19 @@ webserver.start({
 
 Custom Function on every request
 ```js
+const routes = new webserver.routeList()
+
+routes.event('request', async(ctr) => {
+  return console.log(`request made to ${decodeURI(ctr.url.href)} by ${ctr.client.ip}`)
+  // DO NOT write any data or end the request
+})
+
 webserver.start({
   bind: '0.0.0.0',
   cors: false,
   port: port,
-  urls: routes,
-  proxy: true,
-  events: {
-    request: async(ctr) => {
-      return console.log(`request made to ${decodeURI(ctr.reqUrl.href)} by ${ctr.hostIp}`) // DO NOT write any data or end the request
-    }
-  }
+  routes: routes,
+  proxy: true
 }).then((res) => {
   console.log(`webserver started on port ${res.port}`)
 }).catch((err) => {
@@ -211,7 +221,7 @@ webserver.start({
   bind: '0.0.0.0',
   cors: false,
   port: port,
-  urls: routes,
+  routes: routes,
   proxy: true,
   rateLimits: {
     enabled: true,
@@ -228,8 +238,8 @@ webserver.start({
         timeout: 5000
       }
     ], functions: {
-      set: async(key, value) => (await db.query('update ratelimits set value = ? where key = ?;', [value, key])),
-      get: async(key) => ((await db.query('select value from ratelimits where key = ?;', [key])).data.rows[0].value)
+      set: async(key, value) => (await db.queries('update ratelimits set value = ? where key = ?;', [value, key])),
+      get: async(key) => ((await db.queries('select value from ratelimits where key = ?;', [key])).data.rows[0].value)
     }
   }
 }).then((res) => {
@@ -247,7 +257,7 @@ webserver.start({
   bind: '0.0.0.0',
   cors: false,
   port: port,
-  urls: routes,
+  routes: routes,
   proxy: true,
   rateLimits: {
     enabled: true,
@@ -284,7 +294,7 @@ webserver.start({
   bind: '0.0.0.0',
   cors: false,
   port: 5000,
-  urls: routes,
+  routes: routes,
   proxy: true,
 }).then((res) => {
   console.log(`webserver started on port ${res.port}`)
@@ -303,7 +313,7 @@ module.exports = {
   path: '/say/:word',
 
   async code(ctr) {
-    const word = ctr.param.get('word')
+    const word = ctr.params.get('word')
 
     return ctr.print(`I will say it!!!\n${word}`)
   }

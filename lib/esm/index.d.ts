@@ -1,26 +1,15 @@
 /// <reference types="node" />
-import ctr from "./interfaces/ctr";
 import routeList from "./classes/routeList";
 import rateLimitRule from "./interfaces/ratelimitRule";
 import typesEnum from "./interfaces/types";
-import page from "./interfaces/page";
 import * as http from "http";
 interface startOptions {
-    pages?: {
-        /** When a Route is not found */ notFound?: (ctr: ctr) => Promise<any>;
-        /** When an Error occurs in a Route */ reqError?: (ctr: ctr<any, true>) => Promise<any>;
-    };
-    events?: {
-        /** On Every Request */ request?: (ctr: ctr) => Promise<any>;
-    };
-    urls?: {
-        list: () => page[];
-    };
-    rateLimits?: {
+    /** The Routes for the Server */ routes: routeList;
+    /** RateLimit Settings */ rateLimits?: {
         /**
          * Whether Ratelimits are enabled
          * @default false
-        */ enabled: boolean;
+        */ enabled?: boolean;
         /**
          * The Message that gets sent when a ratelimit maxes out
          * @default "Rate Limited"
@@ -28,7 +17,7 @@ interface startOptions {
         /**
          * The List of Ratelimit Rules
          * @default []
-        */ list: rateLimitRule[];
+        */ list?: rateLimitRule[];
         /** The RateLimit Functions */ functions: {
             set: (key: string, value: number) => Promise<any>;
             get: (key: string) => Promise<number>;
@@ -48,16 +37,23 @@ interface startOptions {
     */ cors?: boolean;
     /**
      * Where the Server should start at
-     * @default 5002
+     * @default 2023
     */ port?: number;
     /**
      * The Maximum Body Size in MB
      * @default 20
-    */ body?: number;
+    */ maxBody?: number;
+    /**
+     * Add X-Powered-By Header
+     * @default true
+    */ poweredBy?: boolean;
 }
 declare const _default: {
+    /** The RouteList */
     routeList: typeof routeList;
+    /** The Request Types */
     types: typeof typesEnum;
+    /** Start The Webserver */
     start(options: startOptions): Promise<{
         success: boolean;
         port?: number;
