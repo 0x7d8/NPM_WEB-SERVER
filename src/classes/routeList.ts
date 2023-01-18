@@ -11,8 +11,8 @@ import * as fs from "fs"
 export const pathParser = (path: string) => {
 	path = path.replace(/\/{2,}/g, '/')
 
-	if (path.endsWith('/')) return path.slice(0, -1)
-	if (!path.startsWith('/')) return `/${path}`
+	if (path.endsWith('/') && path !== '/') return path.slice(0, -1)
+	if (!path.startsWith('/') && path !== '/') return `/${path}`
 
 	return path
 }
@@ -104,16 +104,11 @@ export default class routeList {
 
 		for (const file of getAllFiles(folder)) {
 			let fileName = file.replace(folder, '').replace('/', '')
-			let pathName = path + folder.replace(fileName, '').replace(folder, '').slice(0, -1)
-			if (pathName.startsWith('.')) pathName = pathName.slice(-1)
+			const pathName = path + folder.replace(fileName, '').replace(folder, '').slice(0, -1)
 			if (remHTML && fileName === 'index.html') fileName = ''
-			else if (remHTML && fileName.endsWith('.html')) fileName = fileName.slice(0, -5)
-			else if (remHTML && fileName.endsWith('.htm')) fileName = fileName.slice(0, -4)
-			const urlName = `${pathName}/${fileName}`.endsWith('/')
-				? `${pathName}`
-				: `${pathName}` === '/'
-					? `/${fileName}`
-					: `${pathName}/${fileName}`
+			else if (remHTML && fileName.endsWith('.html')) fileName.slice(0, -5)
+			else if (remHTML && fileName.endsWith('.htm')) fileName.slice(0, -4)
+			const urlName = pathParser(`${pathName}/${fileName}`)
 
 			const index = this.routes.push({
 				method: 'STATIC',
