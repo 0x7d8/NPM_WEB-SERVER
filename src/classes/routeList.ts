@@ -19,15 +19,15 @@ export const pathParser = (path: string) => {
 
 interface staticOptions {
 	/**
-	 * If true then files will be loaded into RAM
+	 * Whether files will be loaded into Memory
 	 * @default false
 	*/ preload?: boolean
 	/**
-	 * If true then .html will be removed automatically
+	 * Whether .html & .htm will be removed automatically
 	 * @default false
 	*/ remHTML?: boolean
 	/**
-	 * If true then some Content Types will be added automatically
+	 * Whether some Content Types will be added automatically
 	 * @default true
 	*/ addTypes?: boolean
 }
@@ -70,18 +70,18 @@ export default class routeList {
 	/** Set A Route Manually */
 	set(
 		/** The Request Method */ method: typesInterface,
-		/** The Path on which this will be available */ path: string,
+		/** The Path on which this will be available */ urlPath: string,
 		/** The Async Code to run on a Request */ code: (ctr: ctr) => Promise<any>
 	) {
-		path = pathParser(path)
+		urlPath = pathParser(urlPath)
 
 		if (!types.includes(method)) throw TypeError(`No Valid Request Type: ${method}\nPossible Values: ${types.join(', ')}`)
-		if (this.routes.some((obj) => (obj.method === method && obj.path === path))) return false
+		if (this.routes.some((obj) => (obj.method === method && obj.path === urlPath))) return false
 
 		return this.routes.push({
 			method: method,
-			path: path,
-			pathArray: path.split('/'),
+			path: urlPath,
+			pathArray: urlPath.split('/'),
 			code: code,
 			data: {
 				addTypes: false
@@ -91,11 +91,11 @@ export default class routeList {
 
 	/** Serve Static Files */
 	static(
-		/** The Path to serve the Files on */ path: string,
+		/** The Path to serve the Files on */ urlPath: string,
 		/** The Location of the Folder to load from */ folder: string,
 		/** Additional Options */ options?: staticOptions
 	) {
-		path = pathParser(path)
+		urlPath = pathParser(urlPath)
 
 		const preload = options?.preload ?? false
 		const remHTML = options?.remHTML ?? false
@@ -103,17 +103,15 @@ export default class routeList {
 		let arrayIndexes: number[] = []
 
 		for (const file of getAllFiles(folder)) {
-			let fileName = file.replace(folder, '').replace('/', '')
-			const pathName = path + folder.replace(fileName, '').replace(folder, '').slice(0, -1)
-			if (remHTML && fileName.endsWith('index.html')) fileName = fileName.slice(0, -10)
-			else if (remHTML && fileName.endsWith('.html')) fileName.slice(0, -5)
-			else if (remHTML && fileName.endsWith('.htm')) fileName.slice(0, -4)
-			const urlName = pathParser(`${pathName}/${fileName}`)
+			let pathInfos = path.parse(file.replace(folder, ''))
+			if (remHTML && pathInfos.base === 'index.html') pathInfos.base = ''
+			else if (remHTML && pathInfos.ext === '.html') pathInfos.base = pathInfos.base.slice(0, -5)
+			else if (remHTML && pathInfos.ext === '.htm') pathInfos.base = pathInfos.base.slice(0, -4)
 
 			const index = this.routes.push({
 				method: 'STATIC',
-				path: urlName,
-				pathArray: urlName.split('/'),
+				path: path.join(pathInfos.dir, pathInfos.base),
+				pathArray: path.join(pathInfos.dir, pathInfos.base).split('/'),
 				code: async() => undefined,
 				data: {
 					addTypes,

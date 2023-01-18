@@ -5,15 +5,15 @@ import ctr from "../interfaces/ctr";
 export declare const pathParser: (path: string) => string;
 interface staticOptions {
     /**
-     * If true then files will be loaded into RAM
+     * Whether files will be loaded into Memory
      * @default false
     */ preload?: boolean;
     /**
-     * If true then .html will be removed automatically
+     * Whether .html & .htm will be removed automatically
      * @default false
     */ remHTML?: boolean;
     /**
-     * If true then some Content Types will be added automatically
+     * Whether some Content Types will be added automatically
      * @default true
     */ addTypes?: boolean;
 }
@@ -37,11 +37,11 @@ export default class routeList {
     /** Set A Route Manually */
     set(
     /** The Request Method */ method: typesInterface, 
-    /** The Path on which this will be available */ path: string, 
+    /** The Path on which this will be available */ urlPath: string, 
     /** The Async Code to run on a Request */ code: (ctr: ctr) => Promise<any>): number | false;
     /** Serve Static Files */
     static(
-    /** The Path to serve the Files on */ path: string, 
+    /** The Path to serve the Files on */ urlPath: string, 
     /** The Location of the Folder to load from */ folder: string, 
     /** Additional Options */ options?: staticOptions): number[];
     /** Load External Function Files */

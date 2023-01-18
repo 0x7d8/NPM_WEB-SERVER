@@ -1,5 +1,5 @@
 import ctr from "./interfaces/ctr"
-import routeList from "./classes/routeList"
+import routeList, { pathParser } from "./classes/routeList"
 import rateLimitRule from "./interfaces/ratelimitRule"
 import typesEnum from "./interfaces/types"
 import { events as eventsType } from "./interfaces/event"
@@ -78,6 +78,8 @@ export = {
 		const body = options?.maxBody ?? 20
 		const poweredBy = options?.poweredBy ?? true
 
+		const cacheMap = new Map<string, Buffer>()
+
 		const eventHandler = async(event: eventsType, ctr: ctr) => {
 			switch (event) {
 				case "error": {
@@ -155,7 +157,7 @@ export = {
 			let reqBody = ''
 
 			if (!!req.headers['content-length']) {
-				const bodySize = parseInt(req.headers['content-length'])
+				const bodySize = Number(req.headers['content-length'])
 
 				if (bodySize >= (body * 1e6)) {
 					res.statusCode = 413
@@ -168,7 +170,7 @@ export = {
 				reqBody += data
 			}).on('end', async() => {
 				let reqUrl = { ...url.parse(req.url), method: req.method as any }
-				if (reqUrl.path.endsWith('/')) reqUrl.path = reqUrl.path.slice(0, -1)
+				reqUrl.path = pathParser(reqUrl.path)
 				let executeUrl: number
 
 				// Parse Request Body
@@ -319,12 +321,36 @@ export = {
 					}, status(code) {
 						res.statusCode = code
 						return ctr
-					}, printFile(file) {
+					}, printFile(file, options) {
+						const addTypes = options?.addTypes ?? true
+						const cache = options?.cache ?? false
+
+						// Add Content Types
+						if (addTypes) {
+							if (file.endsWith('.pdf')) ctr.setHeader('Content-Type', 'application/pdf')
+							if (file.endsWith('.js')) ctr.setHeader('Content-Type', 'text/javascript')
+							if (file.endsWith('.html')) ctr.setHeader('Content-Type', 'text/html')
+							if (file.endsWith('.css')) ctr.setHeader('Content-Type', 'text/css')
+							if (file.endsWith('.csv')) ctr.setHeader('Content-Type', 'text/csv')
+							if (file.endsWith('.mpeg')) ctr.setHeader('Content-Type', 'video/mpeg')
+							if (file.endsWith('.mp4')) ctr.setHeader('Content-Type', 'video/mp4')
+							if (file.endsWith('.webm')) ctr.setHeader('Content-Type', 'video/webm')
+							if (file.endsWith('.bmp')) ctr.setHeader('Content-Type', 'image/bmp')
+						}
+
+						// Check Cache
+						if (cacheMap.has(file)) {
+							res.write(cacheMap.get(file), 'binary')
+							return ctr
+						}
+
+						// Get File Content
 						let content: Buffer, errorStop = false
 						try { content = fs.readFileSync(file) }
 						catch (e) { errorStop = true; ctr.error = e; eventHandler('error', ctr) }
 
 						if (errorStop) return ctr
+						if (cache) cacheMap.set(file, content)
 						res.write(content, 'binary')
 						return ctr
 					}

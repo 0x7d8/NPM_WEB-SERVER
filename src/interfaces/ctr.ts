@@ -4,9 +4,20 @@ import { types } from "./types"
 
 interface printOptions {
 	/**
-	 * Whether to Format the Outgoing JSON
+	 * Whether to Format the Outgoing JSON (If any)
 	 * @default false
 	*/ niceJSON?: boolean
+}
+
+interface printFileOptions {
+	/**
+	 * Whether some Content Types will be added automatically
+	 * @default true
+	*/ addTypes?: boolean
+	/**
+	 * Whether to Cache the sent Files after accessed once (only renew after restart)
+	 * @default false
+	*/ cache?: boolean
 }
 
 export default interface ctr<Custom = any, HasError = false, Body = any> {
@@ -33,7 +44,7 @@ export default interface ctr<Custom = any, HasError = false, Body = any> {
 	/** Set a Custom Variable */ setCustom: <Type extends keyof Custom>(name: Type, value: Custom[Type]) => ctr
 	/** Print a Message to the Client (automatically Formatted) */ print: (msg: any, options?: printOptions) => ctr
 	/** The Request Status to Send */ status: (code: number) => ctr
-	/** Print the Content of a File to the Client */ printFile: (path: string) => ctr
+	/** Print the Content of a File to the Client */ printFile: (path: string, options?: printFileOptions) => ctr
 
 	/** Custom Variables that are Global */ '@': Custom
 }
