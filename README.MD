@@ -335,7 +335,7 @@ Making a function File
 ```js
 const webserver = require('rjweb-server')
 
-// For Typescript just use `export =` instead
+/** @type {import('rjweb-server/interfaces').ctrFile} */
 module.exports = {
   method: webserver.types.get,
   path: '/say/:word',
