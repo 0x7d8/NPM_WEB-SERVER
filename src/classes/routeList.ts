@@ -141,13 +141,13 @@ export default class routeList {
 
 			if (
 				!('path' in route) ||
-				!('type' in route) ||
+				!('method' in route) ||
 				!('code' in route)
 			) continue
-			if (!types.includes(route.type)) throw TypeError(`No Valid Request Type: ${route.type}\nPossible Values: ${types.join(', ')}`)
+			if (!types.includes(route.type)) throw TypeError(`No Valid Request Type: ${route.method}\nPossible Values: ${types.join(', ')}`)
 
 			arrayIndexes.push(this.routes.push({
-				method: route.type,
+				method: route.method,
 				path: route.path,
 				pathArray: route.path.split('/'),
 				code: route.code,

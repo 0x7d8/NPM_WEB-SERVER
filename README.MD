@@ -64,7 +64,7 @@ interface Custom {
   count: number
 }
 
-interface ctr<HasError = false> extends ctrPreset<Custom, HasError> {}
+interface ctr<HasError = false, Body = any> extends ctrPreset<Custom, HasError, Body> {}
 
 const routes = new webserver.routeList()
 
@@ -309,7 +309,7 @@ const webserver = require('rjweb-server')
 
 // For Typescript just use `export =` instead
 module.exports = {
-  type: webserver.types.get,
+  method: webserver.types.get,
   path: '/say/:word',
 
   async code(ctr) {
