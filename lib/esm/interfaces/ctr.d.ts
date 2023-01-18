@@ -9,7 +9,7 @@ interface printOptions {
      * @default false
     */ niceJSON?: boolean;
 }
-export default interface ctr<Custom = {}, HasError = false> {
+export default interface ctr<Custom = any, HasError = false, Body = any> {
     /** A Map of all Headers */ readonly headers: Map<Lowercase<string>, string>;
     /** A Map of all Cookies */ readonly cookies: Map<string, string>;
     /** A Map of all Parameters */ readonly params: Map<string, string>;
@@ -18,7 +18,7 @@ export default interface ctr<Custom = {}, HasError = false> {
         /** The Port that the Client is using */ readonly port: number;
         /** The Ip that the Client is using */ readonly ip: string;
     };
-    /** The Request Body (JSON Automatically parsed) */ readonly body: any;
+    /** The Request Body (JSON Automatically parsed) */ readonly body: Body;
     /** The Requested URL */ readonly url: UrlWithStringQuery & {
         method: Uppercase<types>;
     };

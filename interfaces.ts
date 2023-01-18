@@ -1,4 +1,5 @@
 export { default as ctr } from "./lib/cjs/interfaces/ctr"
+export { default as ctrFile } from "./lib/cjs/interfaces/ctrFile"
 export { default as route } from "./lib/cjs/interfaces/route"
 export { default as event } from "./lib/cjs/interfaces/event"
 export { default as types } from "./lib/cjs/interfaces/types"
