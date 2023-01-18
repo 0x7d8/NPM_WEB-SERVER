@@ -105,7 +105,7 @@ export default class routeList {
 		for (const file of getAllFiles(folder)) {
 			let fileName = file.replace(folder, '').replace('/', '')
 			const pathName = path + folder.replace(fileName, '').replace(folder, '').slice(0, -1)
-			if (remHTML && fileName === 'index.html') fileName = ''
+			if (remHTML && fileName.endsWith('index.html')) fileName = fileName.slice(0, -10)
 			else if (remHTML && fileName.endsWith('.html')) fileName.slice(0, -5)
 			else if (remHTML && fileName.endsWith('.htm')) fileName.slice(0, -4)
 			const urlName = pathParser(`${pathName}/${fileName}`)

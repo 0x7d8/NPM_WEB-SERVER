@@ -59,12 +59,13 @@ Custom Properties in Ctr Object
 (This also works in JavaScript, just remove the interface logic)
 ```ts
 import * as webserver from "rjweb-server"
-import { ctr as ctrPreset } from "rjweb-server/interfaces"
+import { ctr as ctrPreset, ctrFile as ctrFilePreset } from "rjweb-server/interfaces"
 interface Custom {
   count: number
 }
 
 interface ctr<HasError = false, Body = any> extends ctrPreset<Custom, HasError, Body> {}
+interface ctrFile<Body = any> extends ctrFilePreset<Custom, Body> {}
 
 const routes = new webserver.routeList()
 
@@ -96,6 +97,33 @@ webserver.start({
 }).then((res) => {
   console.log(`webserver started on port ${res.port}`)
 })
+```
+
+Function File
+```ts
+import * as webserver from "rjweb-server"
+import { ctr as ctrPreset, ctrFile as ctrFilePreset } from "rjweb-server/interfaces"
+interface Custom {
+  count: number
+} // You should import / export this Interface Stuff (look examples section)
+
+interface Body {
+  username?: string
+}
+
+interface ctr<HasError = false, Body = any> extends ctrPreset<Custom, HasError, Body> {}
+interface ctrFile<Body = any> extends ctrFilePreset<Custom, Body> {}
+
+export = {
+  method: webserver.types.post,
+  path: '/v2/account',
+
+  async code(ctr) {
+    if (!('username' in ctr.body)) return ctr.print('no username in body!!')
+
+    ctr.status(204).print(ctr.body.username)
+  }
+} as ctrFile<Body>
 ```
 
 ## Usage
