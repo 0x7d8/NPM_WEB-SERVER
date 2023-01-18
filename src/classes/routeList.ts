@@ -8,6 +8,15 @@ import types from "../misc/types"
 import * as path from "path"
 import * as fs from "fs"
 
+export const pathParser = (path: string) => {
+	path = path.replace(/\/{2,}/g, '/')
+
+	if (path.endsWith('/')) return path.slice(0, -1)
+	if (!path.startsWith('/')) return `/${path}`
+
+	return path
+}
+
 interface staticOptions {
 	/**
 	 * If true then files will be loaded into RAM
@@ -50,7 +59,9 @@ export default class routeList {
 		/** The Event Name */ event: eventsType,
 		/** The Async Code to run on a Request */ code: (ctr: ctr) => Promise<any>
 	) {
-		this.events.push({
+		if (this.events.some((obj) => (obj.event === event))) return false
+
+		return this.events.push({
 			event: event,
 			code: code
 		})
@@ -62,8 +73,12 @@ export default class routeList {
 		/** The Path on which this will be available */ path: string,
 		/** The Async Code to run on a Request */ code: (ctr: ctr) => Promise<any>
 	) {
+		path = pathParser(path)
+
 		if (!types.includes(method)) throw TypeError(`No Valid Request Type: ${method}\nPossible Values: ${types.join(', ')}`)
-		this.routes.push({
+		if (this.routes.some((obj) => (obj.method === method && obj.path === path))) return false
+
+		return this.routes.push({
 			method: method,
 			path: path,
 			pathArray: path.split('/'),
@@ -80,16 +95,25 @@ export default class routeList {
 		/** The Location of the Folder to load from */ folder: string,
 		/** Additional Options */ options?: staticOptions
 	) {
+		path = pathParser(path)
+
 		const preload = options?.preload ?? false
 		const remHTML = options?.remHTML ?? false
 		const addTypes = options?.addTypes ?? true
+		let arrayIndexes: number[] = []
 
 		for (const file of getAllFiles(folder)) {
-			const fileName = file.replace(folder, '')
-			let urlName = ''
-			if (fileName.replace('/', '') === 'index.html' && remHTML) urlName = path.replace('//', '/')
-			else if (fileName.replace('/', '').endsWith('.html') && remHTML) urlName = (path + fileName).replace('//', '/').replace('.html', '')
-			else urlName = (path + fileName).replace('//', '/')
+			let fileName = file.replace(folder, '').replace('/', '')
+			let pathName = path + folder.replace(fileName, '').replace(folder, '').slice(0, -1)
+			if (pathName.startsWith('.')) pathName = pathName.slice(-1)
+			if (remHTML && fileName === 'index.html') fileName = ''
+			else if (remHTML && fileName.endsWith('.html')) fileName = fileName.slice(0, -5)
+			else if (remHTML && fileName.endsWith('.htm')) fileName = fileName.slice(0, -4)
+			const urlName = `${pathName}/${fileName}`.endsWith('/')
+				? `${pathName}`
+				: `${pathName}` === '/'
+					? `/${fileName}`
+					: `${pathName}/${fileName}`
 
 			const index = this.routes.push({
 				method: 'STATIC',
@@ -101,7 +125,8 @@ export default class routeList {
 					file
 				}
 			}); if (preload) this.routes[index].data.content = fs.readFileSync(file)
-		}
+			arrayIndexes.push(index)
+		}; return arrayIndexes
 	}
 
 	/** Load External Function Files */
@@ -109,6 +134,7 @@ export default class routeList {
 		/** The Location of the Folder to load from */ folder: string
 	) {
 		const files = getAllFilesFilter(folder, '.js')
+		let arrayIndexes: number[] = []
 
 		for (const file of files) {
 			const route: route & { type: typesInterface } = require(path.resolve(file))
@@ -120,7 +146,7 @@ export default class routeList {
 			) continue
 			if (!types.includes(route.type)) throw TypeError(`No Valid Request Type: ${route.type}\nPossible Values: ${types.join(', ')}`)
 
-			this.routes.push({
+			arrayIndexes.push(this.routes.push({
 				method: route.type,
 				path: route.path,
 				pathArray: route.path.split('/'),
@@ -128,11 +154,11 @@ export default class routeList {
 				data: {
 					addTypes: false
 				}
-			})
-		}
+			}))
+		}; return arrayIndexes
 	}
 
-	/** Internal Function to access all routes as Array */
+	/** Internal Function to access all Routes & Events as Array */
 	list() {
 		return { routes: this.routes, events: this.events }
 	}

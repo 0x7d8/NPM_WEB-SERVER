@@ -2,6 +2,7 @@ import { types as typesInterface } from "../interfaces/types";
 import route from "../interfaces/route";
 import event, { events as eventsType } from "../interfaces/event";
 import ctr from "../interfaces/ctr";
+export declare const pathParser: (path: string) => string;
 interface staticOptions {
     /**
      * If true then files will be loaded into RAM
@@ -32,21 +33,21 @@ export default class routeList {
     /** Set An Event Manually */
     event(
     /** The Event Name */ event: eventsType, 
-    /** The Async Code to run on a Request */ code: (ctr: ctr) => Promise<any>): void;
+    /** The Async Code to run on a Request */ code: (ctr: ctr) => Promise<any>): number | false;
     /** Set A Route Manually */
     set(
     /** The Request Method */ method: typesInterface, 
     /** The Path on which this will be available */ path: string, 
-    /** The Async Code to run on a Request */ code: (ctr: ctr) => Promise<any>): void;
+    /** The Async Code to run on a Request */ code: (ctr: ctr) => Promise<any>): number | false;
     /** Serve Static Files */
     static(
     /** The Path to serve the Files on */ path: string, 
     /** The Location of the Folder to load from */ folder: string, 
-    /** Additional Options */ options?: staticOptions): void;
+    /** Additional Options */ options?: staticOptions): number[];
     /** Load External Function Files */
     load(
-    /** The Location of the Folder to load from */ folder: string): void;
-    /** Internal Function to access all routes as Array */
+    /** The Location of the Folder to load from */ folder: string): number[];
+    /** Internal Function to access all Routes & Events as Array */
     list(): {
         routes: route[];
         events: event[];
