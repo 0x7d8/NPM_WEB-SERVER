@@ -64,7 +64,7 @@ export default class routeList {
 		return this.events.push({
 			event: event,
 			code: code
-		})
+		}) - 1
 	}
 
 	/** Set A Route Manually */
@@ -86,7 +86,7 @@ export default class routeList {
 			data: {
 				addTypes: false
 			}
-		})
+		}) - 1
 	}
 
 	/** Serve Static Files */
@@ -119,13 +119,13 @@ export default class routeList {
 				method: 'STATIC',
 				path: urlName,
 				pathArray: urlName.split('/'),
-				code: async() => null,
+				code: async() => undefined,
 				data: {
 					addTypes,
 					file
 				}
-			}); if (preload) this.routes[index].data.content = fs.readFileSync(file)
-			arrayIndexes.push(index)
+			}); if (preload) this.routes[index - 1].data.content = fs.readFileSync(file)
+			arrayIndexes.push(index - 1)
 		}; return arrayIndexes
 	}
 
@@ -137,14 +137,14 @@ export default class routeList {
 		let arrayIndexes: number[] = []
 
 		for (const file of files) {
-			const route: route & { type: typesInterface } = require(path.resolve(file))
+			const route: route = require(path.resolve(file))
 
 			if (
 				!('path' in route) ||
 				!('method' in route) ||
 				!('code' in route)
 			) continue
-			if (!types.includes(route.type)) throw TypeError(`No Valid Request Type: ${route.method}\nPossible Values: ${types.join(', ')}`)
+			if (!types.includes(route.method)) throw TypeError(`No Valid Request Type: ${route.method}\nPossible Values: ${types.join(', ')}`)
 
 			arrayIndexes.push(this.routes.push({
 				method: route.method,
@@ -154,7 +154,7 @@ export default class routeList {
 				data: {
 					addTypes: false
 				}
-			}))
+			})) - 1
 		}; return arrayIndexes
 	}
 
