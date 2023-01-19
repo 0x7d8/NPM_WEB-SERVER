@@ -103,15 +103,17 @@ export default class routeList {
 		let arrayIndexes: number[] = []
 
 		for (const file of getAllFiles(folder)) {
-			let pathInfos = path.parse(file.replace(folder, ''))
-			if (remHTML && pathInfos.base === 'index.html') pathInfos.base = ''
-			else if (remHTML && pathInfos.ext === '.html') pathInfos.base = pathInfos.base.slice(0, -5)
-			else if (remHTML && pathInfos.ext === '.htm') pathInfos.base = pathInfos.base.slice(0, -4)
+			let fileName = file.replace(folder, '').replace('/', '')
+			const pathName = path + folder.replace(fileName, '').replace(folder, '').slice(0, -1)
+			if (remHTML && fileName === 'index.html') fileName = ''
+			else if (remHTML && fileName.endsWith('.html')) fileName.slice(0, -5)
+			else if (remHTML && fileName.endsWith('.htm')) fileName.slice(0, -4)
+			const urlName = pathParser(`${pathName}/${fileName}`)
 
 			const index = this.routes.push({
 				method: 'STATIC',
-				path: path.join(pathInfos.dir, pathInfos.base),
-				pathArray: path.join(pathInfos.dir, pathInfos.base).split('/'),
+				path: urlName,
+				pathArray: urlName.split('/'),
 				code: async() => undefined,
 				data: {
 					addTypes,
