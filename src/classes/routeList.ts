@@ -132,7 +132,7 @@ export default class routeList {
 		let arrayIndexes: number[] = []
 
 		for (const file of files) {
-			const route: route = require(path.resolve(file))
+			const route: route = require(path.resolve(file).replace('\\', '/'))
 
 			if (
 				!('path' in route) ||
@@ -144,7 +144,7 @@ export default class routeList {
 			arrayIndexes.push(this.routes.push({
 				method: route.method,
 				path: pathParser(route.path),
-				pathArray: route.path.split('/'),
+				pathArray: pathParser(route.path).split('/'),
 				code: route.code,
 				data: {
 					addTypes: false
