@@ -3,13 +3,13 @@ const webserver = require('rjweb-server')
 const routes = new webserver.routeList()
 const path = require('path')
 
-routes.load(path.join(__dirname, 'endpoints'))
+routes.static(path.join(__dirname, 'static'))
 
 webserver.start({
 	bind: '0.0.0.0',
-	cors: true,
+	cors: false,
 	port: 5000,
 	routes: routes
 }).then((res) => {
-	console.log(`api started on port ${res.port}`)
+	console.log(`website started on port ${res.port}`)
 })

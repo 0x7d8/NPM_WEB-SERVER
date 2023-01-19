@@ -143,7 +143,7 @@ export default class routeList {
 
 			arrayIndexes.push(this.routes.push({
 				method: route.method,
-				path: route.path,
+				path: pathParser(route.path),
 				pathArray: route.path.split('/'),
 				code: route.code,
 				data: {

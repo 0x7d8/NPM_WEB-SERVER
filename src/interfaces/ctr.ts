@@ -27,6 +27,8 @@ export default interface ctr<Custom = any, HasError = false, Body = any> {
 	/** A Map of all Queries */ readonly queries: Map<string, string>
 
 	/** Client Infos */ readonly client: {
+		/** The User Agent of the Client */ readonly userAgent: string
+		/** The HTTP Version that the Client is using */ readonly httpVersion: string
 		/** The Port that the Client is using */ readonly port: number
 		/** The Ip that the Client is using */ readonly ip: string
 	}

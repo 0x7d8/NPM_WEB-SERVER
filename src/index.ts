@@ -265,6 +265,8 @@ export = {
 
 					// Variables
 					client: {
+						userAgent: req.headers['user-agent'],
+						httpVersion: req.httpVersion,
 						port: req.socket.remotePort,
 						ip: hostIp
 					}, body: reqBody,
