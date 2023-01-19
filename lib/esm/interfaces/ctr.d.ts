@@ -38,7 +38,7 @@ export default interface ctr<Custom = any, HasError = false, Body = any> {
     /** The Raw HTTP Server Req Variable */ rawReq: IncomingMessage;
     /** The Raw HTTP Server Res Variable */ rawRes: ServerResponse;
     /** The Error from the Request */ error?: HasError extends true ? Error : undefined;
-    /** Set an HTTP Header to add */ setHeader: (name: string, value: string) => ctr;
+    /** Set an HTTP Header to add */ setHeader: (name: string, value: string | number) => ctr;
     /** Set a Custom Variable */ setCustom: <Type extends keyof Custom>(name: Type, value: Custom[Type]) => ctr;
     /** Print a Message to the Client (automatically Formatted) */ print: (msg: any, options?: printOptions) => ctr;
     /** The Request Status to Send */ status: (code: number) => ctr;

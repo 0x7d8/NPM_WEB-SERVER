@@ -94,7 +94,7 @@ export = {
 						ctr.rawRes.end()
 					} else {
 						// Custom Error
-						Promise.resolve(event.code(ctr as unknown as ctr<{}, true>)).catch((e) => {
+						Promise.resolve(event.code(ctr as any as ctr<any, true>)).catch((e) => {
 							console.log(e)
 							ctr.status(500)
 							ctr.rawRes.write('An Error occured in your Error Event (what the hell?)\n')
