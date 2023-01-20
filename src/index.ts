@@ -191,8 +191,9 @@ export = {
 				let params = new Map()
 				let exists: boolean, isStatic = false
 				const actualUrl = reqUrl.pathname.split('/')
-				for (let urlNumber = 0; urlNumber <= routes.length; urlNumber++) {
+				for (let urlNumber = 0; urlNumber <= routes.length - 1; urlNumber++) {
 					const url = routes[urlNumber]
+					console.log(url)
 
 					// Check for Static Paths
 					if (url.path === reqUrl.pathname && url.method === req.method) {
@@ -201,7 +202,7 @@ export = {
 						exists = true
 
 						break
-					} else if (url.path === reqUrl.pathname && url.method === 'STATIC') {
+					}; if (url.path === reqUrl.pathname && url.method === 'STATIC') {
 						executeUrl = urlNumber
 						isStatic = true
 						exists = true
@@ -213,7 +214,7 @@ export = {
 					if (url.pathArray.length !== actualUrl.length) continue
 					if (exists) break
 
-					for (let partNumber = 0; partNumber <= url.pathArray.length; partNumber++) {
+					for (let partNumber = 0; partNumber <= url.pathArray.length - 1; partNumber++) {
 						const urlParam = url.pathArray[partNumber]
 						const reqParam = actualUrl[partNumber]
 
