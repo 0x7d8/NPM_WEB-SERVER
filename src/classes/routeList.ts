@@ -103,7 +103,7 @@ export default class routeList {
 		let arrayIndexes: number[] = []
 
 		for (const file of getAllFiles(folder)) {
-			let fileName = file.replace(folder, '').replace('/', '')
+			let fileName = file.replace(folder, '').replace('/', '').replace('\\', '/')
 			const pathName = urlPath + folder.replace(fileName, '').replace(folder, '').slice(0, -1)
 			if (remHTML && fileName === 'index.html') fileName = ''
 			else if (remHTML && fileName.endsWith('.html')) fileName.slice(0, -5)
@@ -132,7 +132,7 @@ export default class routeList {
 		let arrayIndexes: number[] = []
 
 		for (const file of files) {
-			const route: route = require(path.resolve(file).replace('\\', '/'))
+			const route: route = require(path.resolve(file))
 
 			if (
 				!('path' in route) ||
@@ -149,7 +149,7 @@ export default class routeList {
 				data: {
 					addTypes: false
 				}
-			})) - 1
+			}) - 1)
 		}; return arrayIndexes
 	}
 

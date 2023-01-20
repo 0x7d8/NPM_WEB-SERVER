@@ -156,7 +156,7 @@ export = {
 		const server = http.createServer(async(req, res) => {
 			let reqBody = ''
 
-			if (!!req.headers['content-length']) {
+			if (req.headers['content-length']) {
 				const bodySize = Number(req.headers['content-length'])
 
 				if (bodySize >= (body * 1e6)) {
@@ -170,7 +170,8 @@ export = {
 				reqBody += data
 			}).on('end', async() => {
 				let reqUrl = { ...url.parse(req.url), method: req.method as any }
-				reqUrl.path = pathParser(reqUrl.path)
+				reqUrl.path = pathParser(reqUrl.path); reqUrl.pathname = pathParser(reqUrl.pathname)
+				console.log(reqUrl)
 				let executeUrl: number
 
 				// Parse Request Body
@@ -191,7 +192,6 @@ export = {
 				let params = new Map()
 				let exists: boolean, isStatic = false
 				const actualUrl = reqUrl.pathname.split('/')
-				if (actualUrl[actualUrl.length - 1] === '') actualUrl.pop()
 				for (let urlNumber = 1; urlNumber <= routes.length - 1; urlNumber++) {
 					const url = routes[urlNumber]
 
@@ -212,9 +212,9 @@ export = {
 
 					if (url.method !== req.method) continue
 					if (url.pathArray.length !== actualUrl.length) continue
-					if (exists && url.path !== routes[executeUrl].path) break
+					if (exists) break
 
-					for (let partNumber = 1; partNumber <= url.pathArray.length - 1; partNumber++) {
+					for (let partNumber = 0; partNumber <= url.pathArray.length; partNumber++) {
 						const urlParam = url.pathArray[partNumber]
 						const reqParam = actualUrl[partNumber]
 
@@ -429,7 +429,7 @@ export = {
 		server.listen(port, bind)
 		return new Promise((resolve, reject) => {
 			server.once('listening', () => resolve({ success: true, port, message: 'WEBSERVER STARTED', rawServer: server }))
-			server.once('error', (error) => reject({ success: false, error, message: 'WEBSERVER ERRORED' }))
+			server.once('error', (error) => { server.close(); reject({ success: false, error, message: 'WEBSERVER ERRORED' }) })
 		}) as Promise<{ success: boolean, port?: number, error?: Error, message: string, rawServer?: typeof server }>
 	}
 }
