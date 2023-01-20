@@ -171,7 +171,6 @@ export = {
 			}).on('end', async() => {
 				let reqUrl = { ...url.parse(req.url), method: req.method as any }
 				reqUrl.path = pathParser(reqUrl.path); reqUrl.pathname = pathParser(reqUrl.pathname)
-				console.log(reqUrl)
 				let executeUrl: number
 
 				// Parse Request Body
