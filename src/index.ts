@@ -191,7 +191,7 @@ export = {
 				let params = new Map()
 				let exists: boolean, isStatic = false
 				const actualUrl = reqUrl.pathname.split('/')
-				for (let urlNumber = 1; urlNumber <= routes.length - 1; urlNumber++) {
+				for (let urlNumber = 0; urlNumber <= routes.length; urlNumber++) {
 					const url = routes[urlNumber]
 
 					// Check for Static Paths
