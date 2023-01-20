@@ -193,7 +193,6 @@ export = {
 				const actualUrl = reqUrl.pathname.split('/')
 				for (let urlNumber = 0; urlNumber <= routes.length - 1; urlNumber++) {
 					const url = routes[urlNumber]
-					console.log(url)
 
 					// Check for Static Paths
 					if (url.path === reqUrl.pathname && url.method === req.method) {
