@@ -39,7 +39,7 @@ export = {
 
 		const cacheMap = new Map<string, Buffer>()
 
-		const eventHandler = async(event: eventsType, ctr: ctr) => {
+		const eventHandler = async(event: eventsType, ctr: ctr, ctx: LocalContext) => {
 			switch (event) {
 				case "error": {
 					const event = events.find((event) => (event.event === 'error'))
@@ -47,19 +47,15 @@ export = {
 					if (!event) {
 						// Default Error
 						console.log(ctr.error)
-						ctr.rawRes.write('An Error occurred\n')
-						ctr.rawRes.write((ctr.error as Error).stack)
 						ctr.status(500)
-						ctr.rawRes.end()
+						ctx.content = Buffer.from(`An Error occured\n${(ctr.error as Error).stack}`)
 					} else {
 						// Custom Error
 						Promise.resolve(event.code(ctr as any as ctr<any, true>)).catch((e) => {
 							console.log(e)
 							ctr.status(500)
-							ctr.rawRes.write('An Error occured in your Error Event (what the hell?)\n')
-							ctr.rawRes.write(e.stack)
-							ctr.rawRes.end()
-						}).then(() => ctr.rawRes.end())
+							ctx.content = Buffer.from(`An Error occured in your Error Event (what the hell?)\n${e.stack}`)
+						})
 					}
 				}
 
@@ -74,9 +70,7 @@ export = {
 
 							console.log(e)
 							ctr.status(500)
-							ctr.rawRes.write('An Error occured in your Request Event\n')
-							ctr.rawRes.write(e.stack)
-							ctr.rawRes.end()
+							ctx.content = Buffer.from(`An Error occured in your Request Event\n${e.stack}`)
 						})
 					}; return errorStop
 				}
@@ -94,8 +88,7 @@ export = {
 						}
 
 						ctr.status(404)
-						ctr.rawRes.write(`[!] COULDNT FIND ${ctr.url.pathname.toUpperCase()}\n[i] AVAILABLE PAGES:\n\n${pageDisplay}`)
-						ctr.rawRes.end()
+						ctx.content = Buffer.from(`[!] COULDNT FIND ${ctr.url.pathname.toUpperCase()}\n[i] AVAILABLE PAGES:\n\n${pageDisplay}`)
 					} else {
 						// Custom NotFound
 						await Promise.resolve(event.code(ctr as unknown as ctr)).catch((e) => {
@@ -103,10 +96,8 @@ export = {
 
 							console.log(e)
 							ctr.status(500)
-							ctr.rawRes.write('An Error occured in your NotFound Event\n')
-							ctr.rawRes.write(e.stack)
-							ctr.rawRes.end()
-						}).then(() => ctr.rawRes.end())
+							ctx.content = Buffer.from(`An Error occured in your Notfound Event\n${e.stack}`)
+						})
 					}; return errorStop
 				}
 			}
@@ -287,7 +278,7 @@ export = {
 								ctx.waiting = true; (async() => {
 									const result = await msg()
 									if (typeof result !== 'function') ctr.print(result, { niceJSON })
-									else { (ctr as any).error = new Error('Cant return functions from functions, consider using async/await'); return eventHandler('error', ctr) }
+									else { (ctr as any).error = new Error('Cant return functions from functions, consider using async/await'); return eventHandler('error', ctr, ctx) }
 									const parsedResult = ctx.content
 
 									ctx.content = parsedResult
@@ -327,7 +318,7 @@ export = {
 						// Get File Content
 						let stream: fs.ReadStream, errorStop = false
 						try { stream = fs.createReadStream(file); ctx.waiting = true; stream.pipe(res) }
-						catch (e) { errorStop = true; ctr.error = e; eventHandler('error', ctr) }
+						catch (e) { errorStop = true; ctr.error = e; eventHandler('error', ctr, ctx) }
 
 						if (errorStop) return ctr
 
@@ -343,7 +334,7 @@ export = {
 				}
 
 				// Execute Custom Run Function
-				let errorStop = await eventHandler('request', ctr)
+				let errorStop = await eventHandler('request', ctr, ctx)
 				if (errorStop) return
 
 				// Rate Limiting
@@ -378,7 +369,7 @@ export = {
 						await Promise.resolve(ctx.execute.route.code(ctr)).catch((e) => {
 							ctr.error = e
 							errorStop = true
-							eventHandler('error', ctr)
+							eventHandler('error', ctr, ctx)
 						})
 					} else {
 						// Add Content Types
@@ -401,7 +392,7 @@ export = {
 							// Get File Content
 							let stream: fs.ReadStream, errorStop = false
 							try { stream = fs.createReadStream(filePath); ctx.waiting = true; stream.pipe(res) }
-							catch (e) { errorStop = true; ctr.error = e; eventHandler('error', ctr) }
+							catch (e) { errorStop = true; ctr.error = e; eventHandler('error', ctr, ctx) }
 
 							if (errorStop) return ctr
 
@@ -418,7 +409,7 @@ export = {
 						ctx.events.once('noWaiting', () => resolve(false))
 					}); res.end(ctx.content, 'binary')
 				} else {
-					eventHandler('notfound', ctr)
+					eventHandler('notfound', ctr, ctx)
 				}
 			})
 		})
