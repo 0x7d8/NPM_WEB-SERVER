@@ -410,6 +410,12 @@ export = {
 					}); res.end(ctx.content, 'binary')
 				} else {
 					eventHandler('notfound', ctr, ctx)
+
+					// Wait for Streams
+					await new Promise((resolve) => {
+						if (!ctx.waiting) return resolve(true)
+						ctx.events.once('noWaiting', () => resolve(false))
+					}); res.end(ctx.content, 'binary')
 				}
 			})
 		})
