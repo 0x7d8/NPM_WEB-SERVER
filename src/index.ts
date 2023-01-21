@@ -1,8 +1,10 @@
 import ctr from "./interfaces/ctr"
 import routeList, { pathParser } from "./classes/routeList"
-import rateLimitRule from "./interfaces/ratelimitRule"
+import serverOptions, { Options } from "./classes/serverOptions"
 import typesEnum from "./interfaces/types"
 import { events as eventsType } from "./interfaces/event"
+import route from "./interfaces/route"
+import { EventEmitter } from "stream"
 import types from "./misc/types"
 
 import * as path from "path"
@@ -10,51 +12,15 @@ import * as http from "http"
 import * as url from "url"
 import * as fs from "fs"
 
-interface startOptions {
-	/** The Routes for the Server */ routes: routeList
-	/** RateLimit Settings */ rateLimits?: {
-		/**
-		 * Whether Ratelimits are enabled
-		 * @default false
-		*/ enabled?: boolean
-		/**
-		 * The Message that gets sent when a ratelimit maxes out
-		 * @default "Rate Limited"
-		*/ message?: any
-		/**
-		 * The List of Ratelimit Rules
-		 * @default []
-		*/ list?: rateLimitRule[]
-		/** The RateLimit Functions */ functions: {
-			set: (key: string, value: number) => Promise<any>
-			get: (key: string) => Promise<number>
-		} | Map<string, number>
+interface LocalContext {
+	/** The Content to Write */ content: Buffer
+	/** The Event Emitter */ events: EventEmitter
+	/** Whether something is Streaming */ waiting: boolean
+	/** The Execute URL Object */ execute: {
+		/** The Route Object that was found */ route: route
+		/** Whether the Route is Static */ static: boolean
+		/** Whether the Route exists */ exists: boolean
 	}
-
-	/**
-	 * Where the Server should bind to
-	 * @default "0.0.0.0"
-	*/ bind?: string
-	/**
-	 * Whether X-Forwarded-For will be shown as hostIp
-	 * @default false
-	*/ proxy?: boolean
-	/**
-	 * Whether all cors headers are set
-	 * @default false
-	*/ cors?: boolean
-	/**
-	 * Where the Server should start at
-	 * @default 2023
-	*/ port?: number
-	/**
-	 * The Maximum Body Size in MB
-	 * @default 20
-	*/ maxBody?: number
-	/**
-	 * Add X-Powered-By Header
-	 * @default true
-	*/ poweredBy?: boolean
 }
 
 export = {
@@ -66,17 +32,10 @@ export = {
 
 	/** Start The Webserver */
 	async start(
-		/** Required Options */ options: startOptions
+		/** Required Options */ options: Options
 	) {
-		const routes = options?.routes?.list().routes ?? []
-		const events = options?.routes?.list().events ?? []
-		const proxy = options?.proxy ?? false
-		const rateLimits = options?.rateLimits ?? { enabled: false, list: [] }
-		const bind = options?.bind ?? '0.0.0.0'
-		const cors = options?.cors ?? false
-		const port = options?.port ?? 2023
-		const body = options?.maxBody ?? 20
-		const poweredBy = options?.poweredBy ?? true
+		options = new serverOptions(options).getOptions()
+		const { routes, events } = options.routes.list()
 
 		const cacheMap = new Map<string, Buffer>()
 
@@ -156,22 +115,23 @@ export = {
 		const server = http.createServer(async(req, res) => {
 			let reqBody = ''
 
+			// Get Body Size
 			if (req.headers['content-length']) {
 				const bodySize = Number(req.headers['content-length'])
 
-				if (bodySize >= (body * 1e6)) {
+				if (bodySize >= (options.maxBody * 1e6)) {
 					res.statusCode = 413
 					res.write('Payload Too Large')
 					return res.end()
 				}
 			}
 
+			// Save Request Body
 			req.on('data', (data: string) => {
 				reqBody += data
 			}).on('end', async() => {
 				let reqUrl = { ...url.parse(req.url), method: req.method as any }
 				reqUrl.path = pathParser(reqUrl.path); reqUrl.pathname = pathParser(reqUrl.pathname)
-				let executeUrl: number
 
 				// Parse Request Body
 				try {
@@ -179,7 +139,7 @@ export = {
 				} catch (e) { }
 
 				// Cors Stuff
-				if (cors) {
+				if (options.cors) {
 					res.setHeader('Access-Control-Allow-Headers', '*')
 					res.setHeader('Access-Control-Allow-Origin', '*')
 					res.setHeader('Access-Control-Request-Method', '*')
@@ -187,32 +147,45 @@ export = {
 					if (req.method === 'OPTIONS') return res.end('')
 				}
 
+				// Create Local ConTeXt
+				let ctx: LocalContext = {
+					content: Buffer.from(''),
+					events: new EventEmitter(),
+					waiting: false,
+					execute: {
+						route: null,
+						static: false,
+						exists: false
+					}
+				}; ctx.events.on('noWaiting', () => ctx.waiting = false)
+				res.once('close', () => ctx.events.emit('endRequest'))
+
 				// Check if URL exists
 				let params = new Map()
-				let exists: boolean, isStatic = false
 				const actualUrl = reqUrl.pathname.split('/')
 				for (let urlNumber = 0; urlNumber <= routes.length - 1; urlNumber++) {
 					const url = routes[urlNumber]
 
 					// Check for Static Paths
 					if (url.path === reqUrl.pathname && url.method === req.method) {
-						executeUrl = urlNumber
-						isStatic = false
-						exists = true
+						ctx.execute.route = routes[urlNumber]
+						ctx.execute.static = false
+						ctx.execute.exists = true
 
 						break
 					}; if (url.path === reqUrl.pathname && url.method === 'STATIC') {
-						executeUrl = urlNumber
-						isStatic = true
-						exists = true
+						ctx.execute.route = routes[urlNumber]
+						ctx.execute.static = true
+						ctx.execute.exists = true
 
 						break
 					}
 
 					if (url.method !== req.method) continue
 					if (url.pathArray.length !== actualUrl.length) continue
-					if (exists) break
+					if (ctx.execute.exists) break
 
+					// Check Parameters
 					for (let partNumber = 0; partNumber <= url.pathArray.length - 1; partNumber++) {
 						const urlParam = url.pathArray[partNumber]
 						const reqParam = actualUrl[partNumber]
@@ -221,8 +194,8 @@ export = {
 						if (urlParam === reqParam) continue
 						else if (urlParam.startsWith(':')) {
 							params.set(urlParam.replace(':', ''), decodeURIComponent(reqParam))
-							executeUrl = urlNumber
-							exists = true
+							ctx.execute.route = routes[urlNumber]
+							ctx.execute.exists = true
 
 							continue
 						}; continue
@@ -231,7 +204,7 @@ export = {
 
 				// Get Correct Host IP
 				let hostIp: string
-				if (proxy && req.headers['x-forwarded-for']) hostIp = req.headers['x-forwarded-for'] as string
+				if (options.proxy && req.headers['x-forwarded-for']) hostIp = req.headers['x-forwarded-for'] as string
 				else hostIp = req.socket.remoteAddress
 
 				// Create ConText Response Object
@@ -240,12 +213,12 @@ export = {
 					headers.set(header, req.headers[header])
 				}); headers.delete('cookie')
 				const queries = new Map()
-				for (const [query, value] of new URLSearchParams(reqUrl.search)) {
-					queries.set(query, value)
+				for (const [ query, value ] of new URLSearchParams(reqUrl.search)) {
+					queries.set(query, decodeURIComponent(value))
 				}; const cookies = new Map()
 				if (req.headers.cookie) {
 					req.headers.cookie.split(';').forEach((cookie: string) => {
-						let [name, ...rest] = cookie.split('=')
+						let [ name, ...rest ] = cookie.split('=')
 						name = name?.trim()
 						if (!name) return
 						const value = rest.join('=').trim()
@@ -254,7 +227,7 @@ export = {
 					})
 				}
 
-				if (poweredBy) res.setHeader('X-Powered-By', 'rjweb-server')
+				if (options.poweredBy) res.setHeader('X-Powered-By', 'rjweb-server')
 				let ctr: ctr = {
 					// Properties
 					headers,
@@ -290,34 +263,40 @@ export = {
 						const niceJSON = options?.niceJSON ?? false
 
 						switch (typeof msg) {
-							case 'object':
+							case "object":
 								res.setHeader('Content-Type', 'application/json')
-								if (niceJSON) res.write(JSON.stringify(msg, undefined, 1))
-								else res.write(JSON.stringify(msg))
+								if (niceJSON) ctx.content = Buffer.from(JSON.stringify(msg, undefined, 1))
+								else ctx.content = Buffer.from(JSON.stringify(msg))
 								break
 
-							case 'bigint':
-							case 'number':
-							case 'boolean':
-								res.write(msg.toString())
+							case "string":
+								ctx.content = Buffer.from(msg)
 								break
 
-							case 'function':
-								res.write(msg())
+							case "symbol":
+								ctx.content = Buffer.from(msg.toString())
 								break
 
-							case 'undefined':
-								res.write('')
+							case "bigint":
+							case "number":
+							case "boolean":
+								ctx.content = Buffer.from(String(msg))
 								break
 
-							default:
-								try {
-									res.write(msg)
-								} catch (e) {
-									ctr.error = e
-									errorStop = true
-									eventHandler('error', ctr)
-								}
+							case "function":
+								ctx.waiting = true; (async() => {
+									const result = await msg()
+									if (typeof result !== 'function') ctr.print(result, { niceJSON })
+									else { (ctr as any).error = new Error('Cant return functions from functions, consider using async/await'); return eventHandler('error', ctr) }
+									const parsedResult = ctx.content
+
+									ctx.content = parsedResult
+									ctx.events.emit('noWaiting')
+								}) (); break
+
+							case "undefined":
+								ctx.content = Buffer.from('')
+								break
 						}; return ctr
 					}, status(code) {
 						res.statusCode = code
@@ -341,18 +320,24 @@ export = {
 
 						// Check Cache
 						if (cacheMap.has(file)) {
-							res.write(cacheMap.get(file), 'binary')
+							ctx.content = (cacheMap.get(file))
 							return ctr
 						}
 
 						// Get File Content
-						let content: Buffer, errorStop = false
-						try { content = fs.readFileSync(file) }
+						let stream: fs.ReadStream, errorStop = false
+						try { stream = fs.createReadStream(file); ctx.waiting = true; stream.pipe(res) }
 						catch (e) { errorStop = true; ctr.error = e; eventHandler('error', ctr) }
 
 						if (errorStop) return ctr
-						if (cache) cacheMap.set(file, content)
-						res.write(content, 'binary')
+
+						// Write to Cache Map
+						stream.on('data', (content: Buffer) => {
+							const oldData = cacheMap.get(file) ?? Buffer.from('')
+							if (cache) cacheMap.set(file, Buffer.concat([ oldData, content ]))
+						}); stream.once('end', () => ctx.events.emit('noWaiting'))
+						res.once('close', () => stream.close())
+
 						return ctr
 					}
 				}
@@ -362,19 +347,19 @@ export = {
 				if (errorStop) return
 
 				// Rate Limiting
-				if (rateLimits.enabled) {
-					for (const rule of rateLimits.list) {
+				if (options.rateLimits.enabled) {
+					for (const rule of options.rateLimits.list) {
 						if (reqUrl.path.startsWith(rule.path)) {
 							res.setHeader('X-RateLimit-Limit', rule.times)
-							res.setHeader('X-RateLimit-Remaining', rule.times - (await rateLimits.functions.get(hostIp + rule.path) ?? 0))
+							res.setHeader('X-RateLimit-Remaining', rule.times - (await options.rateLimits.functions.get(hostIp + rule.path) ?? 0))
 							res.setHeader('X-RateLimit-Reset-Every', rule.timeout)
 
-							await rateLimits.functions.set(hostIp + rule.path, (await rateLimits.functions.get(hostIp + rule.path) ?? 0) + 1)
-							setTimeout(async() => { await rateLimits.functions.set(hostIp + rule.path, (await rateLimits.functions.get(hostIp + rule.path) ?? 0) - 1) }, rule.timeout)
-							if (await rateLimits.functions.get(hostIp + rule.path) > rule.times) {
+							await options.rateLimits.functions.set(hostIp + rule.path, (await options.rateLimits.functions.get(hostIp + rule.path) ?? 0) + 1)
+							setTimeout(async() => { await options.rateLimits.functions.set(hostIp + rule.path, (await options.rateLimits.functions.get(hostIp + rule.path) ?? 0) - 1) }, rule.timeout)
+							if (await options.rateLimits.functions.get(hostIp + rule.path) > rule.times) {
 								res.statusCode = 429
 								errorStop = true
-								ctr.print(rateLimits.message ?? 'Rate Limited')
+								ctr.print(options.rateLimits.message ?? 'Rate Limited')
 								return res.end()
 							}
 						}
@@ -382,52 +367,65 @@ export = {
 				}
 
 				// Execute Page
-				if (exists && !errorStop) {
-					if (!isStatic) {
-						Promise.resolve(routes[executeUrl].code(ctr)).catch((e) => {
+				if (await new Promise((resolve) => {
+					if (!ctx.waiting) return resolve(false)
+					ctx.events.once('noWaiting', () => resolve(false))
+					ctx.events.once('endRequest', () => resolve(true))
+				})) return
+
+				if (ctx.execute.exists && !errorStop) {
+					if (!ctx.execute.static) {
+						await Promise.resolve(ctx.execute.route.code(ctr)).catch((e) => {
 							ctr.error = e
 							errorStop = true
 							eventHandler('error', ctr)
-						}).then(() => res.end())
+						})
 					} else {
 						// Add Content Types
-						if (routes[executeUrl].data.addTypes) {
-							if (routes[executeUrl].path.endsWith('.pdf')) ctr.setHeader('Content-Type', 'application/pdf')
-							if (routes[executeUrl].path.endsWith('.js')) ctr.setHeader('Content-Type', 'text/javascript')
-							if (routes[executeUrl].path.endsWith('.html')) ctr.setHeader('Content-Type', 'text/html')
-							if (routes[executeUrl].path.endsWith('.css')) ctr.setHeader('Content-Type', 'text/css')
-							if (routes[executeUrl].path.endsWith('.csv')) ctr.setHeader('Content-Type', 'text/csv')
-							if (routes[executeUrl].path.endsWith('.mpeg')) ctr.setHeader('Content-Type', 'video/mpeg')
-							if (routes[executeUrl].path.endsWith('.mp4')) ctr.setHeader('Content-Type', 'video/mp4')
-							if (routes[executeUrl].path.endsWith('.webm')) ctr.setHeader('Content-Type', 'video/webm')
-							if (routes[executeUrl].path.endsWith('.bmp')) ctr.setHeader('Content-Type', 'image/bmp')
+						if (ctx.execute.route.data.addTypes) {
+							if (ctx.execute.route.path.endsWith('.pdf')) ctr.setHeader('Content-Type', 'application/pdf')
+							if (ctx.execute.route.path.endsWith('.js')) ctr.setHeader('Content-Type', 'text/javascript')
+							if (ctx.execute.route.path.endsWith('.html')) ctr.setHeader('Content-Type', 'text/html')
+							if (ctx.execute.route.path.endsWith('.css')) ctr.setHeader('Content-Type', 'text/css')
+							if (ctx.execute.route.path.endsWith('.csv')) ctr.setHeader('Content-Type', 'text/csv')
+							if (ctx.execute.route.path.endsWith('.mpeg')) ctr.setHeader('Content-Type', 'video/mpeg')
+							if (ctx.execute.route.path.endsWith('.mp4')) ctr.setHeader('Content-Type', 'video/mp4')
+							if (ctx.execute.route.path.endsWith('.webm')) ctr.setHeader('Content-Type', 'video/webm')
+							if (ctx.execute.route.path.endsWith('.bmp')) ctr.setHeader('Content-Type', 'image/bmp')
 						}
 
 						// Read Content
-						if (!('content' in routes[executeUrl].data)) {
-							const filePath = path.resolve(routes[executeUrl].data.file)
+						if (!('content' in ctx.execute.route.data)) {
+							const filePath = path.resolve(ctx.execute.route.data.file)
 
-							let content: Buffer, errorStop = false
-							try { content = fs.readFileSync(filePath) }
+							// Get File Content
+							let stream: fs.ReadStream, errorStop = false
+							try { stream = fs.createReadStream(filePath); ctx.waiting = true; stream.pipe(res) }
 							catch (e) { errorStop = true; ctr.error = e; eventHandler('error', ctr) }
 
-							if (errorStop) return
-							res.write(content, 'binary')
-							return res.end()
+							if (errorStop) return ctr
+
+							stream.once('end', () => ctx.events.emit('noWaiting'))
+							res.once('close', () => stream.close())
 						}
 
-						res.write(routes[executeUrl].data.content, 'binary')
-						return res.end()
+						ctx.content = ctx.execute.route.data.content
 					}
+
+					// Wait for Streams
+					await new Promise((resolve) => {
+						if (!ctx.waiting) return resolve(true)
+						ctx.events.once('noWaiting', () => resolve(false))
+					}); res.end(ctx.content, 'binary')
 				} else {
 					eventHandler('notfound', ctr)
 				}
 			})
 		})
 
-		server.listen(port, bind)
+		server.listen(options.port, options.bind)
 		return new Promise((resolve, reject) => {
-			server.once('listening', () => resolve({ success: true, port, message: 'WEBSERVER STARTED', rawServer: server }))
+			server.once('listening', () => resolve({ success: true, port: options.port, message: 'WEBSERVER STARTED', rawServer: server }))
 			server.once('error', (error) => { server.close(); reject({ success: false, error, message: 'WEBSERVER ERRORED' }) })
 		}) as Promise<{ success: boolean, port?: number, error?: Error, message: string, rawServer?: typeof server }>
 	}

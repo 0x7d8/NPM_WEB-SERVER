@@ -151,8 +151,36 @@ routes.set(webserver.types.post, '/post', async(ctr) => {
 })
 
 routes.set(webserver.types.get, '/profile/:user', async(ctr) => {
-  ctr.setHeader('Content-Type', 'image/png')
-  return ctr.printFile(`../images/profile/${ctr.params.get('user')}.png`)
+  return ctr.printFile(`../images/profile/${ctr.params.get('user')}.png`, { addTypes: true })
+})
+
+webserver.start({
+  bind: '0.0.0.0', // The IP thats bound to
+  body: 20, // The Max POST Body in MB
+  cors: false, // If Cors Headers will be added
+  port: 5000, // The Port which the Server runs on
+  routes: routes, // The Routes Object
+  proxy: true // If enabled, alternate IPs will be shown
+}).then((res) => {
+  console.log(`webserver started on port ${res.port}`)
+}).catch((err) => {
+  console.log(err)
+})
+```
+
+Print Promises
+```js
+const webserver = require('rjweb-server')
+const routes = new webserver.routeList()
+const wait = require('timers/promises').setTimeout
+
+// this request will load for 5 seconds and send the returned value
+const handleHello = async() => {
+  await wait(5000)
+  return 'You just waited 5 seconds !!'
+}
+routes.set(webserver.types.get, '/hello', async(ctr) => {
+  return ctr.print(handleHello)
 })
 
 webserver.start({
