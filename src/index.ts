@@ -223,26 +223,6 @@ export = {
 				for (let urlNumber = 0; urlNumber <= routes.length - 1; urlNumber++) {
 					const url = routes[urlNumber]
 
-					// Skip Common URLs
-					if (url.method !== 'STATIC' && url.method !== req.method) continue
-					if (url.method === 'STATIC' && req.method !== 'GET') continue
-					if (url.pathArray.length !== actualUrl.length) continue
-					if (ctx.execute.exists) break
-
-					// Check for Static Paths
-					if (url.path === reqUrl.pathname && url.method === req.method) {
-						ctx.execute.route = url
-						ctx.execute.exists = true
-
-						break
-					}; if (url.path === reqUrl.pathname && url.method === 'STATIC') {
-						ctx.execute.route = url
-						ctx.execute.static = true
-						ctx.execute.exists = true
-
-						break
-					}
-
 					// Check for Dashboard Path
 					if (options.dashboard.enabled && (reqUrl.pathname === pathParser(options.dashboard.path) || reqUrl.pathname === pathParser(options.dashboard.path) + '/stats')) {
 						ctx.execute.route = {
@@ -351,6 +331,26 @@ export = {
 						}; ctx.execute.static = false
 						ctx.execute.exists = true
 						ctx.execute.dashboard = true
+
+						break
+					}
+
+					// Skip Common URLs
+					if (url.method !== 'STATIC' && url.method !== req.method) continue
+					if (url.method === 'STATIC' && req.method !== 'GET') continue
+					if (url.pathArray.length !== actualUrl.length) continue
+					if (ctx.execute.exists) break
+
+					// Check for Static Paths
+					if (url.path === reqUrl.pathname && url.method === req.method) {
+						ctx.execute.route = url
+						ctx.execute.exists = true
+
+						break
+					}; if (url.path === reqUrl.pathname && url.method === 'STATIC') {
+						ctx.execute.route = url
+						ctx.execute.static = true
+						ctx.execute.exists = true
 
 						break
 					}
