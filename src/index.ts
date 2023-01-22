@@ -43,6 +43,7 @@ type hours =
 
 interface GlobalContext {
 	/** The Request Count */ requests: Record<hours, number>
+	/** The 404 Page Display */ pageDisplay: string
 	/** The Data Stats */ data: {
 		/** The Incoming Data Count */ incoming: Record<hours, number>
 		/** The Outgoing Data Count */ outgoing: Record<hours, number>
@@ -85,7 +86,8 @@ export = {
 				13: 0, 14: 0, 15: 0, 16: 0,
 				17: 0, 18: 0, 19: 0, 20: 0,
 				21: 0, 22: 0, 23: 0, 24: 0
-			}, data: {
+			}, pageDisplay: '',
+			data: {
 				incoming: {
 					1: 0, 2: 0, 3: 0, 4: 0,
 					5: 0, 6: 0, 7: 0, 8: 0,
@@ -147,10 +149,11 @@ export = {
 					if (!event) {
 						// Default NotFound
 						let pageDisplay = ''
-						for (const url of routes) {
+						if (ctg.pageDisplay) pageDisplay = ctg.pageDisplay
+						else { for (const url of routes) {
 							const type = (url.method === 'STATIC' ? 'GET' : url.method)
 							pageDisplay += `[-] [${type}] ${url.path}\n`
-						}
+						}; ctg.pageDisplay = pageDisplay }
 
 						ctr.status(404)
 						ctx.content = Buffer.from(`[!] COULDNT FIND [${ctr.url.method}]: ${ctr.url.pathname.toUpperCase()}\n[i] AVAILABLE PAGES:\n\n${pageDisplay}`)
@@ -239,71 +242,69 @@ export = {
 									return ctr.print({
 										requests: [
 											{
-												hour: date.getHours() - 0,
-												amount: ctg.requests[String((date.getHours() - 0 + 24) % 24)]
-											},
-											{
-												hour: date.getHours() - 1,
-												amount: ctg.requests[String((date.getHours() - 1 + 24) % 24)]
-											},
-											{
-												hour: date.getHours() - 2,
-												amount: ctg.requests[String((date.getHours() - 2 + 24) % 24)]
+												hour: date.getHours() - 4,
+												amount: ctg.requests[String((date.getHours() - 4 + 24) % 24)]
 											},
 											{
 												hour: date.getHours() - 3,
 												amount: ctg.requests[String((date.getHours() - 3 + 24) % 24)]
 											},
 											{
-												hour: date.getHours() - 4,
-												amount: ctg.requests[String((date.getHours() - 4 + 24) % 24)]
+												hour: date.getHours() - 2,
+												amount: ctg.requests[String((date.getHours() - 2 + 24) % 24)]
+											},
+											{
+												hour: date.getHours() - 1,
+												amount: ctg.requests[String((date.getHours() - 1 + 24) % 24)]
+											},
+											{
+												hour: date.getHours() - 0,
+												amount: ctg.requests[String((date.getHours() - 0 + 24) % 24)]
 											}
-										].reverse(),
-										data: {
+										], data: {
 											incoming: [
 												{
-													hour: date.getHours() - 0,
-													amount: ctg.data.incoming[String((date.getHours() - 0 + 24) % 24)]
-												},
-												{
-													hour: date.getHours() - 1,
-													amount: ctg.data.incoming[String((date.getHours() - 1 + 24) % 24)]
-												},
-												{
-													hour: date.getHours() - 2,
-													amount: ctg.data.incoming[String((date.getHours() - 2 + 24) % 24)]
+													hour: date.getHours() - 4,
+													amount: ctg.data.incoming[String((date.getHours() - 4 + 24) % 24)]
 												},
 												{
 													hour: date.getHours() - 3,
 													amount: ctg.data.incoming[String((date.getHours() - 3 + 24) % 24)]
 												},
 												{
-													hour: date.getHours() - 4,
-													amount: ctg.data.incoming[String((date.getHours() - 4 + 24) % 24)]
-												}
-											].reverse(),
-											outgoing: [
-												{
-													hour: date.getHours() - 0,
-													amount: ctg.data.outgoing[String((date.getHours() - 0 + 24) % 24)]
+													hour: date.getHours() - 2,
+													amount: ctg.data.incoming[String((date.getHours() - 2 + 24) % 24)]
 												},
 												{
 													hour: date.getHours() - 1,
-													amount: ctg.data.outgoing[String((date.getHours() - 1 + 24) % 24)]
+													amount: ctg.data.incoming[String((date.getHours() - 1 + 24) % 24)]
 												},
 												{
-													hour: date.getHours() - 2,
-													amount: ctg.data.outgoing[String((date.getHours() - 2 + 24) % 24)]
+													hour: date.getHours() - 0,
+													amount: ctg.data.incoming[String((date.getHours() - 0 + 24) % 24)]
+												}
+											], outgoing: [
+												{
+													hour: date.getHours() - 4,
+													amount: ctg.data.outgoing[String((date.getHours() - 4 + 24) % 24)]
 												},
 												{
 													hour: date.getHours() - 3,
 													amount: ctg.data.outgoing[String((date.getHours() - 3 + 24) % 24)]
 												},
 												{
-													hour: date.getHours() - 4,
-													amount: ctg.data.outgoing[String((date.getHours() - 4 + 24) % 24)]
+													hour: date.getHours() - 2,
+													amount: ctg.data.outgoing[String((date.getHours() - 2 + 24) % 24)]
+												},
+												{
+													hour: date.getHours() - 1,
+													amount: ctg.data.outgoing[String((date.getHours() - 1 + 24) % 24)]
+												},
+												{
+													hour: date.getHours() - 0,
+													amount: ctg.data.outgoing[String((date.getHours() - 0 + 24) % 24)]
 												}
-											].reverse()
+											]
 										}, cpu: {
 											time: `${date.getHours()}:${date.getMinutes()}:${date.getSeconds()}`,
 											usage: cpuUsage.toFixed(2)
