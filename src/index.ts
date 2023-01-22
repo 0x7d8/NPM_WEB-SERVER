@@ -151,7 +151,7 @@ export = {
 						}
 
 						ctr.status(404)
-						ctx.content = Buffer.from(`[!] COULDNT FIND ${ctr.url.pathname.toUpperCase()}\n[i] AVAILABLE PAGES:\n\n${pageDisplay}`)
+						ctx.content = Buffer.from(`[!] COULDNT FIND [${ctr.url.method}]: ${ctr.url.pathname.toUpperCase()}\n[i] AVAILABLE PAGES:\n\n${pageDisplay}`)
 					} else {
 						// Custom NotFound
 						await Promise.resolve(event.code(ctr as unknown as ctr)).catch((e) => {
@@ -225,6 +225,7 @@ export = {
 
 					// Skip Common URLs
 					if (url.method !== 'STATIC' && url.method !== req.method) continue
+					if (url.method === 'STATIC' && req.method !== 'GET') continue
 					if (url.pathArray.length !== actualUrl.length) continue
 					if (ctx.execute.exists) break
 
