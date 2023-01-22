@@ -294,45 +294,45 @@ export = {
 											incoming: [
 												{
 													hour: date.getHours() - 0,
-													amount: (ctg.data.incoming[String((date.getHours() - 0 + 24) % 24)] / 1024).toFixed(2)
+													amount: ctg.data.incoming[String((date.getHours() - 0 + 24) % 24)]
 												},
 												{
 													hour: date.getHours() - 1,
-													amount: (ctg.data.incoming[String((date.getHours() - 1 + 24) % 24)] / 1024).toFixed(2)
+													amount: ctg.data.incoming[String((date.getHours() - 1 + 24) % 24)]
 												},
 												{
 													hour: date.getHours() - 2,
-													amount: (ctg.data.incoming[String((date.getHours() - 2 + 24) % 24)] / 1024).toFixed(2)
+													amount: ctg.data.incoming[String((date.getHours() - 2 + 24) % 24)]
 												},
 												{
 													hour: date.getHours() - 3,
-													amount: (ctg.data.incoming[String((date.getHours() - 3 + 24) % 24)] / 1024).toFixed(2)
+													amount: ctg.data.incoming[String((date.getHours() - 3 + 24) % 24)]
 												},
 												{
 													hour: date.getHours() - 4,
-													amount: (ctg.data.incoming[String((date.getHours() - 4 + 24) % 24)] / 1024).toFixed(2)
+													amount: ctg.data.incoming[String((date.getHours() - 4 + 24) % 24)]
 												}
 											].reverse(),
 											outgoing: [
 												{
 													hour: date.getHours() - 0,
-													amount: (ctg.data.outgoing[String((date.getHours() - 0 + 24) % 24)] / 1024).toFixed(2)
+													amount: ctg.data.outgoing[String((date.getHours() - 0 + 24) % 24)]
 												},
 												{
 													hour: date.getHours() - 1,
-													amount: (ctg.data.outgoing[String((date.getHours() - 1 + 24) % 24)] / 1024).toFixed(2)
+													amount: ctg.data.outgoing[String((date.getHours() - 1 + 24) % 24)]
 												},
 												{
 													hour: date.getHours() - 2,
-													amount: (ctg.data.outgoing[String((date.getHours() - 2 + 24) % 24)] / 1024).toFixed(2)
+													amount: ctg.data.outgoing[String((date.getHours() - 2 + 24) % 24)]
 												},
 												{
 													hour: date.getHours() - 3,
-													amount: (ctg.data.outgoing[String((date.getHours() - 3 + 24) % 24)] / 1024).toFixed(2)
+													amount: ctg.data.outgoing[String((date.getHours() - 3 + 24) % 24)]
 												},
 												{
 													hour: date.getHours() - 4,
-													amount: (ctg.data.outgoing[String((date.getHours() - 4 + 24) % 24)] / 1024).toFixed(2)
+													amount: ctg.data.outgoing[String((date.getHours() - 4 + 24) % 24)]
 												}
 											].reverse()
 										}, cpu: {
