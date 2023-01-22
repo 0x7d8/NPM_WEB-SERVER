@@ -2,7 +2,7 @@ import rateLimitRule from "../interfaces/ratelimitRule"
 import routeList from "./routeList"
 
 export interface Options {
-	/** The Routes for the Server */ routes: routeList | typeof routeList
+	/** The Routes for the Server */ routes: routeList
 	/** RateLimit Settings */ rateLimits?: {
 		/**
 		 * Whether Ratelimits are enabled
@@ -94,9 +94,11 @@ export default class serverOptions {
 				const pVal = prev[key]
 				const oVal = obj[key]
 
-				if (Array.isArray(pVal) && Array.isArray(oVal)) prev[key] = pVal.concat(...oVal)
-				else if (isObject(pVal) && isObject(oVal)) prev[key] = this.mergeOptions(pVal, oVal)
-				else prev[key] = oVal
+				if (key !== 'functions' && key !== 'routes') {
+					if (Array.isArray(pVal) && Array.isArray(oVal)) prev[key] = pVal.concat(...oVal)
+					else if (isObject(pVal) && isObject(oVal)) prev[key] = this.mergeOptions(pVal, oVal)
+					else prev[key] = oVal
+				} else prev[key] = oVal
 			})
 			
 			return prev

@@ -72,7 +72,7 @@ export = {
 		/** Required Options */ options: Options
 	) {
 		options = new serverOptions(options).getOptions()
-		const { routes, events }: { routes: route[], events: event[] } = options.routes as any
+		const { routes, events } = options.routes.list()
 
 		const cacheMap = new Map<string, Buffer>()
 		let ctg: GlobalContext = {
@@ -187,7 +187,7 @@ export = {
 				reqBody += data
 			}).on('end', async() => {
 				let reqUrl = { ...url.parse(req.url), method: req.method as any }
-				reqUrl.path = pathParser(reqUrl.path); reqUrl.pathname = pathParser(reqUrl.pathname)
+				reqUrl.pathname = pathParser(reqUrl.pathname); reqUrl.pathname = pathParser(reqUrl.pathname)
 
 				// Parse Request Body
 				try {
@@ -219,7 +219,7 @@ export = {
 
 				// Check if URL exists
 				let params = new Map()
-				const actualUrl = reqUrl.path.split('/')
+				const actualUrl = reqUrl.pathname.split('/')
 				for (let urlNumber = 0; urlNumber <= routes.length - 1; urlNumber++) {
 					const url = routes[urlNumber]
 
@@ -230,12 +230,12 @@ export = {
 					if (ctx.execute.exists) break
 
 					// Check for Static Paths
-					if (url.path === reqUrl.path && url.method === req.method) {
+					if (url.path === reqUrl.pathname && url.method === req.method) {
 						ctx.execute.route = url
 						ctx.execute.exists = true
 
 						break
-					}; if (url.path === reqUrl.path && url.method === 'STATIC') {
+					}; if (url.path === reqUrl.pathname && url.method === 'STATIC') {
 						ctx.execute.route = url
 						ctx.execute.static = true
 						ctx.execute.exists = true
@@ -244,7 +244,7 @@ export = {
 					}
 
 					// Check for Dashboard Path
-					if (options.dashboard.enabled && (reqUrl.path === pathParser(options.dashboard.path) || reqUrl.path === pathParser(options.dashboard.path) + '/stats')) {
+					if (options.dashboard.enabled && (reqUrl.pathname === pathParser(options.dashboard.path) || reqUrl.pathname === pathParser(options.dashboard.path) + '/stats')) {
 						ctx.execute.route = {
 							method: 'GET',
 							path: url.path,
@@ -523,7 +523,7 @@ export = {
 				// Rate Limiting
 				if (options.rateLimits.enabled) {
 					for (const rule of options.rateLimits.list) {
-						if (reqUrl.path.startsWith(rule.path)) {
+						if (reqUrl.pathname.startsWith(rule.path)) {
 							res.setHeader('X-RateLimit-Limit', rule.times)
 							res.setHeader('X-RateLimit-Remaining', rule.times - (await options.rateLimits.functions.get(hostIp + rule.path) ?? 0))
 							res.setHeader('X-RateLimit-Reset-Every', rule.timeout)

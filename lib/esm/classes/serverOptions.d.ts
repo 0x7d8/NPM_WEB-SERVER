@@ -1,7 +1,7 @@
 import rateLimitRule from "../interfaces/ratelimitRule";
 import routeList from "./routeList";
 export interface Options {
-    /** The Routes for the Server */ routes: routeList | typeof routeList;
+    /** The Routes for the Server */ routes: routeList;
     /** RateLimit Settings */ rateLimits?: {
         /**
          * Whether Ratelimits are enabled
