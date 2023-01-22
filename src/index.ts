@@ -1,10 +1,10 @@
 import ctr from "./interfaces/ctr"
 import routeList, { pathParser } from "./classes/routeList"
 import serverOptions, { Options } from "./classes/serverOptions"
+import valueCollection from "./classes/valueCollection"
 import typesEnum from "./interfaces/types"
 import { events as eventsType } from "./interfaces/event"
 import route from "./interfaces/route"
-import event from "./interfaces/event"
 import { EventEmitter } from "stream"
 import types from "./misc/types"
 
@@ -15,30 +15,30 @@ import * as fs from "fs"
 import * as os from "os"
 
 type hours =
-  '1' |
-  '2' |
-  '3' |
-  '4' |
-  '5' |
-  '6' |
-  '7' |
+	'1' |
+	'2' |
+	'3' |
+	'4' |
+	'5' |
+	'6' |
+	'7' |
 	'8' |
-  '9' |
-  '10' |
-  '11' |
-  '12' |
-  '13' |
-  '14' |
-  '15' |
-  '16' |
-  '17' |
-  '18' |
-  '19' |
-  '20' |
-  '21' |
-  '22' |
-  '23' |
-  '24'
+	'9' |
+	'10' |
+	'11' |
+	'12' |
+	'13' |
+	'14' |
+	'15' |
+	'16' |
+	'17' |
+	'18' |
+	'19' |
+	'20' |
+	'21' |
+	'22' |
+	'23' |
+	'24'
 
 interface GlobalContext {
 	/** The Request Count */ requests: Record<hours, number>
@@ -61,11 +61,10 @@ interface LocalContext {
 }
 
 export = {
-	/** The RouteList */
-	routeList,
-
-	/** The Request Types */
-	types: typesEnum,
+	/** The RouteList */ routeList,
+	/** The ServerOptions */ serverOptions,
+	/** The ValueCollection */ valueCollection,
+	/** The Request Types */ types: typesEnum,
 
 	/** Start The Webserver */
 	async start(
@@ -187,7 +186,7 @@ export = {
 				reqBody += data
 			}).on('end', async() => {
 				let reqUrl = { ...url.parse(req.url), method: req.method as any }
-				reqUrl.pathname = pathParser(reqUrl.pathname); reqUrl.pathname = pathParser(reqUrl.pathname)
+				reqUrl.pathname = pathParser(reqUrl.pathname), reqUrl.pathname = pathParser(reqUrl.pathname)
 
 				// Parse Request Body
 				try {
@@ -218,7 +217,7 @@ export = {
 				res.once('close', () => ctx.events.emit('endRequest'))
 
 				// Check if URL exists
-				let params = new Map()
+				let params = {}
 				const actualUrl = reqUrl.pathname.split('/')
 				for (let urlNumber = 0; urlNumber <= routes.length - 1; urlNumber++) {
 					const url = routes[urlNumber]
@@ -361,9 +360,9 @@ export = {
 						const reqParam = actualUrl[partNumber]
 
 						if (!urlParam.startsWith(':') && reqParam !== urlParam) break
-						if (urlParam === reqParam) continue
+						else if (urlParam === reqParam) continue
 						else if (urlParam.startsWith(':')) {
-							params.set(urlParam.replace(':', ''), decodeURIComponent(reqParam))
+							params[urlParam.substring(1)] = reqParam
 							ctx.execute.route = url
 							ctx.execute.exists = true
 
@@ -372,38 +371,32 @@ export = {
 					}; continue
 				}
 
+				// Add X-Powered-By Header
+				if (options.poweredBy) res.setHeader('X-Powered-By', 'rjweb-server')
+
 				// Get Correct Host IP
 				let hostIp: string
 				if (options.proxy && req.headers['x-forwarded-for']) hostIp = req.headers['x-forwarded-for'] as string
 				else hostIp = req.socket.remoteAddress
 
-				// Create ConText Response Object
-				const headers = new Map()
-				Object.keys(req.headers).forEach((header) => {
-					headers.set(header, req.headers[header])
-				}); headers.delete('cookie')
-				const queries = new Map()
-				for (const [ query, value ] of new URLSearchParams(reqUrl.search)) {
-					queries.set(query, decodeURIComponent(value))
-				}; const cookies = new Map()
-				if (req.headers.cookie) {
-					req.headers.cookie.split(';').forEach((cookie: string) => {
-						let [ name, ...rest ] = cookie.split('=')
-						name = name?.trim()
-						if (!name) return
-						const value = rest.join('=').trim()
-						if (!value) return
-						cookies.set(name, decodeURIComponent(value))
-					})
-				}
+				// Turn Cookies into Object
+				let cookies = {}
+				if (req.headers.cookie) req.headers.cookie.split(';').forEach((cookie) => {
+					let [ name, ...rest ] = cookie.split('=')
+					name = name?.trim()
+					if (!name) return
+					const value = rest.join('=').trim()
+					if (!value) return
+					cookies[name] = value
+				})
 
-				if (options.poweredBy) res.setHeader('X-Powered-By', 'rjweb-server')
+				// Create ConText Response Object
 				let ctr: ctr = {
 					// Properties
-					headers,
-					cookies,
-					params,
-					queries,
+					headers: new valueCollection(req.headers as any, decodeURIComponent),
+					cookies: new valueCollection(cookies, decodeURIComponent),
+					params: new valueCollection(params, decodeURIComponent),
+					queries: new valueCollection(Object.fromEntries(new URLSearchParams(reqUrl.search)) as any, decodeURIComponent),
 
 					// Variables
 					client: {

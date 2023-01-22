@@ -1,6 +1,7 @@
 /// <reference types="node" />
 /// <reference types="node" />
 import { Server, IncomingMessage, ServerResponse } from "http";
+import valueCollection from "../classes/valueCollection";
 import { UrlWithStringQuery } from "url";
 import { types } from "./types";
 interface printOptions {
@@ -20,10 +21,10 @@ interface printFileOptions {
     */ cache?: boolean;
 }
 export default interface ctr<Custom = any, HasError = false, Body = any> {
-    /** A Map of all Headers */ readonly headers: Map<Lowercase<string>, string>;
-    /** A Map of all Cookies */ readonly cookies: Map<string, string>;
-    /** A Map of all Parameters */ readonly params: Map<string, string>;
-    /** A Map of all Queries */ readonly queries: Map<string, string>;
+    /** A Collection of all Headers */ readonly headers: valueCollection<Lowercase<string>, string>;
+    /** A Collection of all Cookies */ readonly cookies: valueCollection<string, string>;
+    /** A Collection of all Parameters */ readonly params: valueCollection<string, string>;
+    /** A Collection of all Queries */ readonly queries: valueCollection<string, string>;
     /** Client Infos */ readonly client: {
         /** The User Agent of the Client */ readonly userAgent: string;
         /** The HTTP Version that the Client is using */ readonly httpVersion: string;
