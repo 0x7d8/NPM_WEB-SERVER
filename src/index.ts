@@ -246,7 +246,7 @@ export = {
 							pathArray: url.path.split('/'),
 							code: async(ctr) => {
 								if (!ctr.url.path.endsWith('/stats')) {
-									const dashboard = (await fs.promises.readFile('lib/stats/index.html', 'utf8'))
+									const dashboard = (await fs.promises.readFile(__dirname + '/stats/index.html', 'utf8'))
 										.replaceAll('/rjweb-dashboard', pathParser(options.dashboard.path))
 									return ctr.print(dashboard)
 								} else if (ctr.url.path.endsWith('/stats')) {
