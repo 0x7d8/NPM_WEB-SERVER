@@ -23,6 +23,16 @@ export interface Options {
             get: (key: string) => Promise<number>;
         } | Map<string, number>;
     };
+    /** Body Settings */ body?: {
+        /**
+         * Whether recieving Bodies is enabled
+         * @default true
+        */ enabled?: boolean;
+        /**
+         * The Maximum Sise of the Body in MB
+         * @default 5
+        */ maxSize?: number;
+    };
     /** Dashboard Settings */ dashboard?: {
         /**
          * Whether the Dashboard is enabled
@@ -49,10 +59,6 @@ export interface Options {
      * Where the Server should start at
      * @default 2023
     */ port?: number;
-    /**
-     * The Maximum Body Size in MB
-     * @default 5
-    */ maxBody?: number;
     /**
      * Add X-Powered-By Header
      * @default true

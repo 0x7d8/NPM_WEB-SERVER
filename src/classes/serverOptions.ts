@@ -24,7 +24,18 @@ export interface Options {
 			get: (key: string) => Promise<number>
 		} | Map<string, number>
 	}
-	
+
+	/** Body Settings */ body?: {
+		/**
+		 * Whether recieving Bodies is enabled
+		 * @default true
+		*/ enabled?: boolean
+		/**
+		 * The Maximum Sise of the Body in MB
+		 * @default 5
+		*/ maxSize?: number
+	}
+
 	/** Dashboard Settings */ dashboard?: {
 		/**
 		 * Whether the Dashboard is enabled
@@ -53,10 +64,6 @@ export interface Options {
 	 * @default 2023
 	*/ port?: number
 	/**
-	 * The Maximum Body Size in MB
-	 * @default 5
-	*/ maxBody?: number
-	/**
 	 * Add X-Powered-By Header
 	 * @default true
 	*/ poweredBy?: boolean
@@ -74,14 +81,16 @@ export default class serverOptions {
         message: 'Rate Limited',
         list: [],
         functions: new Map<string, number>()
-      }, dashboard: {
+      }, body: {
+				enabled: true,
+				maxSize: 5
+			}, dashboard: {
 				enabled: false,
 				path: '/rjweb-dashboard'
 			}, bind: '0.0.0.0',
       proxy: false,
       cors: false,
       port: 2023,
-      maxBody: 5,
       poweredBy: true
     }, options)
   }

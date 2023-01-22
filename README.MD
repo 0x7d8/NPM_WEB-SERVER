@@ -159,11 +159,14 @@ routes.set(webserver.types.get, '/profile/:user', async(ctr) => {
 
 webserver.start({
   bind: '0.0.0.0', // The IP thats bound to
-  body: 20, // The Max POST Body in MB
   cors: false, // If Cors Headers will be added
   port: 5000, // The Port which the Server runs on
   routes: routes, // The Routes Object
-  proxy: true // If enabled, alternate IPs will be shown
+  proxy: true, // If enabled, alternate IPs will be shown
+  body: {
+    enabled: true, // Whether to enable recieving POST Bodies
+    maxSize: 20 // The Max POST Body Size in MB
+  }
 }).then((res) => {
   console.log(`webserver started on port ${res.port}`)
 }).catch((err) => {
@@ -188,7 +191,6 @@ routes.set(webserver.types.get, '/hello', async(ctr) => {
 
 webserver.start({
   bind: '0.0.0.0', // The IP thats bound to
-  body: 20, // The Max POST Body in MB
   cors: false, // If Cors Headers will be added
   port: 5000, // The Port which the Server runs on
   routes: routes, // The Routes Object

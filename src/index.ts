@@ -8,6 +8,7 @@ import route from "./interfaces/route"
 import { EventEmitter } from "stream"
 import types from "./misc/types"
 
+import * as queryUrl from "querystring"
 import * as path from "path"
 import * as http from "http"
 import * as url from "url"
@@ -57,7 +58,9 @@ interface LocalContext {
 		/** Whether the Route is Static */ static: boolean
 		/** Whether the Route exists */ exists: boolean
 		/** Whether the Route is the Dashboard */ dashboard: boolean
-	}
+	},
+	/** The Request URL */ url: url.UrlWithStringQuery & { method: typesEnum }
+	/** The Request Body */ body: Buffer
 }
 
 export = {
@@ -166,33 +169,33 @@ export = {
 		}
 
 		const server = http.createServer(async(req, res) => {
-			let reqBody = ''
-
-			// Get Body Size
-			if (req.headers['content-length']) {
-				const bodySize = Number(req.headers['content-length'])
-
-				if (bodySize >= (options.maxBody * 1e6)) {
-					res.statusCode = 413
-					res.write('Payload Too Large')
-					return res.end()
-				} else {
-					ctg.data.incoming[new Date().getHours()] += bodySize
-				}
+			// Create Local ConTeXt
+			let ctx: LocalContext = {
+				content: Buffer.from(''),
+				events: new EventEmitter(),
+				waiting: false,
+				execute: {
+					route: null,
+					static: false,
+					exists: false,
+					dashboard: false
+				}, url: { ...url.parse(pathParser(req.url)), method: req.method as typesEnum },
+				body: Buffer.from('')
 			}
 
-			// Save Request Body
-			req.on('data', (data: string) => {
-				reqBody += data
-			}).on('end', async() => {
-				let reqUrl = { ...url.parse(req.url), method: req.method as any }
-				reqUrl.pathname = pathParser(reqUrl.pathname), reqUrl.pathname = pathParser(reqUrl.pathname)
+			// Handle Wait Events
+			ctx.events.on('noWaiting', () => ctx.waiting = false)
+			res.once('close', () => ctx.events.emit('endRequest'))
 
-				// Parse Request Body
-				try {
-					reqBody = JSON.parse(reqBody)
-				} catch (e) { }
-
+			// Save & Check Request Body
+			if (options.body.enabled) req.on('data', (data: string) => {
+				ctx.body = Buffer.concat([ ctx.body, Buffer.from(data) ])
+				if (ctx.body.byteLength >= (options.body.maxSize * 1e6)) {
+					res.statusCode = 413
+					res.end('Payload Too Large')
+				} else ctg.data.incoming[new Date().getHours()] += ctx.body.byteLength
+			}).on('end', () => ctx.events.emit('startRequest'))
+			ctx.events.once('startRequest', async() => {
 				// Cors Stuff
 				if (options.cors) {
 					res.setHeader('Access-Control-Allow-Headers', '*')
@@ -202,28 +205,14 @@ export = {
 					if (req.method === 'OPTIONS') return res.end('')
 				}
 
-				// Create Local ConTeXt
-				let ctx: LocalContext = {
-					content: Buffer.from(''),
-					events: new EventEmitter(),
-					waiting: false,
-					execute: {
-						route: null,
-						static: false,
-						exists: false,
-						dashboard: false
-					}
-				}; ctx.events.on('noWaiting', () => ctx.waiting = false)
-				res.once('close', () => ctx.events.emit('endRequest'))
-
 				// Check if URL exists
 				let params = {}
-				const actualUrl = reqUrl.pathname.split('/')
+				const actualUrl = ctx.url.pathname.split('/')
 				for (let urlNumber = 0; urlNumber <= routes.length - 1; urlNumber++) {
 					const url = routes[urlNumber]
 
 					// Check for Dashboard Path
-					if (options.dashboard.enabled && (reqUrl.pathname === pathParser(options.dashboard.path) || reqUrl.pathname === pathParser(options.dashboard.path) + '/stats')) {
+					if (options.dashboard.enabled && (ctx.url.pathname === pathParser(options.dashboard.path) || ctx.url.pathname === pathParser(options.dashboard.path) + '/stats')) {
 						ctx.execute.route = {
 							method: 'GET',
 							path: url.path,
@@ -233,7 +222,7 @@ export = {
 									const dashboard = (await fs.promises.readFile(__dirname + '/stats/index.html', 'utf8'))
 										.replaceAll('/rjweb-dashboard', pathParser(options.dashboard.path))
 									return ctr.print(dashboard)
-								} else if (ctr.url.path.endsWith('/stats')) {
+								} else {
 									const date = new Date()
 									const startTime = new Date().getTime()
 									const startUsage = process.cpuUsage()
@@ -341,12 +330,12 @@ export = {
 					if (ctx.execute.exists) break
 
 					// Check for Static Paths
-					if (url.path === reqUrl.pathname && url.method === req.method) {
+					if (url.path === ctx.url.pathname && url.method === req.method) {
 						ctx.execute.route = url
 						ctx.execute.exists = true
 
 						break
-					}; if (url.path === reqUrl.pathname && url.method === 'STATIC') {
+					}; if (url.path === ctx.url.pathname && url.method === 'STATIC') {
 						ctx.execute.route = url
 						ctx.execute.static = true
 						ctx.execute.exists = true
@@ -382,13 +371,14 @@ export = {
 				// Turn Cookies into Object
 				let cookies = {}
 				if (req.headers.cookie) req.headers.cookie.split(';').forEach((cookie) => {
-					let [ name, ...rest ] = cookie.split('=')
-					name = name?.trim()
-					if (!name) return
-					const value = rest.join('=').trim()
-					if (!value) return
-					cookies[name] = value
+					const parts = cookie.split('=')
+					cookies[parts.shift().trim()] = parts.join('=')
 				})
+
+				// Parse Request Body
+				let requestBody: string = ''; try {
+					requestBody = JSON.parse(ctx.body.toString())
+				} catch (e) { requestBody = ctx.body.toString() || '' }
 
 				// Create ConText Response Object
 				let ctr: ctr = {
@@ -396,7 +386,7 @@ export = {
 					headers: new valueCollection(req.headers as any, decodeURIComponent),
 					cookies: new valueCollection(cookies, decodeURIComponent),
 					params: new valueCollection(params, decodeURIComponent),
-					queries: new valueCollection(Object.fromEntries(new URLSearchParams(reqUrl.search)) as any, decodeURIComponent),
+					queries: new valueCollection(queryUrl.parse(ctx.url.query) as any, decodeURIComponent),
 
 					// Variables
 					client: {
@@ -404,8 +394,8 @@ export = {
 						httpVersion: req.httpVersion,
 						port: req.socket.remotePort,
 						ip: hostIp
-					}, body: reqBody,
-					url: reqUrl,
+					}, body: requestBody,
+					url: ctx.url,
 
 					// Raw Values
 					rawServer: server,
@@ -515,7 +505,7 @@ export = {
 				// Rate Limiting
 				if (options.rateLimits.enabled) {
 					for (const rule of options.rateLimits.list) {
-						if (reqUrl.pathname.startsWith(rule.path)) {
+						if (ctx.url.pathname.startsWith(rule.path)) {
 							res.setHeader('X-RateLimit-Limit', rule.times)
 							res.setHeader('X-RateLimit-Remaining', rule.times - (await options.rateLimits.functions.get(hostIp + rule.path) ?? 0))
 							res.setHeader('X-RateLimit-Reset-Every', rule.timeout)
@@ -602,7 +592,7 @@ export = {
 						res.end(ctx.content, 'binary')
 					} else res.end()
 				}
-			})
+			}); if (!options.body.enabled) ctx.events.emit('startRequest')
 		})
 
 		server.listen(options.port, options.bind)
