@@ -27,7 +27,7 @@
     </h1>
     <button
       class="flex justify-center self-center bg-slate-900 w-12 h-12 rounded hover:bg-slate-800"
-      onclick="document.querySelector('#reload').classList.add('animate-spin'); window.fetchVars()"
+      onclick="startTime = Date.now(); document.querySelector('#reload').classList.add('animate-spin'); window.fetchVars()"
     >
       <svg xmlns="http://www.w3.org/2000/svg" id="reload" class="icon icon-tabler icon-tabler-reload self-center" width="32" height="32" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
         <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
@@ -54,6 +54,25 @@
         <div class="mt-2 p-2 bg-slate-600 rounded">
           <h1 class="flex justify-center text-white">
             <canvas id="stat-requests-chart"></canvas>
+          </h1>
+        </div>
+      </div>
+
+      <div class="w-96 mx-4 mb-8 text-center">
+        <div class="p-1 bg-slate-600 rounded">
+          <h1 class="text-white">Network Traffic</h1>
+        </div>
+        <div class="mt-2 p-2 bg-slate-600 rounded">
+          <h1 id="stat-network" class="flex justify-center text-white">
+            <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-loader-2 animate-spin" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+              <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
+              <path d="M12 3a9 9 0 1 0 9 9"></path>
+            </svg>
+          </h1>
+        </div>
+        <div class="mt-2 p-2 bg-slate-600 rounded">
+          <h1 class="flex justify-center text-white">
+            <canvas id="stat-network-chart"></canvas>
           </h1>
         </div>
       </div>
@@ -120,6 +139,7 @@
 </body>
 <script>
   Chart.defaults.color = '#fff'
+
   const requestChart = new Chart(document.querySelector('#stat-requests-chart'), {
     type: 'line',
     data: {
@@ -128,7 +148,7 @@
         label: 'Requests',
         data: [234, 1233, 590],
         fill: 'start',
-        lineTension: 0.7
+        tension: 0.4
       }]
     }, options: {
       plugins: {
@@ -145,6 +165,42 @@
         }
       }
     },
+  }), networkChart = new Chart(document.querySelector('#stat-network-chart'), {
+    type: 'line',
+    data: {
+      labels: [],
+      datasets: [{
+        label: 'Outgoing',
+        data: [],
+        fill: 'start',
+        tension: 0.4
+      }, {
+        label: 'Incoming',
+        data: [],
+        fill: 'start',
+        tension: 0.4
+      }]
+    }, options: {
+      plugins: {
+        legend: {
+          display: false
+        }, filler: {
+          propagate: false,
+        }, tooltip: {
+          callbacks: {
+            label: (value) => `${value.dataset.label}: ${value.parsed.y}KB`
+          }
+        }
+      }, interaction: {
+        intersect: false,
+      }, scales: {
+        y: {
+          ticks: {
+            callback: (value) => `${value}KB`
+          }, min: 0
+        }
+      }
+    },
   }), cpuChart = new Chart(document.querySelector('#stat-cpu-chart'), {
     type: 'line',
     data: {
@@ -153,11 +209,11 @@
         label: 'CPU Usage',
         data: [],
         fill: 'start',
-        lineTension: 0.7,
+        tension: 0.4,
         pointRadius: 0
       }]
     }, options: {
-      hover: { mode: null }, 
+      hover: { mode: null },
       plugins: {
         legend: {
           display: false
@@ -171,7 +227,7 @@
       }, scales: {
         y: {
           ticks: {
-            callback: value => `${value.toFixed(2)}%`
+            callback: (value) => `${value}%`
           }, min: 0,
           max: 100
         }
@@ -185,11 +241,11 @@
         label: 'Memory Usage',
         data: [],
         fill: 'start',
-        lineTension: 0.5,
+        tension: 0.4,
         pointRadius: 0
       }]
     }, options: {
-      hover: { mode: null }, 
+      hover: { mode: null },
       plugins: {
         legend: {
           display: false
@@ -203,7 +259,7 @@
       }, scales: {
         y: {
           ticks: {
-            callback: value => `${value.toFixed(2)}MB`
+            callback: (value) => `${value}MB`
           }, min: 0
         }
       }
@@ -216,7 +272,7 @@
         label: 'Response Time',
         data: [],
         fill: 'start',
-        lineTension: 0.5,
+        tension: 0.4,
         pointRadius: 0
       }]
     }, options: {
@@ -234,7 +290,7 @@
       }, scales: {
         y: {
           ticks: {
-            callback: value => `${value.toFixed(2)}ms`
+            callback: (value) => `${value.toFixed(2)}ms`
           }, min: 0
         }
       }
@@ -258,14 +314,29 @@
       document.querySelector('#stat-response').innerText = duration + 'ms'
 
       let totalCount = 0
-      for (let requestStat = 0; requestStat <= res.requests.length - 1; requestStat++) {
-        const { hour, amount } = res.requests[requestStat]
+      for (let stat = 0; stat <= res.requests.length - 1; stat++) {
+        const { hour, amount } = res.requests[stat]
 
-        requestChart.data.labels[requestStat] = `${hour}:00`
-        requestChart.data.datasets[0].data[requestStat] = amount
+        requestChart.data.labels[stat] = `${hour}:00`
+        requestChart.data.datasets[0].data[stat] = amount
         totalCount += amount
       }; requestChart.update()
       document.querySelector('#stat-requests').innerText = totalCount
+      let outgoingMB = 0, incomingMB = 0
+      for (let stat = 0; stat <= res.data.outgoing.length - 1; stat++) {
+        const { hour, amount } = res.data.outgoing[stat]
+
+        networkChart.data.labels[stat] = `${hour}:00`
+        networkChart.data.datasets[0].data[stat] = Number(amount)
+        outgoingMB += Number(amount)
+      }; for (let stat = 0; stat <= res.data.incoming.length - 1; stat++) {
+        const { hour, amount } = res.data.incoming[stat]
+
+        networkChart.data.labels[stat] = `${hour}:00`
+        networkChart.data.datasets[1].data[stat] = Number(amount)
+        incomingMB += Number(amount)
+      }; networkChart.update()
+      document.querySelector('#stat-network').innerText = `${outgoingMB}KB | ${incomingMB}KB`
 
       cpuChart.data.labels.push('')
       cpuChart.data.datasets[0].data.push(res.cpu.usage)

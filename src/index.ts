@@ -42,6 +42,10 @@ type hours =
 
 interface GlobalContext {
 	/** The Request Count */ requests: Record<hours, number>
+	/** The Data Stats */ data: {
+		/** The Incoming Data Count */ incoming: Record<hours, number>
+		/** The Outgoing Data Count */ outgoing: Record<hours, number>
+	}
 }
 
 interface LocalContext {
@@ -73,30 +77,28 @@ export = {
 		const cacheMap = new Map<string, Buffer>()
 		let ctg: GlobalContext = {
 			requests: {
-				1: 0,
-				2: 0,
-				3: 0,
-				4: 0,
-				5: 0,
-				6: 0,
-				7: 0,
-				8: 0,
-				9: 0,
-				10: 0,
-				11: 0,
-				12: 0,
-				13: 0,
-				14: 0,
-				15: 0,
-				16: 0,
-				17: 0,
-				18: 0,
-				19: 0,
-				20: 0,
-				21: 0,
-				22: 0,
-				23: 0,
-				24: 0
+				1: 0, 2: 0, 3: 0, 4: 0,
+				5: 0, 6: 0, 7: 0, 8: 0,
+				9: 0, 10: 0, 11: 0, 12: 0,
+				13: 0, 14: 0, 15: 0, 16: 0,
+				17: 0, 18: 0, 19: 0, 20: 0,
+				21: 0, 22: 0, 23: 0, 24: 0
+			}, data: {
+				incoming: {
+					1: 0, 2: 0, 3: 0, 4: 0,
+					5: 0, 6: 0, 7: 0, 8: 0,
+					9: 0, 10: 0, 11: 0, 12: 0,
+					13: 0, 14: 0, 15: 0, 16: 0,
+					17: 0, 18: 0, 19: 0, 20: 0,
+					21: 0, 22: 0, 23: 0, 24: 0
+				}, outgoing: {
+					1: 0, 2: 0, 3: 0, 4: 0,
+					5: 0, 6: 0, 7: 0, 8: 0,
+					9: 0, 10: 0, 11: 0, 12: 0,
+					13: 0, 14: 0, 15: 0, 16: 0,
+					17: 0, 18: 0, 19: 0, 20: 0,
+					21: 0, 22: 0, 23: 0, 24: 0
+				}
 			}
 		}
 
@@ -175,6 +177,8 @@ export = {
 					res.statusCode = 413
 					res.write('Payload Too Large')
 					return res.end()
+				} else {
+					ctg.data.incoming[new Date().getHours()] += bodySize
 				}
 			}
 
@@ -286,7 +290,52 @@ export = {
 												amount: ctg.requests[String((date.getHours() - 4 + 24) % 24)]
 											}
 										].reverse(),
-										cpu: {
+										data: {
+											incoming: [
+												{
+													hour: date.getHours() - 0,
+													amount: (ctg.data.incoming[String((date.getHours() - 0 + 24) % 24)] / 1024).toFixed(2)
+												},
+												{
+													hour: date.getHours() - 1,
+													amount: (ctg.data.incoming[String((date.getHours() - 1 + 24) % 24)] / 1024).toFixed(2)
+												},
+												{
+													hour: date.getHours() - 2,
+													amount: (ctg.data.incoming[String((date.getHours() - 2 + 24) % 24)] / 1024).toFixed(2)
+												},
+												{
+													hour: date.getHours() - 3,
+													amount: (ctg.data.incoming[String((date.getHours() - 3 + 24) % 24)] / 1024).toFixed(2)
+												},
+												{
+													hour: date.getHours() - 4,
+													amount: (ctg.data.incoming[String((date.getHours() - 4 + 24) % 24)] / 1024).toFixed(2)
+												}
+											].reverse(),
+											outgoing: [
+												{
+													hour: date.getHours() - 0,
+													amount: (ctg.data.outgoing[String((date.getHours() - 0 + 24) % 24)] / 1024).toFixed(2)
+												},
+												{
+													hour: date.getHours() - 1,
+													amount: (ctg.data.outgoing[String((date.getHours() - 1 + 24) % 24)] / 1024).toFixed(2)
+												},
+												{
+													hour: date.getHours() - 2,
+													amount: (ctg.data.outgoing[String((date.getHours() - 2 + 24) % 24)] / 1024).toFixed(2)
+												},
+												{
+													hour: date.getHours() - 3,
+													amount: (ctg.data.outgoing[String((date.getHours() - 3 + 24) % 24)] / 1024).toFixed(2)
+												},
+												{
+													hour: date.getHours() - 4,
+													amount: (ctg.data.outgoing[String((date.getHours() - 4 + 24) % 24)] / 1024).toFixed(2)
+												}
+											].reverse()
+										}, cpu: {
 											time: `${date.getHours()}:${date.getMinutes()}:${date.getSeconds()}`,
 											usage: cpuUsage.toFixed(2)
 										}, memory: {
@@ -440,6 +489,7 @@ export = {
 
 						// Check Cache
 						if (cacheMap.has(file)) {
+							ctg.data.outgoing[new Date().getHours()] += (cacheMap.get(file)).byteLength
 							ctx.content = (cacheMap.get(file))
 							return ctr
 						}
@@ -453,9 +503,11 @@ export = {
 
 						// Write to Cache Map
 						stream.on('data', (content: Buffer) => {
+							ctg.data.outgoing[new Date().getHours()] += content.byteLength
+							console.log(content.byteLength)
 							const oldData = cacheMap.get(file) ?? Buffer.from('')
 							if (cache) cacheMap.set(file, Buffer.concat([ oldData, content ]))
-						}); stream.once('end', () => ctx.events.emit('noWaiting'))
+						}); stream.once('end', () => { ctx.events.emit('noWaiting'); ctx.content = null })
 						res.once('close', () => stream.close())
 
 						return ctr
@@ -527,18 +579,24 @@ export = {
 
 							if (errorStop) return ctr
 
-							stream.once('end', () => ctx.events.emit('noWaiting'))
+							stream.on('data', (content: Buffer) => {
+								ctg.data.outgoing[new Date().getHours()] += content.byteLength
+							}); stream.once('end', () => ctx.events.emit('noWaiting'))
 							res.once('close', () => stream.close())
+						} else {
+							ctg.data.outgoing[new Date().getHours()] += ctx.execute.route.data.content.byteLength
+							ctx.content = ctx.execute.route.data.content
 						}
-
-						ctx.content = ctx.execute.route.data.content
 					}
 
 					// Wait for Streams
 					await new Promise((resolve) => {
 						if (!ctx.waiting) return resolve(true)
 						ctx.events.once('noWaiting', () => resolve(false))
-					}); res.end(ctx.content, 'binary')
+					}); if (ctx.content) {
+						ctg.data.outgoing[new Date().getHours()] += ctx.content.byteLength
+						res.end(ctx.content, 'binary')
+					} else res.end()
 				} else {
 					eventHandler('notfound', ctr, ctx)
 
@@ -546,7 +604,10 @@ export = {
 					await new Promise((resolve) => {
 						if (!ctx.waiting) return resolve(true)
 						ctx.events.once('noWaiting', () => resolve(false))
-					}); res.end(ctx.content, 'binary')
+					}); if (ctx.content) {
+						ctg.data.outgoing[new Date().getHours()] += ctx.content.byteLength
+						res.end(ctx.content, 'binary')
+					} else res.end()
 				}
 			})
 		})
