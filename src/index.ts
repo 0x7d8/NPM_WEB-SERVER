@@ -505,7 +505,6 @@ export = {
 						// Write to Cache Map
 						stream.on('data', (content: Buffer) => {
 							ctg.data.outgoing[new Date().getHours()] += content.byteLength
-							console.log(content.byteLength)
 							const oldData = cacheMap.get(file) ?? Buffer.from('')
 							if (cache) cacheMap.set(file, Buffer.concat([ oldData, content ]))
 						}); stream.once('end', () => { ctx.events.emit('noWaiting'); ctx.content = null })
