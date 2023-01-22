@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <title>rjweb-server Dashboard</title>
+</head>
+<body class="bg-gray-900">
+  <header class="flex justify-between bg-gray-600 p-8 text-white">
+    <h1 class="flex flex-row text-5xl">
+      <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-adjustments-alt self-center" width="48" height="48" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+        <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
+        <rect x="4" y="8" width="4" height="4"></rect>
+        <line x1="6" y1="4" x2="6" y2="8"></line>
+        <line x1="6" y1="12" x2="6" y2="20"></line>
+        <rect x="10" y="14" width="4" height="4"></rect>
+        <line x1="12" y1="4" x2="12" y2="14"></line>
+        <line x1="12" y1="18" x2="12" y2="20"></line>
+        <rect x="16" y="5" width="4" height="4"></rect>
+        <line x1="18" y1="4" x2="18" y2="5"></line>
+        <line x1="18" y1="9" x2="18" y2="20"></line>
+      </svg>
+      RJWEB
+    </h1>
+    <button
+      class="flex justify-center self-center bg-slate-900 w-12 h-12 rounded hover:bg-slate-800"
+      onclick="document.querySelector('#reload').classList.add('animate-spin'); window.fetchVars()"
+    >
+      <svg xmlns="http://www.w3.org/2000/svg" id="reload" class="icon icon-tabler icon-tabler-reload self-center" width="32" height="32" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+        <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
+        <path d="M19.933 13.041a8 8 0 1 1 -9.925 -8.788c3.899 -1.002 7.935 1.007 9.425 4.747"></path>
+        <path d="M20 4v5h-5"></path>
+      </svg>
+    </button>
+  </header>
+  <main>
+    <div class="mt-8 flex flex-wrap justify-center">
+
+      <div class="w-96 mx-4 mb-8 text-center">
+        <div class="p-1 bg-slate-600 rounded">
+          <h1 class="text-white">Requests</h1>
+        </div>
+        <div class="mt-2 p-2 bg-slate-600 rounded">
+          <h1 id="stat-requests" class="flex justify-center text-white">
+            <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-loader-2 animate-spin" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+              <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
+              <path d="M12 3a9 9 0 1 0 9 9"></path>
+            </svg>
+          </h1>
+        </div>
+        <div class="mt-2 p-2 bg-slate-600 rounded">
+          <h1 class="flex justify-center text-white">
+            <canvas id="stat-requests-chart"></canvas>
+          </h1>
+        </div>
+      </div>
+
+      <div class="w-96 mx-4 mb-8 text-center">
+        <div class="p-1 bg-slate-600 rounded">
+          <h1 class="text-white">CPU Usage</h1>
+        </div>
+        <div class="mt-2 p-2 bg-slate-600 rounded">
+          <h1 id="stat-cpu" class="flex justify-center text-white">
+            <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-loader-2 animate-spin" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+              <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
+              <path d="M12 3a9 9 0 1 0 9 9"></path>
+            </svg>
+          </h1>
+        </div>
+        <div class="mt-2 p-2 bg-slate-600 rounded">
+          <h1 class="flex justify-center text-white">
+            <canvas id="stat-cpu-chart"></canvas>
+          </h1>
+        </div>
+      </div>
+
+      <div class="w-96 mx-4 mb-8 text-center">
+        <div class="p-1 bg-slate-600 rounded">
+          <h1 class="text-white">Memory Usage</h1>
+        </div>
+        <div class="mt-2 p-2 bg-slate-600 rounded">
+          <h1 id="stat-memory" class="flex justify-center text-white">
+            <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-loader-2 animate-spin" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+              <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
+              <path d="M12 3a9 9 0 1 0 9 9"></path>
+            </svg>
+          </h1>
+        </div>
+        <div class="mt-2 p-2 bg-slate-600 rounded">
+          <h1 class="flex justify-center text-white">
+            <canvas id="stat-memory-chart"></canvas>
+          </h1>
+        </div>
+      </div>
+
+      <div class="w-96 mx-4 mb-8 text-center">
+        <div class="p-1 bg-slate-600 rounded">
+          <h1 class="text-white">Response Time</h1>
+        </div>
+        <div class="mt-2 p-2 bg-slate-600 rounded">
+          <h1 id="stat-response" class="flex justify-center text-white">
+            <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-loader-2 animate-spin" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+              <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
+              <path d="M12 3a9 9 0 1 0 9 9"></path>
+            </svg>
+          </h1>
+        </div>
+        <div class="mt-2 p-2 bg-slate-600 rounded">
+          <h1 class="flex justify-center text-white">
+            <canvas id="stat-response-chart"></canvas>
+          </h1>
+        </div>
+      </div>
+
+    </div>
+  </main>
+</body>
+<script>
+  Chart.defaults.color = '#fff'
+  const requestChart = new Chart(document.querySelector('#stat-requests-chart'), {
+    type: 'line',
+    data: {
+      labels: ['17:00', '18:00', '19:00'],
+      datasets: [{
+        label: 'Requests',
+        data: [234, 1233, 590],
+        fill: 'start',
+        lineTension: 0.7
+      }]
+    }, options: {
+      plugins: {
+        legend: {
+          display: false
+        }, filler: {
+          propagate: false,
+        }
+      }, interaction: {
+        intersect: false,
+      }, scales: {
+        y: {
+          min: 0
+        }
+      }
+    },
+  }), cpuChart = new Chart(document.querySelector('#stat-cpu-chart'), {
+    type: 'line',
+    data: {
+      labels: [],
+      datasets: [{
+        label: 'CPU Usage',
+        data: [],
+        fill: 'start',
+        lineTension: 0.7,
+        pointRadius: 0
+      }]
+    }, options: {
+      hover: { mode: null }, 
+      plugins: {
+        legend: {
+          display: false
+        }, filler: {
+          propagate: false,
+        }, tooltip: {
+          enabled: false
+        }
+      }, interaction: {
+        intersect: false,
+      }, scales: {
+        y: {
+          ticks: {
+            callback: value => `${value.toFixed(2)}%`
+          }, min: 0,
+          max: 100
+        }
+      }
+    },
+  }), memoryChart = new Chart(document.querySelector('#stat-memory-chart'), {
+    type: 'line',
+    data: {
+      labels: [],
+      datasets: [{
+        label: 'Memory Usage',
+        data: [],
+        fill: 'start',
+        lineTension: 0.5,
+        pointRadius: 0
+      }]
+    }, options: {
+      hover: { mode: null }, 
+      plugins: {
+        legend: {
+          display: false
+        }, filler: {
+          propagate: false,
+        }, tooltip: {
+          enabled: false
+        }
+      }, interaction: {
+        intersect: false,
+      }, scales: {
+        y: {
+          ticks: {
+            callback: value => `${value.toFixed(2)}MB`
+          }, min: 0
+        }
+      }
+    },
+  }), responseChart = new Chart(document.querySelector('#stat-response-chart'), {
+    type: 'line',
+    data: {
+      labels: [],
+      datasets: [{
+        label: 'Response Time',
+        data: [],
+        fill: 'start',
+        lineTension: 0.5,
+        pointRadius: 0
+      }]
+    }, options: {
+      hover: { mode: null }, 
+      plugins: {
+        legend: {
+          display: false
+        }, filler: {
+          propagate: false,
+        }, tooltip: {
+          enabled: false
+        }
+      }, interaction: {
+        intersect: false,
+      }, scales: {
+        y: {
+          ticks: {
+            callback: value => `${value.toFixed(2)}ms`
+          }, min: 0
+        }
+      }
+    },
+  })
+
+
+  let startTime = Date.now()
+  setInterval(() => {
+    startTime = Date.now()
+    document.querySelector('#reload').classList.add('animate-spin')
+    window.fetchVars()
+  }, 5000)
+  window.fetchVars = () => {
+    fetch('/rjweb-dashboard/stats').then(async(res) => {
+      const duration = (Date.now() - startTime) - 500
+      res = await res.json()
+
+      document.querySelector('#stat-cpu').innerText = res.cpu.usage + '%'
+      document.querySelector('#stat-memory').innerText = res.memory.usage + 'MB'
+      document.querySelector('#stat-response').innerText = duration + 'ms'
+
+      let totalCount = 0
+      for (let requestStat = 0; requestStat <= res.requests.length - 1; requestStat++) {
+        const { hour, amount } = res.requests[requestStat]
+
+        requestChart.data.labels[requestStat] = `${hour}:00`
+        requestChart.data.datasets[0].data[requestStat] = amount
+        totalCount += amount
+      }; requestChart.update()
+      document.querySelector('#stat-requests').innerText = totalCount
+
+      cpuChart.data.labels.push('')
+      cpuChart.data.datasets[0].data.push(res.cpu.usage)
+      if (cpuChart.data.labels.length >= 20) {
+        cpuChart.data.labels.shift()
+        cpuChart.data.datasets[0].data.shift()
+      }; cpuChart.update()
+      memoryChart.data.labels.push('')
+      memoryChart.data.datasets[0].data.push(res.memory.usage)
+      if (memoryChart.data.labels.length >= 20) {
+        memoryChart.data.labels.shift()
+        memoryChart.data.datasets[0].data.shift()
+      }; memoryChart.update()
+      responseChart.data.labels.push('')
+      responseChart.data.datasets[0].data.push(duration)
+      if (responseChart.data.labels.length >= 20) {
+        responseChart.data.labels.shift()
+        responseChart.data.datasets[0].data.shift()
+      }; responseChart.update()
+
+      document.querySelector('#reload').classList.remove('animate-spin')
+    })
+  }; window.fetchVars()
+</script>
+</html>

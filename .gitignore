@@ -19,3 +19,4 @@ jspm_packages/
 
 # TESTING
 test/
+src/stats/tailwind.config.js

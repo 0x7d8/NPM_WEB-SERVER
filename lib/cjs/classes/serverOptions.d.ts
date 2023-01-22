@@ -1,7 +1,7 @@
 import rateLimitRule from "../interfaces/ratelimitRule";
 import routeList from "./routeList";
 export interface Options {
-    /** The Routes for the Server */ routes: routeList;
+    /** The Routes for the Server */ routes: routeList | typeof routeList;
     /** RateLimit Settings */ rateLimits?: {
         /**
          * Whether Ratelimits are enabled
@@ -22,6 +22,16 @@ export interface Options {
             set: (key: string, value: number) => Promise<any>;
             get: (key: string) => Promise<number>;
         } | Map<string, number>;
+    };
+    /** Dashboard Settings */ dashboard?: {
+        /**
+         * Whether the Dashboard is enabled
+         * @default false
+        */ enabled?: boolean;
+        /**
+         * The Path to access the Dashboard on
+         * @default "/rjweb-dashboard"
+        */ path?: string;
     };
     /**
      * Where the Server should bind to
@@ -52,6 +62,7 @@ export default class serverOptions {
     private data;
     /** Server Options Helper */
     constructor(options: Options);
+    private mergeOptions;
     /** Get the Resulting Options */
     getOptions(): Options;
 }

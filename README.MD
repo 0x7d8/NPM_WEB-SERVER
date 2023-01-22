@@ -1,5 +1,5 @@
 <h1 align="center">Welcome to rjweb-server v2 👋</h1>
-<center>
+<div align="center">
   <a href="https://www.npmjs.com/package/rjweb-server" target="_blank">
     <img alt="Version" src="https://img.shields.io/npm/v/rjweb-server.svg">
   </a>
@@ -9,9 +9,12 @@
   <a href="https://github.com/rotvproHD/NPM_WEB-SERVER/graphs/commit-activity" target="_blank">
     <img alt="Maintenance" src="https://img.shields.io/badge/Maintained%3F-yes-green.svg" />
   </a>
+  <a href="https://socket.dev/npm/package/rjweb-server" target="_blank">
+    <img alt="Socket Badge" src="https://socket.dev/api/badge/npm/package/rjweb-server" />
+  </a>
 
   Easy and Lightweight Way to create a Web Server in Node.js
-</center>
+</div>
 
 ### 🏠 [Homepage](https://github.com/rotvproHD/NPM_WEB-SERVER#readme)
 
@@ -213,6 +216,27 @@ webserver.start({
   port: 5000,
   routes: routes,
   proxy: true
+}).then((res) => {
+  console.log(`webserver started on port ${res.port}`)
+}).catch((err) => {
+  console.log(err)
+})
+```
+
+Enable Dashboard
+```js
+const routes = new webserver.routeList()
+
+webserver.start({
+  bind: '0.0.0.0',
+  cors: false,
+  port: 5000,
+  routes: routes,
+  proxy: true,
+  dashboard: {
+    enabled: true,
+    path: '/dashboard' // The Dashboad is now accessible at /dashboard
+  }
 }).then((res) => {
   console.log(`webserver started on port ${res.port}`)
 }).catch((err) => {

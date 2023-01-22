@@ -4,6 +4,7 @@ import serverOptions, { Options } from "./classes/serverOptions"
 import typesEnum from "./interfaces/types"
 import { events as eventsType } from "./interfaces/event"
 import route from "./interfaces/route"
+import event from "./interfaces/event"
 import { EventEmitter } from "stream"
 import types from "./misc/types"
 
@@ -11,6 +12,37 @@ import * as path from "path"
 import * as http from "http"
 import * as url from "url"
 import * as fs from "fs"
+import * as os from "os"
+
+type hours =
+  '1' |
+  '2' |
+  '3' |
+  '4' |
+  '5' |
+  '6' |
+  '7' |
+	'8' |
+  '9' |
+  '10' |
+  '11' |
+  '12' |
+  '13' |
+  '14' |
+  '15' |
+  '16' |
+  '17' |
+  '18' |
+  '19' |
+  '20' |
+  '21' |
+  '22' |
+  '23' |
+  '24'
+
+interface GlobalContext {
+	/** The Request Count */ requests: Record<hours, number>
+}
 
 interface LocalContext {
 	/** The Content to Write */ content: Buffer
@@ -20,6 +52,7 @@ interface LocalContext {
 		/** The Route Object that was found */ route: route
 		/** Whether the Route is Static */ static: boolean
 		/** Whether the Route exists */ exists: boolean
+		/** Whether the Route is the Dashboard */ dashboard: boolean
 	}
 }
 
@@ -35,9 +68,37 @@ export = {
 		/** Required Options */ options: Options
 	) {
 		options = new serverOptions(options).getOptions()
-		const { routes, events } = options.routes.list()
+		const { routes, events }: { routes: route[], events: event[] } = options.routes as any
 
 		const cacheMap = new Map<string, Buffer>()
+		let ctg: GlobalContext = {
+			requests: {
+				1: 0,
+				2: 0,
+				3: 0,
+				4: 0,
+				5: 0,
+				6: 0,
+				7: 0,
+				8: 0,
+				9: 0,
+				10: 0,
+				11: 0,
+				12: 0,
+				13: 0,
+				14: 0,
+				15: 0,
+				16: 0,
+				17: 0,
+				18: 0,
+				19: 0,
+				20: 0,
+				21: 0,
+				22: 0,
+				23: 0,
+				24: 0
+			}
+		}
 
 		const eventHandler = async(event: eventsType, ctr: ctr, ctx: LocalContext) => {
 			switch (event) {
@@ -146,35 +207,103 @@ export = {
 					execute: {
 						route: null,
 						static: false,
-						exists: false
+						exists: false,
+						dashboard: false
 					}
 				}; ctx.events.on('noWaiting', () => ctx.waiting = false)
 				res.once('close', () => ctx.events.emit('endRequest'))
 
 				// Check if URL exists
 				let params = new Map()
-				const actualUrl = reqUrl.pathname.split('/')
+				const actualUrl = reqUrl.path.split('/')
 				for (let urlNumber = 0; urlNumber <= routes.length - 1; urlNumber++) {
 					const url = routes[urlNumber]
 
+					// Skip Common URLs
+					if (url.method !== 'STATIC' && url.method !== req.method) continue
+					if (url.pathArray.length !== actualUrl.length) continue
+					if (ctx.execute.exists) break
+
 					// Check for Static Paths
-					if (url.path === reqUrl.pathname && url.method === req.method) {
-						ctx.execute.route = routes[urlNumber]
-						ctx.execute.static = false
+					if (url.path === reqUrl.path && url.method === req.method) {
+						ctx.execute.route = url
 						ctx.execute.exists = true
 
 						break
-					}; if (url.path === reqUrl.pathname && url.method === 'STATIC') {
-						ctx.execute.route = routes[urlNumber]
+					}; if (url.path === reqUrl.path && url.method === 'STATIC') {
+						ctx.execute.route = url
 						ctx.execute.static = true
 						ctx.execute.exists = true
 
 						break
 					}
 
-					if (url.method !== req.method) continue
-					if (url.pathArray.length !== actualUrl.length) continue
-					if (ctx.execute.exists) break
+					// Check for Dashboard Path
+					if (options.dashboard.enabled && (reqUrl.path === pathParser(options.dashboard.path) || reqUrl.path === pathParser(options.dashboard.path) + '/stats')) {
+						ctx.execute.route = {
+							method: 'GET',
+							path: url.path,
+							pathArray: url.path.split('/'),
+							code: async(ctr) => {
+								if (!ctr.url.path.endsWith('/stats')) {
+									const dashboard = (await fs.promises.readFile('lib/stats/index.html', 'utf8'))
+										.replaceAll('/rjweb-dashboard', pathParser(options.dashboard.path))
+									return ctr.print(dashboard)
+								} else if (ctr.url.path.endsWith('/stats')) {
+									const date = new Date()
+									const startTime = new Date().getTime()
+									const startUsage = process.cpuUsage()
+
+									ctg.requests[String((date.getHours() - 5 + 24) % 24)] = 0
+									const cpuUsage = await new Promise<number>((resolve) => setTimeout(() => {
+										const currentUsage = process.cpuUsage(startUsage)
+										const currentTime = new Date().getTime()
+										const timeDelta = (currentTime - startTime) * 5 * os.cpus().length
+										const { user, system } = currentUsage
+										resolve((system + user) / timeDelta)
+									}, 500))
+
+									return ctr.print({
+										requests: [
+											{
+												hour: date.getHours() - 0,
+												amount: ctg.requests[String((date.getHours() - 0 + 24) % 24)]
+											},
+											{
+												hour: date.getHours() - 1,
+												amount: ctg.requests[String((date.getHours() - 1 + 24) % 24)]
+											},
+											{
+												hour: date.getHours() - 2,
+												amount: ctg.requests[String((date.getHours() - 2 + 24) % 24)]
+											},
+											{
+												hour: date.getHours() - 3,
+												amount: ctg.requests[String((date.getHours() - 3 + 24) % 24)]
+											},
+											{
+												hour: date.getHours() - 4,
+												amount: ctg.requests[String((date.getHours() - 4 + 24) % 24)]
+											}
+										].reverse(),
+										cpu: {
+											time: `${date.getHours()}:${date.getMinutes()}:${date.getSeconds()}`,
+											usage: cpuUsage.toFixed(2)
+										}, memory: {
+											time: `${date.getHours()}:${date.getMinutes()}:${date.getSeconds()}`,
+											usage: (process.memoryUsage().heapUsed / 1000 / 1000).toFixed(2)
+										}, routes: routes.length
+									})
+								}
+							}, data: {
+								addTypes: false
+							}
+						}; ctx.execute.static = false
+						ctx.execute.exists = true
+						ctx.execute.dashboard = true
+
+						break
+					}
 
 					// Check Parameters
 					for (let partNumber = 0; partNumber <= url.pathArray.length - 1; partNumber++) {
@@ -185,7 +314,7 @@ export = {
 						if (urlParam === reqParam) continue
 						else if (urlParam.startsWith(':')) {
 							params.set(urlParam.replace(':', ''), decodeURIComponent(reqParam))
-							ctx.execute.route = routes[urlNumber]
+							ctx.execute.route = url
 							ctx.execute.exists = true
 
 							continue
@@ -334,7 +463,8 @@ export = {
 				}
 
 				// Execute Custom Run Function
-				let errorStop = await eventHandler('request', ctr, ctx)
+				let errorStop: boolean = false
+				if (!ctx.execute.dashboard) errorStop = await eventHandler('request', ctr, ctx)
 				if (errorStop) return
 
 				// Rate Limiting
@@ -358,6 +488,7 @@ export = {
 				}
 
 				// Execute Page
+				if (options.dashboard.enabled && !ctx.execute.dashboard) ctg.requests[new Date().getHours()]++
 				if (await new Promise((resolve) => {
 					if (!ctx.waiting) return resolve(false)
 					ctx.events.once('noWaiting', () => resolve(false))

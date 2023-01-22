@@ -2,7 +2,7 @@ import rateLimitRule from "../interfaces/ratelimitRule"
 import routeList from "./routeList"
 
 export interface Options {
-	/** The Routes for the Server */ routes: routeList
+	/** The Routes for the Server */ routes: routeList | typeof routeList
 	/** RateLimit Settings */ rateLimits?: {
 		/**
 		 * Whether Ratelimits are enabled
@@ -23,6 +23,17 @@ export interface Options {
 			set: (key: string, value: number) => Promise<any>
 			get: (key: string) => Promise<number>
 		} | Map<string, number>
+	}
+	
+	/** Dashboard Settings */ dashboard?: {
+		/**
+		 * Whether the Dashboard is enabled
+		 * @default false
+		*/ enabled?: boolean
+		/**
+		 * The Path to access the Dashboard on
+		 * @default "/rjweb-dashboard"
+		*/ path?: string
 	}
 
 	/**
@@ -56,22 +67,41 @@ export default class serverOptions {
 
   /** Server Options Helper */
   constructor(options: Options) {
-    this.data = {
+		this.data = this.mergeOptions({
       routes: new routeList(),
       rateLimits: {
         enabled: false,
         message: 'Rate Limited',
         list: [],
         functions: new Map<string, number>()
-      }, bind: '0.0.0.0',
+      }, dashboard: {
+				enabled: false,
+				path: '/rjweb-dashboard'
+			}, bind: '0.0.0.0',
       proxy: false,
       cors: false,
       port: 2023,
       maxBody: 5,
-      poweredBy: true,
-      ...options
-    }
+      poweredBy: true
+    }, options)
   }
+
+	private mergeOptions(...objects: Options[]): Options {
+		const isObject = (obj: Options) => (obj && typeof obj === 'object')
+		
+		return objects.reduce((prev, obj) => {
+			Object.keys(obj).forEach((key) => {
+				const pVal = prev[key]
+				const oVal = obj[key]
+
+				if (Array.isArray(pVal) && Array.isArray(oVal)) prev[key] = pVal.concat(...oVal)
+				else if (isObject(pVal) && isObject(oVal)) prev[key] = this.mergeOptions(pVal, oVal)
+				else prev[key] = oVal
+			})
+			
+			return prev
+		}, {}) as any
+	}
 
   /** Get the Resulting Options */
   getOptions() {
