@@ -165,7 +165,8 @@ webserver.start({
   proxy: true, // If enabled, alternate IPs will be shown
   body: {
     enabled: true, // Whether to enable recieving POST Bodies
-    maxSize: 20 // The Max POST Body Size in MB
+    maxSize: 20, // The Max POST Body Size in MB
+    message: 'Payload too large' // Message that gets sent if the Limit is exceeded
   }
 }).then((res) => {
   console.log(`webserver started on port ${res.port}`)

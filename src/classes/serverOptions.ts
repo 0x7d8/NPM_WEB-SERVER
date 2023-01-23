@@ -31,9 +31,13 @@ export interface Options {
 		 * @default true
 		*/ enabled?: boolean
 		/**
-		 * The Maximum Sise of the Body in MB
+		 * The Maximum Size of the Body in MB
 		 * @default 5
 		*/ maxSize?: number
+		/**
+		 * The Message that gets sent when the Body Size is exceeded
+		 * @default "Payload too large"
+		*/ message?: any
 	}
 
 	/** HTTPS Settings */ https?: {
@@ -98,7 +102,8 @@ export default class serverOptions {
         functions: new Map<string, number>()
       }, body: {
 				enabled: true,
-				maxSize: 5
+				maxSize: 5,
+				message: 'Payload too large'
 			}, https: {
 				enabled: false,
 				keyFile: '/ssl/key/path',

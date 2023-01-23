@@ -55,6 +55,7 @@ interface LocalContext {
 	/** The Content to Write */ content: Buffer
 	/** The Event Emitter */ events: EventEmitter
 	/** Whether waiting is required */ waiting: boolean
+	/** Whether to Continue with execution */ continue: boolean
 	/** The Execute URL Object */ execute: {
 		/** The Route Object that was found */ route: route
 		/** Whether the Route is Static */ static: boolean
@@ -175,6 +176,8 @@ export = {
 					}; return errorStop
 				}
 			}
+		}; const getPreviousHours = () => {
+			return Array.from({ length: 5 }, (_, i) => (new Date().getHours() - (4 - i) + 24) % 24)
 		}
 
 		let httpOptions = {}
@@ -190,6 +193,7 @@ export = {
 				content: Buffer.from(''),
 				events: new EventEmitter(),
 				waiting: false,
+				continue: true,
 				execute: {
 					route: null,
 					static: false,
@@ -208,12 +212,36 @@ export = {
 				ctx.body = Buffer.concat([ ctx.body, Buffer.from(data) ])
 				if (ctx.body.byteLength >= (options.body.maxSize * 1e6)) {
 					res.statusCode = 413
-					res.end('Payload Too Large')
+					ctx.continue = false
+					switch (typeof options.body.message) {
+						case "object":
+							res.setHeader('Content-Type', 'application/json')
+							ctx.content = Buffer.from(JSON.stringify(options.body.message))
+							break
+
+						case "string":
+							ctx.content = Buffer.from(options.body.message)
+							break
+
+						case "symbol":
+							ctx.content = Buffer.from(options.body.message.toString())
+							break
+
+						case "bigint":
+						case "number":
+						case "boolean":
+							ctx.content = Buffer.from(String(options.body.message))
+							break
+
+						case "undefined":
+							ctx.content = Buffer.from('')
+							break
+					}; return res.end(ctx.content, 'binary')
 				} else {
 					ctg.data.incoming.total += ctx.body.byteLength
-					ctg.data.incoming[new Date().getHours()] += ctx.body.byteLength
+					ctg.data.incoming[getPreviousHours()[4]] += ctx.body.byteLength
 				}
-			}).on('end', () => ctx.events.emit('startRequest'))
+			}).on('end', () => { if (ctx.continue) ctx.events.emit('startRequest') })
 			ctx.events.once('startRequest', async() => {
 				// Cors Stuff
 				if (options.cors) {
@@ -243,7 +271,7 @@ export = {
 									return ctr.print(dashboard)
 								} else {
 									const date = new Date()
-									const startTime = new Date().getTime()
+									const startTime = date.getTime()
 									const startUsage = process.cpuUsage()
 
 									const cpuUsage = await new Promise<number>((resolve) => setTimeout(() => {
@@ -258,69 +286,69 @@ export = {
 										requests: [
 											ctg.requests.total,
 											{
-												hour: date.getHours() - 4,
-												amount: ctg.requests[String((date.getHours() - 4 + 24) % 24)]
+												hour: getPreviousHours()[0],
+												amount: ctg.requests[getPreviousHours()[0]]
 											},
 											{
-												hour: date.getHours() - 3,
-												amount: ctg.requests[String((date.getHours() - 3 + 24) % 24)]
+												hour: getPreviousHours()[1],
+												amount: ctg.requests[getPreviousHours()[1]]
 											},
 											{
-												hour: date.getHours() - 2,
-												amount: ctg.requests[String((date.getHours() - 2 + 24) % 24)]
+												hour: getPreviousHours()[2],
+												amount: ctg.requests[getPreviousHours()[2]]
 											},
 											{
-												hour: date.getHours() - 1,
-												amount: ctg.requests[String((date.getHours() - 1 + 24) % 24)]
+												hour: getPreviousHours()[3],
+												amount: ctg.requests[getPreviousHours()[3]]
 											},
 											{
-												hour: date.getHours() - 0,
-												amount: ctg.requests[String((date.getHours() - 0 + 24) % 24)]
+												hour: getPreviousHours()[4],
+												amount: ctg.requests[getPreviousHours()[4]]
 											}
 										], data: {
 											incoming: [
 												ctg.data.incoming.total,
 												{
-													hour: date.getHours() - 4,
-													amount: ctg.data.incoming[String((date.getHours() - 4 + 24) % 24)]
+													hour: getPreviousHours()[0],
+													amount: ctg.data.incoming[getPreviousHours()[0]]
 												},
 												{
-													hour: date.getHours() - 3,
-													amount: ctg.data.incoming[String((date.getHours() - 3 + 24) % 24)]
+													hour: getPreviousHours()[1],
+													amount: ctg.data.incoming[getPreviousHours()[1]]
 												},
 												{
-													hour: date.getHours() - 2,
-													amount: ctg.data.incoming[String((date.getHours() - 2 + 24) % 24)]
+													hour: getPreviousHours()[2],
+													amount: ctg.data.incoming[getPreviousHours()[2]]
 												},
 												{
-													hour: date.getHours() - 1,
-													amount: ctg.data.incoming[String((date.getHours() - 1 + 24) % 24)]
+													hour: getPreviousHours()[3],
+													amount: ctg.data.incoming[getPreviousHours()[3]]
 												},
 												{
-													hour: date.getHours() - 0,
-													amount: ctg.data.incoming[String((date.getHours() - 0 + 24) % 24)]
+													hour: getPreviousHours()[4],
+													amount: ctg.data.incoming[getPreviousHours()[4]]
 												}
 											], outgoing: [
 												ctg.data.outgoing.total,
 												{
-													hour: date.getHours() - 4,
-													amount: ctg.data.outgoing[String((date.getHours() - 4 + 24) % 24)]
+													hour: getPreviousHours()[0],
+													amount: ctg.data.outgoing[getPreviousHours()[0]]
 												},
 												{
-													hour: date.getHours() - 3,
-													amount: ctg.data.outgoing[String((date.getHours() - 3 + 24) % 24)]
+													hour: getPreviousHours()[1],
+													amount: ctg.data.outgoing[getPreviousHours()[1]]
 												},
 												{
-													hour: date.getHours() - 2,
-													amount: ctg.data.outgoing[String((date.getHours() - 2 + 24) % 24)]
+													hour: getPreviousHours()[2],
+													amount: ctg.data.outgoing[getPreviousHours()[2]]
 												},
 												{
-													hour: date.getHours() - 1,
-													amount: ctg.data.outgoing[String((date.getHours() - 1 + 24) % 24)]
+													hour: getPreviousHours()[3],
+													amount: ctg.data.outgoing[getPreviousHours()[3]]
 												},
 												{
-													hour: date.getHours() - 0,
-													amount: ctg.data.outgoing[String((date.getHours() - 0 + 24) % 24)]
+													hour: getPreviousHours()[4],
+													amount: ctg.data.outgoing[getPreviousHours()[4]]
 												}
 											]
 										}, cpu: {
@@ -492,7 +520,7 @@ export = {
 
 						// Check Cache
 						if (cacheStore.has(file)) {
-							ctg.data.outgoing[new Date().getHours()] += (cacheStore.get(file)).byteLength
+							ctg.data.outgoing[getPreviousHours()[4]] += (cacheStore.get(file)).byteLength
 							ctx.content = (cacheStore.get(file))
 							return ctr
 						}
@@ -506,7 +534,7 @@ export = {
 
 						// Write to Cache Map
 						stream.on('data', (content: Buffer) => {
-							ctg.data.outgoing[new Date().getHours()] += content.byteLength
+							ctg.data.outgoing[getPreviousHours()[4]] += content.byteLength
 							const oldData = cacheStore.get(file) ?? Buffer.from('')
 							if (cache) cacheStore.set(file, Buffer.concat([oldData, content]))
 						}); stream.once('end', () => { ctx.events.emit('noWaiting'); ctx.content = Buffer.from('') })
@@ -534,8 +562,8 @@ export = {
 							if (await options.rateLimits.functions.get(hostIp + rule.path) > rule.times) {
 								res.statusCode = 429
 								errorStop = true
-								ctr.print(options.rateLimits.message ?? 'Rate Limited')
-								return res.end()
+								ctr.print(options.rateLimits.message)
+								return res.end(ctx.content, 'binary')
 							}
 						}
 					}
@@ -544,7 +572,7 @@ export = {
 				// Execute Page
 				if (options.dashboard.enabled && !ctx.execute.dashboard) {
 					ctg.requests.total++
-					ctg.requests[new Date().getHours()]++
+					ctg.requests[getPreviousHours()[4]]++
 				}; if (await new Promise((resolve) => {
 					if (!ctx.waiting) return resolve(false)
 					ctx.events.once('noWaiting', () => resolve(false))
@@ -585,12 +613,12 @@ export = {
 
 							stream.on('data', (content: Buffer) => {
 								ctg.data.outgoing.total += content.byteLength
-								ctg.data.outgoing[new Date().getHours()] += content.byteLength
+								ctg.data.outgoing[getPreviousHours()[4]] += content.byteLength
 							}); stream.once('end', () => ctx.events.emit('noWaiting'))
 							res.once('close', () => stream.close())
 						} else {
 							ctg.data.outgoing.total += ctx.execute.route.data.content.byteLength
-							ctg.data.outgoing[new Date().getHours()] += ctx.execute.route.data.content.byteLength
+							ctg.data.outgoing[getPreviousHours()[4]] += ctx.execute.route.data.content.byteLength
 
 							ctx.content = ctx.execute.route.data.content
 						}
@@ -602,7 +630,7 @@ export = {
 						ctx.events.once('noWaiting', () => resolve(false))
 					}); if (ctx.content) {
 						ctg.data.outgoing.total += ctx.content.byteLength
-						ctg.data.outgoing[new Date().getHours()] += ctx.content.byteLength
+						ctg.data.outgoing[getPreviousHours()[4]] += ctx.content.byteLength
 
 						res.end(ctx.content, 'binary')
 					} else res.end()
@@ -615,7 +643,7 @@ export = {
 						ctx.events.once('noWaiting', () => resolve(false))
 					}); if (ctx.content) {
 						ctg.data.outgoing.total += ctx.content.byteLength
-						ctg.data.outgoing[new Date().getHours()] += ctx.content.byteLength
+						ctg.data.outgoing[getPreviousHours()[4]] += ctx.content.byteLength
 
 						res.end(ctx.content, 'binary')
 					} else res.end()
