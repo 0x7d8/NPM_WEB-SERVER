@@ -1,4 +1,4 @@
-import { types } from "./types"
+import { types } from "./methods"
 import ctr from "./ctr"
 
 export default interface route {

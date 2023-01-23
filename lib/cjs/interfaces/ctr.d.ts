@@ -3,7 +3,7 @@
 import { Server, IncomingMessage, ServerResponse } from "http";
 import valueCollection from "../classes/valueCollection";
 import { UrlWithStringQuery } from "url";
-import { types } from "./types";
+import { types } from "./methods";
 interface printOptions {
     /**
      * Whether to Format the Outgoing JSON (If any)

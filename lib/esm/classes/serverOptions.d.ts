@@ -33,6 +33,20 @@ export interface Options {
          * @default 5
         */ maxSize?: number;
     };
+    /** HTTPS Settings */ https?: {
+        /**
+         * Whether HTTPS is enabled
+         * @default false
+        */ enabled?: boolean;
+        /**
+         * The Key File Path
+         * @default '/ssl/key/path'
+        */ keyFile?: string;
+        /**
+         * The Cert File Path
+         * @default '/ssl/cert/path'
+        */ certFile?: string;
+    };
     /** Dashboard Settings */ dashboard?: {
         /**
          * Whether the Dashboard is enabled

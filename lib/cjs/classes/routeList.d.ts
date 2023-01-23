@@ -1,4 +1,4 @@
-import { types as typesInterface } from "../interfaces/types";
+import { types as typesInterface } from "../interfaces/methods";
 import route from "../interfaces/route";
 import event, { events as eventsType } from "../interfaces/event";
 import ctr from "../interfaces/ctr";

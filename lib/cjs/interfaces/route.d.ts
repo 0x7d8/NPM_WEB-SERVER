@@ -1,5 +1,5 @@
 /// <reference types="node" />
-import { types } from "./types";
+import { types } from "./methods";
 import ctr from "./ctr";
 export default interface route {
     /** The Request Method of the Route */ method: types;

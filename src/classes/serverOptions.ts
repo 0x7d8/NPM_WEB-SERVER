@@ -36,6 +36,21 @@ export interface Options {
 		*/ maxSize?: number
 	}
 
+	/** HTTPS Settings */ https?: {
+		/**
+		 * Whether HTTPS is enabled
+		 * @default false
+		*/ enabled?: boolean
+		/**
+		 * The Key File Path
+		 * @default '/ssl/key/path'
+		*/ keyFile?: string
+		/**
+		 * The Cert File Path
+		 * @default '/ssl/cert/path'
+		*/ certFile?: string
+	}
+
 	/** Dashboard Settings */ dashboard?: {
 		/**
 		 * Whether the Dashboard is enabled
@@ -84,6 +99,10 @@ export default class serverOptions {
       }, body: {
 				enabled: true,
 				maxSize: 5
+			}, https: {
+				enabled: false,
+				keyFile: '/ssl/key/path',
+				certFile: '/ssl/cert/path'
 			}, dashboard: {
 				enabled: false,
 				path: '/rjweb-dashboard'

@@ -230,7 +230,7 @@
           ticks: {
             callback: (value) => `${value}%`
           }, min: 0,
-          max: 100
+          suggestedMax: 10
         }
       }
     },
@@ -321,30 +321,25 @@
       document.querySelector('#stat-memory').innerText = res.memory.usage + 'MB'
       document.querySelector('#stat-response').innerText = duration + 'ms'
 
-      let totalCount = 0
-      for (let stat = 0; stat <= res.requests.length - 1; stat++) {
+      for (let stat = 1; stat <= res.requests.length - 1; stat++) {
         const { hour, amount } = res.requests[stat]
 
-        requestChart.data.labels[stat] = `${hour}:00`
-        requestChart.data.datasets[0].data[stat] = amount
-        totalCount += amount
+        requestChart.data.labels[stat - 1] = `${hour}:00`
+        requestChart.data.datasets[0].data[stat - 1] = amount
       }; requestChart.update()
-      document.querySelector('#stat-requests').innerText = totalCount
-      let outgoing = 0, incoming = 0
-      for (let stat = 0; stat <= res.data.outgoing.length - 1; stat++) {
+      document.querySelector('#stat-requests').innerText = res.requests[0]
+      for (let stat = 1; stat <= res.data.outgoing.length - 1; stat++) {
         const { hour, amount } = res.data.outgoing[stat]
 
-        networkChart.data.labels[stat] = `${hour}:00`
-        networkChart.data.datasets[0].data[stat] = amount
-        outgoing += amount
-      }; for (let stat = 0; stat <= res.data.incoming.length - 1; stat++) {
+        networkChart.data.labels[stat - 1] = `${hour}:00`
+        networkChart.data.datasets[0].data[stat - 1] = amount
+      }; for (let stat = 1; stat <= res.data.incoming.length - 1; stat++) {
         const { hour, amount } = res.data.incoming[stat]
 
-        networkChart.data.labels[stat] = `${hour}:00`
-        networkChart.data.datasets[1].data[stat] = amount
-        incoming += amount
+        networkChart.data.labels[stat - 1] = `${hour}:00`
+        networkChart.data.datasets[1].data[stat - 1] = amount
       }; networkChart.update()
-      document.querySelector('#stat-network').innerText = `${formatBytes(outgoing).amount}${formatBytes(outgoing).format} | ${formatBytes(incoming).amount}${formatBytes(incoming).format}`
+      document.querySelector('#stat-network').innerText = `${formatBytes(res.data.outgoing[0]).amount}${formatBytes(res.data.outgoing[0]).format} | ${formatBytes(res.data.incoming[0]).amount}${formatBytes(res.data.incoming[0]).format}`
 
       cpuChart.data.labels.push('')
       cpuChart.data.datasets[0].data.push(res.cpu.usage)

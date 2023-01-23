@@ -2,15 +2,16 @@ import ctr from "./interfaces/ctr"
 import routeList, { pathParser } from "./classes/routeList"
 import serverOptions, { Options } from "./classes/serverOptions"
 import valueCollection from "./classes/valueCollection"
-import typesEnum from "./interfaces/types"
+import typesEnum from "./interfaces/methods"
 import { events as eventsType } from "./interfaces/event"
 import route from "./interfaces/route"
 import { EventEmitter } from "stream"
-import types from "./misc/types"
+import types from "./misc/methods"
 
+import * as http from "http"
+import * as https from "https"
 import * as queryUrl from "querystring"
 import * as path from "path"
-import * as http from "http"
 import * as url from "url"
 import * as fs from "fs"
 import * as os from "os"
@@ -42,18 +43,18 @@ type hours =
 	'24'
 
 interface GlobalContext {
-	/** The Request Count */ requests: Record<hours, number>
+	/** The Request Count */ requests: Record<hours | 'total', number>
 	/** The 404 Page Display */ pageDisplay: string
 	/** The Data Stats */ data: {
-		/** The Incoming Data Count */ incoming: Record<hours, number>
-		/** The Outgoing Data Count */ outgoing: Record<hours, number>
+		/** The Incoming Data Count */ incoming: Record<hours | 'total', number>
+		/** The Outgoing Data Count */ outgoing: Record<hours | 'total', number>
 	}
 }
 
 interface LocalContext {
 	/** The Content to Write */ content: Buffer
 	/** The Event Emitter */ events: EventEmitter
-	/** Whether something is Streaming */ waiting: boolean
+	/** Whether waiting is required */ waiting: boolean
 	/** The Execute URL Object */ execute: {
 		/** The Route Object that was found */ route: route
 		/** Whether the Route is Static */ static: boolean
@@ -77,9 +78,10 @@ export = {
 		options = new serverOptions(options).getOptions()
 		const { routes, events } = options.routes.list()
 
-		const cacheMap = new Map<string, Buffer>()
+		const cacheStore = new valueCollection<string, Buffer>()
 		let ctg: GlobalContext = {
 			requests: {
+				total: 0,
 				1: 0, 2: 0, 3: 0, 4: 0,
 				5: 0, 6: 0, 7: 0, 8: 0,
 				9: 0, 10: 0, 11: 0, 12: 0,
@@ -89,6 +91,7 @@ export = {
 			}, pageDisplay: '',
 			data: {
 				incoming: {
+					total: 0,
 					1: 0, 2: 0, 3: 0, 4: 0,
 					5: 0, 6: 0, 7: 0, 8: 0,
 					9: 0, 10: 0, 11: 0, 12: 0,
@@ -96,6 +99,7 @@ export = {
 					17: 0, 18: 0, 19: 0, 20: 0,
 					21: 0, 22: 0, 23: 0, 24: 0
 				}, outgoing: {
+					total: 0,
 					1: 0, 2: 0, 3: 0, 4: 0,
 					5: 0, 6: 0, 7: 0, 8: 0,
 					9: 0, 10: 0, 11: 0, 12: 0,
@@ -150,10 +154,12 @@ export = {
 						// Default NotFound
 						let pageDisplay = ''
 						if (ctg.pageDisplay) pageDisplay = ctg.pageDisplay
-						else { for (const url of routes) {
-							const type = (url.method === 'STATIC' ? 'GET' : url.method)
-							pageDisplay += `[-] [${type}] ${url.path}\n`
-						}; ctg.pageDisplay = pageDisplay }
+						else {
+							for (const url of routes) {
+								const type = (url.method === 'STATIC' ? 'GET' : url.method)
+								pageDisplay += `[-] [${type}] ${url.path}\n`
+							}; ctg.pageDisplay = pageDisplay
+						}
 
 						ctr.status(404)
 						ctx.content = Buffer.from(`[!] COULDNT FIND [${ctr.url.method}]: ${ctr.url.pathname.toUpperCase()}\n[i] AVAILABLE PAGES:\n\n${pageDisplay}`)
@@ -171,7 +177,14 @@ export = {
 			}
 		}
 
-		const server = http.createServer(async(req, res) => {
+		let httpOptions = {}
+		if (!options.https.enabled) httpOptions = {}
+		else httpOptions = {
+			key: (await fs.promises.readFile(options.https.keyFile).catch(() => { throw new Error(`Cant access your HTTPS Key file! (${options.https.keyFile})`) })),
+			cert: (await fs.promises.readFile(options.https.certFile).catch(() => { throw new Error(`Cant access your HTTPS Cert file! (${options.https.certFile})`) }))
+		}
+
+		const server = (options.https.enabled ? https as any : http as any).createServer(httpOptions, async(req: http.IncomingMessage, res: http.ServerResponse) => {
 			// Create Local ConTeXt
 			let ctx: LocalContext = {
 				content: Buffer.from(''),
@@ -196,7 +209,10 @@ export = {
 				if (ctx.body.byteLength >= (options.body.maxSize * 1e6)) {
 					res.statusCode = 413
 					res.end('Payload Too Large')
-				} else ctg.data.incoming[new Date().getHours()] += ctx.body.byteLength
+				} else {
+					ctg.data.incoming.total += ctx.body.byteLength
+					ctg.data.incoming[new Date().getHours()] += ctx.body.byteLength
+				}
 			}).on('end', () => ctx.events.emit('startRequest'))
 			ctx.events.once('startRequest', async() => {
 				// Cors Stuff
@@ -230,7 +246,6 @@ export = {
 									const startTime = new Date().getTime()
 									const startUsage = process.cpuUsage()
 
-									ctg.requests[String((date.getHours() - 5 + 24) % 24)] = 0
 									const cpuUsage = await new Promise<number>((resolve) => setTimeout(() => {
 										const currentUsage = process.cpuUsage(startUsage)
 										const currentTime = new Date().getTime()
@@ -241,6 +256,7 @@ export = {
 
 									return ctr.print({
 										requests: [
+											ctg.requests.total,
 											{
 												hour: date.getHours() - 4,
 												amount: ctg.requests[String((date.getHours() - 4 + 24) % 24)]
@@ -263,6 +279,7 @@ export = {
 											}
 										], data: {
 											incoming: [
+												ctg.data.incoming.total,
 												{
 													hour: date.getHours() - 4,
 													amount: ctg.data.incoming[String((date.getHours() - 4 + 24) % 24)]
@@ -284,6 +301,7 @@ export = {
 													amount: ctg.data.incoming[String((date.getHours() - 0 + 24) % 24)]
 												}
 											], outgoing: [
+												ctg.data.outgoing.total,
 												{
 													hour: date.getHours() - 4,
 													amount: ctg.data.outgoing[String((date.getHours() - 4 + 24) % 24)]
@@ -379,7 +397,7 @@ export = {
 				// Parse Request Body
 				let requestBody: string = ''; try {
 					requestBody = JSON.parse(ctx.body.toString())
-				} catch (e) { requestBody = ctx.body.toString() || '' }
+				} catch (e) { requestBody = ctx.body.toString() ?? '' }
 
 				// Create ConText Response Object
 				let ctr: ctr = {
@@ -473,9 +491,9 @@ export = {
 						}
 
 						// Check Cache
-						if (cacheMap.has(file)) {
-							ctg.data.outgoing[new Date().getHours()] += (cacheMap.get(file)).byteLength
-							ctx.content = (cacheMap.get(file))
+						if (cacheStore.has(file)) {
+							ctg.data.outgoing[new Date().getHours()] += (cacheStore.get(file)).byteLength
+							ctx.content = (cacheStore.get(file))
 							return ctr
 						}
 
@@ -489,9 +507,9 @@ export = {
 						// Write to Cache Map
 						stream.on('data', (content: Buffer) => {
 							ctg.data.outgoing[new Date().getHours()] += content.byteLength
-							const oldData = cacheMap.get(file) ?? Buffer.from('')
-							if (cache) cacheMap.set(file, Buffer.concat([ oldData, content ]))
-						}); stream.once('end', () => { ctx.events.emit('noWaiting'); ctx.content = null })
+							const oldData = cacheStore.get(file) ?? Buffer.from('')
+							if (cache) cacheStore.set(file, Buffer.concat([oldData, content]))
+						}); stream.once('end', () => { ctx.events.emit('noWaiting'); ctx.content = Buffer.from('') })
 						res.once('close', () => stream.close())
 
 						return ctr
@@ -499,7 +517,7 @@ export = {
 				}
 
 				// Execute Custom Run Function
-				let errorStop: boolean = false
+				let errorStop = false
 				if (!ctx.execute.dashboard) errorStop = await eventHandler('request', ctr, ctx)
 				if (errorStop) return
 
@@ -524,8 +542,10 @@ export = {
 				}
 
 				// Execute Page
-				if (options.dashboard.enabled && !ctx.execute.dashboard) ctg.requests[new Date().getHours()]++
-				if (await new Promise((resolve) => {
+				if (options.dashboard.enabled && !ctx.execute.dashboard) {
+					ctg.requests.total++
+					ctg.requests[new Date().getHours()]++
+				}; if (await new Promise((resolve) => {
 					if (!ctx.waiting) return resolve(false)
 					ctx.events.once('noWaiting', () => resolve(false))
 					ctx.events.once('endRequest', () => resolve(true))
@@ -564,11 +584,14 @@ export = {
 							if (errorStop) return ctr
 
 							stream.on('data', (content: Buffer) => {
+								ctg.data.outgoing.total += content.byteLength
 								ctg.data.outgoing[new Date().getHours()] += content.byteLength
 							}); stream.once('end', () => ctx.events.emit('noWaiting'))
 							res.once('close', () => stream.close())
 						} else {
+							ctg.data.outgoing.total += ctx.execute.route.data.content.byteLength
 							ctg.data.outgoing[new Date().getHours()] += ctx.execute.route.data.content.byteLength
+
 							ctx.content = ctx.execute.route.data.content
 						}
 					}
@@ -578,7 +601,9 @@ export = {
 						if (!ctx.waiting) return resolve(true)
 						ctx.events.once('noWaiting', () => resolve(false))
 					}); if (ctx.content) {
+						ctg.data.outgoing.total += ctx.content.byteLength
 						ctg.data.outgoing[new Date().getHours()] += ctx.content.byteLength
+
 						res.end(ctx.content, 'binary')
 					} else res.end()
 				} else {
@@ -589,7 +614,9 @@ export = {
 						if (!ctx.waiting) return resolve(true)
 						ctx.events.once('noWaiting', () => resolve(false))
 					}); if (ctx.content) {
+						ctg.data.outgoing.total += ctx.content.byteLength
 						ctg.data.outgoing[new Date().getHours()] += ctx.content.byteLength
+
 						res.end(ctx.content, 'binary')
 					} else res.end()
 				}

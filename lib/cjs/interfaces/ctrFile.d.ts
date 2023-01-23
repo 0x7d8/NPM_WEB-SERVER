@@ -1,5 +1,5 @@
 import ctr from "./ctr";
-import { types } from "./types";
+import { types } from "./methods";
 export default interface ctrFile<Custom = any, Body = any> {
     /** The Request Method */ method: types;
     /** The Route Path */ path: string;

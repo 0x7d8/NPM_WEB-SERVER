@@ -1,9 +1,9 @@
 import { getAllFiles, getAllFilesFilter } from "../misc/getAllFiles"
-import { types as typesInterface } from "../interfaces/types"
+import { types as typesInterface } from "../interfaces/methods"
 import route from "../interfaces/route"
 import event, { events as eventsType } from "../interfaces/event"
 import ctr from "../interfaces/ctr"
-import types from "../misc/types"
+import types from "../misc/methods"
 
 import * as path from "path"
 import * as fs from "fs"
@@ -106,7 +106,7 @@ export default class routeList {
 			let newPath = file.replace(folder, '')
 			if (remHTML) newPath = newPath
 				.replace('/index.html', '/')
-    		.replace('.html', '')
+				.replace('.html', '')
 
 			const urlName = pathParser(newPath)
 			const index = this.routes.push({
