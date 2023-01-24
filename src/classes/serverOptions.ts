@@ -122,6 +122,7 @@ export default class serverOptions {
 				path: '/rjweb-dashboard'
 			}, bind: '0.0.0.0',
       proxy: false,
+			compress: true,
       cors: false,
       port: 2023,
       poweredBy: true

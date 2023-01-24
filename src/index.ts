@@ -50,6 +50,7 @@ interface RequestContext {
 		/** Parsed */ parsed: any
 	}
 	/** The Request URL */ url: url.UrlWithStringQuery & { method: typesEnum }
+	/** Previous Hour Object */ previousHours: number[]
 }
 
 export = {
@@ -99,7 +100,7 @@ export = {
 		}
 
 		const compressionHandler = (ctr: ctr, ctx: RequestContext) => {
-			if (options.compress && ctr.headers.has('accept-encoding') && ctr.headers.get('accept-encoding').includes('gzip')) {
+			if (options.compress && !ctr.rawRes.headersSent && ctr.headers.has('accept-encoding') && ctr.headers.get('accept-encoding').includes('gzip')) {
 				ctr.rawRes.setHeader('Content-Encoding', 'gzip')
     		ctr.rawRes.setHeader('Vary', 'Accept-Encoding')
 
@@ -200,7 +201,8 @@ export = {
 				}, body: {
 					raw: Buffer.from(''),
 					parsed: ''
-				}, url: { ...url.parse(pathParser(req.url)), method: req.method as typesEnum }
+				}, url: { ...url.parse(pathParser(req.url)), method: req.method as typesEnum },
+				previousHours: getPreviousHours()
 			}
 
 			// Handle Wait Events
@@ -239,7 +241,7 @@ export = {
 					}; return compressionHandler({ headers: new valueCollection(req.headers as any, decodeURIComponent), rawRes: res } as any, ctx)
 				} else {
 					ctg.data.incoming.total += ctx.body.raw.byteLength
-					ctg.data.incoming[getPreviousHours()[4]] += ctx.body.raw.byteLength
+					ctg.data.incoming[ctx.previousHours[4]] += ctx.body.raw.byteLength
 				}
 			}).on('end', () => { if (ctx.continue) ctx.events.emit('startRequest') })
 			ctx.events.once('startRequest', async() => {
@@ -285,7 +287,6 @@ export = {
 									const startTime = date.getTime()
 									const startUsage = process.cpuUsage()
 
-									const previousHours = getPreviousHours()
 									const cpuUsage = await new Promise<number>((resolve) => setTimeout(() => {
 										const currentUsage = process.cpuUsage(startUsage)
 										const currentTime = new Date().getTime()
@@ -298,69 +299,69 @@ export = {
 										requests: [
 											ctg.requests.total,
 											{
-												hour: previousHours[0],
-												amount: ctg.requests[previousHours[0]]
+												hour: ctx.previousHours[0],
+												amount: ctg.requests[ctx.previousHours[0]]
 											},
 											{
-												hour: previousHours[1],
-												amount: ctg.requests[previousHours[1]]
+												hour: ctx.previousHours[1],
+												amount: ctg.requests[ctx.previousHours[1]]
 											},
 											{
-												hour: previousHours[2],
-												amount: ctg.requests[previousHours[2]]
+												hour: ctx.previousHours[2],
+												amount: ctg.requests[ctx.previousHours[2]]
 											},
 											{
-												hour: previousHours[3],
-												amount: ctg.requests[previousHours[3]]
+												hour: ctx.previousHours[3],
+												amount: ctg.requests[ctx.previousHours[3]]
 											},
 											{
-												hour: previousHours[4],
-												amount: ctg.requests[previousHours[4]]
+												hour: ctx.previousHours[4],
+												amount: ctg.requests[ctx.previousHours[4]]
 											}
 										], data: {
 											incoming: [
 												ctg.data.incoming.total,
 												{
-													hour: previousHours[0],
-													amount: ctg.data.incoming[previousHours[0]]
+													hour: ctx.previousHours[0],
+													amount: ctg.data.incoming[ctx.previousHours[0]]
 												},
 												{
-													hour: previousHours[1],
-													amount: ctg.data.incoming[previousHours[1]]
+													hour: ctx.previousHours[1],
+													amount: ctg.data.incoming[ctx.previousHours[1]]
 												},
 												{
-													hour: previousHours[2],
-													amount: ctg.data.incoming[previousHours[2]]
+													hour: ctx.previousHours[2],
+													amount: ctg.data.incoming[ctx.previousHours[2]]
 												},
 												{
-													hour: previousHours[3],
-													amount: ctg.data.incoming[previousHours[3]]
+													hour: ctx.previousHours[3],
+													amount: ctg.data.incoming[ctx.previousHours[3]]
 												},
 												{
-													hour: previousHours[4],
-													amount: ctg.data.incoming[previousHours[4]]
+													hour: ctx.previousHours[4],
+													amount: ctg.data.incoming[ctx.previousHours[4]]
 												}
 											], outgoing: [
 												ctg.data.outgoing.total,
 												{
-													hour: previousHours[0],
-													amount: ctg.data.outgoing[previousHours[0]]
+													hour: ctx.previousHours[0],
+													amount: ctg.data.outgoing[ctx.previousHours[0]]
 												},
 												{
-													hour: previousHours[1],
-													amount: ctg.data.outgoing[previousHours[1]]
+													hour: ctx.previousHours[1],
+													amount: ctg.data.outgoing[ctx.previousHours[1]]
 												},
 												{
-													hour: previousHours[2],
-													amount: ctg.data.outgoing[previousHours[2]]
+													hour: ctx.previousHours[2],
+													amount: ctg.data.outgoing[ctx.previousHours[2]]
 												},
 												{
-													hour: previousHours[3],
-													amount: ctg.data.outgoing[previousHours[3]]
+													hour: ctx.previousHours[3],
+													amount: ctg.data.outgoing[ctx.previousHours[3]]
 												},
 												{
-													hour: previousHours[4],
-													amount: ctg.data.outgoing[previousHours[4]]
+													hour: ctx.previousHours[4],
+													amount: ctg.data.outgoing[ctx.previousHours[4]]
 												}
 											]
 										}, cpu: {
@@ -526,9 +527,9 @@ export = {
 					}, status(code) {
 						res.statusCode = code
 						return ctr
-					}, printFile(file, options) {
-						const addTypes = options?.addTypes ?? true
-						const cache = options?.cache ?? false
+					}, printFile(file, localOptions) {
+						const addTypes = localOptions?.addTypes ?? true
+						const cache = localOptions?.cache ?? false
 
 						// Add Content Types
 						if (addTypes) {
@@ -546,26 +547,49 @@ export = {
 						// Check Cache
 						if (cacheStore.has(`file::${file}`)) {
 							ctg.data.outgoing.total += (cacheStore.get(`file::${file}`) as Buffer).byteLength
-							ctg.data.outgoing[getPreviousHours()[4]] += (cacheStore.get(`file::${file}`) as Buffer).byteLength
+							ctg.data.outgoing[ctx.previousHours[4]] += (cacheStore.get(`file::${file}`) as Buffer).byteLength
 							ctx.content = (cacheStore.get(`file::${file}`)) as Buffer
+							return ctr
+						} else if (cacheStore.has(`file::gzip::${file}`)) {
+							ctg.data.outgoing.total += (cacheStore.get(`file::gzip::${file}`) as Buffer).byteLength
+							ctg.data.outgoing[ctx.previousHours[4]] += (cacheStore.get(`file::gzip::${file}`) as Buffer).byteLength
+							ctx.content = (cacheStore.get(`file::gzip::${file}`)) as Buffer
 							return ctr
 						}
 
 						// Get File Content
 						let stream: fs.ReadStream, errorStop = false
-						try { stream = fs.createReadStream(file); ctx.waiting = true; stream.pipe(res) }
-						catch (e) { errorStop = true; ctr.error = e; eventHandler('error', ctr, ctx) }
+						if (options.compress && ctr.headers.has('accept-encoding') && ctr.headers.get('accept-encoding').includes('gzip')) {
+							ctr.rawRes.setHeader('Content-Encoding', 'gzip')
+							ctr.rawRes.setHeader('Vary', 'Accept-Encoding')
+
+							const gZip = zlib.createGzip()
+							try { stream = fs.createReadStream(file); ctx.waiting = true; stream.pipe(gZip); gZip.pipe(res) }
+							catch (e) { errorStop = true; ctr.error = e; eventHandler('error', ctr, ctx) }
+
+							// Write to Cache Store
+							gZip.on('data', (content: Buffer) => {
+								ctg.data.outgoing.total += content.byteLength
+								ctg.data.outgoing[ctx.previousHours[4]] += content.byteLength
+								const oldData = cacheStore.get(`file::gzip::${file}`) ?? Buffer.from('')
+								if (cache) cacheStore.set(`file::gzip::${file}`, Buffer.concat([ oldData as Buffer, content ]))
+							}); gZip.once('end', () => { ctx.events.emit('noWaiting'); ctx.content = Buffer.from('') })
+							res.once('close', () => { stream.close(); gZip.close() })
+						} else {
+							try { stream = fs.createReadStream(file); ctx.waiting = true; stream.pipe(res) }
+							catch (e) { errorStop = true; ctr.error = e; eventHandler('error', ctr, ctx) }
+
+							// Write to Cache Store
+							stream.on('data', (content: Buffer) => {
+								ctg.data.outgoing.total += content.byteLength
+								ctg.data.outgoing[ctx.previousHours[4]] += content.byteLength
+								const oldData = cacheStore.get(`file::${file}`) ?? Buffer.from('')
+								if (cache) cacheStore.set(`file::${file}`, Buffer.concat([ oldData as Buffer, content ]))
+							}); stream.once('end', () => { ctx.events.emit('noWaiting'); ctx.content = Buffer.from('') })
+							res.once('close', () => { stream.close() })
+						}
 
 						if (errorStop) return ctr
-
-						// Write to Cache Map
-						stream.on('data', (content: Buffer) => {
-							ctg.data.outgoing.total += content.byteLength
-							ctg.data.outgoing[getPreviousHours()[4]] += content.byteLength
-							const oldData = cacheStore.get(`file::${file}`) ?? Buffer.from('')
-							if (cache) cacheStore.set(`file::${file}`, Buffer.concat([ oldData as Buffer, content ]))
-						}); stream.once('end', () => { ctx.events.emit('noWaiting'); ctx.content = Buffer.from('') })
-						res.once('close', () => stream.close())
 
 						return ctr
 					}
@@ -599,7 +623,7 @@ export = {
 				// Execute Page
 				if (options.dashboard.enabled && !ctx.execute.dashboard) {
 					ctg.requests.total++
-					ctg.requests[getPreviousHours()[4]]++
+					ctg.requests[ctx.previousHours[4]]++
 				}; if (await new Promise((resolve) => {
 					if (!ctx.waiting) return resolve(false)
 					ctx.events.once('noWaiting', () => resolve(false))
@@ -633,19 +657,36 @@ export = {
 
 							// Get File Content
 							let stream: fs.ReadStream, errorStop = false
-							try { stream = fs.createReadStream(filePath); ctx.waiting = true; stream.pipe(res) }
-							catch (e) { errorStop = true; ctr.error = e; eventHandler('error', ctr, ctx) }
+							if (options.compress && ctr.headers.has('accept-encoding') && ctr.headers.get('accept-encoding').includes('gzip')) {
+								ctr.rawRes.setHeader('Content-Encoding', 'gzip')
+								ctr.rawRes.setHeader('Vary', 'Accept-Encoding')
+
+								const gZip = zlib.createGzip()
+								try { stream = fs.createReadStream(filePath); ctx.waiting = true; stream.pipe(gZip); gZip.pipe(res) }
+								catch (e) { errorStop = true; ctr.error = e; eventHandler('error', ctr, ctx) }
+
+								// Write to Total Network
+								gZip.on('data', (content: Buffer) => {
+									ctg.data.outgoing.total += content.byteLength
+									ctg.data.outgoing[ctx.previousHours[4]] += content.byteLength
+								}); gZip.once('end', () => { ctx.events.emit('noWaiting'); ctx.content = Buffer.from('') })
+								res.once('close', () => { stream.close(); gZip.close() })
+							} else {
+								try { stream = fs.createReadStream(filePath); ctx.waiting = true; stream.pipe(res) }
+								catch (e) { errorStop = true; ctr.error = e; eventHandler('error', ctr, ctx) }
+
+								// Write to Total Network
+								stream.on('data', (content: Buffer) => {
+									ctg.data.outgoing.total += content.byteLength
+									ctg.data.outgoing[ctx.previousHours[4]] += content.byteLength
+								}); stream.once('end', () => { ctx.events.emit('noWaiting'); ctx.content = Buffer.from('') })
+								res.once('close', () => { stream.close() })
+							}
 
 							if (errorStop) return ctr
-
-							stream.on('data', (content: Buffer) => {
-								ctg.data.outgoing.total += content.byteLength
-								ctg.data.outgoing[getPreviousHours()[4]] += content.byteLength
-							}); stream.once('end', () => ctx.events.emit('noWaiting'))
-							res.once('close', () => stream.close())
 						} else {
 							ctg.data.outgoing.total += ctx.execute.route.data.content.byteLength
-							ctg.data.outgoing[getPreviousHours()[4]] += ctx.execute.route.data.content.byteLength
+							ctg.data.outgoing[ctx.previousHours[4]] += ctx.execute.route.data.content.byteLength
 
 							ctx.content = ctx.execute.route.data.content
 						}
@@ -657,7 +698,7 @@ export = {
 						ctx.events.once('noWaiting', () => resolve(false))
 					}); if (ctx.content) {
 						ctg.data.outgoing.total += ctx.content.byteLength
-						ctg.data.outgoing[getPreviousHours()[4]] += ctx.content.byteLength
+						ctg.data.outgoing[ctx.previousHours[4]] += ctx.content.byteLength
 
 						compressionHandler(ctr, ctx)
 					} else res.end()
@@ -670,7 +711,7 @@ export = {
 						ctx.events.once('noWaiting', () => resolve(false))
 					}); if (ctx.content) {
 						ctg.data.outgoing.total += ctx.content.byteLength
-						ctg.data.outgoing[getPreviousHours()[4]] += ctx.content.byteLength
+						ctg.data.outgoing[ctx.previousHours[4]] += ctx.content.byteLength
 
 						compressionHandler(ctr, ctx)
 					} else res.end()
