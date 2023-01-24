@@ -38,6 +38,11 @@ export default class valueCollection<Key extends string | number | symbol = stri
     return existed
   }
 
+  /** Get The Amount of Stored Objects */
+  objectCount(): number {
+    return Object.keys(this.data).length
+  }
+
   /** Get all Keys as JSON */
   toJSON(
     /** Excluded Keys */ excluded?: Key[]

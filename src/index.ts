@@ -79,7 +79,7 @@ export = {
 		options = new serverOptions(options).getOptions()
 		const { routes, events } = options.routes.list()
 
-		const cacheStore = new valueCollection<string, Buffer>()
+		const cacheStore = new valueCollection<string, Buffer | Object>()
 		let ctg: GlobalContext = {
 			requests: {
 				total: 0,
@@ -258,6 +258,17 @@ export = {
 				for (let urlNumber = 0; urlNumber <= routes.length - 1; urlNumber++) {
 					const url = routes[urlNumber]
 
+					// Get From Cache
+					if (cacheStore.has(`route::${ctx.url.pathname}`)) {
+						const url = cacheStore.get(`route::${ctx.url.pathname}`) as route
+
+						ctx.execute.route = url
+						ctx.execute.static = url.method === 'STATIC'
+						ctx.execute.exists = true
+
+						break
+					}
+
 					// Check for Dashboard Path
 					if (options.dashboard.enabled && (ctx.url.pathname === pathParser(options.dashboard.path) || ctx.url.pathname === pathParser(options.dashboard.path) + '/stats')) {
 						ctx.execute.route = {
@@ -274,6 +285,7 @@ export = {
 									const startTime = date.getTime()
 									const startUsage = process.cpuUsage()
 
+									const previousHours = getPreviousHours()
 									const cpuUsage = await new Promise<number>((resolve) => setTimeout(() => {
 										const currentUsage = process.cpuUsage(startUsage)
 										const currentTime = new Date().getTime()
@@ -286,69 +298,69 @@ export = {
 										requests: [
 											ctg.requests.total,
 											{
-												hour: getPreviousHours()[0],
-												amount: ctg.requests[getPreviousHours()[0]]
+												hour: previousHours[0],
+												amount: ctg.requests[previousHours[0]]
 											},
 											{
-												hour: getPreviousHours()[1],
-												amount: ctg.requests[getPreviousHours()[1]]
+												hour: previousHours[1],
+												amount: ctg.requests[previousHours[1]]
 											},
 											{
-												hour: getPreviousHours()[2],
-												amount: ctg.requests[getPreviousHours()[2]]
+												hour: previousHours[2],
+												amount: ctg.requests[previousHours[2]]
 											},
 											{
-												hour: getPreviousHours()[3],
-												amount: ctg.requests[getPreviousHours()[3]]
+												hour: previousHours[3],
+												amount: ctg.requests[previousHours[3]]
 											},
 											{
-												hour: getPreviousHours()[4],
-												amount: ctg.requests[getPreviousHours()[4]]
+												hour: previousHours[4],
+												amount: ctg.requests[previousHours[4]]
 											}
 										], data: {
 											incoming: [
 												ctg.data.incoming.total,
 												{
-													hour: getPreviousHours()[0],
-													amount: ctg.data.incoming[getPreviousHours()[0]]
+													hour: previousHours[0],
+													amount: ctg.data.incoming[previousHours[0]]
 												},
 												{
-													hour: getPreviousHours()[1],
-													amount: ctg.data.incoming[getPreviousHours()[1]]
+													hour: previousHours[1],
+													amount: ctg.data.incoming[previousHours[1]]
 												},
 												{
-													hour: getPreviousHours()[2],
-													amount: ctg.data.incoming[getPreviousHours()[2]]
+													hour: previousHours[2],
+													amount: ctg.data.incoming[previousHours[2]]
 												},
 												{
-													hour: getPreviousHours()[3],
-													amount: ctg.data.incoming[getPreviousHours()[3]]
+													hour: previousHours[3],
+													amount: ctg.data.incoming[previousHours[3]]
 												},
 												{
-													hour: getPreviousHours()[4],
-													amount: ctg.data.incoming[getPreviousHours()[4]]
+													hour: previousHours[4],
+													amount: ctg.data.incoming[previousHours[4]]
 												}
 											], outgoing: [
 												ctg.data.outgoing.total,
 												{
-													hour: getPreviousHours()[0],
-													amount: ctg.data.outgoing[getPreviousHours()[0]]
+													hour: previousHours[0],
+													amount: ctg.data.outgoing[previousHours[0]]
 												},
 												{
-													hour: getPreviousHours()[1],
-													amount: ctg.data.outgoing[getPreviousHours()[1]]
+													hour: previousHours[1],
+													amount: ctg.data.outgoing[previousHours[1]]
 												},
 												{
-													hour: getPreviousHours()[2],
-													amount: ctg.data.outgoing[getPreviousHours()[2]]
+													hour: previousHours[2],
+													amount: ctg.data.outgoing[previousHours[2]]
 												},
 												{
-													hour: getPreviousHours()[3],
-													amount: ctg.data.outgoing[getPreviousHours()[3]]
+													hour: previousHours[3],
+													amount: ctg.data.outgoing[previousHours[3]]
 												},
 												{
-													hour: getPreviousHours()[4],
-													amount: ctg.data.outgoing[getPreviousHours()[4]]
+													hour: previousHours[4],
+													amount: ctg.data.outgoing[previousHours[4]]
 												}
 											]
 										}, cpu: {
@@ -357,7 +369,10 @@ export = {
 										}, memory: {
 											time: `${date.getHours()}:${date.getMinutes()}:${date.getSeconds()}`,
 											usage: (process.memoryUsage().heapUsed / 1000 / 1000).toFixed(2)
-										}, routes: routes.length
+										},
+
+										routes: routes.length,
+										cached: cacheStore.objectCount()
 									})
 								}
 							}, data: {
@@ -381,11 +396,17 @@ export = {
 						ctx.execute.route = url
 						ctx.execute.exists = true
 
+						// Set Cache
+						cacheStore.set(`route::${ctx.url.pathname}`, url)
+
 						break
 					}; if (url.path === ctx.url.pathname && url.method === 'STATIC') {
 						ctx.execute.route = url
 						ctx.execute.static = true
 						ctx.execute.exists = true
+
+						// Set Cache
+						cacheStore.set(`route::${ctx.url.pathname}`, url)
 
 						break
 					}
@@ -404,7 +425,8 @@ export = {
 
 							continue
 						}; continue
-					}; continue
+					}; if (ctx.execute.exists) break
+					else continue
 				}
 
 				// Add X-Powered-By Header
@@ -423,7 +445,7 @@ export = {
 				})
 
 				// Parse Request Body
-				let requestBody: string = ''; try {
+				let requestBody = ''; try {
 					requestBody = JSON.parse(ctx.body.toString())
 				} catch (e) { requestBody = ctx.body.toString() ?? '' }
 
@@ -519,9 +541,10 @@ export = {
 						}
 
 						// Check Cache
-						if (cacheStore.has(file)) {
-							ctg.data.outgoing[getPreviousHours()[4]] += (cacheStore.get(file)).byteLength
-							ctx.content = (cacheStore.get(file))
+						if (cacheStore.has(`file::${file}`)) {
+							ctg.data.outgoing.total += (cacheStore.get(`file::${file}`) as Buffer).byteLength
+							ctg.data.outgoing[getPreviousHours()[4]] += (cacheStore.get(`file::${file}`) as Buffer).byteLength
+							ctx.content = (cacheStore.get(`file::${file}`)) as Buffer
 							return ctr
 						}
 
@@ -534,9 +557,10 @@ export = {
 
 						// Write to Cache Map
 						stream.on('data', (content: Buffer) => {
+							ctg.data.outgoing.total += content.byteLength
 							ctg.data.outgoing[getPreviousHours()[4]] += content.byteLength
-							const oldData = cacheStore.get(file) ?? Buffer.from('')
-							if (cache) cacheStore.set(file, Buffer.concat([oldData, content]))
+							const oldData = cacheStore.get(`file::${file}`) ?? Buffer.from('')
+							if (cache) cacheStore.set(`file::${file}`, Buffer.concat([ oldData as Buffer, content ]))
 						}); stream.once('end', () => { ctx.events.emit('noWaiting'); ctx.content = Buffer.from('') })
 						res.once('close', () => stream.close())
 
@@ -654,7 +678,7 @@ export = {
 		server.listen(options.port, options.bind)
 		return new Promise((resolve, reject) => {
 			server.once('listening', () => resolve({ success: true, port: options.port, message: 'WEBSERVER STARTED', rawServer: server }))
-			server.once('error', (error) => { server.close(); reject({ success: false, error, message: 'WEBSERVER ERRORED' }) })
+			server.once('error', (error: Error) => { server.close(); reject({ success: false, error, message: 'WEBSERVER ERRORED' }) })
 		}) as Promise<{ success: boolean, port?: number, error?: Error, message: string, rawServer?: typeof server }>
 	}
 }

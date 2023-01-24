@@ -14,6 +14,8 @@ export default class valueCollection<Key extends string | number | symbol = stri
     set(
     /** The Key to set */ key: Key, 
     /** The new Value */ value: Value): boolean;
+    /** Get The Amount of Stored Objects */
+    objectCount(): number;
     /** Get all Keys as JSON */
     toJSON(
     /** Excluded Keys */ excluded?: Key[]): Record<Key, Value>;
