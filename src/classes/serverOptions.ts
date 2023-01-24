@@ -31,6 +31,10 @@ export interface Options {
 		 * @default true
 		*/ enabled?: boolean
 		/**
+		 * Whether to try parsing the Body as JSON
+		 * @default true
+		*/ parse?: boolean
+		/**
 		 * The Maximum Size of the Body in MB
 		 * @default 5
 		*/ maxSize?: number
@@ -75,7 +79,11 @@ export interface Options {
 	 * @default false
 	*/ proxy?: boolean
 	/**
-	 * Whether all cors headers are set
+	 * Whether to Compress outgoing Data with gzip
+	 * @default true
+	*/ compress?: boolean
+	/**
+	 * Whether all cors Headers will be set
 	 * @default false
 	*/ cors?: boolean
 	/**
@@ -102,6 +110,7 @@ export default class serverOptions {
         functions: new Map<string, number>()
       }, body: {
 				enabled: true,
+				parse: true,
 				maxSize: 5,
 				message: 'Payload too large'
 			}, https: {

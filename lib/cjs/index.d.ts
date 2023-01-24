@@ -1,7 +1,9 @@
+/// <reference types="node" />
 import routeList from "./classes/routeList";
 import serverOptions, { Options } from "./classes/serverOptions";
 import valueCollection from "./classes/valueCollection";
 import typesEnum from "./interfaces/methods";
+import * as http from "http";
 declare const _default: {
     /** The RouteList */ routeList: typeof routeList;
     /** The ServerOptions */ serverOptions: typeof serverOptions;
@@ -13,7 +15,7 @@ declare const _default: {
         port?: number;
         error?: Error;
         message: string;
-        rawServer?: any;
+        rawServer?: http.Server<typeof http.IncomingMessage, typeof http.ServerResponse>;
     }>;
 };
 export = _default;

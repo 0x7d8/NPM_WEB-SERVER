@@ -12,7 +12,7 @@ interface printOptions {
 }
 interface printFileOptions {
     /**
-     * Whether some Content Types will be added automatically
+     * Whether some Content Type Headers will be added automatically
      * @default true
     */ addTypes?: boolean;
     /**

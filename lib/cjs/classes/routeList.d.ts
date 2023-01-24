@@ -5,15 +5,15 @@ import ctr from "../interfaces/ctr";
 export declare const pathParser: (path: string) => string;
 interface staticOptions {
     /**
-     * Whether files will be loaded into Memory
+     * Whether the files will be loaded into Memory
      * @default false
     */ preload?: boolean;
     /**
-     * Whether .html & .htm will be removed automatically
+     * Whether .html & .htm endings will be removed automatically
      * @default false
     */ remHTML?: boolean;
     /**
-     * Whether some Content Types will be added automatically
+     * Whether some Content Type Headers will be added automatically
      * @default true
     */ addTypes?: boolean;
 }

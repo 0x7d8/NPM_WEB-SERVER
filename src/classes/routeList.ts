@@ -13,21 +13,22 @@ export const pathParser = (path: string) => {
 
 	if (path.endsWith('/') && path !== '/') return path.slice(0, -1)
 	if (!path.startsWith('/') && path !== '/') return `/${path}`
+	if (path.includes('/?')) return path.replace('/?', '?')
 
 	return path
 }
 
 interface staticOptions {
 	/**
-	 * Whether files will be loaded into Memory
+	 * Whether the files will be loaded into Memory
 	 * @default false
 	*/ preload?: boolean
 	/**
-	 * Whether .html & .htm will be removed automatically
+	 * Whether .html & .htm endings will be removed automatically
 	 * @default false
 	*/ remHTML?: boolean
 	/**
-	 * Whether some Content Types will be added automatically
+	 * Whether some Content Type Headers will be added automatically
 	 * @default true
 	*/ addTypes?: boolean
 }

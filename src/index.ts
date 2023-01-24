@@ -11,36 +11,18 @@ import types from "./misc/methods"
 import * as http from "http"
 import * as https from "https"
 import * as queryUrl from "querystring"
+import * as zlib from "zlib"
 import * as path from "path"
 import * as url from "url"
 import * as fs from "fs"
 import * as os from "os"
 
 type hours =
-	'1' |
-	'2' |
-	'3' |
-	'4' |
-	'5' |
-	'6' |
-	'7' |
-	'8' |
-	'9' |
-	'10' |
-	'11' |
-	'12' |
-	'13' |
-	'14' |
-	'15' |
-	'16' |
-	'17' |
-	'18' |
-	'19' |
-	'20' |
-	'21' |
-	'22' |
-	'23' |
-	'24'
+	'1' | '2' | '3' | '4' | '5' |
+	'6' | '7' | '8' | '9' | '10' |
+	'11' | '12' | '13' | '14' | '15' |
+	'16' | '17' | '18' | '19' | '20' |
+	'21' | '22' | '23' | '24'
 
 interface GlobalContext {
 	/** The Request Count */ requests: Record<hours | 'total', number>
@@ -51,7 +33,7 @@ interface GlobalContext {
 	}
 }
 
-interface LocalContext {
+interface RequestContext {
 	/** The Content to Write */ content: Buffer
 	/** The Event Emitter */ events: EventEmitter
 	/** Whether waiting is required */ waiting: boolean
@@ -61,9 +43,13 @@ interface LocalContext {
 		/** Whether the Route is Static */ static: boolean
 		/** Whether the Route exists */ exists: boolean
 		/** Whether the Route is the Dashboard */ dashboard: boolean
-	},
+	}
+
+	/** The Request Body */ body: {
+		/** Unparsed */ raw: Buffer
+		/** Parsed */ parsed: any
+	}
 	/** The Request URL */ url: url.UrlWithStringQuery & { method: typesEnum }
-	/** The Request Body */ body: Buffer
 }
 
 export = {
@@ -79,6 +65,7 @@ export = {
 		options = new serverOptions(options).getOptions()
 		const { routes, events } = options.routes.list()
 
+		const coreCount = os.cpus().length
 		const cacheStore = new valueCollection<string, Buffer | Object>()
 		let ctg: GlobalContext = {
 			requests: {
@@ -111,7 +98,18 @@ export = {
 			}
 		}
 
-		const eventHandler = async(event: eventsType, ctr: ctr, ctx: LocalContext) => {
+		const compressionHandler = (ctr: ctr, ctx: RequestContext) => {
+			if (options.compress && ctr.headers.has('accept-encoding') && ctr.headers.get('accept-encoding').includes('gzip')) {
+				ctr.rawRes.setHeader('Content-Encoding', 'gzip')
+    		ctr.rawRes.setHeader('Vary', 'Accept-Encoding')
+
+				const gZip = zlib.createGzip()
+				gZip.pipe(ctr.rawRes)
+				gZip.end(ctx.content, 'binary')
+			} else {
+				ctr.rawRes.end(ctx.content, 'binary')
+			}
+		}; const eventHandler = async(event: eventsType, ctr: ctr, ctx: RequestContext) => {
 			switch (event) {
 				case "error": {
 					const event = events.find((event) => (event.event === 'error'))
@@ -137,7 +135,7 @@ export = {
 
 					if (event) {
 						// Custom Request
-						await Promise.resolve(event.code(ctr as unknown as ctr)).catch((e) => {
+						await Promise.resolve(event.code(ctr)).catch((e) => {
 							errorStop = true
 
 							console.log(e)
@@ -166,7 +164,7 @@ export = {
 						ctx.content = Buffer.from(`[!] COULDNT FIND [${ctr.url.method}]: ${ctr.url.pathname.toUpperCase()}\n[i] AVAILABLE PAGES:\n\n${pageDisplay}`)
 					} else {
 						// Custom NotFound
-						await Promise.resolve(event.code(ctr as unknown as ctr)).catch((e) => {
+						await Promise.resolve(event.code(ctr)).catch((e) => {
 							errorStop = true
 
 							console.log(e)
@@ -189,7 +187,7 @@ export = {
 
 		const server = (options.https.enabled ? https as any : http as any).createServer(httpOptions, async(req: http.IncomingMessage, res: http.ServerResponse) => {
 			// Create Local ConTeXt
-			let ctx: LocalContext = {
+			let ctx: RequestContext = {
 				content: Buffer.from(''),
 				events: new EventEmitter(),
 				waiting: false,
@@ -199,8 +197,10 @@ export = {
 					static: false,
 					exists: false,
 					dashboard: false
-				}, url: { ...url.parse(pathParser(req.url)), method: req.method as typesEnum },
-				body: Buffer.from('')
+				}, body: {
+					raw: Buffer.from(''),
+					parsed: ''
+				}, url: { ...url.parse(pathParser(req.url)), method: req.method as typesEnum }
 			}
 
 			// Handle Wait Events
@@ -209,8 +209,8 @@ export = {
 
 			// Save & Check Request Body
 			if (options.body.enabled) req.on('data', (data: string) => {
-				ctx.body = Buffer.concat([ ctx.body, Buffer.from(data) ])
-				if (ctx.body.byteLength >= (options.body.maxSize * 1e6)) {
+				ctx.body.raw = Buffer.concat([ ctx.body.raw, Buffer.from(data) ])
+				if (ctx.body.raw.byteLength >= (options.body.maxSize * 1e6)) {
 					res.statusCode = 413
 					ctx.continue = false
 					switch (typeof options.body.message) {
@@ -236,10 +236,10 @@ export = {
 						case "undefined":
 							ctx.content = Buffer.from('')
 							break
-					}; return res.end(ctx.content, 'binary')
+					}; return compressionHandler({ headers: new valueCollection(req.headers as any, decodeURIComponent), rawRes: res } as any, ctx)
 				} else {
-					ctg.data.incoming.total += ctx.body.byteLength
-					ctg.data.incoming[getPreviousHours()[4]] += ctx.body.byteLength
+					ctg.data.incoming.total += ctx.body.raw.byteLength
+					ctg.data.incoming[getPreviousHours()[4]] += ctx.body.raw.byteLength
 				}
 			}).on('end', () => { if (ctx.continue) ctx.events.emit('startRequest') })
 			ctx.events.once('startRequest', async() => {
@@ -263,7 +263,7 @@ export = {
 						const url = cacheStore.get(`route::${ctx.url.pathname}`) as route
 
 						ctx.execute.route = url
-						ctx.execute.static = url.method === 'STATIC'
+						ctx.execute.static = (url.method === 'STATIC')
 						ctx.execute.exists = true
 
 						break
@@ -277,7 +277,7 @@ export = {
 							pathArray: url.path.split('/'),
 							code: async(ctr) => {
 								if (!ctr.url.path.endsWith('/stats')) {
-									const dashboard = (await fs.promises.readFile(__dirname + '/stats/index.html', 'utf8'))
+									const dashboard = (await fs.promises.readFile(`${__dirname}/stats/index.html`, 'utf8'))
 										.replaceAll('/rjweb-dashboard', pathParser(options.dashboard.path))
 									return ctr.print(dashboard)
 								} else {
@@ -289,7 +289,7 @@ export = {
 									const cpuUsage = await new Promise<number>((resolve) => setTimeout(() => {
 										const currentUsage = process.cpuUsage(startUsage)
 										const currentTime = new Date().getTime()
-										const timeDelta = (currentTime - startTime) * 5 * os.cpus().length
+										const timeDelta = (currentTime - startTime) * 5 * coreCount
 										const { user, system } = currentUsage
 										resolve((system + user) / timeDelta)
 									}, 500))
@@ -429,7 +429,7 @@ export = {
 					else continue
 				}
 
-				// Add X-Powered-By Header
+				// Add X-Powered-By Header (if enabled)
 				if (options.poweredBy) res.setHeader('X-Powered-By', 'rjweb-server')
 
 				// Get Correct Host IP
@@ -444,10 +444,13 @@ export = {
 					cookies[parts.shift().trim()] = parts.join('=')
 				})
 
-				// Parse Request Body
-				let requestBody = ''; try {
-					requestBody = JSON.parse(ctx.body.toString())
-				} catch (e) { requestBody = ctx.body.toString() ?? '' }
+				// Parse Request Body (if enabled)
+				if (req.headers['content-encoding'] === 'gzip')
+					ctx.body.raw = await new Promise((resolve) => zlib.gunzip(ctx.body.raw, (_, content) => resolve(content)))
+				if (options.body.parse) {
+					try { JSON.parse(ctx.body.raw.toString()) }
+					catch (e) { ctx.body.parsed = ctx.body.raw.toString() }
+				} else ctx.body.parsed = ctx.body.raw.toString()
 
 				// Create ConText Response Object
 				let ctr: ctr = {
@@ -463,7 +466,7 @@ export = {
 						httpVersion: req.httpVersion,
 						port: req.socket.remotePort,
 						ip: hostIp
-					}, body: requestBody,
+					}, body: ctx.body.parsed,
 					url: ctx.url,
 
 					// Raw Values
@@ -587,7 +590,7 @@ export = {
 								res.statusCode = 429
 								errorStop = true
 								ctr.print(options.rateLimits.message)
-								return res.end(ctx.content, 'binary')
+								return compressionHandler(ctr, ctx)
 							}
 						}
 					}
@@ -656,7 +659,7 @@ export = {
 						ctg.data.outgoing.total += ctx.content.byteLength
 						ctg.data.outgoing[getPreviousHours()[4]] += ctx.content.byteLength
 
-						res.end(ctx.content, 'binary')
+						compressionHandler(ctr, ctx)
 					} else res.end()
 				} else {
 					eventHandler('notfound', ctr, ctx)
@@ -669,11 +672,11 @@ export = {
 						ctg.data.outgoing.total += ctx.content.byteLength
 						ctg.data.outgoing[getPreviousHours()[4]] += ctx.content.byteLength
 
-						res.end(ctx.content, 'binary')
+						compressionHandler(ctr, ctx)
 					} else res.end()
 				}
 			}); if (!options.body.enabled) ctx.events.emit('startRequest')
-		})
+		}) as http.Server
 
 		server.listen(options.port, options.bind)
 		return new Promise((resolve, reject) => {
