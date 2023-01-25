@@ -447,7 +447,7 @@ export = {
 
 				// Parse Request Body (if enabled)
 				if (req.headers['content-encoding'] === 'gzip')
-					ctx.body.raw = await new Promise((resolve) => zlib.gunzip(ctx.body.raw, (_, content) => resolve(content)))
+					ctx.body.raw = await new Promise((resolve) => zlib.gunzip(ctx.body.raw, (error, content) => { if (error) resolve(ctx.body.raw); else resolve(content) }))
 				if (options.body.parse) {
 					try { JSON.parse(ctx.body.raw.toString()) }
 					catch (e) { ctx.body.parsed = ctx.body.raw.toString() }
