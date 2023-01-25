@@ -1,9 +1,9 @@
-export = [
-	'OPTIONS',
-	'DELETE',
-	'PATCH',
-	'STATIC',
-	'POST',
-	'PUT',
-	'GET'
+export default [
+	"OPTIONS",
+	"DELETE",
+	"PATCH",
+	"STATIC",
+	"POST",
+	"PUT",
+	"GET"
 ]

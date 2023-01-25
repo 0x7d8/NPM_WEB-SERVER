@@ -25,21 +25,21 @@ export interface Options {
 		} | Map<string, number>
 	}
 
-	/** Body Settings */ body?: {
+	/** HTTP Body Settings */ body?: {
 		/**
-		 * Whether recieving Bodies is enabled
+		 * Whether recieving HTTP Bodies is enabled
 		 * @default true
 		*/ enabled?: boolean
 		/**
-		 * Whether to try parsing the Body as JSON
+		 * Whether to try parsing the HTTP Body as JSON
 		 * @default true
 		*/ parse?: boolean
 		/**
-		 * The Maximum Size of the Body in MB
+		 * The Maximum Size of the HTTP Body in MB
 		 * @default 5
 		*/ maxSize?: number
 		/**
-		 * The Message that gets sent when the Body Size is exceeded
+		 * The Message that gets sent when the HTTP Body Size is exceeded
 		 * @default "Payload too large"
 		*/ message?: any
 	}
@@ -79,8 +79,8 @@ export interface Options {
 	 * @default false
 	*/ proxy?: boolean
 	/**
-	 * Whether to Compress outgoing Data with gzip
-	 * @default true
+	 * Whether to Compress outgoing Data using gzip
+	 * @default false
 	*/ compress?: boolean
 	/**
 	 * Whether all cors Headers will be set
@@ -122,7 +122,7 @@ export default class serverOptions {
 				path: '/rjweb-dashboard'
 			}, bind: '0.0.0.0',
       proxy: false,
-			compress: true,
+			compress: false,
       cors: false,
       port: 2023,
       poweredBy: true

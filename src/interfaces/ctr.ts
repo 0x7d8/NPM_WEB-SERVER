@@ -8,6 +8,14 @@ interface printOptions {
 	 * Whether to Format the Outgoing JSON (If any)
 	 * @default false
 	*/ niceJSON?: boolean
+	/**
+	 * The Content Type to use
+	 * @default ''
+	*/ contentType?: string
+	/**
+	 * Whether to evaluate returned Function (If Function was sent)
+	 * @default false
+	*/ returnFunctions?: boolean
 }
 
 interface printFileOptions {
@@ -15,6 +23,10 @@ interface printFileOptions {
 	 * Whether some Content Type Headers will be added automatically
 	 * @default true
 	*/ addTypes?: boolean
+	/**
+	 * The Content Type to use
+	 * @default ''
+	*/ contentType?: string
 	/**
 	 * Whether to Cache the sent Files after accessed once (only renew after restart)
 	 * @default false

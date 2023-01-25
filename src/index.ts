@@ -485,8 +485,10 @@ export = {
 					}, setCustom(name, value) {
 						ctr['@'][name] = value
 						return ctr
-					}, print(msg, options) {
-						const niceJSON = options?.niceJSON ?? false
+					}, print(msg, localOptions) {
+						const niceJSON = localOptions?.niceJSON ?? false
+						const contentType = localOptions?.contentType ?? ''
+						const returnFunctions = localOptions?.returnFunctions ?? false
 
 						switch (typeof msg) {
 							case "object":
@@ -496,24 +498,28 @@ export = {
 								break
 
 							case "string":
+								if (contentType) res.setHeader('Content-Type', contentType)
 								ctx.content = Buffer.from(msg)
 								break
 
 							case "symbol":
+								if (contentType) res.setHeader('Content-Type', contentType)
 								ctx.content = Buffer.from(msg.toString())
 								break
 
 							case "bigint":
 							case "number":
 							case "boolean":
+								if (contentType) res.setHeader('Content-Type', contentType)
 								ctx.content = Buffer.from(String(msg))
 								break
 
 							case "function":
 								ctx.waiting = true; (async() => {
 									const result = await msg()
-									if (typeof result !== 'function') ctr.print(result, { niceJSON })
-									else { (ctr as any).error = new Error('Cant return functions from functions, consider using async/await'); return eventHandler('error', ctr, ctx) }
+									if (typeof result !== 'function') ctr.print(result, { niceJSON, contentType })
+									else if (!returnFunctions) { (ctr as any).error = new Error('Cant return functions from functions, consider using async/await'); return eventHandler('error', ctr, ctx) }
+									else { ctr.print(result, { niceJSON, contentType, returnFunctions}) }
 									const parsedResult = ctx.content
 
 									ctx.content = parsedResult
@@ -521,6 +527,7 @@ export = {
 								}) (); break
 
 							case "undefined":
+								if (contentType) res.setHeader('Content-Type', contentType)
 								ctx.content = Buffer.from('')
 								break
 						}; return ctr
@@ -529,10 +536,11 @@ export = {
 						return ctr
 					}, printFile(file, localOptions) {
 						const addTypes = localOptions?.addTypes ?? true
+						const contentType = localOptions?.contentType ?? ''
 						const cache = localOptions?.cache ?? false
 
 						// Add Content Types
-						if (addTypes) {
+						if (addTypes && !contentType) {
 							if (file.endsWith('.pdf')) ctr.setHeader('Content-Type', 'application/pdf')
 							if (file.endsWith('.js')) ctr.setHeader('Content-Type', 'text/javascript')
 							if (file.endsWith('.html')) ctr.setHeader('Content-Type', 'text/html')
@@ -542,7 +550,7 @@ export = {
 							if (file.endsWith('.mp4')) ctr.setHeader('Content-Type', 'video/mp4')
 							if (file.endsWith('.webm')) ctr.setHeader('Content-Type', 'video/webm')
 							if (file.endsWith('.bmp')) ctr.setHeader('Content-Type', 'image/bmp')
-						}
+						} else if (contentType) res.setHeader('Content-Type', contentType)
 
 						// Check Cache
 						if (cacheStore.has(`file::${file}`)) {

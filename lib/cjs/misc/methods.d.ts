@@ -1,2 +1,2 @@
 declare const _default: string[];
-export = _default;
+export default _default;
