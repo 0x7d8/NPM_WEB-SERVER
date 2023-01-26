@@ -3,7 +3,11 @@ lockfileVersion: 5.4
 specifiers:
   '@types/node': ^18.11.18
   esbuild: ^0.17.3
+  rjweb-server: 'link:'
   typescript: ^4.9.4
+
+dependencies:
+  rjweb-server: 'link:'
 
 devDependencies:
   '@types/node': registry.npmjs.org/@types/node/18.11.18

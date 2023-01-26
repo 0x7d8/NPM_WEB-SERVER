@@ -403,6 +403,17 @@ module.exports = {
 }
 ```
 
+### CLI
+Serve a Static Folder using CLI
+```sh
+rjw-srv [path to folder] [options]
+```
+
+View Help
+```sh
+rjw-srv -h
+```
+
 ## Full Example
 
 ### Javascript
