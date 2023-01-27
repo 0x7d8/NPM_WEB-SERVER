@@ -1,6 +1,6 @@
 {
   "name": "rjweb-server",
-  "version": "2.8.3",
+  "version": "2.8.4",
   "description": "Easy and Lightweight Way to create a Web Server with Many Easy-to-use Features",
   "module": "lib/esm/index.js",
   "main": "lib/cjs/index.js",

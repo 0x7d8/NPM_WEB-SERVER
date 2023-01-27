@@ -66,6 +66,10 @@ if (args.includes('-v') || args.includes('--version')) {
 		console.log(`${colors.fg.yellow}[RJW] ${colors.fg.gray}[${ctr.url.method}] ${colors.fg.blue, colors.underscore}${ctr.url.href}${colors.reset} FROM ${ctr.client.ip}`)
 	}); webserver.start(webserverOptions as Options).then((res) => {
 		console.log(`${colors.fg.yellow}[RJW] ${colors.reset}Server started on ${colors.fg.yellow}${res.port}${colors.reset}`)
+	}).catch((err) => {
+		console.log(`${colors.fg.yellow}[RJW] ${colors.reset}Error:`)
+		console.log(`${colors.fg.yellow}[RJW] ${colors.reset}Maybe port ${colors.fg.yellow}${webserverOptions.port ?? 2023}${colors.reset} isnt available`)
+		console.error(`${colors.fg.red}[ERR]${colors.reset}`, err.error)
 	})
 } else if (!isHelp() && !fs.existsSync(path.join(process.cwd(), args[0]))) {
 	console.log(`${colors.fg.yellow}[RJW] ${colors.reset}Error:`)
@@ -80,7 +84,7 @@ else {
 	console.log(`[arguments] ${colors.reset}`)
 	console.log(' --port=2023')
 	console.log(' --compress=false')
-	console.log(' --bind="0.0.0.0"')
+	console.log(' --bind=0.0.0.0')
 	console.log(' --remHTML=false')
 	console.log(' --addTypes=true')
 	console.log(' --dashboard=false')

@@ -50,7 +50,7 @@ import { ctr } from "rjweb-server/interfaces"
 const routes = new webserver.routeList()
 
 routes.set(webserver.types.get, '/hello', async(ctr: ctr) => {
-  if (!ctr.queries.has("name")) return ctr.print('please supply the name queries!!')
+  if (!ctr.queries.has("name")) return ctr.print('please supply the name query!!')
 
   return ctr.print(`Hello, ${ctr.queries.get("name")}! How are you doing?`)
 })
@@ -420,12 +420,17 @@ module.exports = {
 ### CLI
 Serve a Static Folder using CLI
 ```sh
-rjw-srv [path to folder] [options]
+rjw-srv [path to folder] [arguments]
 ```
 
 View Help
 ```sh
 rjw-srv -h
+```
+
+Example
+```sh
+rjw-srv ./static --port=4444 --remHTML=true
 ```
 
 ## Full Example
