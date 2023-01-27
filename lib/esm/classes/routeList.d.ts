@@ -2,7 +2,12 @@ import { types as typesInterface } from "../interfaces/methods";
 import route from "../interfaces/route";
 import event, { events as eventsType } from "../interfaces/event";
 import ctr from "../interfaces/ctr";
-export declare const pathParser: (path: string) => string;
+export declare const pathParser: (path: string, removeSingleSlash?: boolean) => string;
+interface minifiedRoute {
+    /** The Request Method of the Route */ method: typesInterface;
+    /** The Path on which this will be available (+ prefix) */ path: string;
+    /** The Async Code to run on a Request */ code: (ctr: ctr) => Promise<any>;
+}
 interface staticOptions {
     /**
      * Whether the files will be loaded into Memory
@@ -39,6 +44,10 @@ export default class routeList {
     /** The Request Method */ method: typesInterface, 
     /** The Path on which this will be available */ urlPath: string, 
     /** The Async Code to run on a Request */ code: (ctr: ctr) => Promise<any>): number | false;
+    /** Set A Route Block Manually */
+    setBlock(
+    /** The Path Prefix */ prefix: string, 
+    /** The Routes */ routes: minifiedRoute[]): number[];
     /** Serve Static Files */
     static(
     /** The Path to serve the Files on */ urlPath: string, 

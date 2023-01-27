@@ -8,14 +8,20 @@ import types from "../misc/methods"
 import * as path from "path"
 import * as fs from "fs"
 
-export const pathParser = (path: string) => {
+export const pathParser = (path: string, removeSingleSlash?: boolean) => {
 	path = path.replace(/\/{2,}/g, '/')
 
 	if (path.endsWith('/') && path !== '/') return path.slice(0, -1)
 	if (!path.startsWith('/') && path !== '/') return `/${path}`
 	if (path.includes('/?')) return path.replace('/?', '?')
 
-	return path
+	return ((removeSingleSlash && path === '/') ? '' : path)
+}
+
+interface minifiedRoute {
+	/** The Request Method of the Route */ method: typesInterface
+	/** The Path on which this will be available (+ prefix) */ path: string
+	/** The Async Code to run on a Request */ code: (ctr: ctr) => Promise<any>
 }
 
 interface staticOptions {
@@ -90,6 +96,29 @@ export default class routeList {
 		}) - 1
 	}
 
+	/** Set A Route Block Manually */
+	setBlock(
+		/** The Path Prefix */ prefix: string,
+		/** The Routes */ routes: minifiedRoute[]
+	) {
+		prefix = pathParser(prefix)
+		let arrayIndexes: number[] = []
+
+		for (let routeNumber = 0; routeNumber <= routes.length - 1; routeNumber++) {
+			const route = routes[routeNumber]
+
+			arrayIndexes.push(this.routes.push({
+				method: route.method,
+				path: `${prefix}${pathParser(route.path, true)}`,
+				pathArray: `${prefix}${pathParser(route.path, true)}`.split('/'),
+				code: route.code,
+				data: {
+					addTypes: false
+				}
+			}) - 1)
+		}; return arrayIndexes
+	}
+
 	/** Serve Static Files */
 	static(
 		/** The Path to serve the Files on */ urlPath: string,
@@ -132,7 +161,7 @@ export default class routeList {
 		let arrayIndexes: number[] = []
 
 		for (const file of files) {
-			const route: route = require(path.resolve(file))
+			const route: minifiedRoute = require(path.resolve(file))
 
 			if (
 				!('path' in route) ||

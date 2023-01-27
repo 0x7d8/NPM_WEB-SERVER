@@ -136,17 +136,26 @@ Initialize Server
 const webserver = require('rjweb-server')
 const routes = new webserver.routeList()
 
-// ctr.queries.get... is ?name=
-routes.set(webserver.types.get, '/hello', async(ctr) => {
-  if (!ctr.queries.has("name")) return ctr.print('please supply the name Query!!')
+routes.setBlock('/hello' /** That is the prefix (= prefix + path) */, [
+  {
+    method: webserver.types.get,
+    path: '/', // Ends up being "/hello" because prefix is /hello
+    code: async(ctr) => {
+      // ctr.queries.get... is ?name=
+      if (!ctr.queries.has("name")) return ctr.print('please supply the name Query!!')
 
-  return ctr.print(`Hello, ${ctr.queries.get("name")}! How are you doing?`)
-})
-
-// ctr.params.get... is :name, example /hello/0x4096
-routes.set(webserver.types.get, '/hello/:name', async(ctr) => {
-  return ctr.print(`Hello, ${ctr.params.get("name")}! How are you doing?`)
-})
+      return ctr.print(`Hello, ${ctr.queries.get("name")}! How are you doing?`)
+    }
+  },
+  {
+    method: webserver.types.get,
+    path: '/:name', // Ends up being "/hello/<placeholder called name>"
+    code: async(ctr) => {
+      // ctr.params.get... is :name, example /hello/0x4096 where the 0x4096 is :name
+      return ctr.print(`Hello, ${ctr.params.get('name')}! How are ya mate?`)
+    }
+  }
+])
 
 // ctr.params.get... is :name, example /hello/0x4096
 routes.set(webserver.types.post, '/post', async(ctr) => {
@@ -185,9 +194,14 @@ const wait = require('timers/promises').setTimeout
 const handleHello = async() => {
   await wait(5000)
   return 'You just waited 5 seconds !!'
-}
-routes.set(webserver.types.get, '/hello', async(ctr) => {
+}; routes.set(webserver.types.get, '/wait5sec/func', async(ctr) => {
   return ctr.print(handleHello)
+})
+
+// this request will also load for 5 seconds
+routes.set(webserver.types.get, '/wait5sec/promise', async(ctr) => {
+  await wait(5000)
+  return ctr.print('You just waited 5 seconds !!')
 })
 
 webserver.start({
