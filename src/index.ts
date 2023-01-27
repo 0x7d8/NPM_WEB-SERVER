@@ -553,6 +553,7 @@ export = {
 						} else if (contentType) res.setHeader('Content-Type', contentType)
 
 						// Check Cache
+						ctx.continue = false
 						if (cacheStore.has(`file::${file}`)) {
 							ctg.data.outgoing.total += (cacheStore.get(`file::${file}`) as Buffer).byteLength
 							ctg.data.outgoing[ctx.previousHours[4]] += (cacheStore.get(`file::${file}`) as Buffer).byteLength
@@ -660,6 +661,7 @@ export = {
 						}
 
 						// Read Content
+						ctx.continue = false
 						if (!('content' in ctx.execute.route.data)) {
 							const filePath = path.resolve(ctx.execute.route.data.file)
 
@@ -704,7 +706,7 @@ export = {
 					await new Promise((resolve) => {
 						if (!ctx.waiting) return resolve(true)
 						ctx.events.once('noWaiting', () => resolve(false))
-					}); if (ctx.content) {
+					}); if (ctx.content && ctx.continue) {
 						ctg.data.outgoing.total += ctx.content.byteLength
 						ctg.data.outgoing[ctx.previousHours[4]] += ctx.content.byteLength
 
@@ -717,7 +719,7 @@ export = {
 					await new Promise((resolve) => {
 						if (!ctx.waiting) return resolve(true)
 						ctx.events.once('noWaiting', () => resolve(false))
-					}); if (ctx.content) {
+					}); if (ctx.content && ctx.continue) {
 						ctg.data.outgoing.total += ctx.content.byteLength
 						ctg.data.outgoing[ctx.previousHours[4]] += ctx.content.byteLength
 
