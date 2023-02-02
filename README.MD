@@ -166,6 +166,19 @@ routes.set(webserver.types.get, '/profile/:user', async(ctr) => {
   return ctr.printFile(`../images/profile/${ctr.params.get('user')}.png`, { addTypes: true })
 })
 
+routes.set(webserver.types.get, '/redirect/:website', async(ctr) => {
+  switch (ctr.params.get('website')) {
+    case "google":
+      return ctr.redirect('https://www.google.com')
+
+    case "youtube":
+      return ctr.redirect('https://www.youtube.com')
+
+    default:
+      return ctr.print('Im only smart enough to redirect to google and youtube :P')
+  }
+})
+
 webserver.start({
   bind: '0.0.0.0', // The IP thats bound to
   cors: false, // If Cors Headers will be added

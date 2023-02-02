@@ -485,6 +485,10 @@ export = {
 					}, setCustom(name, value) {
 						ctr['@'][name] = value
 						return ctr
+					}, redirect(location, statusCode) {
+						res.statusCode = statusCode ?? 302
+						res.setHeader('Location', location)
+						return ctr
 					}, print(msg, localOptions) {
 						const niceJSON = localOptions?.niceJSON ?? false
 						const contentType = localOptions?.contentType ?? ''

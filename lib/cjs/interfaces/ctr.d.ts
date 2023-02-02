@@ -53,8 +53,9 @@ export default interface ctr<Custom = any, HasError = false, Body = any> {
     /** The Error from the Request */ error?: HasError extends true ? Error : undefined;
     /** Set an HTTP Header to add */ setHeader: (name: string, value: string | number) => ctr;
     /** Set a Custom Variable */ setCustom: <Type extends keyof Custom>(name: Type, value: Custom[Type]) => ctr;
-    /** Print a Message to the Client (automatically Formatted) */ print: (msg: any, options?: printOptions) => ctr;
     /** The Request Status to Send */ status: (code: number) => ctr;
+    /** Redirect a Client to another Location */ redirect: (location: string, statusCode?: 301 | 302) => ctr;
+    /** Print a Message to the Client (automatically Formatted) */ print: (msg: any, options?: printOptions) => ctr;
     /** Print the Content of a File to the Client */ printFile: (path: string, options?: printFileOptions) => ctr;
     /** Custom Variables that are Global */ '@': Custom;
 }
