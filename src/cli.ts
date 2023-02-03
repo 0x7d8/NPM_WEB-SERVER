@@ -56,6 +56,8 @@ if (args.includes('-v') || args.includes('--version')) {
 		if (key === 'remHTML') remHTML = Boolean(value)
 		if (key === 'addTypes') remHTML = Boolean(value)
 		if (key === 'compress') webserverOptions.compress = Boolean(value)
+		if (key === 'cors') webserverOptions.cors = Boolean(value)
+		if (key === 'proxy') webserverOptions.proxy = Boolean(value)
 		if (key === 'dashboard') webserverOptions.dashboard.enabled = Boolean(value)
 		if (key === '404') notFoundPath = String(value).replaceAll('"', '')
 	}
@@ -86,6 +88,8 @@ else {
 	console.log(`[arguments] ${colors.reset}`)
 	console.log(' --port=2023')
 	console.log(' --compress=false')
+	console.log(' --proxy=false')
+	console.log(' --cors=false')
 	console.log(' --bind=0.0.0.0')
 	console.log(' --remHTML=false')
 	console.log(' --addTypes=true')
