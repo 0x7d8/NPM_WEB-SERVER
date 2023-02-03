@@ -47,7 +47,7 @@ if (args.includes('-v') || args.includes('--version')) {
 	console.log(`${colors.fg.yellow}[RJW] ${colors.reset}Version:`)
 	console.log(`v${packageJSON.version}`)
 } else if (!isHelp() && fs.existsSync(path.join(process.cwd(), args[0]))) {
-	let remHTML = false, addTypes = true
+	let remHTML = false, addTypes = true, notFoundPath = ''
 	for (const option of args.slice(1)) {
 		const [ key, value ] = option.slice(2).split('=')
 
@@ -57,11 +57,14 @@ if (args.includes('-v') || args.includes('--version')) {
 		if (key === 'addTypes') remHTML = Boolean(value)
 		if (key === 'compress') webserverOptions.compress = Boolean(value)
 		if (key === 'dashboard') webserverOptions.dashboard.enabled = Boolean(value)
+		if (key === '404') notFoundPath = String(value).replaceAll('"', '')
 	}
 
 	webserverOptions.routes = new webserver.routeList()
 	webserverOptions.routes.static('/', path.join(process.cwd(), args[0]), { remHTML, addTypes })
-	webserverOptions.routes.event('request', async(ctr) => {
+	if (notFoundPath) webserverOptions.routes.event('notfound', async(ctr) => {
+		return ctr.status(404).printFile(path.join(process.cwd(), notFoundPath))
+	}); webserverOptions.routes.event('request', async(ctr) => {
 		console.log(`${colors.fg.yellow}[RJW] ${colors.fg.gray}[${ctr.url.method}] ${colors.fg.blue, colors.underscore}${ctr.url.href}${colors.reset} FROM ${ctr.client.ip}`)
 	}); webserver.start(webserverOptions as Options).then((res) => {
 		console.log(`${colors.fg.yellow}[RJW] ${colors.reset}Server started on ${colors.fg.yellow}${res.port}${colors.reset}`)
@@ -87,4 +90,5 @@ else {
 	console.log(' --remHTML=false')
 	console.log(' --addTypes=true')
 	console.log(' --dashboard=false')
+	console.log(' --404="static/404.html"')
 }
