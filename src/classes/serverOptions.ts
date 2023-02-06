@@ -70,6 +70,10 @@ export interface Options {
 		*/ path?: string
 	}
 
+	/** Header Settings */ headers?: {
+		[key: string]: string | number
+	}
+
 	/**
 	 * Where the Server should bind to
 	 * @default "0.0.0.0"
@@ -120,7 +124,8 @@ export default class serverOptions {
 			}, dashboard: {
 				enabled: false,
 				path: '/rjweb-dashboard'
-			}, bind: '0.0.0.0',
+			}, headers: {},
+			bind: '0.0.0.0',
       proxy: false,
 			compress: false,
       cors: false,
@@ -131,7 +136,7 @@ export default class serverOptions {
 
 	private mergeOptions(...objects: Options[]): Options {
 		const isObject = (obj: Options) => (obj && typeof obj === 'object')
-		
+
 		return objects.reduce((prev, obj) => {
 			Object.keys(obj).forEach((key) => {
 				const pVal = prev[key]

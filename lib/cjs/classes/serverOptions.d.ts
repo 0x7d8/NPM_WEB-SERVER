@@ -65,6 +65,9 @@ export interface Options {
          * @default "/rjweb-dashboard"
         */ path?: string;
     };
+    /** Header Settings */ headers?: {
+        [key: string]: string;
+    };
     /**
      * Where the Server should bind to
      * @default "0.0.0.0"

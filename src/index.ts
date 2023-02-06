@@ -4,6 +4,7 @@ import serverOptions, { Options } from "./classes/serverOptions"
 import valueCollection from "./classes/valueCollection"
 import typesEnum from "./interfaces/methods"
 import { events as eventsType } from "./interfaces/event"
+import * as StartInterfaces from "./interfaces/startInterfaces"
 import route from "./interfaces/route"
 import { EventEmitter } from "stream"
 import types from "./misc/methods"
@@ -245,6 +246,11 @@ export = {
 				}
 			}).on('end', () => { if (ctx.continue) ctx.events.emit('startRequest') })
 			ctx.events.once('startRequest', async() => {
+				// Add Headers
+				Object.keys(options.headers).forEach((key) => {
+					res.setHeader(key, options.headers[key])
+				})
+
 				// Cors Stuff
 				if (options.cors) {
 					res.setHeader('Access-Control-Allow-Headers', '*')
@@ -731,12 +737,12 @@ export = {
 					} else res.end()
 				}
 			}); if (!options.body.enabled) ctx.events.emit('startRequest')
-		}) as http.Server
+		}) as http.Server | https.Server
 
 		server.listen(options.port, options.bind)
-		return new Promise((resolve, reject) => {
+		return new Promise((resolve: (value: StartInterfaces.Success) => void, reject: (reason: StartInterfaces.Error) => void) => {
 			server.once('listening', () => resolve({ success: true, port: options.port, message: 'WEBSERVER STARTED', rawServer: server }))
-			server.once('error', (error: Error) => { server.close(); reject({ success: false, error, message: 'WEBSERVER ERRORED' }) })
-		}) as Promise<{ success: boolean, port?: number, error?: Error, message: string, rawServer?: typeof server }>
+			server.once('error', (error: any) => { server.close(); reject({ success: false, error, message: 'WEBSERVER ERRORED' }) })
+		})
 	}
 }

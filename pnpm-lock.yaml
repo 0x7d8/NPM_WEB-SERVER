@@ -6,12 +6,10 @@ specifiers:
   rjweb-server: 'link:'
   typescript: ^4.9.4
 
-dependencies:
-  rjweb-server: 'link:'
-
 devDependencies:
   '@types/node': registry.npmjs.org/@types/node/18.11.18
   esbuild: registry.npmjs.org/esbuild/0.17.3
+  rjweb-server: 'link:'
   typescript: registry.npmjs.org/typescript/4.9.4
 
 packages:

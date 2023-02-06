@@ -253,6 +253,28 @@ webserver.start({
 })
 ```
 
+Add Headers on EVERY Request
+```js
+const webserver = require('rjweb-server')
+const routes = new webserver.routeList()
+
+webserver.start({
+  bind: '0.0.0.0',
+  cors: false,
+  port: 5000,
+  routes: routes,
+  proxy: true,
+  headers: {
+    "Im-a-Header!": 'indeed',
+    "routes": 123
+  }
+}).then((res) => {
+  console.log(`webserver started on port ${res.port}`)
+}).catch((err) => {
+  console.log(err)
+})
+```
+
 Enable Dashboard
 ```js
 const routes = new webserver.routeList()
