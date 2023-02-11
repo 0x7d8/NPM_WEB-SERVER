@@ -61,13 +61,13 @@ if (args.includes('-v') || args.includes('--version')) {
 		if (key === '404') notFoundPath = String(value).replaceAll('"', '')
 	}
 
-	webserverOptions.routes = new webserver.routeList()
-	webserverOptions.routes.static('/', path.join(process.cwd(), args[0]), { remHTML, addTypes })
-	if (notFoundPath) webserverOptions.routes.event('notfound', async(ctr) => {
+	const routes = new webserver.routeList()
+	routes.static('/', path.join(process.cwd(), args[0]), { remHTML, addTypes })
+	if (notFoundPath) routes.event('notfound', async(ctr) => {
 		return ctr.status(404).printFile(path.join(process.cwd(), notFoundPath))
-	}); webserverOptions.routes.event('request', async(ctr) => {
+	}); routes.event('request', async(ctr) => {
 		console.log(`${colors.fg.yellow}[RJW] ${colors.fg.gray}[${ctr.url.method}] ${colors.fg.blue, colors.underscore}${ctr.url.href}${colors.reset} FROM ${ctr.client.ip}`)
-	}); webserver.initialize(webserverOptions as Options).setRoutes(webserverOptions.routes).start().then((res) => {
+	}); webserver.initialize(webserverOptions as Options).setRoutes(routes).start().then((res) => {
 		console.log(`${colors.fg.yellow}[RJW] ${colors.reset}Server started on ${colors.fg.yellow}${res.port}${colors.reset}`)
 	}).catch((err) => {
 		console.log(`${colors.fg.yellow}[RJW] ${colors.reset}Error:`)

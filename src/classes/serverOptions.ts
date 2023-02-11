@@ -3,7 +3,6 @@ import { CompressTypes } from "../functions/handleCompressType"
 import routeList from "./routeList"
 
 export interface Options {
-	/** The Routes for the Server */ routes: routeList
 	/** RateLimit Settings */ rateLimits?: {
 		/**
 		 * Whether Ratelimits are enabled
@@ -107,7 +106,6 @@ export default class serverOptions {
   /** Server Options Helper */
   constructor(options: Partial<Options>) {
 		this.data = this.mergeOptions({
-      routes: new routeList(),
       rateLimits: {
         enabled: false,
         message: 'Rate Limited',

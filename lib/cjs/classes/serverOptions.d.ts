@@ -1,8 +1,6 @@
 import rateLimitRule from "../interfaces/ratelimitRule";
 import { CompressTypes } from "../functions/handleCompressType";
-import routeList from "./routeList";
 export interface Options {
-    /** The Routes for the Server */ routes: routeList;
     /** RateLimit Settings */ rateLimits?: {
         /**
          * Whether Ratelimits are enabled
