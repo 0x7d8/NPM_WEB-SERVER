@@ -163,12 +163,12 @@ routes.setBlock('/hello' /** That is the prefix (= prefix + path) */, [
   }
 ])
 
-// ctr.params.get... is :name, example /hello/0x4096
+// ctr.params.get... is :name:, example /hello/0x4096
 routes.set(webserver.types.post, '/post', async(ctr) => {
   return ctr.print(`Hello, ${ctr.body}! How are you doing?`)
 })
 
-routes.set(webserver.types.get, '/profile/:user', async(ctr) => {
+routes.set(webserver.types.get, '/profile/:user:', async(ctr) => {
   return ctr.printFile(`../images/profile/${ctr.params.get('user')}.png`, { addTypes: true })
 })
 
@@ -180,7 +180,7 @@ routes.set(webserver.types.get, '/reloadserver', async(ctr) => {
   return ctr.print('server reloaded')
 })
 
-routes.set(webserver.types.get, '/redirect/:website', async(ctr) => {
+routes.set(webserver.types.get, '/redirect/:website:', async(ctr) => {
   switch (ctr.params.get('website')) {
     case "google":
       return ctr.redirect('https://www.google.com')

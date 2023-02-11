@@ -86,7 +86,7 @@ else {
 	console.log('')
 	console.log(`[arguments] ${colors.reset}`)
 	console.log(' --port=2023')
-	console.log(' --compress=false')
+	console.log(' --compression=gzip')
 	console.log(' --proxy=false')
 	console.log(' --cors=false')
 	console.log(' --bind=0.0.0.0')
