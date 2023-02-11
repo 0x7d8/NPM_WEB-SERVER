@@ -1,4 +1,4 @@
-<h1 align="center">Welcome to rjweb-server v2 👋</h1>
+<h1 align="center">Welcome to rjweb-server v3 👋</h1>
 <div align="center">
   <a href="https://www.npmjs.com/package/rjweb-server" target="_blank">
     <img alt="Version" src="https://img.shields.io/npm/v/rjweb-server.svg">
@@ -40,16 +40,20 @@ pnpm add rjweb-server
 
 Importing
 ```ts
+// CJS
 import * as webserver from "rjweb-server"
+
+// ESM
+import webserver from "rjweb-server"
 ```
 
 Interface for ctr Object
 ```ts
-import { ctr } from "rjweb-server/interfaces"
+import { Ctr } from "rjweb-server/interfaces"
 
 const routes = new webserver.routeList()
 
-routes.set(webserver.types.get, '/hello', async(ctr: ctr) => {
+routes.set(webserver.types.get, '/hello', async(ctr: Ctr) => {
   if (!ctr.queries.has("name")) return ctr.print('please supply the name query!!')
 
   return ctr.print(`Hello, ${ctr.queries.get("name")}! How are you doing?`)
@@ -62,7 +66,7 @@ Custom Properties in Ctr Object
 (This also works in JavaScript, just remove the interface logic)
 ```ts
 import * as webserver from "rjweb-server"
-import { ctr as ctrPreset, ctrFile as ctrFilePreset } from "rjweb-server/interfaces"
+import { Ctr as ctrPreset, CtrFile as ctrFilePreset } from "rjweb-server/interfaces"
 interface Custom {
   count: number
 }
@@ -107,7 +111,7 @@ controller.start().then((s) => {
 Function File
 ```ts
 import * as webserver from "rjweb-server"
-import { ctr as ctrPreset, ctrFile as ctrFilePreset } from "rjweb-server/interfaces"
+import { Ctr as ctrPreset, CtrFile as ctrFilePreset } from "rjweb-server/interfaces"
 interface Custom {
   count: number
 } // You should import / export this Interface Stuff (look examples section)
@@ -116,8 +120,8 @@ interface Body {
   username?: string
 }
 
-interface ctr<HasError = false, Body = any> extends ctrPreset<Custom, HasError, Body> {}
-interface ctrFile<Body = any> extends ctrFilePreset<Custom, Body> {}
+interface ctr<HasError = false, Body = any> extends CtrPreset<Custom, HasError, Body> {}
+interface ctrFile<Body = any> extends CtrFilePreset<Custom, Body> {}
 
 export = {
   method: webserver.types.post,
@@ -441,7 +445,7 @@ Making a function File
 ```js
 const webserver = require('rjweb-server')
 
-/** @type {import('rjweb-server/interfaces').ctrFile} */
+/** @type {import('rjweb-server/interfaces').CtrFile} */
 module.exports = {
   method: webserver.types.get,
   path: '/say/:word',
