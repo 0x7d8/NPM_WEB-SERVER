@@ -93,12 +93,14 @@ routes.event('error', async(ctr: ctr<true>) => {
   ctr.print('server error')
 })
 
-webserver.start({
+const controller = webserver.initialize({
   bind: '0.0.0.0', // The IP thats bound to
   port: 5000, // The Port which the Server runs on
-  routes: routes // The Routes Object
-}).then((res) => {
-  console.log(`webserver started on port ${res.port}`)
+})
+
+controller.setRoutes(routes)
+controller.start().then((s) => {
+  console.log(`server started on port ${s.port}`)
 })
 ```
 
@@ -166,6 +168,14 @@ routes.set(webserver.types.get, '/profile/:user', async(ctr) => {
   return ctr.printFile(`../images/profile/${ctr.params.get('user')}.png`, { addTypes: true })
 })
 
+routes.set(webserver.types.get, '/reloadserver', async(ctr) => {
+  if (!ctr.queries.has('password')) return ctr.print('provide the password to do this!!')
+  if (ctr.queries.get('password') !== 'imApassword123!') return ctr.print('the password is incorrect!!')
+
+  setTimeout(() => ctr.controller.reload(), 1000)
+  return ctr.print('server reloaded')
+})
+
 routes.set(webserver.types.get, '/redirect/:website', async(ctr) => {
   switch (ctr.params.get('website')) {
     case "google":
@@ -179,21 +189,21 @@ routes.set(webserver.types.get, '/redirect/:website', async(ctr) => {
   }
 })
 
-webserver.start({
+const controller = webserver.initialize({
   bind: '0.0.0.0', // The IP thats bound to
   cors: false, // If Cors Headers will be added
   port: 5000, // The Port which the Server runs on
-  routes: routes, // The Routes Object
   proxy: true, // If enabled, alternate IPs will be shown
   body: {
     enabled: true, // Whether to enable recieving POST Bodies
     maxSize: 20, // The Max POST Body Size in MB
     message: 'Payload too large' // Message that gets sent if the Limit is exceeded
   }
-}).then((res) => {
-  console.log(`webserver started on port ${res.port}`)
-}).catch((err) => {
-  console.log(err)
+})
+
+controller.setRoutes(routes)
+controller.start().then((s) => {
+  console.log(`server started on port ${s.port}`)
 })
 ```
 
@@ -217,16 +227,16 @@ routes.set(webserver.types.get, '/wait5sec/promise', async(ctr) => {
   return ctr.print('You just waited 5 seconds !!')
 })
 
-webserver.start({
+const controller = webserver.initialize({
   bind: '0.0.0.0', // The IP thats bound to
   cors: false, // If Cors Headers will be added
   port: 5000, // The Port which the Server runs on
-  routes: routes, // The Routes Object
   proxy: true // If enabled, alternate IPs will be shown
-}).then((res) => {
-  console.log(`webserver started on port ${res.port}`)
-}).catch((err) => {
-  console.log(err)
+})
+
+controller.setRoutes(routes)
+controller.start().then((s) => {
+  console.log(`server started on port ${s.port}`)
 })
 ```
 
@@ -240,16 +250,16 @@ routes.static('/', './html', {
   remHTML: true // If enabled will remove the html ending from files when serving
 }) // The html folder is in the root directory
 
-webserver.start({
-  bind: '0.0.0.0',
-  cors: false,
-  port: 5000,
-  routes: routes,
-  proxy: true
-}).then((res) => {
-  console.log(`webserver started on port ${res.port}`)
-}).catch((err) => {
-  console.log(err)
+const controller = webserver.initialize({
+  bind: '0.0.0.0', // The IP thats bound to
+  cors: false, // If Cors Headers will be added
+  port: 5000, // The Port which the Server runs on
+  proxy: true // If enabled, alternate IPs will be shown
+})
+
+controller.setRoutes(routes)
+controller.start().then((s) => {
+  console.log(`server started on port ${s.port}`)
 })
 ```
 
@@ -258,20 +268,18 @@ Add Headers on EVERY Request
 const webserver = require('rjweb-server')
 const routes = new webserver.routeList()
 
-webserver.start({
+const controller = webserver.initialize({
   bind: '0.0.0.0',
   cors: false,
   port: 5000,
-  routes: routes,
-  proxy: true,
   headers: {
-    "Im-a-Header!": 'indeed',
-    "routes": 123
+    "im-a-header": "im-the-value"
   }
-}).then((res) => {
-  console.log(`webserver started on port ${res.port}`)
-}).catch((err) => {
-  console.log(err)
+})
+
+controller.setRoutes(routes)
+controller.start().then((s) => {
+  console.log(`server started on port ${s.port}`)
 })
 ```
 
@@ -279,20 +287,19 @@ Enable Dashboard
 ```js
 const routes = new webserver.routeList()
 
-webserver.start({
+const controller = webserver.initialize({
   bind: '0.0.0.0',
   cors: false,
   port: 5000,
-  routes: routes,
-  proxy: true,
   dashboard: {
     enabled: true,
     path: '/dashboard' // The Dashboad is now accessible at /dashboard
   }
-}).then((res) => {
-  console.log(`webserver started on port ${res.port}`)
-}).catch((err) => {
-  console.log(err)
+})
+
+controller.setRoutes(routes)
+controller.start().then((s) => {
+  console.log(`server started on port ${s.port}`)
 })
 ```
 
@@ -311,16 +318,15 @@ routes.event('error', async(ctr) => {
   return console.log(ctr.error)
 })
 
-webserver.start({
+const controller = webserver.initialize({
   bind: '0.0.0.0',
   cors: false,
-  port: port,
-  routes: routes,
-  proxy: true
-}).then((res) => {
-  console.log(`webserver started on port ${res.port}`)
-}).catch((err) => {
-  console.log(err)
+  port: 5000
+})
+
+controller.setRoutes(routes)
+controller.start().then((s) => {
+  console.log(`server started on port ${s.port}`)
 })
 ```
 
@@ -333,28 +339,25 @@ routes.event('request', async(ctr) => {
   // DO NOT write any data or end the request
 })
 
-webserver.start({
+const controller = webserver.initialize({
   bind: '0.0.0.0',
   cors: false,
-  port: port,
-  routes: routes,
-  proxy: true
-}).then((res) => {
-  console.log(`webserver started on port ${res.port}`)
-}).catch((err) => {
-  console.log(err)
+  port: 5000
+})
+
+controller.setRoutes(routes)
+controller.start().then((s) => {
+  console.log(`server started on port ${s.port}`)
 })
 ```
 
 ### Rate Limits
 With Database (EXAMPLE, PLEASE EDIT)
 ```js
-webserver.start({
+const controller = webserver.initialize({
   bind: '0.0.0.0',
   cors: false,
-  port: port,
-  routes: routes,
-  proxy: true,
+  port: 5000,
   rateLimits: {
     enabled: true,
     message: 'You are being rate limited',
@@ -374,10 +377,11 @@ webserver.start({
       get: async(key) => ((await db.queries('select value from ratelimits where key = ?;', [key])).data.rows[0].value)
     }
   }
-}).then((res) => {
-  console.log(`webserver started on port ${res.port}`)
-}).catch((err) => {
-  console.log(err)
+})
+
+controller.setRoutes(routes)
+controller.start().then((s) => {
+  console.log(`server started on port ${s.port}`)
 })
 ```
 
@@ -385,12 +389,10 @@ With Map
 ```js
 const rateLimits = new Map()
 
-webserver.start({
+const controller = webserver.initialize({
   bind: '0.0.0.0',
   cors: false,
-  port: port,
-  routes: routes,
-  proxy: true,
+  port: 5000,
   rateLimits: {
     enabled: true,
     message: 'You are being rate limited',
@@ -407,10 +409,11 @@ webserver.start({
       }
     ], functions: rateLimits
   }
-}).then((res) => {
-  console.log(`webserver started on port ${res.port}`)
-}).catch((err) => {
-  console.log(err)
+})
+
+controller.setRoutes(routes)
+controller.start().then((s) => {
+  console.log(`server started on port ${s.port}`)
 })
 ```
 
@@ -422,16 +425,15 @@ const routes = new webserver.routeList()
 
 routes.load('./functions') // The functions folder is in the root directory
 
-webserver.start({
+const controller = webserver.initialize({
   bind: '0.0.0.0',
   cors: false,
-  port: 5000,
-  routes: routes,
-  proxy: true,
-}).then((res) => {
-  console.log(`webserver started on port ${res.port}`)
-}).catch((err) => {
-  console.log(err)
+  port: 5000
+})
+
+controller.setRoutes(routes)
+controller.start().then((s) => {
+  console.log(`server started on port ${s.port}`)
 })
 ```
 

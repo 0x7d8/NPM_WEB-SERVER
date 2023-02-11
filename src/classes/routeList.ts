@@ -1,7 +1,7 @@
 import { getAllFiles, getAllFilesFilter } from "../misc/getAllFiles"
-import { types as typesInterface } from "../interfaces/methods"
+import { Types as typesInterface } from "../interfaces/methods"
 import route from "../interfaces/route"
-import event, { events as eventsType } from "../interfaces/event"
+import event, { Events as eventsType } from "../interfaces/event"
 import ctr from "../interfaces/ctr"
 import types from "../misc/methods"
 
@@ -18,13 +18,19 @@ export const pathParser = (path: string, removeSingleSlash?: boolean) => {
 	return ((removeSingleSlash && path === '/') ? '' : path)
 }
 
-interface minifiedRoute {
+export interface minifiedRoute {
 	/** The Request Method of the Route */ method: typesInterface
 	/** The Path on which this will be available (+ prefix) */ path: string
 	/** The Async Code to run on a Request */ code: (ctr: ctr) => Promise<any>
 }
 
-interface staticOptions {
+export interface minifiedRedirect {
+	/** The Request Method of the Redirect */ method: typesInterface
+	/** The Path on which this will be available */ path: string
+	/** The URL which it will send to */ destination: string
+}
+
+export interface staticOptions {
 	/**
 	 * Whether the files will be loaded into Memory
 	 * @default false
@@ -82,7 +88,7 @@ export default class routeList {
 	) {
 		urlPath = pathParser(urlPath)
 
-		if (!types.includes(method)) throw TypeError(`No Valid Request Type: ${method}\nPossible Values: ${types.join(', ')}`)
+		if (!types.includes(method)) throw TypeError(`No Valid Request Type: ${method}, Possible Values: ${types.join(', ')}`)
 		if (this.routes.some((obj) => (obj.method === method && obj.path === urlPath))) return false
 
 		return this.routes.push({
@@ -113,6 +119,28 @@ export default class routeList {
 				pathArray: `${prefix}${pathParser(route.path, true)}`.split('/'),
 				code: route.code,
 				data: {
+					addTypes: false
+				}
+			}) - 1)
+		}; return arrayIndexes
+	}
+
+	/** Set Redirects Manually */
+	setRedirects(
+		/** The Redirects */ redirects: minifiedRedirect[]
+	) {
+		let arrayIndexes: number[] = []
+
+		for (let redirectNumber = 0; redirectNumber <= redirects.length - 1; redirectNumber++) {
+			const redirect = redirects[redirectNumber]
+
+			arrayIndexes.push(this.routes.push({
+				method: redirect.method,
+				path: pathParser(redirect.path),
+				pathArray: pathParser(redirect.path, true).split('/'),
+				code: async(ctr) => {
+					return ctr.redirect(redirect.destination)
+				}, data: {
 					addTypes: false
 				}
 			}) - 1)
@@ -168,7 +196,7 @@ export default class routeList {
 				!('method' in route) ||
 				!('code' in route)
 			) continue
-			if (!types.includes(route.method)) throw TypeError(`No Valid Request Type: ${route.method}\nPossible Values: ${types.join(', ')}`)
+			if (!types.includes(route.method)) throw TypeError(`No Valid Request Type: ${route.method}, Possible Values: ${types.join(', ')}`)
 
 			arrayIndexes.push(this.routes.push({
 				method: route.method,

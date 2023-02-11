@@ -43,7 +43,21 @@ export default class valueCollection<Key extends string | number | symbol = stri
     return Object.keys(this.data).length
   }
 
-  /** Get all Keys as JSON */
+  /** Clear the Stored Objects */
+  clear(
+    /** Excluded Keys */ excluded?: Key[]
+  ): number {
+    excluded = excluded ?? []
+
+    let keys = 0
+    for (const key in this.data) {
+      if (excluded.includes(key)) continue
+      delete this.data[key]
+      keys++
+    }; return keys
+  }
+
+  /** Get all Objects as JSON */
   toJSON(
     /** Excluded Keys */ excluded?: Key[]
   ): Record<Key, Value> {
@@ -56,7 +70,7 @@ export default class valueCollection<Key extends string | number | symbol = stri
     }; return keys
   }
 
-  /** Get all Keys as Array */
+  /** Get all Values as Array */
   toArray(
     /** Excluded Keys */ excluded?: Key[]
   ): Value[] {

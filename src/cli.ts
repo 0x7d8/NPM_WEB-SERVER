@@ -14,7 +14,6 @@ const colors = {
 	blink: "\x1b[5m",
 	reverse: "\x1b[7m",
 	hidden: "\x1b[8m",
-
 	fg: {
 		black: "\x1b[30m",
 		red: "\x1b[31m",
@@ -55,7 +54,7 @@ if (args.includes('-v') || args.includes('--version')) {
 		if (key === 'bind') webserverOptions.bind = value
 		if (key === 'remHTML') remHTML = Boolean(value)
 		if (key === 'addTypes') remHTML = Boolean(value)
-		if (key === 'compress') webserverOptions.compress = Boolean(value)
+		if (key === 'compression') webserverOptions.compression = value as any
 		if (key === 'cors') webserverOptions.cors = Boolean(value)
 		if (key === 'proxy') webserverOptions.proxy = Boolean(value)
 		if (key === 'dashboard') webserverOptions.dashboard.enabled = Boolean(value)
@@ -68,7 +67,7 @@ if (args.includes('-v') || args.includes('--version')) {
 		return ctr.status(404).printFile(path.join(process.cwd(), notFoundPath))
 	}); webserverOptions.routes.event('request', async(ctr) => {
 		console.log(`${colors.fg.yellow}[RJW] ${colors.fg.gray}[${ctr.url.method}] ${colors.fg.blue, colors.underscore}${ctr.url.href}${colors.reset} FROM ${ctr.client.ip}`)
-	}); webserver.start(webserverOptions as Options).then((res) => {
+	}); webserver.initialize(webserverOptions as Options).setRoutes(webserverOptions.routes).start().then((res) => {
 		console.log(`${colors.fg.yellow}[RJW] ${colors.reset}Server started on ${colors.fg.yellow}${res.port}${colors.reset}`)
 	}).catch((err) => {
 		console.log(`${colors.fg.yellow}[RJW] ${colors.reset}Error:`)

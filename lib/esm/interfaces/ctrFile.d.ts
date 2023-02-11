@@ -1,7 +1,7 @@
 import ctr from "./ctr";
-import { types } from "./methods";
-export default interface ctrFile<Custom = any, Body = any> {
-    /** The Request Method */ method: types;
+import { Types } from "./methods";
+export default interface CtrFile<Custom = any, Body = any> {
+    /** The Request Method */ method: Types;
     /** The Route Path */ path: string;
     /** The Async Code to run on a Request */ code: (ctr: ctr<Custom, false, Body>) => Promise<any>;
 }

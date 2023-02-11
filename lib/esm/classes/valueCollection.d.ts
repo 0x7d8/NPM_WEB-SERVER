@@ -16,10 +16,13 @@ export default class valueCollection<Key extends string | number | symbol = stri
     /** The new Value */ value: Value): boolean;
     /** Get The Amount of Stored Objects */
     objectCount(): number;
-    /** Get all Keys as JSON */
+    /** Clear the Stored Objects */
+    clear(
+    /** Excluded Keys */ excluded?: Key[]): number;
+    /** Get all Objects as JSON */
     toJSON(
     /** Excluded Keys */ excluded?: Key[]): Record<Key, Value>;
-    /** Get all Keys as Array */
+    /** Get all Values as Array */
     toArray(
     /** Excluded Keys */ excluded?: Key[]): Value[];
     /** Loop over all Keys */

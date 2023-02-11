@@ -3,10 +3,13 @@ import routeList, { pathParser } from "./classes/routeList"
 import serverOptions, { Options } from "./classes/serverOptions"
 import valueCollection from "./classes/valueCollection"
 import typesEnum from "./interfaces/methods"
-import { events as eventsType } from "./interfaces/event"
-import * as StartInterfaces from "./interfaces/startInterfaces"
-import route from "./interfaces/route"
+import { Events as eventsType } from "./interfaces/event"
+import handleCompressType, { CompressMapping } from "./functions/handleCompressType"
+import { GlobalContext, RequestContext } from "./interfaces/context"
+import handleCompression from "./functions/handleCompression"
+import ServerController from "./classes/serverController"
 import { EventEmitter } from "stream"
+import statsRoute from "./stats/routes"
 import types from "./misc/methods"
 
 import * as http from "http"
@@ -16,43 +19,6 @@ import * as zlib from "zlib"
 import * as path from "path"
 import * as url from "url"
 import * as fs from "fs"
-import * as os from "os"
-
-type hours =
-	'1' | '2' | '3' | '4' | '5' |
-	'6' | '7' | '8' | '9' | '10' |
-	'11' | '12' | '13' | '14' | '15' |
-	'16' | '17' | '18' | '19' | '20' |
-	'21' | '22' | '23' | '24'
-
-interface GlobalContext {
-	/** The Request Count */ requests: Record<hours | 'total', number>
-	/** The 404 Page Display */ pageDisplay: string
-	/** The Data Stats */ data: {
-		/** The Incoming Data Count */ incoming: Record<hours | 'total', number>
-		/** The Outgoing Data Count */ outgoing: Record<hours | 'total', number>
-	}
-}
-
-interface RequestContext {
-	/** The Content to Write */ content: Buffer
-	/** The Event Emitter */ events: EventEmitter
-	/** Whether waiting is required */ waiting: boolean
-	/** Whether to Continue with execution */ continue: boolean
-	/** The Execute URL Object */ execute: {
-		/** The Route Object that was found */ route: route
-		/** Whether the Route is Static */ static: boolean
-		/** Whether the Route exists */ exists: boolean
-		/** Whether the Route is the Dashboard */ dashboard: boolean
-	}
-
-	/** The Request Body */ body: {
-		/** Unparsed */ raw: Buffer
-		/** Parsed */ parsed: any
-	}
-	/** The Request URL */ url: url.UrlWithStringQuery & { method: typesEnum }
-	/** Previous Hour Object */ previousHours: number[]
-}
 
 export = {
 	/** The RouteList */ routeList,
@@ -60,61 +26,54 @@ export = {
 	/** The ValueCollection */ valueCollection,
 	/** The Request Types */ types: typesEnum,
 
-	/** Start The Webserver */
-	async start(
+	/** Initialize The Webserver */
+	initialize(
 		/** Required Options */ options: Options
 	) {
 		options = new serverOptions(options).getOptions()
-		const { routes, events } = options.routes.list()
 
-		const coreCount = os.cpus().length
-		const cacheStore = new valueCollection<string, Buffer | Object>()
 		let ctg: GlobalContext = {
+			controller: null,
 			requests: {
 				total: 0,
-				1: 0, 2: 0, 3: 0, 4: 0,
-				5: 0, 6: 0, 7: 0, 8: 0,
-				9: 0, 10: 0, 11: 0, 12: 0,
-				13: 0, 14: 0, 15: 0, 16: 0,
-				17: 0, 18: 0, 19: 0, 20: 0,
-				21: 0, 22: 0, 23: 0, 24: 0
+				0: 0, 1: 0, 2: 0, 3: 0,
+				4: 0, 5: 0, 6: 0, 7: 0,
+				8: 0, 9: 0, 10: 0, 11: 0,
+				12: 0, 13: 0, 14: 0, 15: 0,
+				16: 0, 17: 0, 18: 0, 19: 0,
+				20: 0, 21: 0, 22: 0, 23: 0
 			}, pageDisplay: '',
 			data: {
 				incoming: {
 					total: 0,
-					1: 0, 2: 0, 3: 0, 4: 0,
-					5: 0, 6: 0, 7: 0, 8: 0,
-					9: 0, 10: 0, 11: 0, 12: 0,
-					13: 0, 14: 0, 15: 0, 16: 0,
-					17: 0, 18: 0, 19: 0, 20: 0,
-					21: 0, 22: 0, 23: 0, 24: 0
+					0: 0, 1: 0, 2: 0, 3: 0,
+					4: 0, 5: 0, 6: 0, 7: 0,
+					8: 0, 9: 0, 10: 0, 11: 0,
+					12: 0, 13: 0, 14: 0, 15: 0,
+					16: 0, 17: 0, 18: 0, 19: 0,
+					20: 0, 21: 0, 22: 0, 23: 0
 				}, outgoing: {
 					total: 0,
-					1: 0, 2: 0, 3: 0, 4: 0,
-					5: 0, 6: 0, 7: 0, 8: 0,
-					9: 0, 10: 0, 11: 0, 12: 0,
-					13: 0, 14: 0, 15: 0, 16: 0,
-					17: 0, 18: 0, 19: 0, 20: 0,
-					21: 0, 22: 0, 23: 0, 24: 0
+					0: 0, 1: 0, 2: 0, 3: 0,
+					4: 0, 5: 0, 6: 0, 7: 0,
+					8: 0, 9: 0, 10: 0, 11: 0,
+					12: 0, 13: 0, 14: 0, 15: 0,
+					16: 0, 17: 0, 18: 0, 19: 0,
+					20: 0, 21: 0, 22: 0, 23: 0
 				}
+			}, routes: {
+				normal: [],
+				event: []
+			}, cache: {
+				files: new valueCollection(),
+				routes: new valueCollection()
 			}
 		}
 
-		const compressionHandler = (ctr: ctr, ctx: RequestContext) => {
-			if (options.compress && !ctr.rawRes.headersSent && ctr.headers.has('accept-encoding') && ctr.headers.get('accept-encoding').includes('gzip')) {
-				ctr.rawRes.setHeader('Content-Encoding', 'gzip')
-    		ctr.rawRes.setHeader('Vary', 'Accept-Encoding')
-
-				const gZip = zlib.createGzip()
-				gZip.pipe(ctr.rawRes)
-				gZip.end(ctx.content, 'binary')
-			} else {
-				ctr.rawRes.end(ctx.content, 'binary')
-			}
-		}; const eventHandler = async(event: eventsType, ctr: ctr, ctx: RequestContext) => {
+		const eventHandler = async(event: eventsType, ctr: ctr, ctx: RequestContext) => {
 			switch (event) {
 				case "error": {
-					const event = events.find((event) => (event.event === 'error'))
+					const event = ctg.routes.event.find((event) => (event.event === 'error'))
 
 					if (!event) {
 						// Default Error
@@ -133,7 +92,7 @@ export = {
 
 				case "request": {
 					let errorStop = false
-					const event = events.find((event) => (event.event === 'request'))
+					const event = ctg.routes.event.find((event) => (event.event === 'request'))
 
 					if (event) {
 						// Custom Request
@@ -149,14 +108,14 @@ export = {
 
 				case "notfound": {
 					let errorStop = false
-					const event = events.find((event) => (event.event === 'notfound'))
+					const event = ctg.routes.event.find((event) => (event.event === 'notfound'))
 
 					if (!event) {
 						// Default NotFound
 						let pageDisplay = ''
 						if (ctg.pageDisplay) pageDisplay = ctg.pageDisplay
 						else {
-							for (const url of routes) {
+							for (const url of ctg.routes.normal) {
 								const type = (url.method === 'STATIC' ? 'GET' : url.method)
 								pageDisplay += `[-] [${type}] ${url.path}\n`
 							}; ctg.pageDisplay = pageDisplay
@@ -180,17 +139,33 @@ export = {
 			return Array.from({ length: 5 }, (_, i) => (new Date().getHours() - (4 - i) + 24) % 24)
 		}
 
+		// Clean Stats
+		setInterval(() => {
+			const previousHours = getPreviousHours()
+
+			ctg.requests[previousHours[0] - 1] = 0
+			ctg.data.incoming[previousHours[0] - 1] = 0
+			ctg.data.outgoing[previousHours[0] - 1] = 0
+		}, 300000)
+
+		// Set HTTP Server Options
 		let httpOptions = {}
-		if (!options.https.enabled) httpOptions = {}
-		else httpOptions = {
-			key: (await fs.promises.readFile(options.https.keyFile).catch(() => { throw new Error(`Cant access your HTTPS Key file! (${options.https.keyFile})`) })),
-			cert: (await fs.promises.readFile(options.https.certFile).catch(() => { throw new Error(`Cant access your HTTPS Cert file! (${options.https.certFile})`) }))
+		let key: Buffer, cert: Buffer
+		if (options.https.enabled) {
+			try {
+				key = fs.readFileSync(options.https.keyFile)
+				cert = fs.readFileSync(options.https.certFile)
+			} catch (e) {
+				throw new Error(`Cant access your HTTPS Key or Cert file! (${options.https.keyFile} / ${options.https.certFile})`)
+			}; httpOptions = { key, cert }
 		}
 
+		// Initialize the HTTP Server
 		const server = (options.https.enabled ? https as any : http as any).createServer(httpOptions, async(req: http.IncomingMessage, res: http.ServerResponse) => {
 			// Create Local ConTeXt
 			let ctx: RequestContext = {
 				content: Buffer.from(''),
+				compressed: false,
 				events: new EventEmitter(),
 				waiting: false,
 				continue: true,
@@ -239,7 +214,7 @@ export = {
 						case "undefined":
 							ctx.content = Buffer.from('')
 							break
-					}; return compressionHandler({ headers: new valueCollection(req.headers as any, decodeURIComponent), rawRes: res } as any, ctx)
+					}; return handleCompression({ headers: new valueCollection(req.headers as any, decodeURIComponent), rawRes: res } as any, ctx, options)
 				} else {
 					ctg.data.incoming.total += ctx.body.raw.byteLength
 					ctg.data.incoming[ctx.previousHours[4]] += ctx.body.raw.byteLength
@@ -263,15 +238,16 @@ export = {
 				// Check if URL exists
 				let params = {}
 				const actualUrl = ctx.url.pathname.split('/')
-				for (let urlNumber = 0; urlNumber <= routes.length - 1; urlNumber++) {
-					const url = routes[urlNumber]
+				for (let urlNumber = 0; urlNumber <= ctg.routes.normal.length - 1; urlNumber++) {
+					const url = ctg.routes.normal[urlNumber]
 
 					// Get From Cache
-					if (cacheStore.has(`route::${ctx.url.pathname}`)) {
-						const url = cacheStore.get(`route::${ctx.url.pathname}`) as route
+					if (ctg.cache.routes.has(`route::${ctx.url.pathname}`)) {
+						const url = ctg.cache.routes.get(`route::${ctx.url.pathname}`)
 
-						ctx.execute.route = url
-						ctx.execute.static = (url.method === 'STATIC')
+						params = url.params
+						ctx.execute.route = url.route
+						ctx.execute.static = (url.route.method === 'STATIC')
 						ctx.execute.exists = true
 
 						break
@@ -283,106 +259,8 @@ export = {
 							method: 'GET',
 							path: url.path,
 							pathArray: url.path.split('/'),
-							code: async(ctr) => {
-								if (!ctr.url.path.endsWith('/stats')) {
-									const dashboard = (await fs.promises.readFile(`${__dirname}/stats/index.html`, 'utf8'))
-										.replaceAll('/rjweb-dashboard', pathParser(options.dashboard.path))
-									return ctr.print(dashboard)
-								} else {
-									const date = new Date()
-									const startTime = date.getTime()
-									const startUsage = process.cpuUsage()
-
-									const cpuUsage = await new Promise<number>((resolve) => setTimeout(() => {
-										const currentUsage = process.cpuUsage(startUsage)
-										const currentTime = new Date().getTime()
-										const timeDelta = (currentTime - startTime) * 5 * coreCount
-										const { user, system } = currentUsage
-										resolve((system + user) / timeDelta)
-									}, 500))
-
-									return ctr.print({
-										requests: [
-											ctg.requests.total,
-											{
-												hour: ctx.previousHours[0],
-												amount: ctg.requests[ctx.previousHours[0]]
-											},
-											{
-												hour: ctx.previousHours[1],
-												amount: ctg.requests[ctx.previousHours[1]]
-											},
-											{
-												hour: ctx.previousHours[2],
-												amount: ctg.requests[ctx.previousHours[2]]
-											},
-											{
-												hour: ctx.previousHours[3],
-												amount: ctg.requests[ctx.previousHours[3]]
-											},
-											{
-												hour: ctx.previousHours[4],
-												amount: ctg.requests[ctx.previousHours[4]]
-											}
-										], data: {
-											incoming: [
-												ctg.data.incoming.total,
-												{
-													hour: ctx.previousHours[0],
-													amount: ctg.data.incoming[ctx.previousHours[0]]
-												},
-												{
-													hour: ctx.previousHours[1],
-													amount: ctg.data.incoming[ctx.previousHours[1]]
-												},
-												{
-													hour: ctx.previousHours[2],
-													amount: ctg.data.incoming[ctx.previousHours[2]]
-												},
-												{
-													hour: ctx.previousHours[3],
-													amount: ctg.data.incoming[ctx.previousHours[3]]
-												},
-												{
-													hour: ctx.previousHours[4],
-													amount: ctg.data.incoming[ctx.previousHours[4]]
-												}
-											], outgoing: [
-												ctg.data.outgoing.total,
-												{
-													hour: ctx.previousHours[0],
-													amount: ctg.data.outgoing[ctx.previousHours[0]]
-												},
-												{
-													hour: ctx.previousHours[1],
-													amount: ctg.data.outgoing[ctx.previousHours[1]]
-												},
-												{
-													hour: ctx.previousHours[2],
-													amount: ctg.data.outgoing[ctx.previousHours[2]]
-												},
-												{
-													hour: ctx.previousHours[3],
-													amount: ctg.data.outgoing[ctx.previousHours[3]]
-												},
-												{
-													hour: ctx.previousHours[4],
-													amount: ctg.data.outgoing[ctx.previousHours[4]]
-												}
-											]
-										}, cpu: {
-											time: `${date.getHours()}:${date.getMinutes()}:${date.getSeconds()}`,
-											usage: cpuUsage.toFixed(2)
-										}, memory: {
-											time: `${date.getHours()}:${date.getMinutes()}:${date.getSeconds()}`,
-											usage: (process.memoryUsage().heapUsed / 1000 / 1000).toFixed(2)
-										},
-
-										routes: routes.length,
-										cached: cacheStore.objectCount()
-									})
-								}
-							}, data: {
+							code: async(ctr) => await statsRoute(ctr, ctg, ctx, options, ctg.routes.normal.length),
+							data: {
 								addTypes: false
 							}
 						}; ctx.execute.static = false
@@ -404,7 +282,7 @@ export = {
 						ctx.execute.exists = true
 
 						// Set Cache
-						cacheStore.set(`route::${ctx.url.pathname}`, url)
+						ctg.cache.routes.set(`route::${ctx.url.pathname}`, { route: url, params: {} })
 
 						break
 					}; if (url.path === ctx.url.pathname && url.method === 'STATIC') {
@@ -413,7 +291,7 @@ export = {
 						ctx.execute.exists = true
 
 						// Set Cache
-						cacheStore.set(`route::${ctx.url.pathname}`, url)
+						ctg.cache.routes.set(`route::${ctx.url.pathname}`, { route: url, params: {} })
 
 						break
 					}
@@ -423,17 +301,22 @@ export = {
 						const urlParam = url.pathArray[partNumber]
 						const reqParam = actualUrl[partNumber]
 
-						if (!urlParam.startsWith(':') && reqParam !== urlParam) break
+						if (!/^:.*:$/.test(urlParam) && reqParam !== urlParam) break
 						else if (urlParam === reqParam) continue
-						else if (urlParam.startsWith(':')) {
-							params[urlParam.substring(1)] = reqParam
+						else if (/^:.*:$/.test(urlParam)) {
+							params[urlParam.substring(1, urlParam.length - 1)] = reqParam
 							ctx.execute.route = url
 							ctx.execute.exists = true
 
 							continue
 						}; continue
-					}; if (ctx.execute.exists) break
-					else continue
+					}; if (ctx.execute.exists) {
+						// Set Cache
+						ctg.cache.routes.set(`route::${ctx.url.pathname}`, { route: url, params: params })
+						break
+					}
+
+					continue
 				}
 
 				// Add X-Powered-By Header (if enabled)
@@ -462,6 +345,7 @@ export = {
 				// Create ConText Response Object
 				let ctr: ctr = {
 					// Properties
+					controller: ctg.controller,
 					headers: new valueCollection(req.headers as any, decodeURIComponent),
 					cookies: new valueCollection(cookies, decodeURIComponent),
 					params: new valueCollection(params, decodeURIComponent),
@@ -542,7 +426,7 @@ export = {
 								break
 						}; return ctr
 					}, status(code) {
-						res.statusCode = code
+						res.statusCode = code ?? 200
 						return ctr
 					}, printFile(file, localOptions) {
 						const addTypes = localOptions?.addTypes ?? true
@@ -562,53 +446,65 @@ export = {
 							if (file.endsWith('.bmp')) ctr.setHeader('Content-Type', 'image/bmp')
 						} else if (contentType) res.setHeader('Content-Type', contentType)
 
-						// Check Cache
-						ctx.continue = false
-						if (cacheStore.has(`file::${file}`)) {
-							ctg.data.outgoing.total += (cacheStore.get(`file::${file}`) as Buffer).byteLength
-							ctg.data.outgoing[ctx.previousHours[4]] += (cacheStore.get(`file::${file}`) as Buffer).byteLength
-							ctx.content = (cacheStore.get(`file::${file}`)) as Buffer
-							return ctr
-						} else if (cacheStore.has(`file::gzip::${file}`)) {
-							ctg.data.outgoing.total += (cacheStore.get(`file::gzip::${file}`) as Buffer).byteLength
-							ctg.data.outgoing[ctx.previousHours[4]] += (cacheStore.get(`file::gzip::${file}`) as Buffer).byteLength
-							ctx.content = (cacheStore.get(`file::gzip::${file}`)) as Buffer
-							return ctr
-						}
-
 						// Get File Content
 						let stream: fs.ReadStream, errorStop = false
-						if (options.compress && ctr.headers.has('accept-encoding') && ctr.headers.get('accept-encoding').includes('gzip')) {
-							ctr.rawRes.setHeader('Content-Encoding', 'gzip')
+						if (ctr.headers.get('accept-encoding').includes(CompressMapping[options.compression])) {
+							ctr.rawRes.setHeader('Content-Encoding', CompressMapping[options.compression])
 							ctr.rawRes.setHeader('Vary', 'Accept-Encoding')
 
-							const gZip = zlib.createGzip()
-							try { stream = fs.createReadStream(file); ctx.waiting = true; stream.pipe(gZip); gZip.pipe(res) }
-							catch (e) { errorStop = true; ctr.error = e; eventHandler('error', ctr, ctx) }
+							// Check Cache
+							ctx.continue = false
+							if (ctg.cache.files.has(`file::${file}`)) {
+								ctg.data.outgoing.total += (ctg.cache.files.get(`file::${file}`) as Buffer).byteLength
+								ctg.data.outgoing[ctx.previousHours[4]] += (ctg.cache.files.get(`file::${file}`) as Buffer).byteLength
+								ctx.content = (ctg.cache.files.get(`file::${file}`) as Buffer)
+								ctx.continue = true
 
-							// Write to Cache Store
-							gZip.on('data', (content: Buffer) => {
+								return ctr
+							} else if (ctg.cache.files.has(`file::${options.compression}::${file}`)) {
+								ctx.compressed = true
+								ctg.data.outgoing.total += (ctg.cache.files.get(`file::${options.compression}::${file}`) as Buffer).byteLength
+								ctg.data.outgoing[ctx.previousHours[4]] += (ctg.cache.files.get(`file::${options.compression}::${file}`) as Buffer).byteLength
+								ctx.content = (ctg.cache.files.get(`file::${options.compression}::${file}`) as Buffer)
+								ctx.continue = true
+
+								return ctr
+							}
+
+							const compression = handleCompressType(options.compression)
+							try { stream = fs.createReadStream(file); ctx.waiting = true; stream.pipe(compression); compression.pipe(res) }
+							catch (e) { errorStop = true; ctr.error = e; eventHandler('error', ctr, ctx) }
+							if (errorStop) return
+
+							// Collect Data
+							compression.on('data', (content: Buffer) => {
 								ctg.data.outgoing.total += content.byteLength
 								ctg.data.outgoing[ctx.previousHours[4]] += content.byteLength
-								const oldData = cacheStore.get(`file::gzip::${file}`) ?? Buffer.from('')
-								if (cache) cacheStore.set(`file::gzip::${file}`, Buffer.concat([ oldData as Buffer, content ]))
-							}); gZip.once('end', () => { ctx.events.emit('noWaiting'); ctx.content = Buffer.from('') })
-							res.once('close', () => { stream.close(); gZip.close() })
+
+								// Write to Cache Store
+								if (cache) {
+									const oldData = ctg.cache.files.get(`file::${options.compression}::${file}`) ?? Buffer.from('')
+									ctg.cache.files.set(`file::${options.compression}::${file}`, Buffer.concat([ oldData as Buffer, content ]))
+								}
+							}); compression.once('end', () => { ctx.events.emit('noWaiting'); ctx.content = Buffer.from('') })
+							res.once('close', () => { stream.close(); compression.close() })
 						} else {
 							try { stream = fs.createReadStream(file); ctx.waiting = true; stream.pipe(res) }
 							catch (e) { errorStop = true; ctr.error = e; eventHandler('error', ctr, ctx) }
 
-							// Write to Cache Store
+							// Collect Data
 							stream.on('data', (content: Buffer) => {
 								ctg.data.outgoing.total += content.byteLength
 								ctg.data.outgoing[ctx.previousHours[4]] += content.byteLength
-								const oldData = cacheStore.get(`file::${file}`) ?? Buffer.from('')
-								if (cache) cacheStore.set(`file::${file}`, Buffer.concat([ oldData as Buffer, content ]))
-							}); stream.once('end', () => { ctx.events.emit('noWaiting'); ctx.content = Buffer.from('') })
-							res.once('close', () => { stream.close() })
-						}
 
-						if (errorStop) return ctr
+								// Write to Cache Store
+								if (cache) {
+									const oldData = ctg.cache.files.get(`file::${options.compression}::${file}`) ?? Buffer.from('')
+									ctg.cache.files.set(`file::${options.compression}::${file}`, Buffer.concat([ oldData as Buffer, content ]))
+								}
+							}); stream.once('end', () => { ctx.events.emit('noWaiting'); ctx.content = Buffer.from('') })
+							res.once('close', () => stream.close())
+						}
 
 						return ctr
 					}
@@ -633,7 +529,7 @@ export = {
 								res.statusCode = 429
 								errorStop = true
 								ctr.print(options.rateLimits.message)
-								return compressionHandler(ctr, ctx)
+								return handleCompression(ctr, ctx, options)
 							}
 						}
 					}
@@ -677,20 +573,21 @@ export = {
 
 							// Get File Content
 							let stream: fs.ReadStream, errorStop = false
-							if (options.compress && ctr.headers.has('accept-encoding') && ctr.headers.get('accept-encoding').includes('gzip')) {
-								ctr.rawRes.setHeader('Content-Encoding', 'gzip')
+							if (options.compression && String(ctr.headers.get('accept-encoding')).includes(CompressMapping[options.compression])) {
+								ctr.rawRes.setHeader('Content-Encoding', CompressMapping[options.compression])
 								ctr.rawRes.setHeader('Vary', 'Accept-Encoding')
 
-								const gZip = zlib.createGzip()
-								try { stream = fs.createReadStream(filePath); ctx.waiting = true; stream.pipe(gZip); gZip.pipe(res) }
+								const compression = handleCompressType(options.compression)
+								try { stream = fs.createReadStream(filePath); ctx.waiting = true; stream.pipe(compression); compression.pipe(res) }
 								catch (e) { errorStop = true; ctr.error = e; eventHandler('error', ctr, ctx) }
+								if (errorStop) return
 
 								// Write to Total Network
-								gZip.on('data', (content: Buffer) => {
+								compression.on('data', (content: Buffer) => {
 									ctg.data.outgoing.total += content.byteLength
 									ctg.data.outgoing[ctx.previousHours[4]] += content.byteLength
-								}); gZip.once('end', () => { ctx.events.emit('noWaiting'); ctx.content = Buffer.from('') })
-								res.once('close', () => { stream.close(); gZip.close() })
+								}); compression.once('end', () => { ctx.events.emit('noWaiting'); ctx.content = Buffer.from('') })
+								res.once('close', () => { stream.close(); compression.close() })
 							} else {
 								try { stream = fs.createReadStream(filePath); ctx.waiting = true; stream.pipe(res) }
 								catch (e) { errorStop = true; ctr.error = e; eventHandler('error', ctr, ctx) }
@@ -700,10 +597,8 @@ export = {
 									ctg.data.outgoing.total += content.byteLength
 									ctg.data.outgoing[ctx.previousHours[4]] += content.byteLength
 								}); stream.once('end', () => { ctx.events.emit('noWaiting'); ctx.content = Buffer.from('') })
-								res.once('close', () => { stream.close() })
+								res.once('close', () => stream.close())
 							}
-
-							if (errorStop) return ctr
 						} else {
 							ctg.data.outgoing.total += ctx.execute.route.data.content.byteLength
 							ctg.data.outgoing[ctx.previousHours[4]] += ctx.execute.route.data.content.byteLength
@@ -720,7 +615,7 @@ export = {
 						ctg.data.outgoing.total += ctx.content.byteLength
 						ctg.data.outgoing[ctx.previousHours[4]] += ctx.content.byteLength
 
-						compressionHandler(ctr, ctx)
+						handleCompression(ctr, ctx, options)
 					} else res.end()
 				} else {
 					eventHandler('notfound', ctr, ctx)
@@ -733,16 +628,13 @@ export = {
 						ctg.data.outgoing.total += ctx.content.byteLength
 						ctg.data.outgoing[ctx.previousHours[4]] += ctx.content.byteLength
 
-						compressionHandler(ctr, ctx)
+						handleCompression(ctr, ctx, options)
 					} else res.end()
 				}
 			}); if (!options.body.enabled) ctx.events.emit('startRequest')
 		}) as http.Server | https.Server
 
-		server.listen(options.port, options.bind)
-		return new Promise((resolve: (value: StartInterfaces.Success) => void, reject: (reason: StartInterfaces.Error) => void) => {
-			server.once('listening', () => resolve({ success: true, port: options.port, message: 'WEBSERVER STARTED', rawServer: server }))
-			server.once('error', (error: any) => { server.close(); reject({ success: false, error, message: 'WEBSERVER ERRORED' }) })
-		})
+		ctg.controller = new ServerController(ctg, server, options)
+		return ctg.controller
 	}
 }

@@ -3,6 +3,7 @@ export default [
 	"DELETE",
 	"PATCH",
 	"STATIC",
+	"HEAD",
 	"POST",
 	"PUT",
 	"GET"

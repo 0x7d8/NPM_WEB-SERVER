@@ -1,14 +1,19 @@
-import { types as typesInterface } from "../interfaces/methods";
+import { Types as typesInterface } from "../interfaces/methods";
 import route from "../interfaces/route";
-import event, { events as eventsType } from "../interfaces/event";
+import event, { Events as eventsType } from "../interfaces/event";
 import ctr from "../interfaces/ctr";
 export declare const pathParser: (path: string, removeSingleSlash?: boolean) => string;
-interface minifiedRoute {
+export interface minifiedRoute {
     /** The Request Method of the Route */ method: typesInterface;
     /** The Path on which this will be available (+ prefix) */ path: string;
     /** The Async Code to run on a Request */ code: (ctr: ctr) => Promise<any>;
 }
-interface staticOptions {
+export interface minifiedRedirect {
+    /** The Request Method of the Redirect */ method: typesInterface;
+    /** The Path on which this will be available */ path: string;
+    /** The URL which it will send to */ destination: string;
+}
+export interface staticOptions {
     /**
      * Whether the files will be loaded into Memory
      * @default false
@@ -48,6 +53,9 @@ export default class routeList {
     setBlock(
     /** The Path Prefix */ prefix: string, 
     /** The Routes */ routes: minifiedRoute[]): number[];
+    /** Set Redirects Manually */
+    setRedirects(
+    /** The Redirects */ redirects: minifiedRedirect[]): number[];
     /** Serve Static Files */
     static(
     /** The Path to serve the Files on */ urlPath: string, 
@@ -62,4 +70,3 @@ export default class routeList {
         events: event[];
     };
 }
-export {};

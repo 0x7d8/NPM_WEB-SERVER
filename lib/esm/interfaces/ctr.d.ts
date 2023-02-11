@@ -2,8 +2,9 @@
 /// <reference types="node" />
 import { Server, IncomingMessage, ServerResponse } from "http";
 import valueCollection from "../classes/valueCollection";
+import ServerController from "../classes/serverController";
 import { UrlWithStringQuery } from "url";
-import { types } from "./methods";
+import { Types } from "./methods";
 interface printOptions {
     /**
      * Whether to Format the Outgoing JSON (If any)
@@ -11,7 +12,7 @@ interface printOptions {
     */ niceJSON?: boolean;
     /**
      * The Content Type to use
-     * @default ''
+     * @default ""
     */ contentType?: string;
     /**
      * Whether to evaluate returned Function (If Function was sent)
@@ -25,7 +26,7 @@ interface printFileOptions {
     */ addTypes?: boolean;
     /**
      * The Content Type to use
-     * @default ''
+     * @default ""
     */ contentType?: string;
     /**
      * Whether to Cache the sent Files after accessed once (only renew after restart)
@@ -33,6 +34,7 @@ interface printFileOptions {
     */ cache?: boolean;
 }
 export default interface ctr<Custom = any, HasError = false, Body = any> {
+    /** The Server Controller Class */ controller: ServerController;
     /** A Collection of all Headers */ readonly headers: valueCollection<Lowercase<string>, string>;
     /** A Collection of all Cookies */ readonly cookies: valueCollection<string, string>;
     /** A Collection of all Parameters */ readonly params: valueCollection<string, string>;
@@ -45,7 +47,7 @@ export default interface ctr<Custom = any, HasError = false, Body = any> {
     };
     /** The Request Body (JSON Automatically parsed) */ readonly body: Body;
     /** The Requested URL */ readonly url: UrlWithStringQuery & {
-        method: Uppercase<types>;
+        method: Types;
     };
     /** The Raw HTTP Server Variable */ rawServer: Server;
     /** The Raw HTTP Server Req Variable */ rawReq: IncomingMessage;
@@ -54,7 +56,7 @@ export default interface ctr<Custom = any, HasError = false, Body = any> {
     /** Set an HTTP Header to add */ setHeader: (name: string, value: string | number) => ctr;
     /** Set a Custom Variable */ setCustom: <Type extends keyof Custom>(name: Type, value: Custom[Type]) => ctr;
     /** The Request Status to Send */ status: (code: number) => ctr;
-    /** Redirect a Client to another Location */ redirect: (location: string, statusCode?: 301 | 302) => ctr;
+    /** Redirect a Client to another URL */ redirect: (location: string, statusCode?: 301 | 302) => ctr;
     /** Print a Message to the Client (automatically Formatted) */ print: (msg: any, options?: printOptions) => ctr;
     /** Print the Content of a File to the Client */ printFile: (path: string, options?: printFileOptions) => ctr;
     /** Custom Variables that are Global */ '@': Custom;

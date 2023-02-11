@@ -8,4 +8,4 @@ declare enum HTTPtypes {
     /** Internal Request Type */ static = "STATIC"
 }
 export default HTTPtypes;
-export type types = 'OPTIONS' | 'DELETE' | 'PATCH' | 'POST' | 'PUT' | 'GET' | 'STATIC';
+export type Types = 'OPTIONS' | 'DELETE' | 'PATCH' | 'POST' | 'PUT' | 'GET' | 'STATIC';

@@ -1,4 +1,5 @@
 import rateLimitRule from "../interfaces/ratelimitRule";
+import { CompressTypes } from "../functions/handleCompressType";
 import routeList from "./routeList";
 export interface Options {
     /** The Routes for the Server */ routes: routeList;
@@ -48,11 +49,11 @@ export interface Options {
         */ enabled?: boolean;
         /**
          * The Key File Path
-         * @default '/ssl/key/path'
+         * @default "/ssl/key/path"
         */ keyFile?: string;
         /**
          * The Cert File Path
-         * @default '/ssl/cert/path'
+         * @default "/ssl/cert/path"
         */ certFile?: string;
     };
     /** Dashboard Settings */ dashboard?: {
@@ -66,7 +67,7 @@ export interface Options {
         */ path?: string;
     };
     /** Header Settings */ headers?: {
-        [key: string]: string;
+        [key: string]: string | number;
     };
     /**
      * Where the Server should bind to
@@ -77,9 +78,9 @@ export interface Options {
      * @default false
     */ proxy?: boolean;
     /**
-     * Whether to Compress outgoing Data using gzip
-     * @default false
-    */ compress?: boolean;
+     * The Method to use to compress data
+     * @default "none"
+    */ compression?: CompressTypes;
     /**
      * Whether all cors Headers will be set
      * @default false
@@ -96,7 +97,7 @@ export interface Options {
 export default class serverOptions {
     private data;
     /** Server Options Helper */
-    constructor(options: Options);
+    constructor(options: Partial<Options>);
     private mergeOptions;
     /** Get the Resulting Options */
     getOptions(): Options;

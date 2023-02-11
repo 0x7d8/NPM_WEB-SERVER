@@ -1,4 +1,5 @@
 import rateLimitRule from "../interfaces/ratelimitRule"
+import { CompressTypes } from "../functions/handleCompressType"
 import routeList from "./routeList"
 
 export interface Options {
@@ -51,11 +52,11 @@ export interface Options {
 		*/ enabled?: boolean
 		/**
 		 * The Key File Path
-		 * @default '/ssl/key/path'
+		 * @default "/ssl/key/path"
 		*/ keyFile?: string
 		/**
 		 * The Cert File Path
-		 * @default '/ssl/cert/path'
+		 * @default "/ssl/cert/path"
 		*/ certFile?: string
 	}
 
@@ -83,9 +84,9 @@ export interface Options {
 	 * @default false
 	*/ proxy?: boolean
 	/**
-	 * Whether to Compress outgoing Data using gzip
-	 * @default false
-	*/ compress?: boolean
+	 * The Method to use to compress data
+	 * @default "none"
+	*/ compression?: CompressTypes
 	/**
 	 * Whether all cors Headers will be set
 	 * @default false
@@ -104,7 +105,7 @@ export default class serverOptions {
   private data: Options
 
   /** Server Options Helper */
-  constructor(options: Options) {
+  constructor(options: Partial<Options>) {
 		this.data = this.mergeOptions({
       routes: new routeList(),
       rateLimits: {
@@ -127,14 +128,14 @@ export default class serverOptions {
 			}, headers: {},
 			bind: '0.0.0.0',
       proxy: false,
-			compress: false,
+			compression: 'none',
       cors: false,
       port: 2023,
       poweredBy: true
     }, options)
   }
 
-	private mergeOptions(...objects: Options[]): Options {
+	private mergeOptions(...objects: Partial<Options>[]): Options {
 		const isObject = (obj: Options) => (obj && typeof obj === 'object')
 
 		return objects.reduce((prev, obj) => {
