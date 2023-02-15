@@ -132,7 +132,7 @@ export default class serverController {
       20: 0, 21: 0, 22: 0, 23: 0
     }; return new Promise((resolve: (value: ServerEvents.StopSuccess) => void, reject: (reason: ServerEvents.StopError) => void) => {
 			this.server.once('close', () => resolve({ success: true, message: 'WEBSERVER CLOSED' }))
-			this.server.once('error', (error: Error) => { this.server.close(); reject({ success: false, error, message: 'WEBSERVER CLOSING ERRORED' }) })
+			this.server.once('error', (error: Error) => reject({ success: false, error, message: 'WEBSERVER CLOSING ERRORED' }))
 		})
   }
 }
