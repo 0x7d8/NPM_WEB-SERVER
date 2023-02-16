@@ -6,7 +6,7 @@ import routeList from "./routeList"
 import * as https from "https"
 import * as http from "http"
 
-export default class serverController {
+export default class ServerController {
   private globalContext: GlobalContext
   private optionsCache: Record<string, any>
   private options: Options
@@ -58,7 +58,9 @@ export default class serverController {
   }
 
   /** Load all Server Routes & Options */
-  async reload() {
+  async reload(
+    /** Whether to restart the HTTP Server itself */ restartHTTP?: boolean
+  ) {
     this.globalContext.pageDisplay = ''
     this.globalContext.cache.files.clear()
     this.globalContext.cache.routes.clear()
@@ -90,8 +92,10 @@ export default class serverController {
       12: 0, 13: 0, 14: 0, 15: 0,
       16: 0, 17: 0, 18: 0, 19: 0,
       20: 0, 21: 0, 22: 0, 23: 0
-    }; await this.stop()
-    await this.start()
+    }; if (restartHTTP) {
+      await this.stop()
+      await this.start()
+    }
 
     return this
   }

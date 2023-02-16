@@ -2,7 +2,6 @@
 
 import * as fs from "fs"
 import * as path from "path"
-import * as packageJSON from "package.json"
 import { Options } from "./classes/serverOptions"
 import webserver from "."
 
@@ -43,8 +42,10 @@ const isHelp = () => (!args[0] || args.includes('-h') || args.includes('--help')
 const webserverOptions: Partial<Options> = { dashboard: {} }
 const args = process.argv.slice(2)
 if (args.includes('-v') || args.includes('--version')) {
+	const { version } = require('../../package.json')
+
 	console.log(`${colors.fg.yellow}[RJW] ${colors.reset}Version:`)
-	console.log(`v${packageJSON.version}`)
+	console.log(`v${version}`)
 } else if (!isHelp() && fs.existsSync(path.join(process.cwd(), args[0]))) {
 	let remHTML = false, addTypes = true, notFoundPath = ''
 	for (const option of args.slice(1)) {
@@ -62,18 +63,42 @@ if (args.includes('-v') || args.includes('--version')) {
 	}
 
 	const routes = new webserver.routeList()
-	routes.static('/', path.join(process.cwd(), args[0]), { remHTML, addTypes })
+	routes.routeBlock('/').static(path.join(process.cwd(), args[0]), { hideHTML: remHTML, addTypes })
 	if (notFoundPath) routes.event('notfound', async(ctr) => {
 		return ctr.status(404).printFile(path.join(process.cwd(), notFoundPath))
 	}); routes.event('request', async(ctr) => {
 		console.log(`${colors.fg.yellow}[RJW] ${colors.fg.gray}[${ctr.url.method}] ${colors.fg.blue, colors.underscore}${ctr.url.href}${colors.reset} FROM ${ctr.client.ip}`)
-	}); webserver.initialize(webserverOptions as Options).setRoutes(routes).start().then((res) => {
-		console.log(`${colors.fg.yellow}[RJW] ${colors.reset}Server started on ${colors.fg.yellow}${res.port}${colors.reset}`)
-	}).catch((err) => {
-		console.log(`${colors.fg.yellow}[RJW] ${colors.reset}Error:`)
-		console.log(`${colors.fg.yellow}[RJW] ${colors.reset}Maybe port ${colors.fg.yellow}${webserverOptions.port ?? 2023}${colors.reset} isnt available`)
-		console.error(`${colors.fg.red}[ERR]${colors.reset}`, err.error)
-	})
+	}); const controller = webserver.initialize(webserverOptions as Options)
+		controller.setRoutes(routes).start().then((res) => {
+			console.log(`${colors.fg.yellow}[RJW] ${colors.reset}Server started on Port ${colors.fg.yellow}${res.port}${colors.reset}`)
+
+			// CLI Commands
+			const stdin = process.openStdin()
+			stdin.addListener('data', (input) => {
+				// Get Arguments
+				const cmdArgs = input.toString().trim().split(' ')
+
+				// RELOAD
+				if (cmdArgs[0].toUpperCase() === 'RELOAD') {
+					console.log(`${colors.fg.yellow}[RJW] ${colors.reset}Reloading Server...`)
+
+					const routes = new webserver.routeList()
+					routes.routeBlock('/').static(path.join(process.cwd(), args[0]), { hideHTML: remHTML, addTypes })
+					if (notFoundPath) routes.event('notfound', async(ctr) => {
+						return ctr.status(404).printFile(path.join(process.cwd(), notFoundPath))
+					}); routes.event('request', async(ctr) => {
+						console.log(`${colors.fg.yellow}[RJW] ${colors.fg.gray}[${ctr.url.method}] ${colors.fg.blue, colors.underscore}${ctr.url.href}${colors.reset} FROM ${ctr.client.ip}`)
+					}); controller.setRoutes(routes)
+					controller.reload(cmdArgs[1] === '-y').then(() => {
+						console.log(`${colors.fg.yellow}[RJW] ${colors.reset}Server reloaded and started on Port ${colors.fg.yellow}${res.port}${colors.reset}`)
+					})
+				}
+			})
+		}).catch((err) => {
+			console.log(`${colors.fg.yellow}[RJW] ${colors.reset}Error:`)
+			console.log(`${colors.fg.yellow}[RJW] ${colors.reset}Maybe Port ${colors.fg.yellow}${webserverOptions.port ?? 2023}${colors.reset} isnt available?`)
+			console.error(`${colors.fg.red}[ERR]${colors.reset}`, err.error)
+		})
 } else if (!isHelp() && !fs.existsSync(path.join(process.cwd(), args[0]))) {
 	console.log(`${colors.fg.yellow}[RJW] ${colors.reset}Error:`)
 	console.log(`Folder ${colors.fg.red, colors.underscore}${path.join(process.cwd(), args[0])}${colors.reset} couldnt be found`)

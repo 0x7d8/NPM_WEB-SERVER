@@ -5,7 +5,7 @@ export default interface Route {
 	/** The Request Method of the Route */ method: Types
 	/** The URL as normal String */ path: string
 	/** An Array of the URL split by Slashes */ pathArray: string[]
-	/** The Async Code to run on the Request */ code: (ctr: ctr) => Promise<any>
+	/** The Async Code to run on the Request */ code: (ctr: ctr) => Promise<any> | any
 	/** Additional Route Data */ data: {
 		/** Whether then some Content Types will be added automatically */ addTypes: boolean
 		/** The File Content (If Preloading) */ content?: Buffer

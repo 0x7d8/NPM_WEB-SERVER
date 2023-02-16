@@ -100,7 +100,7 @@ export interface Options {
 	*/ poweredBy?: boolean
 }
 
-export default class serverOptions {
+export default class ServerOptions {
   private data: Options
 
   /** Server Options Helper */

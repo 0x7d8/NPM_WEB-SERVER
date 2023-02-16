@@ -6,7 +6,7 @@ import { Options } from "./serverOptions";
 import routeList from "./routeList";
 import * as https from "https";
 import * as http from "http";
-export default class serverController {
+export default class ServerController {
     private globalContext;
     private optionsCache;
     private options;
@@ -25,7 +25,8 @@ export default class serverController {
     /** Start the Server */
     start(): Promise<ServerEvents.StartSuccess>;
     /** Load all Server Routes & Options */
-    reload(): Promise<this>;
+    reload(
+    /** Whether to restart the HTTP Server itself */ restartHTTP?: boolean): Promise<this>;
     /** Stop the Server */
     stop(): Promise<ServerEvents.StopSuccess>;
 }

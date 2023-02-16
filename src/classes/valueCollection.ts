@@ -1,4 +1,4 @@
-export default class valueCollection<Key extends string | number | symbol = string | number | symbol, Value = any> {
+export default class ValueCollection<Key extends string | number | symbol = string | number | symbol, Value = any> {
   private data: Record<Key, Value> = {} as any
 
   /** Create a New Collection */

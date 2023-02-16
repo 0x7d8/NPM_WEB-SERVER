@@ -2,6 +2,7 @@ import { Types as typesInterface } from "../interfaces/methods";
 import route from "../interfaces/route";
 import event, { Events as eventsType } from "../interfaces/event";
 import ctr from "../interfaces/ctr";
+import RouteBlock from "./router/routeBlock";
 export declare const pathParser: (path: string, removeSingleSlash?: boolean) => string;
 export interface minifiedRoute {
     /** The Request Method of the Route */ method: typesInterface;
@@ -27,7 +28,8 @@ export interface staticOptions {
      * @default true
     */ addTypes?: boolean;
 }
-export default class routeList {
+export default class RouteList {
+    private externals;
     private routes;
     private events;
     /** List of Routes */
@@ -40,31 +42,56 @@ export default class routeList {
      * Events to Import
      * @default []
      */ events?: event[]);
-    /** Set An Event Manually */
+    /**
+     * Set An Event Manually
+     */
     event(
     /** The Event Name */ event: eventsType, 
     /** The Async Code to run on a Request */ code: (ctr: ctr) => Promise<any>): number | false;
-    /** Set A Route Manually */
+    /**
+     * Set A Route Manually
+     * @deprecated Please use the new Route Blocks instead, RouteList.routeBlock(path)
+     */
     set(
     /** The Request Method */ method: typesInterface, 
     /** The Path on which this will be available */ urlPath: string, 
-    /** The Async Code to run on a Request */ code: (ctr: ctr) => Promise<any>): number | false;
-    /** Set A Route Block Manually */
+    /** The Async Code to run on a Request */ code: (ctr: ctr) => Promise<any>): false | this;
+    /**
+     * Set A Route Block
+     * @deprecated Please use the new Route Blocks instead, RouteList.routeBlock(path)
+     */
     setBlock(
     /** The Path Prefix */ prefix: string, 
-    /** The Routes */ routes: minifiedRoute[]): number[];
-    /** Set Redirects Manually */
+    /** The Routes */ routes: minifiedRoute[]): this;
+    /**
+     * Set Redirects Manually
+     */
     setRedirects(
-    /** The Redirects */ redirects: minifiedRedirect[]): number[];
-    /** Serve Static Files */
+    /** The Redirects */ redirects: minifiedRedirect[]): this;
+    /**
+     * Create A new Route Block
+     * @since 3.1.0
+     */
+    routeBlock(
+    /** The Path Prefix */ prefix: string): RouteBlock;
+    /**
+     * Serve Static Files
+     * @deprecated Please use the new Route Blocks instead, RouteList.routeBlock(path)
+     */
     static(
     /** The Path to serve the Files on */ urlPath: string, 
     /** The Location of the Folder to load from */ folder: string, 
-    /** Additional Options */ options?: staticOptions): number[];
-    /** Load External Function Files */
+    /** Additional Options */ options?: staticOptions): this;
+    /**
+     * Load External Function files
+     * @deprecated Please use the new Route Blocks instead, RouteList.routeBlock(path).loadCJS()
+     */
     load(
-    /** The Location of the Folder to load from */ folder: string): number[];
-    /** Internal Function to access all Routes & Events as Array */
+    /** The Location of the Folder to load from */ folder: string): this;
+    /**
+     * Internal Function to access all Routes & Events as Array
+     * @ignore This is only for internal use
+     */
     list(): {
         routes: route[];
         events: event[];

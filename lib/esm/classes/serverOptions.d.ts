@@ -92,7 +92,7 @@ export interface Options {
      * @default true
     */ poweredBy?: boolean;
 }
-export default class serverOptions {
+export default class ServerOptions {
     private data;
     /** Server Options Helper */
     constructor(options: Partial<Options>);

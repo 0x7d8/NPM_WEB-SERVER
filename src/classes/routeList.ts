@@ -5,15 +5,17 @@ import event, { Events as eventsType } from "../interfaces/event"
 import ctr from "../interfaces/ctr"
 import types from "../misc/methods"
 
+import RouteBlock from "./router/routeBlock"
+
 import * as path from "path"
 import * as fs from "fs"
 
 export const pathParser = (path: string, removeSingleSlash?: boolean) => {
 	path = path.replace(/\/{2,}/g, '/')
 
-	if (path.endsWith('/') && path !== '/') return path.slice(0, -1)
-	if (!path.startsWith('/') && path !== '/') return `/${path}`
-	if (path.includes('/?')) return path.replace('/?', '?')
+	if (path.endsWith('/') && path !== '/') path = path.slice(0, -1)
+	if (!path.startsWith('/') && path !== '/') path = `/${path}`
+	if (path.includes('/?')) path = path.replace('/?', '?')
 
 	return ((removeSingleSlash && path === '/') ? '' : path)
 }
@@ -45,7 +47,8 @@ export interface staticOptions {
 	*/ addTypes?: boolean
 }
 
-export default class routeList {
+export default class RouteList {
+	private externals: { method: string, object: any }[]
 	private routes: route[]
 	private events: event[]
 
@@ -65,9 +68,12 @@ export default class routeList {
 
 		this.routes = routes
 		this.events = events
+		this.externals = []
 	}
 
-	/** Set An Event Manually */
+	/**
+	 * Set An Event Manually
+	 */
 	event(
 		/** The Event Name */ event: eventsType,
 		/** The Async Code to run on a Request */ code: (ctr: ctr) => Promise<any>
@@ -80,7 +86,10 @@ export default class routeList {
 		}) - 1
 	}
 
-	/** Set A Route Manually */
+	/**
+	 * Set A Route Manually
+	 * @deprecated Please use the new Route Blocks instead, RouteList.routeBlock(path)
+	 */
 	set(
 		/** The Request Method */ method: typesInterface,
 		/** The Path on which this will be available */ urlPath: string,
@@ -91,7 +100,7 @@ export default class routeList {
 		if (!types.includes(method)) throw TypeError(`No Valid Request Type: ${method}, Possible Values: ${types.join(', ')}`)
 		if (this.routes.some((obj) => (obj.method === method && obj.path === urlPath))) return false
 
-		return this.routes.push({
+		this.routes.push({
 			method: method,
 			path: urlPath,
 			pathArray: urlPath.split('/'),
@@ -99,21 +108,25 @@ export default class routeList {
 			data: {
 				addTypes: false
 			}
-		}) - 1
+		})
+
+		return this
 	}
 
-	/** Set A Route Block Manually */
+	/**
+	 * Set A Route Block
+	 * @deprecated Please use the new Route Blocks instead, RouteList.routeBlock(path)
+	 */
 	setBlock(
 		/** The Path Prefix */ prefix: string,
 		/** The Routes */ routes: minifiedRoute[]
 	) {
 		prefix = pathParser(prefix)
-		let arrayIndexes: number[] = []
 
 		for (let routeNumber = 0; routeNumber <= routes.length - 1; routeNumber++) {
 			const route = routes[routeNumber]
 
-			arrayIndexes.push(this.routes.push({
+			this.routes.push({
 				method: route.method,
 				path: `${prefix}${pathParser(route.path, true)}`,
 				pathArray: `${prefix}${pathParser(route.path, true)}`.split('/'),
@@ -121,20 +134,22 @@ export default class routeList {
 				data: {
 					addTypes: false
 				}
-			}) - 1)
-		}; return arrayIndexes
+			})
+		}
+
+		return this
 	}
 
-	/** Set Redirects Manually */
+	/**
+	 * Set Redirects Manually
+	 */
 	setRedirects(
 		/** The Redirects */ redirects: minifiedRedirect[]
 	) {
-		let arrayIndexes: number[] = []
-
 		for (let redirectNumber = 0; redirectNumber <= redirects.length - 1; redirectNumber++) {
 			const redirect = redirects[redirectNumber]
 
-			arrayIndexes.push(this.routes.push({
+			this.routes.push({
 				method: redirect.method,
 				path: pathParser(redirect.path),
 				pathArray: pathParser(redirect.path, true).split('/'),
@@ -143,11 +158,29 @@ export default class routeList {
 				}, data: {
 					addTypes: false
 				}
-			}) - 1)
-		}; return arrayIndexes
+			})
+		}
+
+		return this
 	}
 
-	/** Serve Static Files */
+	/**
+	 * Create A new Route Block
+	 * @since 3.1.0
+	 */
+	routeBlock(
+		/** The Path Prefix */ prefix: string
+	) {
+		const routeBlock = new RouteBlock(prefix)
+		this.externals.push({ method: 'get', object: routeBlock })
+
+		return routeBlock
+	}
+
+	/**
+	 * Serve Static Files
+	 * @deprecated Please use the new Route Blocks instead, RouteList.routeBlock(path)
+	 */
 	static(
 		/** The Path to serve the Files on */ urlPath: string,
 		/** The Location of the Folder to load from */ folder: string,
@@ -158,7 +191,6 @@ export default class routeList {
 		const preload = options?.preload ?? false
 		const remHTML = options?.remHTML ?? false
 		const addTypes = options?.addTypes ?? true
-		let arrayIndexes: number[] = []
 
 		for (const file of getAllFiles(folder)) {
 			let newPath = file.replace(folder, '')
@@ -177,16 +209,19 @@ export default class routeList {
 					file
 				}
 			}); if (preload) this.routes[index - 1].data.content = fs.readFileSync(file)
-			arrayIndexes.push(index - 1)
-		}; return arrayIndexes
+		}
+
+		return this
 	}
 
-	/** Load External Function Files */
+	/**
+	 * Load External Function files
+	 * @deprecated Please use the new Route Blocks instead, RouteList.routeBlock(path).loadCJS()
+	 */
 	load(
 		/** The Location of the Folder to load from */ folder: string
 	) {
 		const files = getAllFilesFilter(folder, '.js')
-		let arrayIndexes: number[] = []
 
 		for (const file of files) {
 			const route: minifiedRoute = require(path.resolve(file))
@@ -198,7 +233,7 @@ export default class routeList {
 			) continue
 			if (!types.includes(route.method)) throw TypeError(`No Valid Request Type: ${route.method}, Possible Values: ${types.join(', ')}`)
 
-			arrayIndexes.push(this.routes.push({
+			this.routes.push({
 				method: route.method,
 				path: pathParser(route.path),
 				pathArray: pathParser(route.path).split('/'),
@@ -206,12 +241,21 @@ export default class routeList {
 				data: {
 					addTypes: false
 				}
-			}) - 1)
-		}; return arrayIndexes
+			})
+		}
+
+		return this
 	}
 
-	/** Internal Function to access all Routes & Events as Array */
+	/**
+	 * Internal Function to access all Routes & Events as Array
+	 * @ignore This is only for internal use
+	 */
 	list() {
+		for (const external of this.externals) {
+			this.routes.push(...external.object[external.method]())
+		}
+
 		return { routes: this.routes, events: this.events }
 	}
 }

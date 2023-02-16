@@ -6,7 +6,8 @@ enum HTTPtypes {
   /** HTTP Request Type */ head = 'HEAD',
   /** HTTP Request Type */ put = 'PUT',
   /** HTTP Request Type */ get = 'GET',
-  /** Internal Request Type */ static = 'STATIC'
+  /** Internal Request Type */ static = 'STATIC',
+  /** Internal Request Type */ staticdir = 'STATICDIR'
 }
 
 export default HTTPtypes
@@ -20,3 +21,4 @@ export type Types =
   | 'PUT'
   | 'GET'
   | 'STATIC'
+  | 'STATICDIR'

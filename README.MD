@@ -53,11 +53,12 @@ import { Ctr } from "rjweb-server/interfaces"
 
 const routes = new webserver.routeList()
 
-routes.set(webserver.types.get, '/hello', async(ctr: Ctr) => {
-  if (!ctr.queries.has("name")) return ctr.print('please supply the name query!!')
+routes.routeBlock('/')
+  .add(webserver.types.get, '/hello', async(ctr: Ctr) => {
+    if (!ctr.queries.has("name")) return ctr.print('please supply the name query!!')
 
-  return ctr.print(`Hello, ${ctr.queries.get("name")}! How are you doing?`)
-})
+    return ctr.print(`Hello, ${ctr.queries.get("name")}! How are you doing?`)
+  })
 
 // ...
 ```
@@ -142,56 +143,34 @@ Initialize Server
 const webserver = require('rjweb-server')
 const routes = new webserver.routeList()
 
-routes.setBlock('/hello' /** That is the prefix (= prefix + path) */, [
-  {
-    method: webserver.types.get,
-    path: '/', // Ends up being "/hello" because prefix is /hello
-    code: async(ctr) => {
-      // ctr.queries.get... is ?name=
-      if (!ctr.queries.has("name")) return ctr.print('please supply the name Query!!')
-
-      return ctr.print(`Hello, ${ctr.queries.get("name")}! How are you doing?`)
-    }
-  },
-  {
-    method: webserver.types.get,
-    path: '/:name', // Ends up being "/hello/<placeholder called name>"
-    code: async(ctr) => {
-      // ctr.params.get... is :name, example /hello/0x4096 where the 0x4096 is :name
-      return ctr.print(`Hello, ${ctr.params.get('name')}! How are ya mate?`)
-    }
-  }
-])
-
 // ctr.params.get... is :name:, example /hello/0x4096
-routes.set(webserver.types.post, '/post', async(ctr) => {
-  return ctr.print(`Hello, ${ctr.body}! How are you doing?`)
-})
+routes.routeBlock('/') // The / is the Path Prefix for all children paths
+  .add(webserver.types.post, '/post', async(ctr) => {
+    return ctr.print(`Hello, ${ctr.body}! How are you doing?`)
+  })
+  .add(webserver.types.get, '/profile/:user:', async(ctr) => {
+    return ctr.printFile(`../images/profile/${ctr.params.get('user')}.png`, { addTypes: true })
+  })
+  .add(webserver.types.get, '/reloadserver', async(ctr) => {
+    if (!ctr.queries.has('password')) return ctr.print('provide the password to do this!!')
+    if (ctr.queries.get('password') !== 'imApassword123!') return ctr.print('the password is incorrect!!')
 
-routes.set(webserver.types.get, '/profile/:user:', async(ctr) => {
-  return ctr.printFile(`../images/profile/${ctr.params.get('user')}.png`, { addTypes: true })
-})
+    setTimeout(() => ctr.controller.reload(), 1000)
+    return ctr.print('server reloaded')
+  })
+  .add(webserver.types.get, '/redirect/:website:', async(ctr) => {
+    switch (ctr.params.get('website')) {
+      case "google":
+        return ctr.redirect('https://www.google.com')
 
-routes.set(webserver.types.get, '/reloadserver', async(ctr) => {
-  if (!ctr.queries.has('password')) return ctr.print('provide the password to do this!!')
-  if (ctr.queries.get('password') !== 'imApassword123!') return ctr.print('the password is incorrect!!')
+      case "youtube":
+        return ctr.redirect('https://www.youtube.com')
 
-  setTimeout(() => ctr.controller.reload(), 1000)
-  return ctr.print('server reloaded')
-})
-
-routes.set(webserver.types.get, '/redirect/:website:', async(ctr) => {
-  switch (ctr.params.get('website')) {
-    case "google":
-      return ctr.redirect('https://www.google.com')
-
-    case "youtube":
-      return ctr.redirect('https://www.youtube.com')
-
-    default:
-      return ctr.print('Im only smart enough to redirect to google and youtube :P')
-  }
-})
+      default:
+        return ctr.print('Im only smart enough to redirect to google and youtube :P')
+    }
+  })
+  .redirect('/googleplz', 'https://www.google.com')
 
 const controller = webserver.initialize({
   bind: '0.0.0.0', // The IP thats bound to
@@ -221,15 +200,17 @@ const wait = require('timers/promises').setTimeout
 const handleHello = async() => {
   await wait(5000)
   return 'You just waited 5 seconds !!'
-}; routes.set(webserver.types.get, '/wait5sec/func', async(ctr) => {
-  return ctr.print(handleHello)
-})
+}
 
-// this request will also load for 5 seconds
-routes.set(webserver.types.get, '/wait5sec/promise', async(ctr) => {
-  await wait(5000)
-  return ctr.print('You just waited 5 seconds !!')
-})
+routes.routeBlock('/wait5sec')
+  // this request will load for 5 seconds
+  .add(webserver.types.get, '/func', async(ctr) => {
+    return ctr.print(handleHello)
+  }) // this request will also load for 5 seconds
+  .add(webserver.types.get, '/promise', async(ctr) => {
+    await wait(5000)
+    return ctr.print('You just waited 5 seconds !!')
+  })
 
 const controller = webserver.initialize({
   bind: '0.0.0.0', // The IP thats bound to
@@ -249,10 +230,11 @@ Serve Static Files
 const webserver = require('rjweb-server')
 const routes = new webserver.routeList()
 
-routes.static('/', './html', {
-  preload: false, // If enabled will load every static files content into Memory
-  remHTML: true // If enabled will remove the html ending from files when serving
-}) // The html folder is in the root directory
+routes.setBlock('/')
+  .static('./html', {
+    preLoad: false, // If enabled will load every static files content into Memory
+    hideHTML: true // If enabled will remove the html ending from files when serving
+  }) // The html folder is in the root directory
 
 const controller = webserver.initialize({
   bind: '0.0.0.0', // The IP thats bound to
