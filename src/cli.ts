@@ -47,7 +47,7 @@ if (args.includes('-v') || args.includes('--version')) {
 	console.log(`${colors.fg.yellow}[RJW] ${colors.reset}Version:`)
 	console.log(`v${version}`)
 } else if (!isHelp() && fs.existsSync(path.join(process.cwd(), args[0]))) {
-	let remHTML = false, addTypes = true, notFoundPath = ''
+	let remHTML = false, addTypes = true, notFoundPath = '', refreshInterval = -1
 	for (const option of args.slice(1)) {
 		const [ key, value ] = option.slice(2).split('=')
 
@@ -59,8 +59,24 @@ if (args.includes('-v') || args.includes('--version')) {
 		if (key === 'cors') webserverOptions.cors = Boolean(value)
 		if (key === 'proxy') webserverOptions.proxy = Boolean(value)
 		if (key === 'dashboard') webserverOptions.dashboard.enabled = Boolean(value)
+		if (key === 'refresh') refreshInterval = Number(value)
 		if (key === '404') notFoundPath = String(value).replaceAll('"', '')
 	}
+
+	if (refreshInterval !== -1) setInterval(() => {
+		console.log(`${colors.fg.yellow}[RJW] ${colors.reset}Reloading Server...`)
+
+		const routes = new webserver.routeList()
+		routes.routeBlock('/').static(path.join(process.cwd(), args[0]), { hideHTML: remHTML, addTypes })
+		if (notFoundPath) routes.event('notfound', async(ctr) => {
+			return ctr.status(404).printFile(path.join(process.cwd(), notFoundPath))
+		}); routes.event('request', async(ctr) => {
+			console.log(`${colors.fg.yellow}[RJW] ${colors.fg.gray}[${ctr.url.method}] ${colors.fg.blue, colors.underscore}${ctr.url.href}${colors.reset} FROM ${ctr.client.ip}`)
+		}); controller.setRoutes(routes)
+		controller.reload(false).then(() => {
+			console.log(`${colors.fg.yellow}[RJW] ${colors.reset}Server automatically reloaded and started on Port ${colors.fg.yellow}${webserverOptions.port ?? 2023}${colors.reset}`)
+		})
+	}, refreshInterval * 1000)
 
 	const routes = new webserver.routeList()
 	routes.routeBlock('/').static(path.join(process.cwd(), args[0]), { hideHTML: remHTML, addTypes })
@@ -118,5 +134,6 @@ else {
 	console.log(' --remHTML=false')
 	console.log(' --addTypes=true')
 	console.log(' --dashboard=false')
+	console.log(' --refresh=100')
 	console.log(' --404="static/404.html"')
 }

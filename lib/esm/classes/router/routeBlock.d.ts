@@ -2,6 +2,7 @@ import { Types as typesInterface } from "../../interfaces/methods";
 import Route from "../../interfaces/route";
 import Ctr from "../../interfaces/ctr";
 export default class RouteBlock {
+    private checkAuth?;
     private data;
     private path;
     /** Generate Route Block */
@@ -54,6 +55,29 @@ export default class RouteBlock {
     redirect(
     /** The Request Path to Trigger the Redirect on */ request: string, 
     /** The Redirect Path to Redirect to */ redirect: string): this;
+    /**
+     * (Sync) Add Authentication
+     * @sync This Function adds Authentication Syncronously
+     * @example
+     * ```
+     * // The /api route will automatically check for authentication
+     * // Obviously still putting the prefix (in this case / from the routeBlock in front)
+     * // Please note that in order to respond unautorized the status cant be 2xx
+     * const routes = new webserver.routeList()
+     *
+     * routes.routeBlock('/api')
+     *   .auth(async(ctr) => {
+     *     if (!ctr.headers.has('Authorization')) return ctr.status(401).print('Unauthorized')
+     *     if (ctr.headers.get('Authorization') !== 'key123 or db request ig') return ctr.status(401).print('Unauthorized')
+     *
+     *     return ctr.status(200)
+     *   })
+     *   .redirect('/pics', 'https://google.com/search?q=devil')
+     * ```
+     * @since 3.1.1
+     */
+    auth(
+    /** The Function to Validate Authorization */ code: (ctr: Ctr) => Promise<any> | any): this;
     /**
      * (Sync) Load Static Files
      * @sync This Function loads the static files Syncronously
@@ -110,6 +134,11 @@ export default class RouteBlock {
     /**
      * Internal Method for Generating Routes Object
      * @ignore Please do not use
+     * @since 3.1.0
      */
-    get(): Route[];
+    get(): {
+        routes: Route[];
+        path: string;
+        authCheck: (ctr: Ctr<any, false, any>) => any;
+    };
 }

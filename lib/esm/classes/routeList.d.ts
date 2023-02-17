@@ -30,6 +30,7 @@ export interface staticOptions {
 }
 export default class RouteList {
     private externals;
+    private authChecks;
     private routes;
     private events;
     /** List of Routes */
@@ -95,5 +96,9 @@ export default class RouteList {
     list(): {
         routes: route[];
         events: event[];
+        authChecks: {
+            path: string;
+            func: (ctr: ctr<any, false, any>) => any;
+        }[];
     };
 }

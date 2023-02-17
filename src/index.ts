@@ -63,10 +63,12 @@ export = {
 				}
 			}, routes: {
 				normal: [],
-				event: []
+				event: [],
+				auth: [],
 			}, cache: {
 				files: new valueCollection(),
-				routes: new valueCollection()
+				routes: new valueCollection(),
+				auths: new valueCollection()
 			}
 		}
 
@@ -121,7 +123,7 @@ export = {
 							}; ctg.pageDisplay = pageDisplay
 						}
 
-						ctr.status(404)
+						ctr.status(404).setHeader('Content-Type', 'text/plain')
 						ctx.content = Buffer.from(`[!] COULDNT FIND [${ctr.url.method}]: ${ctr.url.pathname.toUpperCase()}\n[i] AVAILABLE PAGES:\n\n${pageDisplay}`)
 					} else {
 						// Custom NotFound
@@ -167,6 +169,7 @@ export = {
 				content: Buffer.from(''),
 				compressed: false,
 				events: new EventEmitter(),
+				authCheck: null,
 				waiting: false,
 				continue: true,
 				execute: {
@@ -250,6 +253,17 @@ export = {
 						ctx.execute.static = (url.route.method === 'STATIC')
 						ctx.execute.exists = true
 
+						if (ctg.cache.auths.has(`auth::${ctx.url.pathname}`)) {
+							ctx.authCheck = ctg.cache.auths.get(`auth::${ctx.url.pathname}`).func
+						} else for (let authNumber = 0; authNumber <= ctg.routes.auth.length - 1; authNumber++) {
+							console.log(ctg.routes.auth[authNumber], ctx.execute.route)
+							if (!ctx.execute.route.path.startsWith(ctg.routes.auth[authNumber].path)) continue
+							ctx.authCheck = ctg.routes.auth[authNumber].func
+
+							ctg.cache.auths.set(`auth::${ctx.url.pathname}`, ctg.routes.auth[authNumber])
+							break
+						}
+
 						break
 					}
 
@@ -281,6 +295,17 @@ export = {
 						ctx.execute.route = url
 						ctx.execute.exists = true
 
+						if (ctg.cache.auths.has(`auth::${ctx.url.pathname}`)) {
+							ctx.authCheck = ctg.cache.auths.get(`auth::${ctx.url.pathname}`).func
+						} else for (let authNumber = 0; authNumber <= ctg.routes.auth.length - 1; authNumber++) {
+							console.log(ctg.routes.auth[authNumber], ctx.execute.route)
+							if (!ctx.execute.route.path.startsWith(ctg.routes.auth[authNumber].path)) continue
+							ctx.authCheck = ctg.routes.auth[authNumber].func
+
+							ctg.cache.auths.set(`auth::${ctx.url.pathname}`, ctg.routes.auth[authNumber])
+							break
+						}
+
 						// Set Cache
 						ctg.cache.routes.set(`route::${ctx.url.pathname}`, { route: url, params: {} })
 
@@ -289,6 +314,17 @@ export = {
 						ctx.execute.route = url
 						ctx.execute.static = true
 						ctx.execute.exists = true
+
+						if (ctg.cache.auths.has(`auth::${ctx.url.pathname}`)) {
+							ctx.authCheck = ctg.cache.auths.get(`auth::${ctx.url.pathname}`).func
+						} else for (let authNumber = 0; authNumber <= ctg.routes.auth.length - 1; authNumber++) {
+							console.log(ctg.routes.auth[authNumber], ctx.execute.route)
+							if (!ctx.execute.route.path.startsWith(ctg.routes.auth[authNumber].path)) continue
+							ctx.authCheck = ctg.routes.auth[authNumber].func
+
+							ctg.cache.auths.set(`auth::${ctx.url.pathname}`, ctg.routes.auth[authNumber])
+							break
+						}
 
 						// Set Cache
 						ctg.cache.routes.set(`route::${ctx.url.pathname}`, { route: url, params: {} })
@@ -311,6 +347,17 @@ export = {
 							continue
 						}; continue
 					}; if (ctx.execute.exists) {
+						if (ctg.cache.auths.has(`auth::${ctx.url.pathname}`)) {
+							ctx.authCheck = ctg.cache.auths.get(`auth::${ctx.url.pathname}`).func
+						} else for (let authNumber = 0; authNumber <= ctg.routes.auth.length - 1; authNumber++) {
+							console.log(ctg.routes.auth[authNumber], ctx.execute.route)
+							if (!ctx.execute.route.path.startsWith(ctg.routes.auth[authNumber].path)) continue
+							ctx.authCheck = ctg.routes.auth[authNumber].func
+
+							ctg.cache.auths.set(`auth::${ctx.url.pathname}`, ctg.routes.auth[authNumber])
+							break
+						}
+
 						// Set Cache
 						ctg.cache.routes.set(`route::${ctx.url.pathname}`, { route: url, params: params })
 						break
@@ -535,6 +582,20 @@ export = {
 					}
 				}
 
+				// Execute Authorization
+				if (ctx.authCheck) {
+					await Promise.resolve(ctx.authCheck(ctr)).then(() => {
+						if (!String(res.statusCode).startsWith('2')) {
+							ctr.setHeader('Content-Type', 'text/plain')
+							return handleCompression(ctr, ctx, options)
+						}
+					}).catch((e) => {
+						ctr.error = e
+						errorStop = true
+						eventHandler('error', ctr, ctx)
+					})
+				}
+
 				// Execute Page
 				if (options.dashboard.enabled && !ctx.execute.dashboard) {
 					ctg.requests.total++
@@ -617,7 +678,7 @@ export = {
 
 						handleCompression(ctr, ctx, options)
 					} else res.end()
-				} else {
+				} else if (!errorStop) {
 					eventHandler('notfound', ctr, ctx)
 
 					// Wait for Streams

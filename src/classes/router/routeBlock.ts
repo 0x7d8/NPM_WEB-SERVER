@@ -10,6 +10,7 @@ import * as path from "path"
 import * as fs from "fs"
 
 export default class RouteBlock {
+  private checkAuth?: (ctr: Ctr) => Promise<any> | any
   private data: Route[]
   private path: string
 
@@ -17,7 +18,8 @@ export default class RouteBlock {
   constructor(
     /** The Path of the Routes */ path: string
   ) {
-    this.path = pathParser(path, true)
+    this.checkAuth = null
+    this.path = pathParser(path)
     this.data = []
   }
 
@@ -44,7 +46,7 @@ export default class RouteBlock {
    *       .print('The Devils message was set')
    *   })
    * ```
-   * @since 3.1.0 
+   * @since 3.1.0
    */
 	add(
 		/** The Request Method */ method: typesInterface,
@@ -80,7 +82,7 @@ export default class RouteBlock {
    *   .redirect('/devil', 'https://google.com')
    *   .redirect('/devilpics', 'https://google.com/search?q=devil')
    * ```
-   * @since 3.1.0 
+   * @since 3.1.0
    */
 	redirect(
 		/** The Request Path to Trigger the Redirect on */ request: string,
@@ -91,10 +93,39 @@ export default class RouteBlock {
 			path: pathParser(this.path + request),
 			pathArray: pathParser(this.path + request).split('/'),
 			code: (ctr) => ctr.redirect(redirect),
-			data: {
+      data: {
 				addTypes: false
 			}
 		})
+
+		return this
+	}
+
+  /**
+   * (Sync) Add Authentication
+   * @sync This Function adds Authentication Syncronously
+   * @example
+   * ```
+   * // The /api route will automatically check for authentication
+   * // Obviously still putting the prefix (in this case / from the routeBlock in front)
+   * // Please note that in order to respond unautorized the status cant be 2xx
+   * const routes = new webserver.routeList()
+   * 
+   * routes.routeBlock('/api')
+   *   .auth(async(ctr) => {
+   *     if (!ctr.headers.has('Authorization')) return ctr.status(401).print('Unauthorized')
+   *     if (ctr.headers.get('Authorization') !== 'key123 or db request ig') return ctr.status(401).print('Unauthorized')
+   * 
+   *     return ctr.status(200)
+   *   })
+   *   .redirect('/pics', 'https://google.com/search?q=devil')
+   * ```
+   * @since 3.1.1
+   */
+	auth(
+		/** The Function to Validate Authorization */ code: (ctr: Ctr) => Promise<any> | any
+	) {
+		this.checkAuth = code
 
 		return this
 	}
@@ -211,8 +242,9 @@ export default class RouteBlock {
   /**
    * Internal Method for Generating Routes Object
    * @ignore Please do not use
+   * @since 3.1.0
    */
   get() {
-    return this.data
+    return { routes: this.data, path: this.path, authCheck: this.checkAuth }
   }
 }

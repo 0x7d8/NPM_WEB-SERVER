@@ -49,6 +49,7 @@ export interface staticOptions {
 
 export default class RouteList {
 	private externals: { method: string, object: any }[]
+	private authChecks: { path: string, func: (ctr: ctr) => Promise<any> | any}[]
 	private routes: route[]
 	private events: event[]
 
@@ -68,6 +69,7 @@ export default class RouteList {
 
 		this.routes = routes
 		this.events = events
+		this.authChecks = []
 		this.externals = []
 	}
 
@@ -253,9 +255,11 @@ export default class RouteList {
 	 */
 	list() {
 		for (const external of this.externals) {
-			this.routes.push(...external.object[external.method]())
+			const result = external.object[external.method]()
+			this.routes.push(...result.routes)
+			if (result.authCheck) this.authChecks.push({ path: result.path, func: result.authCheck })
 		}
 
-		return { routes: this.routes, events: this.events }
+		return { routes: this.routes, events: this.events, authChecks: this.authChecks }
 	}
 }

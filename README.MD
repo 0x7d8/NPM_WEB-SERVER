@@ -225,6 +225,26 @@ controller.start().then((s) => {
 })
 ```
 
+Authenticate Requests
+```js
+const webserver = require('rjweb-server')
+const routes = new webserver.routeList()
+
+routes.setBlock('/account')
+  .auth(async(ctr) => { // Will Authenticate every request starting with the route block prefix (/account)
+    if (!ctr.queries.has('password')) return ctr.status(401).print('Unauthorized')
+    if (ctr.queries.get('password') !== '123456 or database request or sum') return ctr.status(401).print('Unauthorized')
+
+    return ctr.status(200) // <- Everything is OK
+  })
+  .add(webserver.types.get, '/', async(ctr) => {
+    return ctr.print('Account Infos: idk')
+  })
+  .add(webserver.types.post, '/edit', async(ctr) => {
+    return ctr.print('Edited Account Infos!')
+  })
+```
+
 Serve Static Files
 ```js
 const webserver = require('rjweb-server')

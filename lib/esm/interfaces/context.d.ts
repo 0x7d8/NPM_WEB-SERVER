@@ -8,6 +8,7 @@ import Route from "../interfaces/route";
 import Event from "../interfaces/event";
 import { EventEmitter } from "stream";
 import { UrlWithStringQuery } from "url";
+import Ctr from "./ctr";
 export type hours = '0' | '1' | '2' | '3' | '4' | '5' | '6' | '7' | '8' | '9' | '10' | '11' | '12' | '13' | '14' | '15' | '16' | '17' | '18' | '19' | '20' | '21' | '22' | '23';
 export interface GlobalContext {
     /** The Server Controller Class */ controller: ServerController;
@@ -20,6 +21,10 @@ export interface GlobalContext {
     /** The Routes */ routes: {
         /** Normal Routes */ normal: Route[];
         /** Event Routes */ event: Event[];
+        /** Auth Routes */ auth: {
+            path: string;
+            func: (ctr: Ctr) => Promise<any> | any;
+        }[];
     };
     /** The Cache Stores */ cache: {
         /** The File Caches */ files: valueCollection<string, Buffer>;
@@ -27,12 +32,17 @@ export interface GlobalContext {
             route: Route;
             params: Record<string, string>;
         }>;
+        /** The Auth Caches */ auths: valueCollection<string, {
+            path: string;
+            func: (ctr: Ctr) => Promise<any> | any;
+        }>;
     };
 }
 export interface RequestContext {
     /** The Content to Write */ content: Buffer;
     /** Whether the Content is already compressed */ compressed: boolean;
     /** The Event Emitter */ events: EventEmitter;
+    /** The Function to Check Authentication */ authCheck: (ctr: Ctr) => Promise<any> | any;
     /** Whether waiting is required */ waiting: boolean;
     /** Whether to Continue with execution */ continue: boolean;
     /** The Execute URL Object */ execute: {
