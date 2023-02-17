@@ -169,7 +169,7 @@ export = {
 				content: Buffer.from(''),
 				compressed: false,
 				events: new EventEmitter(),
-				authCheck: null,
+				authChecks: [],
 				waiting: false,
 				continue: true,
 				execute: {
@@ -182,7 +182,7 @@ export = {
 					parsed: ''
 				}, url: { ...url.parse(pathParser(req.url)), method: req.method as typesEnum },
 				previousHours: getPreviousHours()
-			}
+			}; ctx.url.pathname = decodeURI(ctx.url.pathname)
 
 			// Handle Wait Events
 			ctx.events.on('noWaiting', () => ctx.waiting = false)
@@ -254,14 +254,16 @@ export = {
 						ctx.execute.exists = true
 
 						if (ctg.cache.auths.has(`auth::${ctx.url.pathname}`)) {
-							ctx.authCheck = ctg.cache.auths.get(`auth::${ctx.url.pathname}`).func
+							ctx.authChecks = ctg.cache.auths.get(`auth::${ctx.url.pathname}`).map((authCheck) => authCheck.func)
 						} else for (let authNumber = 0; authNumber <= ctg.routes.auth.length - 1; authNumber++) {
-							console.log(ctg.routes.auth[authNumber], ctx.execute.route)
 							if (!ctx.execute.route.path.startsWith(ctg.routes.auth[authNumber].path)) continue
-							ctx.authCheck = ctg.routes.auth[authNumber].func
+							ctx.authChecks.push(ctg.routes.auth[authNumber].func)
 
-							ctg.cache.auths.set(`auth::${ctx.url.pathname}`, ctg.routes.auth[authNumber])
-							break
+							if (!ctg.cache.auths.has(`auth::${ctx.url.pathname}`)) ctg.cache.auths.set(`auth::${ctx.url.pathname}`, [])
+							ctg.cache.auths.get(`auth::${ctx.url.pathname}`).push({
+								path: ctg.routes.auth[authNumber].path,
+								func: ctg.routes.auth[authNumber].func
+							}); continue
 						}
 
 						break
@@ -296,14 +298,16 @@ export = {
 						ctx.execute.exists = true
 
 						if (ctg.cache.auths.has(`auth::${ctx.url.pathname}`)) {
-							ctx.authCheck = ctg.cache.auths.get(`auth::${ctx.url.pathname}`).func
+							ctx.authChecks = ctg.cache.auths.get(`auth::${ctx.url.pathname}`).map((authCheck) => authCheck.func)
 						} else for (let authNumber = 0; authNumber <= ctg.routes.auth.length - 1; authNumber++) {
-							console.log(ctg.routes.auth[authNumber], ctx.execute.route)
 							if (!ctx.execute.route.path.startsWith(ctg.routes.auth[authNumber].path)) continue
-							ctx.authCheck = ctg.routes.auth[authNumber].func
+							ctx.authChecks.push(ctg.routes.auth[authNumber].func)
 
-							ctg.cache.auths.set(`auth::${ctx.url.pathname}`, ctg.routes.auth[authNumber])
-							break
+							if (!ctg.cache.auths.has(`auth::${ctx.url.pathname}`)) ctg.cache.auths.set(`auth::${ctx.url.pathname}`, [])
+							ctg.cache.auths.get(`auth::${ctx.url.pathname}`).push({
+								path: ctg.routes.auth[authNumber].path,
+								func: ctg.routes.auth[authNumber].func
+							}); continue
 						}
 
 						// Set Cache
@@ -316,14 +320,16 @@ export = {
 						ctx.execute.exists = true
 
 						if (ctg.cache.auths.has(`auth::${ctx.url.pathname}`)) {
-							ctx.authCheck = ctg.cache.auths.get(`auth::${ctx.url.pathname}`).func
+							ctx.authChecks = ctg.cache.auths.get(`auth::${ctx.url.pathname}`).map((authCheck) => authCheck.func)
 						} else for (let authNumber = 0; authNumber <= ctg.routes.auth.length - 1; authNumber++) {
-							console.log(ctg.routes.auth[authNumber], ctx.execute.route)
 							if (!ctx.execute.route.path.startsWith(ctg.routes.auth[authNumber].path)) continue
-							ctx.authCheck = ctg.routes.auth[authNumber].func
+							ctx.authChecks.push(ctg.routes.auth[authNumber].func)
 
-							ctg.cache.auths.set(`auth::${ctx.url.pathname}`, ctg.routes.auth[authNumber])
-							break
+							if (!ctg.cache.auths.has(`auth::${ctx.url.pathname}`)) ctg.cache.auths.set(`auth::${ctx.url.pathname}`, [])
+							ctg.cache.auths.get(`auth::${ctx.url.pathname}`).push({
+								path: ctg.routes.auth[authNumber].path,
+								func: ctg.routes.auth[authNumber].func
+							}); continue
 						}
 
 						// Set Cache
@@ -348,14 +354,16 @@ export = {
 						}; continue
 					}; if (ctx.execute.exists) {
 						if (ctg.cache.auths.has(`auth::${ctx.url.pathname}`)) {
-							ctx.authCheck = ctg.cache.auths.get(`auth::${ctx.url.pathname}`).func
+							ctx.authChecks = ctg.cache.auths.get(`auth::${ctx.url.pathname}`).map((authCheck) => authCheck.func)
 						} else for (let authNumber = 0; authNumber <= ctg.routes.auth.length - 1; authNumber++) {
-							console.log(ctg.routes.auth[authNumber], ctx.execute.route)
 							if (!ctx.execute.route.path.startsWith(ctg.routes.auth[authNumber].path)) continue
-							ctx.authCheck = ctg.routes.auth[authNumber].func
+							ctx.authChecks.push(ctg.routes.auth[authNumber].func)
 
-							ctg.cache.auths.set(`auth::${ctx.url.pathname}`, ctg.routes.auth[authNumber])
-							break
+							if (!ctg.cache.auths.has(`auth::${ctx.url.pathname}`)) ctg.cache.auths.set(`auth::${ctx.url.pathname}`, [])
+							ctg.cache.auths.get(`auth::${ctx.url.pathname}`).push({
+								path: ctg.routes.auth[authNumber].path,
+								func: ctg.routes.auth[authNumber].func
+							}); continue
 						}
 
 						// Set Cache
@@ -582,18 +590,34 @@ export = {
 					}
 				}
 
-				// Execute Authorization
-				if (ctx.authCheck) {
-					await Promise.resolve(ctx.authCheck(ctr)).then(() => {
-						if (!String(res.statusCode).startsWith('2')) {
+				// Execute Authorizations
+				if (ctx.authChecks.length > 0) {
+					let doContinue = true, runError = null
+					for (let authNumber = 0; authNumber <= ctx.authChecks.length - 1; authNumber++) {
+						const authCheck = ctx.authChecks[authNumber]
+
+						await Promise.resolve(authCheck(ctr)).then(() => {
+							if (!String(res.statusCode).startsWith('2')) {
+								doContinue = false
+							}
+						}).catch((e) => {
+							doContinue = false
+							runError = e
+						})
+
+						if (!doContinue && runError) {
+							ctr.error = runError
+							errorStop = true
+							eventHandler('error', ctr, ctx)
+							break
+						} else if (!doContinue) {
 							ctr.setHeader('Content-Type', 'text/plain')
-							return handleCompression(ctr, ctx, options)
+							handleCompression(ctr, ctx, options)
+							break
 						}
-					}).catch((e) => {
-						ctr.error = e
-						errorStop = true
-						eventHandler('error', ctr, ctx)
-					})
+					}
+
+					if (!doContinue) return
 				}
 
 				// Execute Page

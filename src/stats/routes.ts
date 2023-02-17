@@ -12,7 +12,7 @@ export default async function statsRoute(ctr: ctr, ctg: GlobalContext, ctx: Requ
   const path = ctr.url.path.replace(pathParser(options.dashboard.path, false), '') || '/'
   switch (path) {
     case "/":
-      const dashboard = (await fs.readFile(`${__dirname}/stats/index.html`, 'utf8'))
+      const dashboard = (await fs.readFile(`${__dirname}/index.html`, 'utf8'))
         .replaceAll('/rjweb-dashboard', pathParser(options.dashboard.path))
 
       return ctr.print(dashboard)
@@ -107,7 +107,7 @@ export default async function statsRoute(ctr: ctr, ctg: GlobalContext, ctx: Requ
         },
         
         routes: routes,
-        cached: ctg.cache.files.objectCount() + ctg.cache.routes.objectCount()
+        cached: ctg.cache.files.objectCount() + ctg.cache.routes.objectCount() + ctg.cache.auths.objectCount()
       })
   }
 }

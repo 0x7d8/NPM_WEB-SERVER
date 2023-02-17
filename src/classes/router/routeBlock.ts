@@ -10,7 +10,8 @@ import * as path from "path"
 import * as fs from "fs"
 
 export default class RouteBlock {
-  private checkAuth?: (ctr: Ctr) => Promise<any> | any
+  private externals: { method: string, object: any }[]
+  private authChecks: { path: string, func: (ctr: Ctr) => Promise<any> | any}[]
   private data: Route[]
   private path: string
 
@@ -18,9 +19,11 @@ export default class RouteBlock {
   constructor(
     /** The Path of the Routes */ path: string
   ) {
-    this.checkAuth = null
     this.path = pathParser(path)
     this.data = []
+
+    this.authChecks = []
+		this.externals = []
   }
 
   /**
@@ -125,7 +128,7 @@ export default class RouteBlock {
 	auth(
 		/** The Function to Validate Authorization */ code: (ctr: Ctr) => Promise<any> | any
 	) {
-		this.checkAuth = code
+		this.authChecks.push({ path: this.path, func: code })
 
 		return this
 	}
@@ -236,15 +239,34 @@ export default class RouteBlock {
 		return this
 	}
 
+  /**
+	 * Create A new Sub-Route Block
+   * @sync This Function adds a sub-route block syncronously
+	 * @since 3.1.2
+	 */
+	subRouteBlock(
+		/** The Path Prefix */ prefix: string
+	) {
+		const routeBlock = new RouteBlock(this.path + '/' + prefix)
+		this.externals.push({ method: 'get', object: routeBlock })
 
+		return routeBlock
+	}
 
 
   /**
    * Internal Method for Generating Routes Object
+   * @sync This Function generates routes synchronously
    * @ignore Please do not use
    * @since 3.1.0
    */
   get() {
-    return { routes: this.data, path: this.path, authCheck: this.checkAuth }
+    for (const external of this.externals) {
+			const result = external.object[external.method]()
+			this.data.push(...result.routes)
+			if (result.authChecks) this.authChecks.push(...result.authChecks)
+		}
+
+		return { routes: this.data, events: this.data, authChecks: this.authChecks }
   }
 }

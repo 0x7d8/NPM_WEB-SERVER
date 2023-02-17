@@ -2,7 +2,8 @@ import { Types as typesInterface } from "../../interfaces/methods";
 import Route from "../../interfaces/route";
 import Ctr from "../../interfaces/ctr";
 export default class RouteBlock {
-    private checkAuth?;
+    private externals;
+    private authChecks;
     private data;
     private path;
     /** Generate Route Block */
@@ -132,13 +133,24 @@ export default class RouteBlock {
     loadCJS(
     /** The Folder which will be used */ folder: string): this;
     /**
+       * Create A new Sub-Route Block
+     * @sync This Function adds a sub-route block syncronously
+       * @since 3.1.2
+       */
+    subRouteBlock(
+    /** The Path Prefix */ prefix: string): RouteBlock;
+    /**
      * Internal Method for Generating Routes Object
+     * @sync This Function generates routes synchronously
      * @ignore Please do not use
      * @since 3.1.0
      */
     get(): {
         routes: Route[];
-        path: string;
-        authCheck: (ctr: Ctr<any, false, any>) => any;
+        events: Route[];
+        authChecks: {
+            path: string;
+            func: (ctr: Ctr<any, false, any>) => any;
+        }[];
     };
 }

@@ -181,7 +181,7 @@ export default class RouteList {
 
 	/**
 	 * Serve Static Files
-	 * @deprecated Please use the new Route Blocks instead, RouteList.routeBlock(path)
+	 * @deprecated Please use the new Route Blocks instead, RouteList.routeBlock(path).static()
 	 */
 	static(
 		/** The Path to serve the Files on */ urlPath: string,
@@ -257,7 +257,7 @@ export default class RouteList {
 		for (const external of this.externals) {
 			const result = external.object[external.method]()
 			this.routes.push(...result.routes)
-			if (result.authCheck) this.authChecks.push({ path: result.path, func: result.authCheck })
+			if (result.authChecks) this.authChecks.push(...result.authChecks)
 		}
 
 		return { routes: this.routes, events: this.events, authChecks: this.authChecks }

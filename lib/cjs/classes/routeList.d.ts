@@ -77,7 +77,7 @@ export default class RouteList {
     /** The Path Prefix */ prefix: string): RouteBlock;
     /**
      * Serve Static Files
-     * @deprecated Please use the new Route Blocks instead, RouteList.routeBlock(path)
+     * @deprecated Please use the new Route Blocks instead, RouteList.routeBlock(path).static()
      */
     static(
     /** The Path to serve the Files on */ urlPath: string, 

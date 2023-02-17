@@ -171,6 +171,10 @@ routes.routeBlock('/') // The / is the Path Prefix for all children paths
     }
   })
   .redirect('/googleplz', 'https://www.google.com')
+  .subRouteBlock('/api')
+    .add('GET', '/', (ctr) => ctr.print('welcome to api!'))
+    .subRouteBlock('/v2')
+      .add('GET', '/', (ctr) => ctr.print('welcome to v2 api!'))
 
 const controller = webserver.initialize({
   bind: '0.0.0.0', // The IP thats bound to
