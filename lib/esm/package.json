@@ -10,8 +10,12 @@
       "import": {
         "default": "./lib/esm/index.js"
       }
-    }
+    },
+    "./interfaces": "./interfaces"
   },
+  "files": [
+    "lib/**/*"
+  ],
   "scripts": {
     "build": "rm -rf lib && tsc && esbuild `find src \\( -name '*.ts' -o -name '*.tsx' \\)` --platform='node' --ignore-annotations --format='cjs' --outdir='lib/cjs' && esbuild `find src \\( -name '*.ts' -o -name '*.tsx' \\)` --platform='node' --ignore-annotations --format='esm' --outdir='lib/esm' && cp -r lib/typings/* lib/cjs && cp -r lib/typings/* lib/esm && rm -rf lib/typings && cp -r src/stats/index.html lib/cjs/stats/index.html && cp -r src/stats/index.html lib/esm/stats/index.html && cp package.json lib/cjs && cp package.json lib/esm"
   },
