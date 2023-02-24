@@ -8,6 +8,7 @@ export default interface Route {
     /** The Async Code to run on the Request */ code: (ctr: ctr) => Promise<any> | any;
     /** Additional Route Data */ data: {
         /** Whether then some Content Types will be added automatically */ addTypes: boolean;
+        /** The Auth Checks to run on this route */ authChecks: ((ctr: ctr) => Promise<any> | any)[];
         /** The File Content (If Preloading) */ content?: Buffer;
         /** The File Path (If Static) */ file?: string;
     };

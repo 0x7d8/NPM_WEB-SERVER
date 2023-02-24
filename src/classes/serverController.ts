@@ -51,7 +51,6 @@ export default class ServerController {
   start() {
     this.globalContext.routes.normal = this.optionsCache.normal
     this.globalContext.routes.event = this.optionsCache.event
-    this.globalContext.routes.auth = this.optionsCache.auth
     this.server.listen(this.options.port, this.options.bind)
 		return new Promise((resolve: (value: ServerEvents.StartSuccess) => void, reject: (reason: ServerEvents.StartError) => void) => {
 			this.server.once('listening', () => resolve({ success: true, port: this.options.port, message: 'WEBSERVER STARTED' }))
@@ -66,10 +65,8 @@ export default class ServerController {
     this.globalContext.pageDisplay = ''
     this.globalContext.cache.files.clear()
     this.globalContext.cache.routes.clear()
-    this.globalContext.cache.auths.clear()
     this.globalContext.routes.normal = this.optionsCache.normal
     this.globalContext.routes.event = this.optionsCache.event
-    this.globalContext.routes.auth = this.optionsCache.auth
     this.globalContext.data = {
       incoming: {
         total: 0,
@@ -110,10 +107,8 @@ export default class ServerController {
     this.globalContext.pageDisplay = ''
     this.globalContext.cache.files.clear()
     this.globalContext.cache.routes.clear()
-    this.globalContext.cache.auths.clear()
     this.globalContext.routes.normal = this.optionsCache.normal
     this.globalContext.routes.event = this.optionsCache.event
-    this.globalContext.routes.auth = this.optionsCache.auth
     this.globalContext.data = {
       incoming: {
         total: 0,

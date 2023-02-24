@@ -32,17 +32,12 @@ export interface GlobalContext {
             route: Route;
             params: Record<string, string>;
         }>;
-        /** The Auth Caches */ auths: valueCollection<string, {
-            path: string;
-            func: (ctr: Ctr) => Promise<any> | any;
-        }[]>;
     };
 }
 export interface RequestContext {
     /** The Content to Write */ content: Buffer;
     /** Whether the Content is already compressed */ compressed: boolean;
     /** The Event Emitter */ events: EventEmitter;
-    /** The Function to Check Authentication */ authChecks: ((ctr: Ctr) => Promise<any> | any)[];
     /** Whether waiting is required */ waiting: boolean;
     /** Whether to Continue with execution */ continue: boolean;
     /** The Execute URL Object */ execute: {

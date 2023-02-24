@@ -108,7 +108,8 @@ export default class RouteList {
 			pathArray: urlPath.split('/'),
 			code: code,
 			data: {
-				addTypes: false
+				addTypes: false,
+				authChecks: []
 			}
 		})
 
@@ -134,7 +135,8 @@ export default class RouteList {
 				pathArray: `${prefix}${pathParser(route.path, true)}`.split('/'),
 				code: route.code,
 				data: {
-					addTypes: false
+					addTypes: false,
+					authChecks: []
 				}
 			})
 		}
@@ -158,7 +160,8 @@ export default class RouteList {
 				code: async(ctr) => {
 					return ctr.redirect(redirect.destination)
 				}, data: {
-					addTypes: false
+					addTypes: false,
+					authChecks: []
 				}
 			})
 		}
@@ -207,8 +210,8 @@ export default class RouteList {
 				pathArray: urlName.split('/'),
 				code: async() => undefined,
 				data: {
-					addTypes,
-					file
+					addTypes, file,
+					authChecks: []
 				}
 			}); if (preload) this.routes[index - 1].data.content = fs.readFileSync(file)
 		}
@@ -241,7 +244,8 @@ export default class RouteList {
 				pathArray: pathParser(route.path).split('/'),
 				code: route.code,
 				data: {
-					addTypes: false
+					addTypes: false,
+					authChecks: []
 				}
 			})
 		}

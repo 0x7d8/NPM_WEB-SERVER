@@ -11,7 +11,7 @@ import * as fs from "fs"
 
 export default class RouteBlock {
   private externals: { method: string, object: any }[]
-  private authChecks: { path: string, func: (ctr: Ctr) => Promise<any> | any}[]
+  private authChecks: { path: string, func: (ctr: Ctr) => Promise<any> | any }[]
   private data: Route[]
   private path: string
 
@@ -65,7 +65,8 @@ export default class RouteBlock {
 			pathArray: pathParser(this.path + path).split('/'),
 			code: code,
 			data: {
-				addTypes: false
+				addTypes: false,
+        authChecks: []
 			}
 		})
 
@@ -97,7 +98,8 @@ export default class RouteBlock {
 			pathArray: pathParser(this.path + request).split('/'),
 			code: (ctr) => ctr.redirect(redirect),
       data: {
-				addTypes: false
+				addTypes: false,
+        authChecks: []
 			}
 		})
 
@@ -188,8 +190,8 @@ export default class RouteBlock {
 				pathArray: pathParser(this.path + newPath).split('/'),
 				code: () => {},
 				data: {
-					addTypes,
-					file
+					addTypes, file,
+          authChecks: []
 				}
 			}); if (preLoad) this.data[index - 1].data.content = fs.readFileSync(file)
 		}
@@ -231,7 +233,8 @@ export default class RouteBlock {
 				pathArray: pathParser(this.path + route.path).split('/'),
 				code: route.code,
 				data: {
-					addTypes: false
+					addTypes: false,
+          authChecks: []
 				}
 			})
 		}
@@ -266,6 +269,10 @@ export default class RouteBlock {
 			this.data.push(...result.routes)
 			if (result.authChecks) this.authChecks.push(...result.authChecks)
 		}
+
+    for (const route of this.data) {
+      route.data.authChecks = this.authChecks.map((authCheck) => authCheck.func)
+    }
 
 		return { routes: this.data, events: this.data, authChecks: this.authChecks }
   }

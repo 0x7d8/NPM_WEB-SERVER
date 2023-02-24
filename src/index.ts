@@ -67,8 +67,7 @@ export = {
 				auth: [],
 			}, cache: {
 				files: new valueCollection(),
-				routes: new valueCollection(),
-				auths: new valueCollection()
+				routes: new valueCollection()
 			}
 		}
 
@@ -169,7 +168,6 @@ export = {
 				content: Buffer.from(''),
 				compressed: false,
 				events: new EventEmitter(),
-				authChecks: [],
 				waiting: false,
 				continue: true,
 				execute: {
@@ -253,19 +251,6 @@ export = {
 						ctx.execute.static = (url.route.method === 'STATIC')
 						ctx.execute.exists = true
 
-						if (ctg.cache.auths.has(`auth::${ctx.url.pathname}`)) {
-							ctx.authChecks = ctg.cache.auths.get(`auth::${ctx.url.pathname}`).map((authCheck) => authCheck.func)
-						} else for (let authNumber = 0; authNumber <= ctg.routes.auth.length - 1; authNumber++) {
-							if (!ctx.execute.route.path.startsWith(ctg.routes.auth[authNumber].path)) continue
-							ctx.authChecks.push(ctg.routes.auth[authNumber].func)
-
-							if (!ctg.cache.auths.has(`auth::${ctx.url.pathname}`)) ctg.cache.auths.set(`auth::${ctx.url.pathname}`, [])
-							ctg.cache.auths.get(`auth::${ctx.url.pathname}`).push({
-								path: ctg.routes.auth[authNumber].path,
-								func: ctg.routes.auth[authNumber].func
-							}); continue
-						}
-
 						break
 					}
 
@@ -277,7 +262,8 @@ export = {
 							pathArray: url.path.split('/'),
 							code: async(ctr) => await statsRoute(ctr, ctg, ctx, options, ctg.routes.normal.length),
 							data: {
-								addTypes: false
+								addTypes: false,
+								authChecks: []
 							}
 						}; ctx.execute.static = false
 						ctx.execute.exists = true
@@ -297,19 +283,6 @@ export = {
 						ctx.execute.route = url
 						ctx.execute.exists = true
 
-						if (ctg.cache.auths.has(`auth::${ctx.url.pathname}`)) {
-							ctx.authChecks = ctg.cache.auths.get(`auth::${ctx.url.pathname}`).map((authCheck) => authCheck.func)
-						} else for (let authNumber = 0; authNumber <= ctg.routes.auth.length - 1; authNumber++) {
-							if (!ctx.execute.route.path.startsWith(ctg.routes.auth[authNumber].path)) continue
-							ctx.authChecks.push(ctg.routes.auth[authNumber].func)
-
-							if (!ctg.cache.auths.has(`auth::${ctx.url.pathname}`)) ctg.cache.auths.set(`auth::${ctx.url.pathname}`, [])
-							ctg.cache.auths.get(`auth::${ctx.url.pathname}`).push({
-								path: ctg.routes.auth[authNumber].path,
-								func: ctg.routes.auth[authNumber].func
-							}); continue
-						}
-
 						// Set Cache
 						ctg.cache.routes.set(`route::${ctx.url.pathname}`, { route: url, params: {} })
 
@@ -318,19 +291,6 @@ export = {
 						ctx.execute.route = url
 						ctx.execute.static = true
 						ctx.execute.exists = true
-
-						if (ctg.cache.auths.has(`auth::${ctx.url.pathname}`)) {
-							ctx.authChecks = ctg.cache.auths.get(`auth::${ctx.url.pathname}`).map((authCheck) => authCheck.func)
-						} else for (let authNumber = 0; authNumber <= ctg.routes.auth.length - 1; authNumber++) {
-							if (!ctx.execute.route.path.startsWith(ctg.routes.auth[authNumber].path)) continue
-							ctx.authChecks.push(ctg.routes.auth[authNumber].func)
-
-							if (!ctg.cache.auths.has(`auth::${ctx.url.pathname}`)) ctg.cache.auths.set(`auth::${ctx.url.pathname}`, [])
-							ctg.cache.auths.get(`auth::${ctx.url.pathname}`).push({
-								path: ctg.routes.auth[authNumber].path,
-								func: ctg.routes.auth[authNumber].func
-							}); continue
-						}
 
 						// Set Cache
 						ctg.cache.routes.set(`route::${ctx.url.pathname}`, { route: url, params: {} })
@@ -353,19 +313,6 @@ export = {
 							continue
 						}; continue
 					}; if (ctx.execute.exists) {
-						if (ctg.cache.auths.has(`auth::${ctx.url.pathname}`)) {
-							ctx.authChecks = ctg.cache.auths.get(`auth::${ctx.url.pathname}`).map((authCheck) => authCheck.func)
-						} else for (let authNumber = 0; authNumber <= ctg.routes.auth.length - 1; authNumber++) {
-							if (!ctx.execute.route.path.startsWith(ctg.routes.auth[authNumber].path)) continue
-							ctx.authChecks.push(ctg.routes.auth[authNumber].func)
-
-							if (!ctg.cache.auths.has(`auth::${ctx.url.pathname}`)) ctg.cache.auths.set(`auth::${ctx.url.pathname}`, [])
-							ctg.cache.auths.get(`auth::${ctx.url.pathname}`).push({
-								path: ctg.routes.auth[authNumber].path,
-								func: ctg.routes.auth[authNumber].func
-							}); continue
-						}
-
 						// Set Cache
 						ctg.cache.routes.set(`route::${ctx.url.pathname}`, { route: url, params: params })
 						break
@@ -591,10 +538,10 @@ export = {
 				}
 
 				// Execute Authorizations
-				if (ctx.authChecks.length > 0) {
+				if (ctx.execute.exists && ctx.execute.route.data.authChecks.length > 0) {
 					let doContinue = true, runError = null
-					for (let authNumber = 0; authNumber <= ctx.authChecks.length - 1; authNumber++) {
-						const authCheck = ctx.authChecks[authNumber]
+					for (let authNumber = 0; authNumber <= ctx.execute.route.data.authChecks.length - 1; authNumber++) {
+						const authCheck = ctx.execute.route.data.authChecks[authNumber]
 
 						await Promise.resolve(authCheck(ctr)).then(() => {
 							if (!String(res.statusCode).startsWith('2')) {
