@@ -611,7 +611,7 @@ export = {
 							eventHandler('error', ctr, ctx)
 							break
 						} else if (!doContinue) {
-							ctr.setHeader('Content-Type', 'text/plain')
+							if (!res.getHeader('Content-Type')) ctr.setHeader('Content-Type', 'text/plain')
 							handleCompression(ctr, ctx, options)
 							break
 						}
