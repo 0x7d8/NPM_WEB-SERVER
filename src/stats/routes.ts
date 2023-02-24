@@ -3,6 +3,9 @@ import { Options } from "../classes/serverOptions"
 import { pathParser } from "../classes/routeList"
 import ctr from "../interfaces/ctr"
 
+// @ts-ignore
+import packageJSON from "../package.json"
+
 import * as fs from "fs/promises"
 import * as os from "os"
 
@@ -14,6 +17,7 @@ export default async function statsRoute(ctr: ctr, ctg: GlobalContext, ctx: Requ
     case "/":
       const dashboard = (await fs.readFile(`${__dirname}/index.html`, 'utf8'))
         .replaceAll('/rjweb-dashboard', pathParser(options.dashboard.path))
+        .replace('VERSION 1.1.1', packageJSON.version)
 
       return ctr.print(dashboard)
 
