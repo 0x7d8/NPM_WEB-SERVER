@@ -30,7 +30,7 @@ export default class ServerController {
   setRoutes(
     /** The RouteList Class */ list: routeList
   ) {
-    const { routes, events, authChecks: auths } = list.list()
+    const { routes, events, authChecks: auths } = list.get()
     this.optionsCache.normal = routes
     this.optionsCache.event = events
     this.optionsCache.auth = auths

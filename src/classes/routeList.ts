@@ -254,10 +254,11 @@ export default class RouteList {
 	}
 
 	/**
-	 * Internal Function to access all Routes & Events as Array
-	 * @ignore This is only for internal use
+	 * Internal Method for Generating Routes Object
+   * @sync This Function generates routes synchronously
+   * @ignore Please do not use
 	 */
-	list() {
+	get() {
 		for (const external of this.externals) {
 			const result = external.object[external.method]()
 			this.routes.push(...result.routes)

@@ -5,8 +5,8 @@ import * as path from "path"
 import { Options } from "./classes/serverOptions"
 import webserver from "."
 
-// @ts-ignore
-import packageJSON from "./package.json"
+/** @ts-ignore */ 
+import { version } from "./pckg.json"
 
 const colors = {
 	reset: "\x1b[0m",
@@ -46,7 +46,7 @@ const webserverOptions: Partial<Options> = { dashboard: {} }
 const args = process.argv.slice(2)
 if (args.includes('-v') || args.includes('--version')) {
 	console.log(`${colors.fg.yellow}[RJW] ${colors.reset}Version:`)
-	console.log(`v${packageJSON.version}`)
+	console.log(`v${version}`)
 } else if (!isHelp() && fs.existsSync(path.join(process.cwd(), args[0]))) {
 	let remHTML = false, addTypes = true, notFoundPath = '', refreshInterval = -1
 	for (const option of args.slice(1)) {

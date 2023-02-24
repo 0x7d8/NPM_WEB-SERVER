@@ -90,10 +90,11 @@ export default class RouteList {
     load(
     /** The Location of the Folder to load from */ folder: string): this;
     /**
-     * Internal Function to access all Routes & Events as Array
-     * @ignore This is only for internal use
+     * Internal Method for Generating Routes Object
+   * @sync This Function generates routes synchronously
+   * @ignore Please do not use
      */
-    list(): {
+    get(): {
         routes: route[];
         events: event[];
         authChecks: {
