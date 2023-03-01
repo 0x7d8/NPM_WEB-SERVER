@@ -17,14 +17,44 @@ export default class RouteBlock {
 
   /** Generate Route Block */
   constructor(
-    /** The Path of the Routes */ path: string
+    /** The Path of the Routes */ path: string,
+    /** The Authchecks to add */ authChecks?: { path: string, func: (ctr: Ctr) => Promise<any> | any }[]
   ) {
     this.path = pathParser(path)
     this.data = []
 
-    this.authChecks = []
+    this.authChecks = authChecks || []
 		this.externals = []
   }
+
+  /**
+   * (Sync) Add Authentication
+   * @sync This Function adds Authentication Syncronously
+   * @example
+   * ```
+   * // The /api route will automatically check for authentication
+   * // Obviously still putting the prefix (in this case / from the routeBlock in front)
+   * // Please note that in order to respond unautorized the status cant be 2xx
+   * const routes = new webserver.routeList()
+   * 
+   * routes.routeBlock('/api')
+   *   .auth(async(ctr) => {
+   *     if (!ctr.headers.has('Authorization')) return ctr.status(401).print('Unauthorized')
+   *     if (ctr.headers.get('Authorization') !== 'key123 or db request ig') return ctr.status(401).print('Unauthorized')
+   * 
+   *     return ctr.status(200)
+   *   })
+   *   .redirect('/pics', 'https://google.com/search?q=devil')
+   * ```
+   * @since 3.1.1
+   */
+	auth(
+		/** The Function to Validate Authorization */ code: (ctr: Ctr) => Promise<any> | any
+	) {
+		this.authChecks.push({ path: this.path, func: code })
+
+		return this
+	}
 
   /**
    * (Sync) Add a Route
@@ -66,7 +96,7 @@ export default class RouteBlock {
 			code: code,
 			data: {
 				addTypes: false,
-        authChecks: []
+        authChecks: this.authChecks.map((check) => check.func)
 			}
 		})
 
@@ -99,38 +129,9 @@ export default class RouteBlock {
 			code: (ctr) => ctr.redirect(redirect),
       data: {
 				addTypes: false,
-        authChecks: []
+        authChecks: this.authChecks.map((check) => check.func)
 			}
 		})
-
-		return this
-	}
-
-  /**
-   * (Sync) Add Authentication
-   * @sync This Function adds Authentication Syncronously
-   * @example
-   * ```
-   * // The /api route will automatically check for authentication
-   * // Obviously still putting the prefix (in this case / from the routeBlock in front)
-   * // Please note that in order to respond unautorized the status cant be 2xx
-   * const routes = new webserver.routeList()
-   * 
-   * routes.routeBlock('/api')
-   *   .auth(async(ctr) => {
-   *     if (!ctr.headers.has('Authorization')) return ctr.status(401).print('Unauthorized')
-   *     if (ctr.headers.get('Authorization') !== 'key123 or db request ig') return ctr.status(401).print('Unauthorized')
-   * 
-   *     return ctr.status(200)
-   *   })
-   *   .redirect('/pics', 'https://google.com/search?q=devil')
-   * ```
-   * @since 3.1.1
-   */
-	auth(
-		/** The Function to Validate Authorization */ code: (ctr: Ctr) => Promise<any> | any
-	) {
-		this.authChecks.push({ path: this.path, func: code })
 
 		return this
 	}
@@ -142,7 +143,7 @@ export default class RouteBlock {
    * @example
    * ```
    * // All Files in "./static" will be served dynamically so they wont be loaded as routes by default
-   * // Due to the hideHTML Option being on files will be served differently, index.html -> /; about.html -> /about
+   * // Due to the hideHTML Option being on files will be served differently, /index.html -> /; /about.html -> /about
    * const routes = new webserver.routeList()
    * 
    * routes.routeBlock('/')
@@ -191,7 +192,7 @@ export default class RouteBlock {
 				code: () => {},
 				data: {
 					addTypes, file,
-          authChecks: []
+          authChecks: this.authChecks.map((check) => check.func)
 				}
 			}); if (preLoad) this.data[index - 1].data.content = fs.readFileSync(file)
 		}
@@ -234,7 +235,7 @@ export default class RouteBlock {
 				code: route.code,
 				data: {
 					addTypes: false,
-          authChecks: []
+          authChecks: this.authChecks.map((check) => check.func)
 				}
 			})
 		}
@@ -250,7 +251,7 @@ export default class RouteBlock {
 	subRouteBlock(
 		/** The Path Prefix */ prefix: string
 	) {
-		const routeBlock = new RouteBlock(this.path + '/' + prefix)
+		const routeBlock = new RouteBlock(this.path + '/' + prefix, this.authChecks)
 		this.externals.push({ method: 'get', object: routeBlock })
 
 		return routeBlock
@@ -260,19 +261,14 @@ export default class RouteBlock {
   /**
    * Internal Method for Generating Routes Object
    * @sync This Function generates routes synchronously
-   * @ignore Please do not use
+   * @ignore This is meant for internal use
    * @since 3.1.0
    */
   get() {
     for (const external of this.externals) {
 			const result = external.object[external.method]()
 			this.data.push(...result.routes)
-			if (result.authChecks) this.authChecks.push(...result.authChecks)
 		}
-
-    for (const route of this.data) {
-      route.data.authChecks = this.authChecks.map((authCheck) => authCheck.func)
-    }
 
 		return { routes: this.data, events: this.data, authChecks: this.authChecks }
   }

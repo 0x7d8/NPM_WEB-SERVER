@@ -8,7 +8,34 @@ export default class RouteBlock {
     private path;
     /** Generate Route Block */
     constructor(
-    /** The Path of the Routes */ path: string);
+    /** The Path of the Routes */ path: string, 
+    /** The Authchecks to add */ authChecks?: {
+        path: string;
+        func: (ctr: Ctr) => Promise<any> | any;
+    }[]);
+    /**
+     * (Sync) Add Authentication
+     * @sync This Function adds Authentication Syncronously
+     * @example
+     * ```
+     * // The /api route will automatically check for authentication
+     * // Obviously still putting the prefix (in this case / from the routeBlock in front)
+     * // Please note that in order to respond unautorized the status cant be 2xx
+     * const routes = new webserver.routeList()
+     *
+     * routes.routeBlock('/api')
+     *   .auth(async(ctr) => {
+     *     if (!ctr.headers.has('Authorization')) return ctr.status(401).print('Unauthorized')
+     *     if (ctr.headers.get('Authorization') !== 'key123 or db request ig') return ctr.status(401).print('Unauthorized')
+     *
+     *     return ctr.status(200)
+     *   })
+     *   .redirect('/pics', 'https://google.com/search?q=devil')
+     * ```
+     * @since 3.1.1
+     */
+    auth(
+    /** The Function to Validate Authorization */ code: (ctr: Ctr) => Promise<any> | any): this;
     /**
      * (Sync) Add a Route
      * @sync This Function adds a Route Syncronously
@@ -57,36 +84,13 @@ export default class RouteBlock {
     /** The Request Path to Trigger the Redirect on */ request: string, 
     /** The Redirect Path to Redirect to */ redirect: string): this;
     /**
-     * (Sync) Add Authentication
-     * @sync This Function adds Authentication Syncronously
-     * @example
-     * ```
-     * // The /api route will automatically check for authentication
-     * // Obviously still putting the prefix (in this case / from the routeBlock in front)
-     * // Please note that in order to respond unautorized the status cant be 2xx
-     * const routes = new webserver.routeList()
-     *
-     * routes.routeBlock('/api')
-     *   .auth(async(ctr) => {
-     *     if (!ctr.headers.has('Authorization')) return ctr.status(401).print('Unauthorized')
-     *     if (ctr.headers.get('Authorization') !== 'key123 or db request ig') return ctr.status(401).print('Unauthorized')
-     *
-     *     return ctr.status(200)
-     *   })
-     *   .redirect('/pics', 'https://google.com/search?q=devil')
-     * ```
-     * @since 3.1.1
-     */
-    auth(
-    /** The Function to Validate Authorization */ code: (ctr: Ctr) => Promise<any> | any): this;
-    /**
      * (Sync) Load Static Files
      * @sync This Function loads the static files Syncronously
      * @warning If new Files are added the Server needs to be reloaded
      * @example
      * ```
      * // All Files in "./static" will be served dynamically so they wont be loaded as routes by default
-     * // Due to the hideHTML Option being on files will be served differently, index.html -> /; about.html -> /about
+     * // Due to the hideHTML Option being on files will be served differently, /index.html -> /; /about.html -> /about
      * const routes = new webserver.routeList()
      *
      * routes.routeBlock('/')
@@ -142,7 +146,7 @@ export default class RouteBlock {
     /**
      * Internal Method for Generating Routes Object
      * @sync This Function generates routes synchronously
-     * @ignore Please do not use
+     * @ignore This is meant for internal use
      * @since 3.1.0
      */
     get(): {

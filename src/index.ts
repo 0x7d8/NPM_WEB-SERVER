@@ -184,7 +184,7 @@ export = {
 
 			// Handle Wait Events
 			ctx.events.on('noWaiting', () => ctx.waiting = false)
-			res.once('close', () => ctx.events.emit('endRequest'))
+			req.once('close', () => ctx.events.emit('endRequest'))
 
 			// Save & Check Request Body
 			if (options.body.enabled) req.on('data', (data: string) => {
@@ -220,7 +220,7 @@ export = {
 					ctg.data.incoming.total += ctx.body.raw.byteLength
 					ctg.data.incoming[ctx.previousHours[4]] += ctx.body.raw.byteLength
 				}
-			}).on('end', () => { if (ctx.continue) ctx.events.emit('startRequest') })
+			}).once('end', () => { if (ctx.continue) ctx.events.emit('startRequest') })
 			ctx.events.once('startRequest', async() => {
 				// Add Headers
 				Object.keys(options.headers).forEach((key) => {
