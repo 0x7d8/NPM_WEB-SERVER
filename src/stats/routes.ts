@@ -110,8 +110,8 @@ export default async function statsRoute(ctr: ctr, ctg: GlobalContext, ctx: Requ
         },
         
         routes: routes,
-        cached: ctg.cache.files.objectCount()
-          + ctg.cache.routes.objectCount()
+        cached: ctg.cache.files.objectCount
+          + ctg.cache.routes.objectCount
       })
   }
 }

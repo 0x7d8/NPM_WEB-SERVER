@@ -38,11 +38,6 @@ export default class ValueCollection<Key extends string | number | symbol = stri
     return existed
   }
 
-  /** Get The Amount of Stored Objects */
-  objectCount(): number {
-    return Object.keys(this.data).length
-  }
-
   /** Clear the Stored Objects */
   clear(
     /** Excluded Keys */ excluded?: Key[]
@@ -97,5 +92,10 @@ export default class ValueCollection<Key extends string | number | symbol = stri
       callback(key, this.data[key])
       keys++
     }; return keys
+  }
+
+  /** Get The Amount of Stored Objects */
+  get objectCount(): number {
+    return Object.keys(this.data).length
   }
 }

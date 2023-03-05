@@ -14,8 +14,6 @@ export default class ValueCollection<Key extends string | number | symbol = stri
     set(
     /** The Key to set */ key: Key, 
     /** The new Value */ value: Value): boolean;
-    /** Get The Amount of Stored Objects */
-    objectCount(): number;
     /** Clear the Stored Objects */
     clear(
     /** Excluded Keys */ excluded?: Key[]): number;
@@ -29,4 +27,6 @@ export default class ValueCollection<Key extends string | number | symbol = stri
     forEach(
     /** Callback Function */ callback: (key: Key, value: Value) => any, 
     /** Excluded Keys */ excluded?: Key[]): number;
+    /** Get The Amount of Stored Objects */
+    get objectCount(): number;
 }

@@ -132,14 +132,26 @@ export default async function handleHTTPRequest(req: IncomingMessage, res: Serve
       if (ctx.execute.exists) break
 
       // Find File
-      let file = ctx.url.pathname.replace(url.path, '')
-      if (file && !file.includes('.')) file += '/'
-      if ((url.data.hideHTML && !file.endsWith('.html')) && fs.existsSync(path.resolve(url.location + '/' + file)))
-        foundStatic(path.resolve(url.location + '/' + file), url)
-      if ((url.data.hideHTML && file === '') && url.data.hideHTML && fs.existsSync(path.resolve(url.location + '/' + file + '.html')))
-        foundStatic(path.resolve(url.location + '/' + file + '.html'), url)
-      if (url.data.hideHTML && fs.existsSync(path.resolve(url.location + '/' + file + 'index.html')))
-        foundStatic(path.resolve(url.location + '/' + file + 'index.html'), url)
+      const urlPath = ctx.url.pathname.replace(url.path, '').split('/')
+      const file = urlPath.length > 1 ? urlPath.pop() : ''
+      const folder = urlPath.join('/')
+
+      const fileExists = async(location: string) => {
+        location = path.resolve(location)
+
+        try {
+          const res = await fs.promises.stat(location)
+          return res.isFile()
+        } catch (err) {
+          return false
+        }
+      }
+
+      if (url.data.hideHTML) {
+        if (!file.endsWith('.html') && await fileExists(url.location + '/' + folder + '/' + file)) foundStatic(path.resolve(url.location + '/' + folder + '/' + file), url)
+        else if (file && await fileExists(url.location + '/' + folder + '/' + file + '.html')) foundStatic(path.resolve(url.location + '/' + folder + '/' + file + '.html'), url)
+        else if (!file && await fileExists(url.location + '/' + folder + '/index.html')) foundStatic(path.resolve(url.location + '/' + folder + '/index.html'), url)
+      } else if (await fileExists(url.location + '/' + folder + '/' + file)) foundStatic(path.resolve(url.location + '/' + folder + '/' + file), url)
     }
 
     for (let urlNumber = 0; urlNumber <= ctg.routes.normal.length - 1; urlNumber++) {
@@ -479,7 +491,6 @@ export default async function handleHTTPRequest(req: IncomingMessage, res: Serve
 
         // Read Content
         ctx.continue = false
-        const filePath = path.resolve(ctx.execute.file)
 
         // Get File Content
         let stream: fs.ReadStream, errorStop = false
@@ -488,7 +499,7 @@ export default async function handleHTTPRequest(req: IncomingMessage, res: Serve
           ctr.rawRes.setHeader('Vary', 'Accept-Encoding')
 
           const compression = handleCompressType(ctg.options.compression)
-          try { stream = fs.createReadStream(filePath); ctx.waiting = true; stream.pipe(compression); compression.pipe(res) }
+          try { stream = fs.createReadStream(ctx.execute.file); ctx.waiting = true; stream.pipe(compression); compression.pipe(res) }
           catch (e) { errorStop = true; ctr.error = e; handleEvent('error', ctr, ctx, ctg) }
           if (errorStop) return
 
@@ -499,7 +510,7 @@ export default async function handleHTTPRequest(req: IncomingMessage, res: Serve
           }); compression.once('end', () => { ctx.events.emit('noWaiting'); ctx.content = Buffer.from('') })
           res.once('close', () => { stream.close(); compression.close() })
         } else {
-          try { stream = fs.createReadStream(filePath); ctx.waiting = true; stream.pipe(res) }
+          try { stream = fs.createReadStream(ctx.execute.file); ctx.waiting = true; stream.pipe(res) }
           catch (e) { errorStop = true; ctr.error = e; handleEvent('error', ctr, ctx, ctg) }
 
           // Write to Total Network
