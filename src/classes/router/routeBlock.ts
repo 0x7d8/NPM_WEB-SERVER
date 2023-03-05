@@ -1,18 +1,19 @@
 import { getAllFiles, getAllFilesFilter } from "../../misc/getAllFiles"
 import { Types as typesInterface } from "../../interfaces/methods"
+import Static from "../../interfaces/static"
 import Route from "../../interfaces/route"
-import { pathParser } from "../routeList"
+import { pathParser } from "../router"
 import Ctr from "../../interfaces/ctr"
-import { minifiedRoute } from "../routeList"
+import { minifiedRoute } from "../router"
 import types from "../../misc/methods"
 
 import * as path from "path"
-import * as fs from "fs"
 
 export default class RouteBlock {
   private externals: { method: string, object: any }[]
   private authChecks: { path: string, func: (ctr: Ctr) => Promise<any> | any }[]
-  private data: Route[]
+  private statics: Static[]
+  private routes: Route[]
   private path: string
 
   /** Generate Route Block */
@@ -21,24 +22,25 @@ export default class RouteBlock {
     /** The Authchecks to add */ authChecks?: { path: string, func: (ctr: Ctr) => Promise<any> | any }[]
   ) {
     this.path = pathParser(path)
-    this.data = []
+    this.routes = []
+    this.statics = []
 
     this.authChecks = authChecks || []
 		this.externals = []
   }
 
   /**
-   * (Sync) Add Authentication
-   * @sync This Function adds Authentication Syncronously
+   * (Sync) Add Validation
+   * @sync This Function adds Validation Syncronously
    * @example
    * ```
-   * // The /api route will automatically check for authentication
+   * // The /api route will automatically check for correct credentials
    * // Obviously still putting the prefix (in this case / from the routeBlock in front)
    * // Please note that in order to respond unautorized the status cant be 2xx
-   * const routes = new webserver.routeList()
+   * const controller = new Webserver({ })
    * 
-   * routes.routeBlock('/api')
-   *   .auth(async(ctr) => {
+   * controller.prefix('/api')
+   *   .validate(async(ctr) => {
    *     if (!ctr.headers.has('Authorization')) return ctr.status(401).print('Unauthorized')
    *     if (ctr.headers.get('Authorization') !== 'key123 or db request ig') return ctr.status(401).print('Unauthorized')
    * 
@@ -46,10 +48,10 @@ export default class RouteBlock {
    *   })
    *   .redirect('/pics', 'https://google.com/search?q=devil')
    * ```
-   * @since 3.1.1
-   */
-	auth(
-		/** The Function to Validate Authorization */ code: (ctr: Ctr) => Promise<any> | any
+   * @since 3.2.1
+  */
+	validate(
+		/** The Function to Validate thr Request */ code: (ctr: Ctr) => Promise<any> | any
 	) {
 		this.authChecks.push({ path: this.path, func: code })
 
@@ -63,10 +65,10 @@ export default class RouteBlock {
    * ```
    * // The /devil route will be available on "path + /devil" so "/devil"
    * // Paths wont collide if the request methods are different
-   * const routes = new webserver.routeList()
+   * const controller = new Webserver({ })
    * let devilsMessage = 'Im the one who knocks'
    * 
-   * routes.routeBlock('/')
+   * controller.prefix('/')
    *   .add(webserver.types.get, '/devil', async(ctr) => {
    *     return ctr
    *       .status(666)
@@ -80,16 +82,16 @@ export default class RouteBlock {
    *   })
    * ```
    * @since 3.1.0
-   */
+  */
 	add(
 		/** The Request Method */ method: typesInterface,
 		/** The Path on which this will be available */ path: string,
 		/** The Async Code to run on a Request */ code: (ctr: Ctr) => Promise<any> | any
 	) {
 		if (!types.includes(method)) throw TypeError(`No Valid Request Type: ${method}, Possible Values: ${types.join(', ')}`)
-		if (this.data.some((obj) => (obj.method === method && obj.path === pathParser(path)))) return this
+		if (this.routes.some((obj) => (obj.method === method && obj.path === pathParser(path)))) return this
 
-		this.data.push({
+		this.routes.push({
 			method: method,
 			path: pathParser(this.path + path),
 			pathArray: pathParser(this.path + path).split('/'),
@@ -110,19 +112,19 @@ export default class RouteBlock {
    * ```
    * // The /devil route will automatically redirect to google.com
    * // Obviously still putting the prefix (in this case / from the routeBlock in front)
-   * const routes = new webserver.routeList()
+   * const controller = new Webserver({ })
    * 
-   * routes.routeBlock('/')
+   * controller.prefix('/')
    *   .redirect('/devil', 'https://google.com')
    *   .redirect('/devilpics', 'https://google.com/search?q=devil')
    * ```
    * @since 3.1.0
-   */
+  */
 	redirect(
 		/** The Request Path to Trigger the Redirect on */ request: string,
 		/** The Redirect Path to Redirect to */ redirect: string
 	) {
-		this.data.push({
+		this.routes.push({
 			method: 'GET',
 			path: pathParser(this.path + request),
 			pathArray: pathParser(this.path + request).split('/'),
@@ -144,17 +146,16 @@ export default class RouteBlock {
    * ```
    * // All Files in "./static" will be served dynamically so they wont be loaded as routes by default
    * // Due to the hideHTML Option being on files will be served differently, /index.html -> /; /about.html -> /about
-   * const routes = new webserver.routeList()
+   * const controller = new Webserver({ })
    * 
-   * routes.routeBlock('/')
+   * controller.prefix('/')
    *   .static('./static', {
    *     hideHTML: true, // If enabled will remove .html ending from files
-   *     preLoad: false, // If enabled will load files into RAM instead of dynamically loading them
    *     addTypes: true, // If enabled will automatically add content-types to some file endings
    *   })
    * ```
    * @since 3.1.0
-   */
+  */
 	static(
 		/** The Folder which will be used */ folder: string,
 		/** Additional Configuration for Serving */ options: {
@@ -162,61 +163,46 @@ export default class RouteBlock {
        * Automatically add Content-Type to some file endings
        * @default true
        * @since 3.1.0
-       */ addTypes?: boolean
+      */ addTypes?: boolean
       /**
        * Automatically remove .html ending from files
        * @default false
        * @since 3.1.0
-       */ hideHTML?: boolean
-      /**
-       * Automatically load files into RAM instead of dynamically loading them
-       * @default false
-       * @since 3.1.0
-       */ preLoad?: boolean
+      */ hideHTML?: boolean
     }
 	) {
     const addTypes = options?.addTypes ?? true
     const hideHTML = options?.hideHTML ?? false
-		const preLoad = options?.preLoad ?? false
 
-		for (const file of getAllFiles(folder)) {
-			let newPath = file.replace(folder, '')
-			if (hideHTML) newPath = newPath
-				.replace('/index.html', '/')
-				.replace('.html', '')
-
-			const index = this.data.push({
-				method: 'STATIC',
-				path: pathParser(this.path + newPath),
-				pathArray: pathParser(this.path + newPath).split('/'),
-				code: () => {},
-				data: {
-					addTypes, file,
-          authChecks: this.authChecks.map((check) => check.func)
-				}
-			}); if (preLoad) this.data[index - 1].data.content = fs.readFileSync(file)
-		}
+		this.statics.push({
+			path: pathParser(this.path),
+      location: folder,
+			data: {
+				addTypes, hideHTML,
+        authChecks: this.authChecks.map((check) => check.func)
+			}
+		})
 
 		return this
 	}
 
   /**
    * (Sync) Load CJS Route Files
-   * @sync This Function loads the route files Syncronously
+   * @async This Function loads the route files Asyncronously
    * @example
    * ```
    * // All Files in "./routes" ending with .js will be loaded as routes
-   * const routes = new webserver.routeList()
+   * const controller = new Webserver({ })
    * 
-   * routes.routeBlock('/')
-   *   .loadCJS('./static')
+   * controller.prefix('/')
+   *   .loadCJS('./routes')
    * ```
    * @since 3.1.0
-   */
-	loadCJS(
+  */
+	async loadCJS(
 		/** The Folder which will be used */ folder: string,
 	) {
-    const files = getAllFilesFilter(folder, '.js')
+    const files = getAllFilesFilter(folder, 'js')
 
 		for (const file of files) {
 			const route: minifiedRoute = require(path.resolve(file))
@@ -228,7 +214,7 @@ export default class RouteBlock {
 			) continue
 			if (!types.includes(route.method)) throw TypeError(`No Valid Request Type: ${route.method}, Possible Values: ${types.join(', ')}`)
 
-			this.data.push({
+			this.routes.push({
 				method: route.method,
 				path: pathParser(this.path + route.path),
 				pathArray: pathParser(this.path + route.path).split('/'),
@@ -244,14 +230,57 @@ export default class RouteBlock {
 	}
 
   /**
-	 * Create A new Sub-Route Block
+   * (Async) Load ESM Route Files
+   * @async This Function loads the route files Asyncronously
+   * @example
+   * ```
+   * // All Files in "./routes" ending with .js will be loaded as routes
+   * const controller = new Webserver({ })
+   * 
+   * controller.prefix('/')
+   *   .loadESM('./routes')
+   * ```
+   * @since 4.0.0
+  */
+	async loadESM(
+		/** The Folder which will be used */ folder: string,
+	) {
+    const files = getAllFilesFilter(folder, 'js')
+
+		for (const file of files) {
+			const route: minifiedRoute = await import(path.resolve(file))
+
+			if (
+				!('path' in route) ||
+				!('method' in route) ||
+				!('code' in route)
+			) continue
+			if (!types.includes(route.method)) throw TypeError(`No Valid Request Type: ${route.method}, Possible Values: ${types.join(', ')}`)
+
+			this.routes.push({
+				method: route.method,
+				path: pathParser(this.path + route.path),
+				pathArray: pathParser(this.path + route.path).split('/'),
+				code: route.code,
+				data: {
+					addTypes: false,
+          authChecks: this.authChecks.map((check) => check.func)
+				}
+			})
+		}
+
+		return this
+	}
+
+  /**
+	 * Add a new Block of Routes with a Prefix
    * @sync This Function adds a sub-route block syncronously
-	 * @since 3.1.2
-	 */
-	subRouteBlock(
+	 * @since 4.0.0
+	*/
+	prefix(
 		/** The Path Prefix */ prefix: string
 	) {
-		const routeBlock = new RouteBlock(this.path + '/' + prefix, this.authChecks)
+		const routeBlock = new RouteBlock(this.path + '/' + prefix ?? '/', this.authChecks)
 		this.externals.push({ method: 'get', object: routeBlock })
 
 		return routeBlock
@@ -263,13 +292,14 @@ export default class RouteBlock {
    * @sync This Function generates routes synchronously
    * @ignore This is meant for internal use
    * @since 3.1.0
-   */
+  */
   get() {
     for (const external of this.externals) {
 			const result = external.object[external.method]()
-			this.data.push(...result.routes)
+			this.routes.push(...result.routes)
+      this.statics.push(...result.statics)
 		}
 
-		return { routes: this.data, events: this.data, authChecks: this.authChecks }
+		return { routes: this.routes, statics: this.statics, authChecks: this.authChecks }
   }
 }

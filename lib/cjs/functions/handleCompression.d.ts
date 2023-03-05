@@ -1,4 +1,3 @@
-import { RequestContext } from "../interfaces/context";
-import { Options } from "../classes/serverOptions";
+import { GlobalContext, RequestContext } from "../interfaces/context";
 import ctr from "../interfaces/ctr";
-export default function handleCompression(ctr: ctr, ctx: RequestContext, options: Options): void;
+export default function handleCompression(ctr: ctr, ctx: RequestContext, ctg: GlobalContext): void;

@@ -1,6 +1,7 @@
 export { default as Ctr } from "./lib/cjs/interfaces/ctr"
 export { default as CtrFile } from "./lib/cjs/interfaces/ctrFile"
 export { default as Route } from "./lib/cjs/interfaces/route"
+export { default as Static } from "./lib/cjs/interfaces/static"
 export { default as Event } from "./lib/cjs/interfaces/event"
 export { default as Methods } from "./lib/cjs/interfaces/methods"
 export { default as RatelimitRule } from "./lib/cjs/interfaces/ratelimitRule"

@@ -1,11 +1,12 @@
 import valueCollection from "src/classes/valueCollection"
-import ServerController from "src/classes/serverController"
+import ServerController from "src/classes/webServer"
 import typesEnum from "../interfaces/methods"
 import Route from "../interfaces/route"
 import Event from "../interfaces/event"
 import { EventEmitter } from "stream"
 import { UrlWithStringQuery } from "url"
-import Ctr from "./ctr"
+import { Options } from "../classes/serverOptions"
+import Static from "./static"
 
 export type hours =
 	| '0' | '1' | '2' | '3' | '4'
@@ -16,8 +17,8 @@ export type hours =
 
 export interface GlobalContext {
 	/** The Server Controller Class */ controller: ServerController
+	/** The HTTP Server Options */ options: Options
 	/** The Request Count */ requests: Record<hours | 'total', number>
-	/** The 404 Page Display */ pageDisplay: string
 	/** The Data Stats */ data: {
 		/** The Incoming Data Count */ incoming: Record<hours | 'total', number>
 		/** The Outgoing Data Count */ outgoing: Record<hours | 'total', number>
@@ -25,13 +26,13 @@ export interface GlobalContext {
 
   /** The Routes */ routes: {
     /** Normal Routes */ normal: Route[]
+		/** Static Routes */ static: Static[]
     /** Event Routes */ event: Event[]
-		/** Auth Routes */ auth: { path: string, func: (ctr: Ctr) => Promise<any> | any }[]
   }
 
   /** The Cache Stores */ cache: {
     /** The File Caches */ files: valueCollection<string, Buffer>
-    /** The Route Caches */ routes: valueCollection<string, { route: Route, params: Record<string, string> }>
+    /** The Route Caches */ routes: valueCollection<string, { route: Route, params: Record<string, string>, file?: string }>
   }
 }
 
@@ -42,13 +43,15 @@ export interface RequestContext {
 	/** Whether waiting is required */ waiting: boolean
 	/** Whether to Continue with execution */ continue: boolean
 	/** The Execute URL Object */ execute: {
-		/** The Route Object that was found */ route: Route
+		/** The Route Object that was found */ route: Route | Static
+		/** The File to Read when Route is Static */ file: string
 		/** Whether the Route is Static */ static: boolean
 		/** Whether the Route exists */ exists: boolean
 		/** Whether the Route is the Dashboard */ dashboard: boolean
 	}
 
 	/** The Request Body */ body: {
+		/** Body Chunks */ chunks: Buffer[]
 		/** Unparsed Body */ raw: Buffer
 		/** Parsed Body */ parsed: any
 	}

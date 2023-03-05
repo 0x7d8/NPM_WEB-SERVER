@@ -1,17 +1,24 @@
-import { RequestContext } from "../interfaces/context"
+import { GlobalContext, RequestContext } from "../interfaces/context"
 import handleCompressType, { CompressMapping } from "./handleCompressType"
-import { Options } from "../classes/serverOptions"
 import ctr from "../interfaces/ctr"
 
-export default function handleCompression(ctr: ctr, ctx: RequestContext, options: Options) {
-  if (!ctx.compressed && !ctr.rawRes.headersSent && String(ctr.headers.get('accept-encoding')).includes(CompressMapping[options.compression])) {
-    ctr.rawRes.setHeader('Content-Encoding', CompressMapping[options.compression])
+export default function handleCompression(ctr: ctr, ctx: RequestContext, ctg: GlobalContext) {
+  if (!ctx.compressed && !ctr.rawRes.headersSent && String(ctr.headers.get('accept-encoding')).includes(CompressMapping[ctg.options.compression])) {
+    ctr.rawRes.setHeader('Content-Encoding', CompressMapping[ctg.options.compression])
     ctr.rawRes.setHeader('Vary', 'Accept-Encoding')
 
-    const compression = handleCompressType(options.compression)
+    const compression = handleCompressType(ctg.options.compression)
+    compression.on('data', (data: Buffer) => {
+      ctg.data.outgoing.total += data.byteLength
+      ctg.data.outgoing[ctx.previousHours[4]] += data.byteLength
+    })
+
     compression.pipe(ctr.rawRes)
     compression.end(ctx.content, 'binary')
   } else {
+    ctg.data.outgoing.total += ctx.content.byteLength
+    ctg.data.outgoing[ctx.previousHours[4]] += ctx.content.byteLength
+
     ctr.rawRes.end(ctx.content, 'binary')
   }
 }

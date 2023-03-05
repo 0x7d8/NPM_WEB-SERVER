@@ -1,6 +1,5 @@
 import rateLimitRule from "../interfaces/ratelimitRule"
 import { CompressTypes } from "../functions/handleCompressType"
-import routeList from "./routeList"
 
 export interface Options {
 	/** RateLimit Settings */ rateLimits?: {

@@ -1,15 +1,11 @@
 /// <reference types="node" />
 /// <reference types="node" />
-import { Server, IncomingMessage, ServerResponse } from "http";
+import { IncomingMessage, ServerResponse } from "http";
 import valueCollection from "../classes/valueCollection";
-import ServerController from "../classes/serverController";
+import ServerController from "../classes/webServer";
 import { UrlWithStringQuery } from "url";
 import { Types } from "./methods";
 interface printOptions {
-    /**
-     * Whether to Format the Outgoing JSON (If any)
-     * @default false
-    */ niceJSON?: boolean;
     /**
      * The Content Type to use
      * @default ""
@@ -49,7 +45,6 @@ export default interface Ctr<Custom = any, HasError = false, Body = any> {
     /** The Requested URL */ readonly url: UrlWithStringQuery & {
         method: Types;
     };
-    /** The Raw HTTP Server Variable */ rawServer: Server;
     /** The Raw HTTP Server Req Variable */ rawReq: IncomingMessage;
     /** The Raw HTTP Server Res Variable */ rawRes: ServerResponse;
     /** The Error from the Request */ error?: HasError extends true ? Error : undefined;

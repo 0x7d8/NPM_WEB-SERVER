@@ -1,6 +1,5 @@
 import { GlobalContext, RequestContext } from "../interfaces/context"
-import { Options } from "../classes/serverOptions"
-import { pathParser } from "../classes/routeList"
+import { pathParser } from "../classes/router"
 import ctr from "../interfaces/ctr"
 
 /** @ts-ignore */ 
@@ -11,13 +10,13 @@ import * as os from "os"
 
 const coreCount = os.cpus().length
 
-export default async function statsRoute(ctr: ctr, ctg: GlobalContext, ctx: RequestContext, options: Options, routes: number) {
-  const path = ctr.url.path.replace(pathParser(options.dashboard.path, false), '') || '/'
+export default async function statsRoute(ctr: ctr, ctg: GlobalContext, ctx: RequestContext, routes: number) {
+  const path = ctr.url.path.replace(pathParser(ctg.options.dashboard.path, false), '') || '/'
   switch (path) {
     case "/":
       const dashboard = (await fs.readFile(`${__dirname}/index.html`, 'utf8'))
-        .replaceAll('/rjweb-dashboard', pathParser(options.dashboard.path))
-        .replace('VERSION 1.1.1', version)
+        .replaceAll('/rjweb-dashboard', pathParser(ctg.options.dashboard.path))
+        .replace('VERSION 1.1.1', `VERSION ${version}`)
 
       return ctr.print(dashboard)
 

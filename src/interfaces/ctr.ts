@@ -1,14 +1,10 @@
 import { Server, IncomingMessage, ServerResponse } from "http"
 import valueCollection from "../classes/valueCollection"
-import ServerController from "../classes/serverController"
+import ServerController from "../classes/webServer"
 import { UrlWithStringQuery } from "url"
 import { Types } from "./methods"
 
 interface printOptions {
-	/**
-	 * Whether to Format the Outgoing JSON (If any)
-	 * @default false
-	*/ niceJSON?: boolean
 	/**
 	 * The Content Type to use
 	 * @default ""
@@ -51,7 +47,6 @@ export default interface Ctr<Custom = any, HasError = false, Body = any> {
 	/** The Request Body (JSON Automatically parsed) */ readonly body: Body
 	/** The Requested URL */ readonly url: UrlWithStringQuery & { method: Types }
 
-	/** The Raw HTTP Server Variable */ rawServer: Server
 	/** The Raw HTTP Server Req Variable */ rawReq: IncomingMessage
 	/** The Raw HTTP Server Res Variable */ rawRes: ServerResponse
 

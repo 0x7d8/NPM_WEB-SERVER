@@ -54,7 +54,7 @@ import { Ctr } from "rjweb-server/interfaces"
 const routes = new webserver.routeList()
 
 routes.routeBlock('/')
-  .add(webserver.types.get, '/hello', async(ctr: Ctr) => {
+  .add('GET', '/hello', async(ctr: Ctr) => {
     if (!ctr.queries.has("name")) return ctr.print('please supply the name query!!')
 
     return ctr.print(`Hello, ${ctr.queries.get("name")}! How are you doing?`)
@@ -66,7 +66,7 @@ routes.routeBlock('/')
 Custom Properties in Ctr Object
 (This also works in JavaScript, just remove the interface logic)
 ```ts
-import * as webserver from "rjweb-server"
+import { Server } from "rjweb-server"
 import { Ctr as ctrPreset, CtrFile as ctrFilePreset } from "rjweb-server/interfaces"
 interface Custom {
   count: number
@@ -75,22 +75,26 @@ interface Custom {
 interface ctr<HasError = false, Body = any> extends ctrPreset<Custom, HasError, Body> {}
 interface ctrFile<Body = any> extends ctrFilePreset<Custom, Body> {}
 
-const routes = new webserver.routeList()
-
-routes.set(webserver.types.get, '/hello', async(ctr: ctr) => {
-  if (!ctr.queries.has("name")) return ctr.print('please supply the name queries!!')
-
-  return ctr.print(`Hello, ${ctr.queries.get("name")}! You are Visit nr.${ctr['@'].count}`)
+const server = new Server({
+  bind: '0.0.0.0', // The IP thats bound to
+  port: 5000, // The Port which the Server runs on
 })
 
+server.prefix('/')
+  .add('GET', '/hello', async(ctr: ctr) => {
+    if (!ctr.queries.has("name")) return ctr.print('please supply the name queries!!')
+
+    return ctr.print(`Hello, ${ctr.queries.get("name")}! You are Visit nr.${ctr['@'].count}`)
+  })
+
 let count = 0
-routes.event('request', async(ctr: ctr) => {
+server.event('request', async(ctr: ctr) => {
   ctr.setCustom('count', ++count) 
 
   console.log(`request made to ${decodeURI(ctr.url.pathname)} by ${ctr.client.ip}`)
 })
 
-routes.event('error', async(ctr: ctr<true>) => {
+server.event('error', async(ctr: ctr<true>) => {
   console.log(`error on path ${decodeURI(ctr.url.pathname)}!!!`)
   console.error(ctr.error.stack)
 
@@ -98,20 +102,13 @@ routes.event('error', async(ctr: ctr<true>) => {
   ctr.print('server error')
 })
 
-const controller = webserver.initialize({
-  bind: '0.0.0.0', // The IP thats bound to
-  port: 5000, // The Port which the Server runs on
-})
-
-controller.setRoutes(routes)
-controller.start().then((s) => {
+server.start().then((s) => {
   console.log(`server started on port ${s.port}`)
 })
 ```
 
 Function File
 ```ts
-import * as webserver from "rjweb-server"
 import { Ctr as ctrPreset, CtrFile as ctrFilePreset } from "rjweb-server/interfaces"
 interface Custom {
   count: number
@@ -125,7 +122,7 @@ interface ctr<HasError = false, Body = any> extends CtrPreset<Custom, HasError, 
 interface ctrFile<Body = any> extends CtrFilePreset<Custom, Body> {}
 
 export = {
-  method: webserver.types.post,
+  method: 'POST',
   path: '/v2/account',
 
   async code(ctr) {
@@ -140,25 +137,36 @@ export = {
 
 Initialize Server
 ```js
-const webserver = require('rjweb-server')
-const routes = new webserver.routeList()
+const { Server } = require('rjweb-server')
+
+const server = new Server({
+  bind: '0.0.0.0', // The IP thats bound to
+  cors: false, // If Cors Headers will be added
+  port: 5000, // The Port which the Server runs on
+  proxy: true, // If enabled, alternate IPs will be shown
+  body: {
+    enabled: true, // Whether to enable recieving POST Bodies
+    maxSize: 20, // The Max POST Body Size in MB
+    message: 'Payload too large' // Message that gets sent if the Limit is exceeded
+  }
+})
 
 // ctr.params.get... is :name:, example /hello/0x4096
-routes.routeBlock('/') // The / is the Path Prefix for all children paths
-  .add(webserver.types.post, '/post', async(ctr) => {
+server.prefix('/') // The / is the Path Prefix for all children paths
+  .add('POST', '/post', async(ctr) => {
     return ctr.print(`Hello, ${ctr.body}! How are you doing?`)
   })
-  .add(webserver.types.get, '/profile/:user:', async(ctr) => {
+  .add('GET', '/profile/<user>', async(ctr) => {
     return ctr.printFile(`../images/profile/${ctr.params.get('user')}.png`, { addTypes: true })
   })
-  .add(webserver.types.get, '/reloadserver', async(ctr) => {
+  .add('GET', '/reloadserver', async(ctr) => {
     if (!ctr.queries.has('password')) return ctr.print('provide the password to do this!!')
     if (ctr.queries.get('password') !== 'imApassword123!') return ctr.print('the password is incorrect!!')
 
     setTimeout(() => ctr.controller.reload(), 1000)
     return ctr.print('server reloaded')
   })
-  .add(webserver.types.get, '/redirect/:website:', async(ctr) => {
+  .add('GET', '/redirect/<website>', async(ctr) => {
     switch (ctr.params.get('website')) {
       case "google":
         return ctr.redirect('https://www.google.com')
@@ -171,34 +179,27 @@ routes.routeBlock('/') // The / is the Path Prefix for all children paths
     }
   })
   .redirect('/googleplz', 'https://www.google.com')
-  .subRouteBlock('/api')
+  .prefix('/api')
     .add('GET', '/', (ctr) => ctr.print('welcome to api!'))
-    .subRouteBlock('/v2')
+    .prefix('/v2')
       .add('GET', '/', (ctr) => ctr.print('welcome to v2 api!'))
 
-const controller = webserver.initialize({
-  bind: '0.0.0.0', // The IP thats bound to
-  cors: false, // If Cors Headers will be added
-  port: 5000, // The Port which the Server runs on
-  proxy: true, // If enabled, alternate IPs will be shown
-  body: {
-    enabled: true, // Whether to enable recieving POST Bodies
-    maxSize: 20, // The Max POST Body Size in MB
-    message: 'Payload too large' // Message that gets sent if the Limit is exceeded
-  }
-})
-
-controller.setRoutes(routes)
-controller.start().then((s) => {
+server.start().then((s) => {
   console.log(`server started on port ${s.port}`)
 })
 ```
 
 Print Promises
 ```js
-const webserver = require('rjweb-server')
-const routes = new webserver.routeList()
+const { Server } = require('rjweb-server')
 const wait = require('timers/promises').setTimeout
+
+const server = new Server({
+  bind: '0.0.0.0', // The IP thats bound to
+  cors: false, // If Cors Headers will be added
+  port: 5000, // The Port which the Server runs on
+  proxy: true // If enabled, alternate IPs will be shown
+})
 
 // this request will load for 5 seconds and send the returned value
 const handleHello = async() => {
@@ -206,98 +207,92 @@ const handleHello = async() => {
   return 'You just waited 5 seconds !!'
 }
 
-routes.routeBlock('/wait5sec')
+server.routeBlock('/wait5sec')
   // this request will load for 5 seconds
-  .add(webserver.types.get, '/func', async(ctr) => {
+  .add('GET', '/func', async(ctr) => {
     return ctr.print(handleHello)
   }) // this request will also load for 5 seconds
-  .add(webserver.types.get, '/promise', async(ctr) => {
+  .add('GET', '/promise', async(ctr) => {
     await wait(5000)
     return ctr.print('You just waited 5 seconds !!')
   })
 
-const controller = webserver.initialize({
-  bind: '0.0.0.0', // The IP thats bound to
-  cors: false, // If Cors Headers will be added
-  port: 5000, // The Port which the Server runs on
-  proxy: true // If enabled, alternate IPs will be shown
-})
-
-controller.setRoutes(routes)
-controller.start().then((s) => {
+server.start().then((s) => {
   console.log(`server started on port ${s.port}`)
 })
 ```
 
 Authenticate Requests
 ```js
-const webserver = require('rjweb-server')
-const routes = new webserver.routeList()
+const { Server } = require('rjweb-server')
 
-routes.setBlock('/account')
-  .auth(async(ctr) => { // Will Authenticate every request starting with the route block prefix (/account)
-    if (!ctr.queries.has('password')) return ctr.status(401).print('Unauthorized')
-    if (ctr.queries.get('password') !== '123456 or database request or sum') return ctr.status(401).print('Unauthorized')
-
-    return ctr.status(200) // <- Everything is OK
-  })
-  .add(webserver.types.get, '/', async(ctr) => {
-    return ctr.print('Account Infos: idk')
-  })
-  .add(webserver.types.post, '/edit', async(ctr) => {
-    return ctr.print('Edited Account Infos!')
-  })
-```
-
-Serve Static Files
-```js
-const webserver = require('rjweb-server')
-const routes = new webserver.routeList()
-
-routes.setBlock('/')
-  .static('./html', {
-    preLoad: false, // If enabled will load every static files content into Memory
-    hideHTML: true // If enabled will remove the html ending from files when serving
-  }) // The html folder is in the root directory
-
-const controller = webserver.initialize({
+const server = new Server({
   bind: '0.0.0.0', // The IP thats bound to
   cors: false, // If Cors Headers will be added
   port: 5000, // The Port which the Server runs on
   proxy: true // If enabled, alternate IPs will be shown
 })
 
-controller.setRoutes(routes)
-controller.start().then((s) => {
+server.prefix('/account')
+  .validate(async(ctr) => { // Will Validate every request starting with the route block prefix (/account)
+    if (!ctr.queries.has('password')) return ctr.status(401).print('Unauthorized')
+    if (ctr.queries.get('password') !== '123456 or database request or sum') return ctr.status(401).print('Unauthorized')
+
+    return ctr.status(200) // <- Everything is OK
+  })
+  .add('GET', '/', async(ctr) => {
+    return ctr.print('Account Infos: idk')
+  })
+  .add('POST', '/edit', async(ctr) => {
+    return ctr.print('Edited Account Infos!')
+  })
+```
+
+Serve Static Files
+```js
+const { Server } = require('rjweb-server')
+
+const server = new Server({
+  bind: '0.0.0.0', // The IP thats bound to
+  cors: false, // If Cors Headers will be added
+  port: 5000, // The Port which the Server runs on
+  proxy: true // If enabled, alternate IPs will be shown
+})
+
+server.prefix('/')
+  .static('./html', {
+    hideHTML: true // If enabled will remove the html ending from files when serving
+  }) // The html folder is in the root directory
+
+server.start().then((s) => {
   console.log(`server started on port ${s.port}`)
 })
 ```
 
 Add Headers on EVERY Request
 ```js
-const webserver = require('rjweb-server')
-const routes = new webserver.routeList()
+const { Server } = require('rjweb-server')
 
-const controller = webserver.initialize({
-  bind: '0.0.0.0',
-  cors: false,
-  port: 5000,
-  headers: {
-    "im-a-header": "im-the-value"
+const server = new Server({
+  bind: '0.0.0.0', // The IP thats bound to
+  cors: false, // If Cors Headers will be added
+  port: 5000, // The Port which the Server runs on
+  proxy: true, // If enabled, alternate IPs will be shown
+  headers: { // List of Headers to add to every request
+    "im-a-header": 'im a value'
   }
 })
 
-controller.setRoutes(routes)
-controller.start().then((s) => {
+server.start().then((s) => {
   console.log(`server started on port ${s.port}`)
 })
 ```
 
 Enable Dashboard
 ```js
-const routes = new webserver.routeList()
+const { Server } = require('rjweb-server')
 
-const controller = webserver.initialize({
+const server = new Server({
   bind: '0.0.0.0',
   cors: false,
   port: 5000,
@@ -307,56 +302,55 @@ const controller = webserver.initialize({
   }
 })
 
-controller.setRoutes(routes)
-controller.start().then((s) => {
+server.start().then((s) => {
   console.log(`server started on port ${s.port}`)
 })
 ```
 
 Custom Not Found / Server Error Page
 ```js
-const routes = new webserver.routeList()
+const { Server } = require('rjweb-server')
 
-routes.event('notfound', async(ctr) => {
+const server = new Server({
+  bind: '0.0.0.0',
+  cors: false,
+  port: 5000,
+  proxy: true
+})
+
+server.event('notfound', async(ctr) => {
   ctr.status(404)
   return ctr.print(`page "${ctr.url.pathname}" not found`)
 })
 
-routes.event('error', async(ctr) => {
+server.event('error', async(ctr) => {
   ctr.status(500)
   ctr.print(`ERROR!!! ${ctr.error.message}`)
   return console.log(ctr.error)
 })
 
-const controller = webserver.initialize({
-  bind: '0.0.0.0',
-  cors: false,
-  port: 5000
-})
-
-controller.setRoutes(routes)
-controller.start().then((s) => {
+server.start().then((s) => {
   console.log(`server started on port ${s.port}`)
 })
 ```
 
 Custom Function on every request
 ```js
-const routes = new webserver.routeList()
+const { Server } = require('rjweb-server')
 
-routes.event('request', async(ctr) => {
+const server = new Server({
+  bind: '0.0.0.0',
+  cors: false,
+  port: 5000,
+  proxy: true
+})
+
+server.event('request', async(ctr) => {
   return console.log(`request made to ${decodeURI(ctr.url.href)} by ${ctr.client.ip}`)
   // DO NOT write any data or end the request
 })
 
-const controller = webserver.initialize({
-  bind: '0.0.0.0',
-  cors: false,
-  port: 5000
-})
-
-controller.setRoutes(routes)
-controller.start().then((s) => {
+server.start().then((s) => {
   console.log(`server started on port ${s.port}`)
 })
 ```
@@ -364,7 +358,9 @@ controller.start().then((s) => {
 ### Rate Limits
 With Database (EXAMPLE, PLEASE EDIT)
 ```js
-const controller = webserver.initialize({
+const { Server } = require('rjweb-server')
+
+const server = new Server({
   bind: '0.0.0.0',
   cors: false,
   port: 5000,
@@ -389,17 +385,18 @@ const controller = webserver.initialize({
   }
 })
 
-controller.setRoutes(routes)
-controller.start().then((s) => {
+server.start().then((s) => {
   console.log(`server started on port ${s.port}`)
 })
 ```
 
 With Map
 ```js
+const { Server } = require('rjweb-server')
+
 const rateLimits = new Map()
 
-const controller = webserver.initialize({
+const server = new Server({
   bind: '0.0.0.0',
   cors: false,
   port: 5000,
@@ -421,8 +418,7 @@ const controller = webserver.initialize({
   }
 })
 
-controller.setRoutes(routes)
-controller.start().then((s) => {
+server.start().then((s) => {
   console.log(`server started on port ${s.port}`)
 })
 ```
@@ -430,31 +426,30 @@ controller.start().then((s) => {
 ### Cleaning Up Functions
 Load Functions from Directory
 ```js
-const webserver = require('rjweb-server')
-const routes = new webserver.routeList()
+const { Server } = require('rjweb-server')
 
-routes.load('./functions') // The functions folder is in the root directory
-
-const controller = webserver.initialize({
+const server = new Server({
   bind: '0.0.0.0',
   cors: false,
-  port: 5000
+  port: 5000,
+  proxy: true
 })
 
-controller.setRoutes(routes)
-controller.start().then((s) => {
+server.prefix('/')
+  .loadCJS('./functions') // This loads CJS files (module.exports)
+  .loadESM('./functions') // This loads ESM files (export default)
+
+server.start().then((s) => {
   console.log(`server started on port ${s.port}`)
 })
 ```
 
 Making a function File
 ```js
-const webserver = require('rjweb-server')
-
 /** @type {import('rjweb-server/interfaces').CtrFile} */
 module.exports = {
-  method: webserver.types.get,
-  path: '/say/:word',
+  method: 'GET',
+  path: '/say/<word>',
 
   async code(ctr) {
     const word = ctr.params.get('word')
