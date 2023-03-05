@@ -3,11 +3,11 @@
 import * as ServerEvents from "../interfaces/serverEvents";
 import { Options } from "./serverOptions";
 import RouteList from "./router";
-import * as https from "https";
-import * as http from "http";
+import http2 from "http2";
+import http from "http";
 export default class Webserver extends RouteList {
     private globalContext;
-    server: http.Server | https.Server;
+    server: http.Server | http2.Http2SecureServer;
     /** Server Controller */
     constructor(
     /** The Server Options */ options: Options);

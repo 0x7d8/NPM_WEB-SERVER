@@ -80,7 +80,7 @@ export default class ValueCollection<Key extends string | number | symbol = stri
 
   /** Loop over all Keys */
   forEach(
-    /** Callback Function */ callback: (key: Key, value: Value) => any,
+    /** Callback Function */ callback: (key: Key, value: Value) => Promise<any> | any,
     /** Excluded Keys */ excluded?: Key[]
   ): number {
     callback = callback ?? (() => undefined)

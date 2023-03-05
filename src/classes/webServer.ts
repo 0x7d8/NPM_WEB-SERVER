@@ -5,12 +5,13 @@ import ServerOptions, { Options } from "./serverOptions"
 import RouteList from "./router"
 import handleHTTPRequest, { getPreviousHours } from "../functions/web/handleHTTPRequest"
 
-import * as https from "https"
-import * as http from "http"
+import http2 from "http2"
+import http from "http"
+import fs from "fs"
 
 export default class Webserver extends RouteList {
   private globalContext: GlobalContext
-  public server: http.Server | https.Server
+  public server: http.Server | http2.Http2SecureServer
 
   /** Server Controller */
   constructor(
@@ -57,7 +58,19 @@ export default class Webserver extends RouteList {
 			}
 		}
 
-    this.server = new http.Server()
+    if (this.globalContext.options.https.enabled) {
+      let key: Buffer, cert: Buffer
+      try {
+        key = fs.readFileSync(this.globalContext.options.https.keyFile)
+        cert = fs.readFileSync(this.globalContext.options.https.certFile)
+      } catch (e) {
+        throw new Error(`Cant access your HTTPS Key or Cert file! (${this.globalContext.options.https.keyFile} / ${this.globalContext.options.https.certFile})`)
+      }
+
+      this.server = http2.createSecureServer({
+        key, cert, allowHTTP1: true
+      })
+    } else this.server = new http.Server()
 
     this.server.on('request', async(req, res) => Promise.resolve(handleHTTPRequest(req, res, this.globalContext)))
 

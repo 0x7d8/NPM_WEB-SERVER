@@ -1,15 +1,16 @@
-import { pathParser } from "../../classes/router";
-import { GlobalContext, RequestContext } from "../../interfaces/context";
-import EventEmitter from "events";
-import handleCompressType, { CompressMapping } from "../handleCompressType";
-import ValueCollection from "../../classes/valueCollection";
-import handleCompression from "../handleCompression";
-import statsRoute from "../../stats/routes";
-import Ctr from "src/interfaces/ctr";
-import handleEvent from "../handleEvent";
-import { IncomingMessage, ServerResponse } from "http";
-import handleContentType from "../handleContentType";
-import Static from "../../interfaces/static";
+import { pathParser } from "../../classes/router"
+import { GlobalContext, RequestContext } from "../../interfaces/context"
+import EventEmitter from "events"
+import handleCompressType, { CompressMapping } from "../handleCompressType"
+import ValueCollection from "../../classes/valueCollection"
+import handleCompression from "../handleCompression"
+import statsRoute from "../../stats/routes"
+import Ctr from "src/interfaces/ctr"
+import handleEvent from "../handleEvent"
+import { IncomingMessage, ServerResponse } from "http"
+import { Http2ServerRequest, Http2ServerResponse } from "http2"
+import handleContentType from "../handleContentType"
+import Static from "../../interfaces/static"
 
 import queryUrl from "querystring"
 import zlib from "zlib"
@@ -20,7 +21,7 @@ import fs from "fs"
 export const getPreviousHours = () =>
   Array.from({ length: 5 }, (_, i) => (new Date().getHours() - (4 - i) + 24) % 24)
 
-export default async function handleHTTPRequest(req: IncomingMessage, res: ServerResponse, ctg: GlobalContext) {
+export default async function handleHTTPRequest(req: IncomingMessage | Http2ServerRequest, res: ServerResponse | Http2ServerResponse, ctg: GlobalContext) {
   // Create Local ConTeXt
   let ctx: RequestContext = {
     content: Buffer.alloc(0),

@@ -25,7 +25,7 @@ export default class ValueCollection<Key extends string | number | symbol = stri
     /** Excluded Keys */ excluded?: Key[]): Value[];
     /** Loop over all Keys */
     forEach(
-    /** Callback Function */ callback: (key: Key, value: Value) => any, 
+    /** Callback Function */ callback: (key: Key, value: Value) => Promise<any> | any, 
     /** Excluded Keys */ excluded?: Key[]): number;
     /** Get The Amount of Stored Objects */
     get objectCount(): number;

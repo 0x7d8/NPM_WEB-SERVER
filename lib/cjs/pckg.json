@@ -1,6 +1,6 @@
 {
   "name": "rjweb-server",
-  "version": "4.0.3",
+  "version": "4.1.0",
   "description": "Easy and Lightweight Way to create a Web Server with Many Easy-to-use Features",
   "main": "./lib/cjs/index.js",
   "module": "./lib/esm/index.js",
@@ -40,5 +40,8 @@
     "esbuild": "^0.17.3",
     "rjweb-server": "link:",
     "typescript": "^4.9.4"
+  },
+  "dependencies": {
+    "require-esm-in-cjs": "^0.1.0"
   }
 }

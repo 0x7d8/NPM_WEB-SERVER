@@ -1,4 +1,5 @@
-import { Server, IncomingMessage, ServerResponse } from "http"
+import { IncomingMessage, ServerResponse } from "http"
+import { Http2ServerRequest, Http2ServerResponse } from "http2"
 import valueCollection from "../classes/valueCollection"
 import ServerController from "../classes/webServer"
 import { UrlWithStringQuery } from "url"
@@ -47,8 +48,8 @@ export default interface Ctr<Custom = any, HasError = false, Body = any> {
 	/** The Request Body (JSON Automatically parsed) */ readonly body: Body
 	/** The Requested URL */ readonly url: UrlWithStringQuery & { method: Types }
 
-	/** The Raw HTTP Server Req Variable */ rawReq: IncomingMessage
-	/** The Raw HTTP Server Res Variable */ rawRes: ServerResponse
+	/** The Raw HTTP Server Req Variable */ rawReq: IncomingMessage | Http2ServerRequest
+	/** The Raw HTTP Server Res Variable */ rawRes: ServerResponse | Http2ServerResponse
 
 	/** The Error from the Request */ error?: HasError extends true ? Error : undefined
 

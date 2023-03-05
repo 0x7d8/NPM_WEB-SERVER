@@ -3,8 +3,12 @@ lockfileVersion: 5.4
 specifiers:
   '@types/node': ^18.11.18
   esbuild: ^0.17.3
+  require-esm-in-cjs: ^0.1.0
   rjweb-server: 'link:'
   typescript: ^4.9.4
+
+dependencies:
+  require-esm-in-cjs: registry.npmjs.org/require-esm-in-cjs/0.1.0
 
 devDependencies:
   '@types/node': registry.npmjs.org/@types/node/18.11.18
@@ -262,6 +266,25 @@ packages:
     version: 18.11.18
     dev: true
 
+  registry.npmjs.org/bindings/1.5.0:
+    resolution: {integrity: sha512-p2q/t/mhvuOj/UeLlV6566GD/guowlr0hHxClI0W9m7MWYkL1F0hLo+0Aexs9HSPCtR1SXQ0TD3MMKrXZajbiQ==, registry: https://registry.npmjs.cf/, tarball: https://registry.npmjs.org/bindings/-/bindings-1.5.0.tgz}
+    name: bindings
+    version: 1.5.0
+    dependencies:
+      file-uri-to-path: registry.npmjs.org/file-uri-to-path/1.0.0
+    dev: false
+
+  registry.npmjs.org/deasync/0.1.28:
+    resolution: {integrity: sha512-QqLF6inIDwiATrfROIyQtwOQxjZuek13WRYZ7donU5wJPLoP67MnYxA6QtqdvdBy2mMqv5m3UefBVdJjvevOYg==, registry: https://registry.npmjs.cf/, tarball: https://registry.npmjs.org/deasync/-/deasync-0.1.28.tgz}
+    name: deasync
+    version: 0.1.28
+    engines: {node: '>=0.11.0'}
+    requiresBuild: true
+    dependencies:
+      bindings: registry.npmjs.org/bindings/1.5.0
+      node-addon-api: registry.npmjs.org/node-addon-api/1.7.2
+    dev: false
+
   registry.npmjs.org/esbuild/0.17.3:
     resolution: {integrity: sha512-9n3AsBRe6sIyOc6kmoXg2ypCLgf3eZSraWFRpnkto+svt8cZNuKTkb1bhQcitBcvIqjNiK7K0J3KPmwGSfkA8g==, registry: https://registry.npmjs.cf/, tarball: https://registry.npmjs.org/esbuild/-/esbuild-0.17.3.tgz}
     name: esbuild
@@ -293,6 +316,26 @@ packages:
       '@esbuild/win32-ia32': registry.npmjs.org/@esbuild/win32-ia32/0.17.3
       '@esbuild/win32-x64': registry.npmjs.org/@esbuild/win32-x64/0.17.3
     dev: true
+
+  registry.npmjs.org/file-uri-to-path/1.0.0:
+    resolution: {integrity: sha512-0Zt+s3L7Vf1biwWZ29aARiVYLx7iMGnEUl9x33fbB/j3jR81u/O2LbqK+Bm1CDSNDKVtJ/YjwY7TUd5SkeLQLw==, registry: https://registry.npmjs.cf/, tarball: https://registry.npmjs.org/file-uri-to-path/-/file-uri-to-path-1.0.0.tgz}
+    name: file-uri-to-path
+    version: 1.0.0
+    dev: false
+
+  registry.npmjs.org/node-addon-api/1.7.2:
+    resolution: {integrity: sha512-ibPK3iA+vaY1eEjESkQkM0BbCqFOaZMiXRTtdB0u7b4djtY6JnsjvPdUHVMg6xQt3B8fpTTWHI9A+ADjM9frzg==, registry: https://registry.npmjs.cf/, tarball: https://registry.npmjs.org/node-addon-api/-/node-addon-api-1.7.2.tgz}
+    name: node-addon-api
+    version: 1.7.2
+    dev: false
+
+  registry.npmjs.org/require-esm-in-cjs/0.1.0:
+    resolution: {integrity: sha512-cvUbHfMLrZ0ELkNFJ8jxfCMOPBOSKgt2Vr5j5XU1WrFCXVTDWJNIIkERU1YcVk/KlENrjq5F1jvj1KNnkFKB1Q==, registry: https://registry.npmjs.cf/, tarball: https://registry.npmjs.org/require-esm-in-cjs/-/require-esm-in-cjs-0.1.0.tgz}
+    name: require-esm-in-cjs
+    version: 0.1.0
+    dependencies:
+      deasync: registry.npmjs.org/deasync/0.1.28
+    dev: false
 
   registry.npmjs.org/typescript/4.9.4:
     resolution: {integrity: sha512-Uz+dTXYzxXXbsFpM86Wh3dKCxrQqUcVMxwU54orwlJjOpO3ao8L7j5lH+dWfTwgCwIuM9GQ2kvVotzYJMXTBZg==, registry: https://registry.npmjs.cf/, tarball: https://registry.npmjs.org/typescript/-/typescript-4.9.4.tgz}

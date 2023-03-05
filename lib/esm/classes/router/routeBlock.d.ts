@@ -23,7 +23,7 @@ export default class RouteBlock {
      * // The /api route will automatically check for correct credentials
      * // Obviously still putting the prefix (in this case / from the routeBlock in front)
      * // Please note that in order to respond unautorized the status cant be 2xx
-     * const controller = new Webserver({ })
+     * const controller = new Server({ })
      *
      * controller.prefix('/api')
      *   .validate(async(ctr) => {
@@ -45,7 +45,7 @@ export default class RouteBlock {
      * ```
      * // The /devil route will be available on "path + /devil" so "/devil"
      * // Paths wont collide if the request methods are different
-     * const controller = new Webserver({ })
+     * const controller = new Server({ })
      * let devilsMessage = 'Im the one who knocks'
      *
      * controller.prefix('/')
@@ -74,7 +74,7 @@ export default class RouteBlock {
      * ```
      * // The /devil route will automatically redirect to google.com
      * // Obviously still putting the prefix (in this case / from the routeBlock in front)
-     * const controller = new Webserver({ })
+     * const controller = new Server({ })
      *
      * controller.prefix('/')
      *   .redirect('/devil', 'https://google.com')
@@ -93,7 +93,7 @@ export default class RouteBlock {
      * ```
      * // All Files in "./static" will be served dynamically so they wont be loaded as routes by default
      * // Due to the hideHTML Option being on files will be served differently, /index.html -> /; /about.html -> /about
-     * const controller = new Webserver({ })
+     * const controller = new Server({ })
      *
      * controller.prefix('/')
      *   .static('./static', {
@@ -119,11 +119,11 @@ export default class RouteBlock {
     }): this;
     /**
      * (Sync) Load CJS Route Files
-     * @async This Function loads the route files Asyncronously
+     * @sync This Function loads the route files Syncronously
      * @example
      * ```
      * // All Files in "./routes" ending with .js will be loaded as routes
-     * const controller = new Webserver({ })
+     * const controller = new Server({ })
      *
      * controller.prefix('/')
      *   .loadCJS('./routes')
@@ -131,14 +131,15 @@ export default class RouteBlock {
      * @since 3.1.0
     */
     loadCJS(
-    /** The Folder which will be used */ folder: string): Promise<this>;
+    /** The Folder which will be used */ folder: string): this;
     /**
      * (Async) Load ESM Route Files
-     * @async This Function loads the route files Asyncronously
+     * @sync This Function loads the route files Syncronously
+     * @warning This function calls import() Syncronously
      * @example
      * ```
      * // All Files in "./routes" ending with .js will be loaded as routes
-     * const controller = new Webserver({ })
+     * const controller = new Server({ })
      *
      * controller.prefix('/')
      *   .loadESM('./routes')
@@ -146,7 +147,7 @@ export default class RouteBlock {
      * @since 4.0.0
     */
     loadESM(
-    /** The Folder which will be used */ folder: string): Promise<this>;
+    /** The Folder which will be used */ folder: string): this;
     /**
        * Add a new Block of Routes with a Prefix
      * @sync This Function adds a sub-route block syncronously

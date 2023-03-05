@@ -1,6 +1,8 @@
 /// <reference types="node" />
 /// <reference types="node" />
+/// <reference types="node" />
 import { IncomingMessage, ServerResponse } from "http";
+import { Http2ServerRequest, Http2ServerResponse } from "http2";
 import valueCollection from "../classes/valueCollection";
 import ServerController from "../classes/webServer";
 import { UrlWithStringQuery } from "url";
@@ -45,8 +47,8 @@ export default interface Ctr<Custom = any, HasError = false, Body = any> {
     /** The Requested URL */ readonly url: UrlWithStringQuery & {
         method: Types;
     };
-    /** The Raw HTTP Server Req Variable */ rawReq: IncomingMessage;
-    /** The Raw HTTP Server Res Variable */ rawRes: ServerResponse;
+    /** The Raw HTTP Server Req Variable */ rawReq: IncomingMessage | Http2ServerRequest;
+    /** The Raw HTTP Server Res Variable */ rawRes: ServerResponse | Http2ServerResponse;
     /** The Error from the Request */ error?: HasError extends true ? Error : undefined;
     /** Set an HTTP Header to add */ setHeader: (name: string, value: string | number) => Ctr;
     /** Set a Custom Variable */ setCustom: <Type extends keyof Custom>(name: Type, value: Custom[Type]) => Ctr;
