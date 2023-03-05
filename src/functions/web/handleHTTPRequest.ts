@@ -132,9 +132,7 @@ export default async function handleHTTPRequest(req: IncomingMessage, res: Serve
       if (ctx.execute.exists) break
 
       // Find File
-      const urlPath = pathParser(ctx.url.pathname.replace(url.path, '')).slice(1).split('/')
-      const file = urlPath.length > 1 ? urlPath.pop() : ''
-      const folder = urlPath.join('/')
+      const urlPath = pathParser(ctx.url.pathname.replace(url.path, '')).substring(1)
 
       const fileExists = async(location: string) => {
         location = path.resolve(location)
@@ -148,10 +146,10 @@ export default async function handleHTTPRequest(req: IncomingMessage, res: Serve
       }
 
       if (url.data.hideHTML) {
-        if (!file.endsWith('.html') && await fileExists(url.location + '/' + folder + '/' + file)) foundStatic(path.resolve(url.location + '/' + folder + '/' + file), url)
-        else if (file && await fileExists(url.location + '/' + folder + '/' + file + '.html')) foundStatic(path.resolve(url.location + '/' + folder + '/' + file + '.html'), url)
-        else if (!file && await fileExists(url.location + '/' + folder + '/index.html')) foundStatic(path.resolve(url.location + '/' + folder + '/index.html'), url)
-      } else if (await fileExists(url.location + '/' + folder + '/' + file)) foundStatic(path.resolve(url.location + '/' + folder + '/' + file), url)
+        if (await fileExists(url.location + '/' + urlPath + '/index.html')) foundStatic(path.resolve(url.location + '/' + urlPath + '/index.html'), url)
+        else if (await fileExists(url.location + '/' + urlPath + '.html')) foundStatic(path.resolve(url.location + '/' + urlPath + '.html'), url)
+        else if (await fileExists(url.location + '/' + urlPath)) foundStatic(path.resolve(url.location + '/' + urlPath), url)
+      } else if (await fileExists(url.location + '/' + urlPath)) foundStatic(path.resolve(url.location + '/' + urlPath), url)
     }
 
     for (let urlNumber = 0; urlNumber <= ctg.routes.normal.length - 1; urlNumber++) {
