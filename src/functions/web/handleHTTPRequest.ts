@@ -132,7 +132,7 @@ export default async function handleHTTPRequest(req: IncomingMessage, res: Serve
       if (ctx.execute.exists) break
 
       // Find File
-      const urlPath = ctx.url.pathname.replace(url.path, '').split('/')
+      const urlPath = pathParser(ctx.url.pathname.replace(url.path, '')).slice(1).split('/')
       const file = urlPath.length > 1 ? urlPath.pop() : ''
       const folder = urlPath.join('/')
 
