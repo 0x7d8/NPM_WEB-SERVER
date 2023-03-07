@@ -4,17 +4,14 @@ import Route from "../../interfaces/route";
 import Ctr from "../../interfaces/ctr";
 export default class RouteBlock {
     private externals;
-    private authChecks;
+    private validations;
     private statics;
     private routes;
     private path;
     /** Generate Route Block */
     constructor(
     /** The Path of the Routes */ path: string, 
-    /** The Authchecks to add */ authChecks?: {
-        path: string;
-        func: (ctr: Ctr) => Promise<any> | any;
-    }[]);
+    /** The Validations to add */ validations?: ((ctr: Ctr) => Promise<any> | any)[]);
     /**
      * (Sync) Add Validation
      * @sync This Function adds Validation Syncronously
@@ -150,7 +147,20 @@ export default class RouteBlock {
     /** The Folder which will be used */ folder: string): this;
     /**
        * Add a new Block of Routes with a Prefix
-     * @sync This Function adds a sub-route block syncronously
+     * @sync This Function adds a prefix block syncronously
+     * @example
+     * ```
+     * const controller = new Server({ })
+     *
+     * controller.prefix('/')
+     *   .add('GET', '/cool', (ctr) => {
+     *     ctr.print('cool!')
+     *   })
+     *   .prefix('/api')
+     *     .add('GET', '/', (ctr) => {
+     *       ctr.print('Welcome to the API')
+     *     })
+     * ```
        * @since 4.0.0
       */
     prefix(
@@ -164,9 +174,6 @@ export default class RouteBlock {
     get(): {
         routes: Route[];
         statics: Static[];
-        authChecks: {
-            path: string;
-            func: (ctr: Ctr<any, false, any>) => any;
-        }[];
+        validations: ((ctr: Ctr<any, false, any>) => any)[];
     };
 }

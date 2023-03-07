@@ -1,9 +1,10 @@
 #!/usr/bin/env node
 
-import * as fs from "fs"
-import * as path from "path"
 import { Options } from "./classes/serverOptions"
 import Server from "./classes/webServer"
+
+import path from "path"
+import fs from "fs"
 
 /** @ts-ignore */ 
 import { version } from "./pckg.json"
@@ -45,10 +46,10 @@ const isHelp = () => (!args[0] || args.includes('-h') || args.includes('--help')
 const webserverOptions: Partial<Options> = { dashboard: {} }
 const args = process.argv.slice(2)
 if (args.includes('-v') || args.includes('--version')) {
-	console.log(`${colors.fg.yellow}[RJW] ${colors.reset}Version:`)
-	console.log(`v${version}`)
+	console.log(`${colors.fg.blue}[INF] ${colors.reset}Version:`)
+	console.log(`${version}`)
 } else if (!isHelp() && fs.existsSync(path.join(process.cwd(), args[0]))) {
-	let remHTML = false, addTypes = true, notFoundPath = '', refreshInterval = -1
+	let remHTML = false, addTypes = true, notFoundPath = ''
 	for (const option of args.slice(1)) {
 		const [ key, value ] = option.slice(2).split('=')
 
@@ -60,35 +61,41 @@ if (args.includes('-v') || args.includes('--version')) {
 		if (key === 'cors') webserverOptions.cors = Boolean(value)
 		if (key === 'proxy') webserverOptions.proxy = Boolean(value)
 		if (key === 'dashboard') webserverOptions.dashboard.enabled = Boolean(value)
-		if (key === '404') notFoundPath = String(value).replaceAll('"', '')
+		if (key === '404') notFoundPath = String(value).replace(/"|'+/g, '')
 	}
 
 	const server = new Server(webserverOptions)
-	server.prefix('/').static(path.join(process.cwd(), args[0]), { hideHTML: remHTML, addTypes })
-	if (notFoundPath) server.event('notfound', async(ctr) => {
+	server.prefix('/')
+		.static(path.join(process.cwd(), args[0]), { hideHTML: remHTML, addTypes })
+
+	if (notFoundPath) server.event('notfound', (ctr) => {
 		return ctr.status(404).printFile(path.join(process.cwd(), notFoundPath))
-	}); server.event('request', async(ctr) => {
-		console.log(`${colors.fg.yellow}[RJW] ${colors.fg.gray}[${ctr.url.method}] ${colors.fg.blue, colors.underscore}${ctr.url.href}${colors.reset} FROM ${ctr.client.ip}`)
+	})
+
+	server.event('request', (ctr) => {
+		console.log(`${colors.fg.blue}[INF] ${colors.fg.cyan}[${ctr.url.method}] ${colors.fg.gray}${ctr.url.href}${colors.reset} FROM ${ctr.client.ip}`)
 	})
 
 	server.start().then((res) => {
-		console.log(`${colors.fg.yellow}[RJW] ${colors.reset}Server started on Port ${colors.fg.yellow}${res.port}${colors.reset}`)
+		console.log(`${colors.fg.blue}[INF] ${colors.reset}Server started on Port ${colors.fg.yellow}${res.port}${colors.reset}`)
 	}).catch((err) => {
-		console.log(`${colors.fg.yellow}[RJW] ${colors.reset}Error:`)
-		console.log(`${colors.fg.yellow}[RJW] ${colors.reset}Maybe Port ${colors.fg.yellow}${webserverOptions.port ?? 2023}${colors.reset} isnt available?`)
-		console.error(`${colors.fg.red}[ERR]${colors.reset}`, err.error)
+		console.log(`${colors.fg.blue}[INF] ${colors.fg.red}An Error occurred!`)
+		console.log(`${colors.fg.red}[ERR] ${colors.fg.gray}Maybe Port ${colors.fg.yellow}${webserverOptions.port ?? 2023}${colors.fg.gray} isnt available?`)
+		console.error(`${colors.fg.red}[ERR]${colors.fg.gray}`, err.error)
+
+		process.exit(3)
 	})
 } else if (!isHelp() && !fs.existsSync(path.join(process.cwd(), args[0]))) {
-	console.log(`${colors.fg.yellow}[RJW] ${colors.reset}Error:`)
-	console.log(`Folder ${colors.fg.red, colors.underscore}${path.join(process.cwd(), args[0])}${colors.reset} couldnt be found`)
+	console.log(`${colors.fg.blue}[INF] ${colors.fg.red}An Error occurred!`)
+	console.log(`${colors.fg.red}[ERR] ${colors.fg.gray}Folder ${colors.fg.red, colors.underscore}${path.join(process.cwd(), args[0])}${colors.reset} couldnt be found`)
 }
 
 /** Last Resort */
 else {
-	console.log(`${colors.fg.yellow}[RJW] ${colors.reset}Help:`)
-	console.log(`rjw-srv ${colors.fg.blue}[folder] ${colors.fg.red}[arguments]`)
+	console.log(`${colors.fg.blue}[INF] ${colors.reset}Help`)
+	console.log(`rjw-srv ${colors.fg.blue}[folder]`)
 	console.log('')
-	console.log(`[arguments] ${colors.reset}`)
+	console.log(`${colors.fg.gray}[arguments] ${colors.reset}`)
 	console.log(' --port=2023')
 	console.log(' --compression=gzip')
 	console.log(' --proxy=false')

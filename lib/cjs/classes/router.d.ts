@@ -10,28 +10,9 @@ export interface minifiedRoute {
     /** The Path on which this will be available (+ prefix) */ path: string;
     /** The Async Code to run on a Request */ code: (ctr: Ctr) => Promise<any>;
 }
-export interface minifiedRedirect {
-    /** The Request Method of the Redirect */ method: typesInterface;
-    /** The Path on which this will be available */ path: string;
-    /** The URL which it will send to */ destination: string;
-}
-export interface staticOptions {
-    /**
-     * Whether the files will be loaded into Memory
-     * @default false
-    */ preload?: boolean;
-    /**
-     * Whether .html & .htm endings will be removed automatically
-     * @default false
-    */ remHTML?: boolean;
-    /**
-     * Whether some Content Type Headers will be added automatically
-     * @default true
-    */ addTypes?: boolean;
-}
 export default class RouteList {
     private externals;
-    private authChecks;
+    private validations;
     private statics;
     private routes;
     private events;
@@ -39,13 +20,37 @@ export default class RouteList {
     constructor();
     /**
      * Add a new Event Response
+     * @sync This Function adds an event handler syncronously
+     * @example
+   * ```
+   * // We will log every time a request is made
+   * const controller = new Server({ })
+   *
+   * controller.event('request', (ctr) => {
+     *   console.log(`${ctr.url.method} Request made to ${ctr.url.path}`)
+     * })
+   * ```
      * @since 4.0.0
     */
     event(
     /** The Event Name */ event: Events, 
-    /** The Async Code to run on a Request */ code: (ctr: Ctr) => Promise<any>): number | false;
+    /** The Async Code to run on a Request */ code: (ctr: Ctr) => Promise<any> | any): this;
     /**
      * Add a new Block of Routes with a Prefix
+     * @sync This Function adds a prefix block syncronously
+     * @example
+   * ```
+   * const controller = new Server({ })
+   *
+   * controller.prefix('/')
+   *   .add('GET', '/cool', (ctr) => {
+   *     ctr.print('cool!')
+   *   })
+   *   .prefix('/api')
+   *     .add('GET', '/', (ctr) => {
+   *       ctr.print('Welcome to the API')
+   *     })
+   * ```
      * @since 4.0.0
     */
     prefix(
@@ -60,9 +65,6 @@ export default class RouteList {
         events: Event[];
         routes: Route[];
         statics: Static[];
-        authChecks: {
-            path: string;
-            func: (ctr: Ctr<any, false, any>) => any;
-        }[];
+        validations: ((ctr: Ctr<any, false, any>) => any)[];
     };
 }

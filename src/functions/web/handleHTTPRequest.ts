@@ -176,7 +176,7 @@ export default async function handleHTTPRequest(req: IncomingMessage | Http2Serv
           code: async(ctr) => await statsRoute(ctr, ctg, ctx, ctg.routes.normal.length),
           data: {
             addTypes: false,
-            authChecks: []
+            validations: []
           }
         }; ctx.execute.static = false
         ctx.execute.exists = true
@@ -345,7 +345,7 @@ export default async function handleHTTPRequest(req: IncomingMessage | Http2Serv
         const cache = localOptions?.cache ?? false
 
         // Add Content Types
-        if (addTypes && !contentType) ctr.setHeader('Content-Type', handleContentType(ctx.execute.route.path))
+        if (addTypes && !contentType) ctr.setHeader('Content-Type', handleContentType(file))
         else if (contentType) res.setHeader('Content-Type', contentType)
 
         // Get File Content
@@ -438,10 +438,10 @@ export default async function handleHTTPRequest(req: IncomingMessage | Http2Serv
     }
 
     // Execute Validations
-    if (ctx.execute.exists && ctx.execute.route.data.authChecks.length > 0) {
+    if (ctx.execute.exists && ctx.execute.route.data.validations.length > 0) {
       let doContinue = true, runError = null
-      for (let authNumber = 0; authNumber <= ctx.execute.route.data.authChecks.length - 1; authNumber++) {
-        const authCheck = ctx.execute.route.data.authChecks[authNumber]
+      for (let authNumber = 0; authNumber <= ctx.execute.route.data.validations.length - 1; authNumber++) {
+        const authCheck = ctx.execute.route.data.validations[authNumber]
 
         await Promise.resolve(authCheck(ctr)).then(() => {
           if (!String(res.statusCode).startsWith('2')) {

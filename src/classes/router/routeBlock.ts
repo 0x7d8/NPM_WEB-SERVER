@@ -12,7 +12,7 @@ import path from "path"
 
 export default class RouteBlock {
   private externals: { method: string, object: any }[]
-  private authChecks: { path: string, func: (ctr: Ctr) => Promise<any> | any }[]
+  private validations: ((ctr: Ctr) => Promise<any> | any)[]
   private statics: Static[]
   private routes: Route[]
   private path: string
@@ -20,13 +20,13 @@ export default class RouteBlock {
   /** Generate Route Block */
   constructor(
     /** The Path of the Routes */ path: string,
-    /** The Authchecks to add */ authChecks?: { path: string, func: (ctr: Ctr) => Promise<any> | any }[]
+    /** The Validations to add */ validations?: ((ctr: Ctr) => Promise<any> | any)[]
   ) {
     this.path = pathParser(path)
     this.routes = []
     this.statics = []
 
-    this.authChecks = authChecks || []
+    this.validations = validations || []
 		this.externals = []
   }
 
@@ -54,7 +54,7 @@ export default class RouteBlock {
 	validate(
 		/** The Function to Validate thr Request */ code: (ctr: Ctr) => Promise<any> | any
 	) {
-		this.authChecks.push({ path: this.path, func: code })
+		this.validations.push(code)
 
 		return this
 	}
@@ -99,7 +99,7 @@ export default class RouteBlock {
 			code: code,
 			data: {
 				addTypes: false,
-        authChecks: this.authChecks.map((check) => check.func)
+        validations: this.validations
 			}
 		})
 
@@ -132,7 +132,7 @@ export default class RouteBlock {
 			code: (ctr) => ctr.redirect(redirect),
       data: {
 				addTypes: false,
-        authChecks: this.authChecks.map((check) => check.func)
+        validations: this.validations
 			}
 		})
 
@@ -180,7 +180,7 @@ export default class RouteBlock {
       location: folder,
 			data: {
 				addTypes, hideHTML,
-        authChecks: this.authChecks.map((check) => check.func)
+        validations: this.validations
 			}
 		})
 
@@ -222,7 +222,7 @@ export default class RouteBlock {
 				code: route.code,
 				data: {
 					addTypes: false,
-          authChecks: this.authChecks.map((check) => check.func)
+          validations: this.validations
 				}
 			})
 		}
@@ -267,7 +267,7 @@ export default class RouteBlock {
 				code: route.code,
 				data: {
 					addTypes: false,
-          authChecks: this.authChecks.map((check) => check.func)
+          validations: this.validations
 				}
 			})
 		}
@@ -277,13 +277,26 @@ export default class RouteBlock {
 
   /**
 	 * Add a new Block of Routes with a Prefix
-   * @sync This Function adds a sub-route block syncronously
+   * @sync This Function adds a prefix block syncronously
+   * @example
+   * ```
+   * const controller = new Server({ })
+   * 
+   * controller.prefix('/')
+   *   .add('GET', '/cool', (ctr) => {
+   *     ctr.print('cool!')
+   *   })
+   *   .prefix('/api')
+   *     .add('GET', '/', (ctr) => {
+   *       ctr.print('Welcome to the API')
+   *     })
+   * ```
 	 * @since 4.0.0
 	*/
 	prefix(
 		/** The Path Prefix */ prefix: string
 	) {
-		const routeBlock = new RouteBlock(this.path + '/' + prefix ?? '/', this.authChecks)
+		const routeBlock = new RouteBlock(this.path + '/' + prefix ?? '/', this.validations)
 		this.externals.push({ method: 'get', object: routeBlock })
 
 		return routeBlock
@@ -303,6 +316,10 @@ export default class RouteBlock {
       this.statics.push(...result.statics)
 		}
 
-		return { routes: this.routes, statics: this.statics, authChecks: this.authChecks }
+		return {
+      routes: this.routes,
+      statics: this.statics,
+      validations: this.validations
+    }
   }
 }
