@@ -199,15 +199,6 @@ export default async function handleHTTPRequest(req: IncomingMessage | Http2Serv
         ctg.cache.routes.set(`route::normal::${ctx.url.pathname}`, { route: url, params: {} })
 
         break
-      }; if (url.path === ctx.url.pathname && url.method === 'STATIC') {
-        ctx.execute.route = url
-        ctx.execute.static = true
-        ctx.execute.exists = true
-
-        // Set Cache
-        ctg.cache.routes.set(`route::normal::${ctx.url.pathname}`, { route: url, params: {} })
-
-        break
       }
 
       // Check Parameters
@@ -350,7 +341,7 @@ export default async function handleHTTPRequest(req: IncomingMessage | Http2Serv
 
         // Get File Content
         let stream: fs.ReadStream, errorStop = false
-        if (ctr.headers.get('accept-encoding').includes(CompressMapping[ctg.options.compression])) {
+        if (ctr.headers.get('accept-encoding', '').includes(CompressMapping[ctg.options.compression])) {
           ctr.rawRes.setHeader('Content-Encoding', CompressMapping[ctg.options.compression])
           ctr.rawRes.setHeader('Vary', 'Accept-Encoding')
 
@@ -493,7 +484,7 @@ export default async function handleHTTPRequest(req: IncomingMessage | Http2Serv
 
         // Get File Content
         let stream: fs.ReadStream, errorStop = false
-        if (ctg.options.compression && String(ctr.headers.get('accept-encoding')).includes(CompressMapping[ctg.options.compression])) {
+        if (ctg.options.compression && ctr.headers.get('accept-encoding', '').includes(CompressMapping[ctg.options.compression])) {
           ctr.rawRes.setHeader('Content-Encoding', CompressMapping[ctg.options.compression])
           ctr.rawRes.setHeader('Vary', 'Accept-Encoding')
 

@@ -2,8 +2,9 @@ import * as ServerEvents from "../interfaces/serverEvents"
 import { GlobalContext } from "../interfaces/context"
 import ValueCollection from "./valueCollection"
 import ServerOptions, { Options } from "./serverOptions"
-import RouteList from "./router"
+import RouteList, { minifiedRoute, pathParser } from "./router"
 import handleHTTPRequest, { getPreviousHours } from "../functions/web/handleHTTPRequest"
+import { getAllFilesFilter } from "../misc/getAllFiles"
 
 import http2 from "http2"
 import http from "http"
@@ -72,7 +73,7 @@ export default class Webserver extends RouteList {
       })
     } else this.server = new http.Server()
 
-    this.server.on('request', async(req, res) => Promise.resolve(handleHTTPRequest(req, res, this.globalContext)))
+    this.server.on('request', (req, res) => handleHTTPRequest(req, res, this.globalContext))
 
     // Stats Cleaner
     setInterval(() => {
@@ -95,11 +96,20 @@ export default class Webserver extends RouteList {
 
   /** Start the Server */
   start() {
-    this.globalContext.routes.normal = this.getRoutes().routes
-    this.globalContext.routes.event = this.getRoutes().events
-    this.globalContext.routes.static = this.getRoutes().statics
-    this.server.listen(this.globalContext.options.port, this.globalContext.options.bind)
-		return new Promise((resolve: (value: ServerEvents.StartSuccess) => void, reject: (reason: ServerEvents.StartError) => void) => {
+    return new Promise(async(resolve: (value: ServerEvents.StartSuccess) => void, reject: (reason: ServerEvents.StartError) => void) => {
+      let stopExecution = false
+      await this.loadExternalPaths().catch((error) => {
+        reject({ success: false, error, message: 'WEBSERVER ERRORED' })
+        stopExecution = true
+      })
+
+      if (stopExecution) return
+
+      this.globalContext.routes.normal = this.routes
+      this.globalContext.routes.event = this.events
+      this.globalContext.routes.static = this.statics
+
+      this.server.listen(this.globalContext.options.port, this.globalContext.options.bind)
 			this.server.once('listening', () => resolve({ success: true, port: this.globalContext.options.port, message: 'WEBSERVER STARTED' }))
 			this.server.once('error', (error: Error) => { this.server.close(); reject({ success: false, error, message: 'WEBSERVER ERRORED' }) })
 		})
@@ -111,9 +121,13 @@ export default class Webserver extends RouteList {
   ) {
     this.globalContext.cache.files.clear()
     this.globalContext.cache.routes.clear()
-    this.globalContext.routes.normal = this.getRoutes().routes
-    this.globalContext.routes.event = this.getRoutes().events
-    this.globalContext.routes.static = this.getRoutes().statics
+
+    await this.loadExternalPaths()
+
+    this.globalContext.routes.normal = this.routes
+    this.globalContext.routes.event = this.events
+    this.globalContext.routes.static = this.statics
+
     this.globalContext.data = {
       incoming: {
         total: 0,
@@ -153,9 +167,11 @@ export default class Webserver extends RouteList {
     this.server.close()
     this.globalContext.cache.files.clear()
     this.globalContext.cache.routes.clear()
-    this.globalContext.routes.normal = this.getRoutes().routes
-    this.globalContext.routes.event = this.getRoutes().events
-    this.globalContext.routes.static = this.getRoutes().statics
+
+    this.globalContext.routes.normal = this.routes
+    this.globalContext.routes.event = this.events
+    this.globalContext.routes.static = this.statics
+
     this.globalContext.data = {
       incoming: {
         total: 0,
@@ -186,5 +202,54 @@ export default class Webserver extends RouteList {
 			this.server.once('close', () => resolve({ success: true, message: 'WEBSERVER CLOSED' }))
 			this.server.once('error', (error: Error) => reject({ success: false, error, message: 'WEBSERVER CLOSING ERRORED' }))
 		})
+  }
+
+
+  private async loadExternalPaths() {
+    for (const loadPath of this.loadPaths) {
+      if (loadPath.type === 'cjs') {
+        for (const file of getAllFilesFilter(loadPath.path, 'js')) {
+          const route: minifiedRoute = require(file)
+
+          if (
+            !('method' in route) ||
+            !('path' in route) ||
+            !('code' in route)
+          ) throw new Error(`Invalid Route at ${file}`)
+
+          this.routes.push({
+            method: route.method,
+            path: loadPath.prefix + pathParser(route.path),
+            pathArray: (loadPath.prefix + pathParser(route.path)).split('/'),
+            code: route.code,
+            data: {
+              addTypes: false,
+              validations: loadPath.validations
+            }
+          })
+        }
+      } else {
+        for (const file of getAllFilesFilter(loadPath.path, 'js')) {
+          const route: minifiedRoute = (await import(file)).default
+
+          if (
+            !('method' in route) ||
+            !('path' in route) ||
+            !('code' in route)
+          ) throw new Error(`Invalid Route at ${file}`)
+
+          this.routes.push({
+            method: route.method,
+            path: loadPath.prefix + pathParser(route.path),
+            pathArray: (loadPath.prefix + pathParser(route.path)).split('/'),
+            code: route.code,
+            data: {
+              addTypes: false,
+              validations: loadPath.validations
+            }
+          })
+        }
+      }
+    }
   }
 }

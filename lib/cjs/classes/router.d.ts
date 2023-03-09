@@ -1,21 +1,21 @@
-import { Types as typesInterface } from "../interfaces/methods";
 import Route from "../interfaces/route";
+import { ExternalRouter, LoadPath, Routed, HTTPMethods } from "src/interfaces/general";
 import Event, { Events } from "../interfaces/event";
 import Static from "../interfaces/static";
-import Ctr from "../interfaces/ctr";
 import RouteBlock from "./router/routeBlock";
 export declare const pathParser: (path: string, removeSingleSlash?: boolean) => string;
 export interface minifiedRoute {
-    /** The Request Method of the Route */ method: typesInterface;
+    /** The Request Method of the Route */ method: HTTPMethods;
     /** The Path on which this will be available (+ prefix) */ path: string;
-    /** The Async Code to run on a Request */ code: (ctr: Ctr) => Promise<any>;
+    /** The Async Code to run on a Request */ code: Routed;
 }
 export default class RouteList {
-    private externals;
-    private validations;
-    private statics;
-    private routes;
-    private events;
+    protected externals: ExternalRouter[];
+    protected validations: Routed[];
+    protected loadPaths: LoadPath[];
+    protected statics: Static[];
+    protected routes: Route[];
+    protected events: Event[];
     /** List of Routes */
     constructor();
     /**
@@ -34,7 +34,7 @@ export default class RouteList {
     */
     event(
     /** The Event Name */ event: Events, 
-    /** The Async Code to run on a Request */ code: (ctr: Ctr) => Promise<any> | any): this;
+    /** The Async Code to run on a Request */ code: Routed): this;
     /**
      * Add a new Block of Routes with a Prefix
      * @sync This Function adds a prefix block syncronously
@@ -65,6 +65,7 @@ export default class RouteList {
         events: Event[];
         routes: Route[];
         statics: Static[];
-        validations: ((ctr: Ctr<any, false, any>) => any)[];
+        loadPaths: LoadPath[];
+        validations: Routed[];
     };
 }

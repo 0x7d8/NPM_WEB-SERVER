@@ -1,17 +1,17 @@
-import { Types as typesInterface } from "../../interfaces/methods";
+import { ExternalRouter, LoadPath, Routed, HTTPMethods } from "../../interfaces/general";
 import Static from "../../interfaces/static";
 import Route from "../../interfaces/route";
-import Ctr from "../../interfaces/ctr";
 export default class RouteBlock {
-    private externals;
-    private validations;
-    private statics;
-    private routes;
-    private path;
+    protected externals: ExternalRouter[];
+    protected validations: Routed[];
+    protected loadPaths: LoadPath[];
+    protected statics: Static[];
+    protected routes: Route[];
+    protected path: string;
     /** Generate Route Block */
     constructor(
     /** The Path of the Routes */ path: string, 
-    /** The Validations to add */ validations?: ((ctr: Ctr) => Promise<any> | any)[]);
+    /** The Validations to add */ validations?: Routed[]);
     /**
      * (Sync) Add Validation
      * @sync This Function adds Validation Syncronously
@@ -34,7 +34,7 @@ export default class RouteBlock {
      * @since 3.2.1
     */
     validate(
-    /** The Function to Validate thr Request */ code: (ctr: Ctr) => Promise<any> | any): this;
+    /** The Function to Validate thr Request */ code: Routed): this;
     /**
      * (Sync) Add a Route
      * @sync This Function adds a Route Syncronously
@@ -61,9 +61,9 @@ export default class RouteBlock {
      * @since 3.1.0
     */
     add(
-    /** The Request Method */ method: typesInterface, 
+    /** The Request Method */ method: HTTPMethods, 
     /** The Path on which this will be available */ path: string, 
-    /** The Async Code to run on a Request */ code: (ctr: Ctr) => Promise<any> | any): this;
+    /** The Async Code to run on a Request */ code: Routed): this;
     /**
      * (Sync) Add a Redirect
      * @sync This Function adds a Redirect Syncronously
@@ -174,6 +174,7 @@ export default class RouteBlock {
     get(): {
         routes: Route[];
         statics: Static[];
-        validations: ((ctr: Ctr<any, false, any>) => any)[];
+        loadPaths: LoadPath[];
+        validations: Routed[];
     };
 }

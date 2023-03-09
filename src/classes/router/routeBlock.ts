@@ -1,30 +1,29 @@
-import { getAllFiles, getAllFilesFilter } from "../../misc/getAllFiles"
-import { Types as typesInterface } from "../../interfaces/methods"
+import { ExternalRouter, LoadPath, Routed, HTTPMethods } from "../../interfaces/general"
 import Static from "../../interfaces/static"
 import Route from "../../interfaces/route"
 import { pathParser } from "../router"
-import Ctr from "../../interfaces/ctr"
-import { minifiedRoute } from "../router"
 import types from "../../misc/methods"
 
-import requireESM from "require-esm-in-cjs"
 import path from "path"
+import fs from "fs"
 
 export default class RouteBlock {
-  private externals: { method: string, object: any }[]
-  private validations: ((ctr: Ctr) => Promise<any> | any)[]
-  private statics: Static[]
-  private routes: Route[]
-  private path: string
+  protected externals: ExternalRouter[]
+  protected validations: Routed[]
+  protected loadPaths: LoadPath[]
+  protected statics: Static[]
+  protected routes: Route[]
+  protected path: string
 
   /** Generate Route Block */
   constructor(
     /** The Path of the Routes */ path: string,
-    /** The Validations to add */ validations?: ((ctr: Ctr) => Promise<any> | any)[]
+    /** The Validations to add */ validations?: Routed[]
   ) {
     this.path = pathParser(path)
     this.routes = []
     this.statics = []
+    this.loadPaths = []
 
     this.validations = validations || []
 		this.externals = []
@@ -52,7 +51,7 @@ export default class RouteBlock {
    * @since 3.2.1
   */
 	validate(
-		/** The Function to Validate thr Request */ code: (ctr: Ctr) => Promise<any> | any
+		/** The Function to Validate thr Request */ code: Routed
 	) {
 		this.validations.push(code)
 
@@ -85,9 +84,9 @@ export default class RouteBlock {
    * @since 3.1.0
   */
 	add(
-		/** The Request Method */ method: typesInterface,
+		/** The Request Method */ method: HTTPMethods,
 		/** The Path on which this will be available */ path: string,
-		/** The Async Code to run on a Request */ code: (ctr: Ctr) => Promise<any> | any
+		/** The Async Code to run on a Request */ code: Routed
 	) {
 		if (!types.includes(method)) throw TypeError(`No Valid Request Type: ${method}, Possible Values: ${types.join(', ')}`)
 		if (this.routes.some((obj) => (obj.method === method && obj.path === pathParser(path)))) return this
@@ -203,29 +202,14 @@ export default class RouteBlock {
 	loadCJS(
 		/** The Folder which will be used */ folder: string,
 	) {
-    const files = getAllFilesFilter(folder, 'js')
+    if (!fs.existsSync(path.resolve(folder))) throw Error('The CJS Function folder wasnt found!')
 
-		for (const file of files) {
-			const route: minifiedRoute = require(path.resolve(file))
-
-			if (
-				!('path' in route) ||
-				!('method' in route) ||
-				!('code' in route)
-			) continue
-			if (!types.includes(route.method)) throw TypeError(`No Valid Request Type: ${route.method}, Possible Values: ${types.join(', ')}`)
-
-			this.routes.push({
-				method: route.method,
-				path: pathParser(this.path + route.path),
-				pathArray: pathParser(this.path + route.path).split('/'),
-				code: route.code,
-				data: {
-					addTypes: false,
-          validations: this.validations
-				}
-			})
-		}
+    this.loadPaths.push({
+      path: path.resolve(folder),
+      prefix: this.path,
+      type: 'cjs',
+      validations: this.validations
+    })
 
 		return this
 	}
@@ -247,30 +231,14 @@ export default class RouteBlock {
 	loadESM(
 		/** The Folder which will be used */ folder: string,
 	) {
-    const files = getAllFilesFilter(folder, 'js')
+    if (!fs.existsSync(path.resolve(folder))) throw Error('The ESM Function folder wasnt found!')
 
-		for (const file of files) {
-			const route: minifiedRoute = requireESM(path.resolve(file))
-
-			if (
-        route &&
-				!('path' in route) ||
-				!('method' in route) ||
-				!('code' in route)
-			) continue
-			if (!types.includes(route.method)) throw TypeError(`No Valid Request Type: ${route.method}, Possible Values: ${types.join(', ')}`)
-
-			this.routes.push({
-				method: route.method,
-				path: pathParser(this.path + route.path),
-				pathArray: pathParser(this.path + route.path).split('/'),
-				code: route.code,
-				data: {
-					addTypes: false,
-          validations: this.validations
-				}
-			})
-		}
+    this.loadPaths.push({
+      path: path.resolve(folder),
+      prefix: this.path,
+      type: 'esm',
+      validations: this.validations
+    })
 
 		return this
 	}
@@ -314,11 +282,13 @@ export default class RouteBlock {
 			const result = external.object[external.method]()
 			this.routes.push(...result.routes)
       this.statics.push(...result.statics)
+      this.loadPaths.push(...result.loadPaths)
 		}
 
 		return {
       routes: this.routes,
       statics: this.statics,
+      loadPaths: this.loadPaths,
       validations: this.validations
     }
   }

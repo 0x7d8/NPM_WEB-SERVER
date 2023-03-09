@@ -21,4 +21,5 @@ export default class Webserver extends RouteList {
     /** Whether to restart the HTTP Server itself */ restartHTTP?: boolean): Promise<this>;
     /** Stop the Server */
     stop(): Promise<ServerEvents.StopSuccess>;
+    private loadExternalPaths;
 }

@@ -1,11 +1,11 @@
 import { IncomingMessage, ServerResponse } from "http"
 import { Http2ServerRequest, Http2ServerResponse } from "http2"
 import valueCollection from "../classes/valueCollection"
+import { HTTPMethods } from "./general"
 import ServerController from "../classes/webServer"
 import { UrlWithStringQuery } from "url"
-import { Types } from "./methods"
 
-interface printOptions {
+export interface PrintOptions {
 	/**
 	 * The Content Type to use
 	 * @default ""
@@ -16,7 +16,7 @@ interface printOptions {
 	*/ returnFunctions?: boolean
 }
 
-interface printFileOptions {
+export interface PrintFileOptions {
 	/**
 	 * Whether some Content Type Headers will be added automatically
 	 * @default true
@@ -46,7 +46,7 @@ export default interface Ctr<Custom = any, HasError = false, Body = any> {
 	}
 
 	/** The Request Body (JSON Automatically parsed) */ readonly body: Body
-	/** The Requested URL */ readonly url: UrlWithStringQuery & { method: Types }
+	/** The Requested URL */ readonly url: UrlWithStringQuery & { method: HTTPMethods }
 
 	/** The Raw HTTP Server Req Variable */ rawReq: IncomingMessage | Http2ServerRequest
 	/** The Raw HTTP Server Res Variable */ rawRes: ServerResponse | Http2ServerResponse
@@ -57,8 +57,8 @@ export default interface Ctr<Custom = any, HasError = false, Body = any> {
 	/** Set a Custom Variable */ setCustom: <Type extends keyof Custom>(name: Type, value: Custom[Type]) => Ctr
 	/** The Request Status to Send */ status: (code: number) => Ctr
 	/** Redirect a Client to another URL */ redirect: (location: string, statusCode?: 301 | 302) => Ctr
-	/** Print a Message to the Client (automatically Formatted) */ print: (msg: any, options?: printOptions) => Ctr
-	/** Print the Content of a File to the Client */ printFile: (path: string, options?: printFileOptions) => Ctr
+	/** Print a Message to the Client (automatically Formatted) */ print: (msg: any, options?: PrintOptions) => Ctr
+	/** Print the Content of a File to the Client */ printFile: (path: string, options?: PrintFileOptions) => Ctr
 
 	/** Custom Variables that are Global */ '@': Custom
 }

@@ -9,7 +9,8 @@ export default class ValueCollection<Key extends string | number | symbol = stri
     /** The Key to check */ key: Key): boolean;
     /** Get a Key */
     get(
-    /** The Key to get */ key: Key): Value;
+    /** The Key to get */ key: Key, 
+    /** The Fallback Value */ fallback?: Value): Value | undefined;
     /** Set a Key */
     set(
     /** The Key to set */ key: Key, 

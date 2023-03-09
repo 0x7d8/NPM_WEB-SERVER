@@ -1,8 +1,7 @@
-import { Types as typesInterface } from "../interfaces/methods"
 import Route from "../interfaces/route"
+import { ExternalRouter, LoadPath, Routed, HTTPMethods } from "src/interfaces/general"
 import Event, { Events } from "../interfaces/event"
 import Static from "../interfaces/static"
-import Ctr from "../interfaces/ctr"
 
 import RouteBlock from "./router/routeBlock"
 
@@ -17,23 +16,25 @@ export const pathParser = (path: string, removeSingleSlash?: boolean) => {
 }
 
 export interface minifiedRoute {
-	/** The Request Method of the Route */ method: typesInterface
+	/** The Request Method of the Route */ method: HTTPMethods
 	/** The Path on which this will be available (+ prefix) */ path: string
-	/** The Async Code to run on a Request */ code: (ctr: Ctr) => Promise<any>
+	/** The Async Code to run on a Request */ code: Routed
 }
 
 export default class RouteList {
-	private externals: { method: string, object: any }[]
-	private validations: ((ctr: Ctr) => Promise<any> | any)[]
-	private statics: Static[]
-  private routes: Route[]
-	private events: Event[]
+	protected externals: ExternalRouter[]
+	protected validations: Routed[]
+	protected loadPaths: LoadPath[]
+	protected statics: Static[]
+  protected routes: Route[]
+	protected events: Event[]
 
 	/** List of Routes */
 	constructor() {
 		this.routes = []
 		this.events = []
 		this.statics = []
+		this.loadPaths = []
 		this.validations = []
 
 		this.externals = []
@@ -55,7 +56,7 @@ export default class RouteList {
 	*/
 	event(
 		/** The Event Name */ event: Events,
-		/** The Async Code to run on a Request */ code: (ctr: Ctr) => Promise<any> | any
+		/** The Async Code to run on a Request */ code: Routed
 	) {
 		if (this.events.some((obj) => (obj.event === event))) return this
 
@@ -104,6 +105,7 @@ export default class RouteList {
 			const result = external.object[external.method]()
 			this.routes.push(...result.routes)
       this.statics.push(...result.statics)
+			this.loadPaths.push(...result.loadPaths)
 			this.validations.push(...result.validations)
 		}
 
@@ -111,6 +113,7 @@ export default class RouteList {
 			events: this.events,
 			routes: this.routes,
 			statics: this.statics,
+			loadPaths: this.loadPaths,
 			validations: this.validations
 		}
   }

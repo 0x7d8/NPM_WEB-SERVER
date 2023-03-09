@@ -1,6 +1,6 @@
 import valueCollection from "src/classes/valueCollection"
 import ServerController from "src/classes/webServer"
-import typesEnum from "../interfaces/methods"
+import { HTTPMethods } from "./general"
 import Route from "../interfaces/route"
 import Event from "../interfaces/event"
 import { EventEmitter } from "stream"
@@ -56,6 +56,6 @@ export interface RequestContext {
 		/** Parsed Body */ parsed: any
 	}
 
-	/** The Request URL */ url: UrlWithStringQuery & { method: typesEnum }
+	/** The Request URL */ url: UrlWithStringQuery & { method: HTTPMethods }
 	/** Previous Hour Object */ previousHours: number[]
 }
