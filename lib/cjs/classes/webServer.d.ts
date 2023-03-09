@@ -23,5 +23,6 @@ export default class Webserver extends RouteList {
      * Stop the Server
     */
     stop(): Promise<ServerEvents.StopSuccess>;
+    /** Load all External Paths */
     private loadExternalPaths;
 }

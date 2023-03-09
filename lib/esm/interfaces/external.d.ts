@@ -59,10 +59,10 @@ export interface HTTPRequestContext<Custom = {}, Body = any> {
     /** Print the Content of a File to the Client */ printFile: (path: string, options?: PrintFileOptions) => HTTPRequestContext;
     /** Custom Variables that are Global */ '@': Custom;
 }
-export interface RouteFile {
+export interface RouteFile<Custom = {}, Body = any> {
     /** The Request Method of the Route */ method: HTTPMethods;
     /** The Request Path of the Route */ path: string;
-    /** The Code to run on the Request */ code: Routed;
+    /** The Code to run on the Request */ code: (ctr: HTTPRequestContext<Custom, Body>) => Promise<any> | any;
 }
 export interface Event {
     /** The Name of The Event */ event: Events;

@@ -207,6 +207,7 @@ export default class Webserver extends RouteList {
   }
 
 
+  /** Load all External Paths */
   private async loadExternalPaths() {
     for (const loadPath of this.loadPaths) {
       if (loadPath.type === 'cjs') {
