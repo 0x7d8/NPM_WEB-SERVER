@@ -51,9 +51,9 @@ Interface for ctr Object
 ```ts
 import { Ctr } from "rjweb-server/interfaces"
 
-const routes = new webserver.routeList()
+const server = new Server({ })
 
-routes.routeBlock('/')
+server.prefix('/')
   .add('GET', '/hello', async(ctr: Ctr) => {
     if (!ctr.queries.has("name")) return ctr.print('please supply the name query!!')
 

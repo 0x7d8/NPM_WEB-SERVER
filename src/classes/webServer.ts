@@ -105,9 +105,9 @@ export default class Webserver extends RouteList {
 
       if (stopExecution) return
 
-      this.globalContext.routes.normal = this.routes
-      this.globalContext.routes.event = this.events
-      this.globalContext.routes.static = this.statics
+      this.globalContext.routes.normal = this.getRoutes().routes
+      this.globalContext.routes.event = this.getRoutes().events
+      this.globalContext.routes.static = this.getRoutes().statics
 
       this.server.listen(this.globalContext.options.port, this.globalContext.options.bind)
 			this.server.once('listening', () => resolve({ success: true, port: this.globalContext.options.port, message: 'WEBSERVER STARTED' }))
@@ -124,9 +124,9 @@ export default class Webserver extends RouteList {
 
     await this.loadExternalPaths()
 
-    this.globalContext.routes.normal = this.routes
-    this.globalContext.routes.event = this.events
-    this.globalContext.routes.static = this.statics
+    this.globalContext.routes.normal = this.getRoutes().routes
+    this.globalContext.routes.event = this.getRoutes().events
+    this.globalContext.routes.static = this.getRoutes().statics
 
     this.globalContext.data = {
       incoming: {
@@ -168,9 +168,9 @@ export default class Webserver extends RouteList {
     this.globalContext.cache.files.clear()
     this.globalContext.cache.routes.clear()
 
-    this.globalContext.routes.normal = this.routes
-    this.globalContext.routes.event = this.events
-    this.globalContext.routes.static = this.statics
+    this.globalContext.routes.normal = this.getRoutes().routes
+    this.globalContext.routes.event = this.getRoutes().events
+    this.globalContext.routes.static = this.getRoutes().statics
 
     this.globalContext.data = {
       incoming: {
