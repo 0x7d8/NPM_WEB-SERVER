@@ -73,6 +73,10 @@ export interface Options {
 		[key: string]: string | number
 	}
 
+	/** Content-Type Settings */ contentTypes?: {
+		[fileEnding: string]: string
+	}
+
 	/**
 	 * Where the Server should bind to
 	 * @default "0.0.0.0"
@@ -123,6 +127,7 @@ export default class ServerOptions {
 				enabled: false,
 				path: '/rjweb-dashboard'
 			}, headers: {},
+			contentTypes: {},
 			bind: '0.0.0.0',
       proxy: false,
 			compression: 'none',

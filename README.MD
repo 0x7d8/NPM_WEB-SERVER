@@ -1,4 +1,4 @@
-<h1 align="center">Welcome to rjweb-server v3 👋</h1>
+<h1 align="center">Welcome to rjweb-server v4 👋</h1>
 <div align="center">
   <a href="https://www.npmjs.com/package/rjweb-server" target="_blank">
     <img alt="Version" src="https://img.shields.io/npm/v/rjweb-server.svg">
@@ -66,14 +66,13 @@ server.prefix('/')
 Custom Properties in Ctr Object
 (This also works in JavaScript, just remove the interface logic)
 ```ts
-import { Server } from "rjweb-server"
-import { Ctr as ctrPreset, CtrFile as ctrFilePreset } from "rjweb-server/interfaces"
+import { Server, HTTPRequestContext, RouteFile } from "rjweb-server"
 interface Custom {
   count: number
 }
 
-interface ctr<HasError = false, Body = any> extends ctrPreset<Custom, HasError, Body> {}
-interface ctrFile<Body = any> extends ctrFilePreset<Custom, Body> {}
+interface Ctr<Body = any> extends HTTPRequestContext<Custom, Body> {}
+interface CtrFile<Body = any> extends RouteFile<Custom, Body> {}
 
 const server = new Server({
   bind: '0.0.0.0', // The IP thats bound to
@@ -81,20 +80,18 @@ const server = new Server({
 })
 
 server.prefix('/')
-  .add('GET', '/hello', async(ctr: ctr) => {
+  .add('GET', '/hello', async(ctr: Ctr) => {
     if (!ctr.queries.has("name")) return ctr.print('please supply the name queries!!')
 
     return ctr.print(`Hello, ${ctr.queries.get("name")}! You are Visit nr.${ctr['@'].count}`)
   })
 
 let count = 0
-server.event('request', async(ctr: ctr) => {
+server.event('request', async(ctr: Ctr) => {
   ctr.setCustom('count', ++count) 
 
   console.log(`request made to ${decodeURI(ctr.url.pathname)} by ${ctr.client.ip}`)
-})
-
-server.event('error', async(ctr: ctr<true>) => {
+}).event('error', async(ctr: Ctr) => {
   console.log(`error on path ${decodeURI(ctr.url.pathname)}!!!`)
   console.error(ctr.error.stack)
 
@@ -109,7 +106,8 @@ server.start().then((s) => {
 
 Function File
 ```ts
-import { Ctr as ctrPreset, CtrFile as ctrFilePreset } from "rjweb-server/interfaces"
+import { HTTPRequestContext, RouteFile } from "rjweb-server/interfaces"
+
 interface Custom {
   count: number
 } // You should import / export this Interface Stuff (look examples section)
@@ -118,8 +116,8 @@ interface Body {
   username?: string
 }
 
-interface ctr<HasError = false, Body = any> extends CtrPreset<Custom, HasError, Body> {}
-interface ctrFile<Body = any> extends CtrFilePreset<Custom, Body> {}
+interface Ctr<Body = any> extends HTTPRequestContext<Custom, Body> {}
+interface CtrFile<Body = any> extends RouteFile<Custom, Body> {}
 
 export = {
   method: 'POST',
@@ -130,7 +128,7 @@ export = {
 
     ctr.status(204).print(ctr.body.username)
   }
-} as ctrFile<Body>
+} as CtrFile<Body>
 ```
 
 ## Usage
@@ -280,6 +278,26 @@ const server = new Server({
   proxy: true, // If enabled, alternate IPs will be shown
   headers: { // List of Headers to add to every request
     "im-a-header": 'im a value'
+  }
+})
+
+server.start().then((s) => {
+  console.log(`server started on port ${s.port}`)
+})
+```
+
+Override Content-Types
+```js
+const { Server } = require('rjweb-server')
+
+const server = new Server({
+  bind: '0.0.0.0', // The IP thats bound to
+  cors: false, // If Cors Headers will be added
+  port: 5000, // The Port which the Server runs on
+  proxy: true, // If enabled, alternate IPs will be shown
+  contentTypes: { // List of File endings and content types to add
+    jsn: 'application/json',
+    jn: 'application/json',
   }
 })
 
@@ -446,7 +464,7 @@ server.start().then((s) => {
 
 Making a function File
 ```js
-/** @type {import('rjweb-server/interfaces').CtrFile} */
+/** @type {import('rjweb-server').RouteFile} */
 module.exports = {
   method: 'GET',
   path: '/say/<word>',

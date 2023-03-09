@@ -1,6 +1,7 @@
 import Route from "../interfaces/route";
-import { ExternalRouter, LoadPath, Routed, HTTPMethods } from "src/interfaces/general";
-import Event, { Events } from "../interfaces/event";
+import { ExternalRouter, LoadPath, Routed, HTTPMethods } from "../interfaces/internal";
+import { Event } from "../interfaces/external";
+import { Events } from "../interfaces/internal";
 import Static from "../interfaces/static";
 import RouteBlock from "./router/routeBlock";
 export declare const pathParser: (path: string, removeSingleSlash?: boolean) => string;

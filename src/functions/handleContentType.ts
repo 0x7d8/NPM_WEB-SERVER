@@ -1,4 +1,10 @@
-export default function handleContentType(name: string) {
+import { GlobalContext } from "../interfaces/context"
+
+export default function handleContentType(name: string, ctg: GlobalContext) {
+  for (const contentType of Object.keys(ctg.options.contentTypes)) {
+    if (name.endsWith(contentType)) return ctg.options.contentTypes[contentType]  
+  }
+
   if (name.endsWith('.pdf')) return 'application/pdf'
   if (name.endsWith('.js')) return 'text/javascript'
   if (name.endsWith('.html')) return 'text/html'

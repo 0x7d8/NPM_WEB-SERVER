@@ -87,7 +87,7 @@ export default class Webserver extends RouteList {
 
   /** Set new Options for the Server */
   setOptions(
-    /** The Options */ options: Partial<Options>
+    /** The Options */ options: Options
   ) {
     this.globalContext.options = new ServerOptions(options).getOptions()
 
@@ -162,7 +162,9 @@ export default class Webserver extends RouteList {
     return this
   }
 
-  /** Stop the Server */
+  /**
+   * Stop the Server
+  */
   stop() {
     this.server.close()
     this.globalContext.cache.files.clear()
@@ -218,12 +220,12 @@ export default class Webserver extends RouteList {
           ) throw new Error(`Invalid Route at ${file}`)
 
           this.routes.push({
+            type: 'route',
             method: route.method,
             path: loadPath.prefix + pathParser(route.path),
             pathArray: (loadPath.prefix + pathParser(route.path)).split('/'),
             code: route.code,
             data: {
-              addTypes: false,
               validations: loadPath.validations
             }
           })
@@ -239,12 +241,12 @@ export default class Webserver extends RouteList {
           ) throw new Error(`Invalid Route at ${file}`)
 
           this.routes.push({
+            type: 'route',
             method: route.method,
             path: loadPath.prefix + pathParser(route.path),
             pathArray: (loadPath.prefix + pathParser(route.path)).split('/'),
             code: route.code,
             data: {
-              addTypes: false,
               validations: loadPath.validations
             }
           })

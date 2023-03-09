@@ -67,6 +67,9 @@ export interface Options {
     /** Header Settings */ headers?: {
         [key: string]: string | number;
     };
+    /** Content-Type Settings */ contentTypes?: {
+        [fileEnding: string]: string;
+    };
     /**
      * Where the Server should bind to
      * @default "0.0.0.0"

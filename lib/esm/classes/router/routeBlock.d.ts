@@ -1,4 +1,4 @@
-import { ExternalRouter, LoadPath, Routed, HTTPMethods } from "../../interfaces/general";
+import { ExternalRouter, LoadPath, Routed, HTTPMethods } from "../../interfaces/internal";
 import Static from "../../interfaces/static";
 import Route from "../../interfaces/route";
 export default class RouteBlock {
@@ -102,7 +102,7 @@ export default class RouteBlock {
     */
     static(
     /** The Folder which will be used */ folder: string, 
-    /** Additional Configuration for Serving */ options: {
+    /** Additional Configuration for Serving */ options?: {
         /**
          * Automatically add Content-Type to some file endings
          * @default true
@@ -116,7 +116,7 @@ export default class RouteBlock {
     }): this;
     /**
      * (Sync) Load CJS Route Files
-     * @sync This Function loads the route files Syncronously
+     * @sync This Function schedules the route files to load Syncronously
      * @example
      * ```
      * // All Files in "./routes" ending with .js will be loaded as routes
@@ -131,8 +131,7 @@ export default class RouteBlock {
     /** The Folder which will be used */ folder: string): this;
     /**
      * (Async) Load ESM Route Files
-     * @sync This Function loads the route files Syncronously
-     * @warning This function calls import() Syncronously
+     * @sync This Function schedules the route files to load Syncronously
      * @example
      * ```
      * // All Files in "./routes" ending with .js will be loaded as routes

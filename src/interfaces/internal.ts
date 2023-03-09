@@ -1,4 +1,4 @@
-import Ctr from "./ctr"
+import { HTTPRequestContext } from "./external"
 
 export type LoadPath = {
   path: string
@@ -6,6 +6,11 @@ export type LoadPath = {
   type: 'cjs' | 'esm'
   validations: Routed[]
 }
+
+export type Events =
+  | 'error'
+  | 'request'
+  | 'notfound'
 
 export type HTTPMethods =
   | 'OPTIONS'
@@ -21,4 +26,4 @@ export type ExternalRouter = {
   object: unknown
 }
 
-export type Routed = (ctr: Ctr) => Promise<any> | any
+export type Routed = (ctr: HTTPRequestContext) => Promise<any> | any

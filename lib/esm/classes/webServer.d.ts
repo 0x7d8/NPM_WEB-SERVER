@@ -13,13 +13,15 @@ export default class Webserver extends RouteList {
     /** The Server Options */ options: Options);
     /** Set new Options for the Server */
     setOptions(
-    /** The Options */ options: Partial<Options>): this;
+    /** The Options */ options: Options): this;
     /** Start the Server */
     start(): Promise<ServerEvents.StartSuccess>;
     /** Load all Server Routes & Options */
     reload(
     /** Whether to restart the HTTP Server itself */ restartHTTP?: boolean): Promise<this>;
-    /** Stop the Server */
+    /**
+     * Stop the Server
+    */
     stop(): Promise<ServerEvents.StopSuccess>;
     private loadExternalPaths;
 }

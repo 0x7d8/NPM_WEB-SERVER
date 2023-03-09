@@ -1,4 +1,4 @@
-import { ExternalRouter, LoadPath, Routed, HTTPMethods } from "../../interfaces/general"
+import { ExternalRouter, LoadPath, Routed, HTTPMethods } from "../../interfaces/internal"
 import Static from "../../interfaces/static"
 import Route from "../../interfaces/route"
 import { pathParser } from "../router"
@@ -92,12 +92,12 @@ export default class RouteBlock {
 		if (this.routes.some((obj) => (obj.method === method && obj.path === pathParser(path)))) return this
 
 		this.routes.push({
+      type: 'route',
 			method: method,
 			path: pathParser(this.path + path),
 			pathArray: pathParser(this.path + path).split('/'),
 			code: code,
 			data: {
-				addTypes: false,
         validations: this.validations
 			}
 		})
@@ -125,12 +125,12 @@ export default class RouteBlock {
 		/** The Redirect Path to Redirect to */ redirect: string
 	) {
 		this.routes.push({
+      type: 'route',
 			method: 'GET',
 			path: pathParser(this.path + request),
 			pathArray: pathParser(this.path + request).split('/'),
 			code: (ctr) => ctr.redirect(redirect),
       data: {
-				addTypes: false,
         validations: this.validations
 			}
 		})
@@ -169,12 +169,13 @@ export default class RouteBlock {
        * @default false
        * @since 3.1.0
       */ hideHTML?: boolean
-    }
+    } = {}
 	) {
     const addTypes = options?.addTypes ?? true
     const hideHTML = options?.hideHTML ?? false
 
 		this.statics.push({
+      type: 'static',
 			path: pathParser(this.path),
       location: folder,
 			data: {
@@ -188,7 +189,7 @@ export default class RouteBlock {
 
   /**
    * (Sync) Load CJS Route Files
-   * @sync This Function loads the route files Syncronously
+   * @sync This Function schedules the route files to load Syncronously
    * @example
    * ```
    * // All Files in "./routes" ending with .js will be loaded as routes
@@ -216,8 +217,7 @@ export default class RouteBlock {
 
   /**
    * (Async) Load ESM Route Files
-   * @sync This Function loads the route files Syncronously
-   * @warning This function calls import() Syncronously
+   * @sync This Function schedules the route files to load Syncronously
    * @example
    * ```
    * // All Files in "./routes" ending with .js will be loaded as routes

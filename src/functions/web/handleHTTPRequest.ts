@@ -5,8 +5,8 @@ import handleCompressType, { CompressMapping } from "../handleCompressType"
 import ValueCollection from "../../classes/valueCollection"
 import handleCompression from "../handleCompression"
 import statsRoute from "../../stats/routes"
-import Ctr from "src/interfaces/ctr"
 import handleEvent from "../handleEvent"
+import { HTTPRequestContext } from "../../interfaces/external"
 import { IncomingMessage, ServerResponse } from "http"
 import { Http2ServerRequest, Http2ServerResponse } from "http2"
 import handleContentType from "../handleContentType"
@@ -32,7 +32,6 @@ export default async function handleHTTPRequest(req: IncomingMessage | Http2Serv
     execute: {
       route: null,
       file: null,
-      static: false,
       exists: false,
       dashboard: false
     }, body: {
@@ -111,7 +110,6 @@ export default async function handleHTTPRequest(req: IncomingMessage | Http2Serv
     const foundStatic = (file: string, url: Static) => {
       ctx.execute.file = file
       ctx.execute.route = url
-      ctx.execute.static = true
       ctx.execute.exists = true
     }; for (let staticNumber = 0; staticNumber <= ctg.routes.static.length - 1; staticNumber++) {
       const url = ctg.routes.static[staticNumber]
@@ -122,7 +120,6 @@ export default async function handleHTTPRequest(req: IncomingMessage | Http2Serv
 
         ctx.execute.file = url.file
         ctx.execute.route = url.route
-        ctx.execute.static = true
         ctx.execute.exists = true
 
         break
@@ -170,15 +167,16 @@ export default async function handleHTTPRequest(req: IncomingMessage | Http2Serv
       // Check for Dashboard Path
       if (ctg.options.dashboard.enabled && (ctx.url.pathname === pathParser(ctg.options.dashboard.path) || ctx.url.pathname === pathParser(ctg.options.dashboard.path) + '/stats')) {
         ctx.execute.route = {
+          type: 'route',
           method: 'GET',
           path: url.path,
           pathArray: url.path.split('/'),
           code: async(ctr) => await statsRoute(ctr, ctg, ctx, ctg.routes.normal.length),
           data: {
-            addTypes: false,
             validations: []
           }
-        }; ctx.execute.static = false
+        }
+
         ctx.execute.exists = true
         ctx.execute.dashboard = true
 
@@ -248,7 +246,7 @@ export default async function handleHTTPRequest(req: IncomingMessage | Http2Serv
     } else ctx.body.parsed = ctx.body.raw.toString()
 
     // Create Context Response Object
-    let ctr: Ctr = {
+    let ctr: HTTPRequestContext = {
       // Properties
       controller: ctg.controller,
       headers: new ValueCollection(req.headers as any, decodeURIComponent),
@@ -336,7 +334,7 @@ export default async function handleHTTPRequest(req: IncomingMessage | Http2Serv
         const cache = localOptions?.cache ?? false
 
         // Add Content Types
-        if (addTypes && !contentType) ctr.setHeader('Content-Type', handleContentType(file))
+        if (addTypes && !contentType) ctr.setHeader('Content-Type', handleContentType(file, ctg))
         else if (contentType) res.setHeader('Content-Type', contentType)
 
         // Get File Content
@@ -469,15 +467,9 @@ export default async function handleHTTPRequest(req: IncomingMessage | Http2Serv
     })) return
 
     if (ctx.execute.exists && !errorStop) {
-      if (!ctx.execute.static && 'code' in ctx.execute.route) {
-        await Promise.resolve(ctx.execute.route.code(ctr)).catch((e) => {
-          ctr.error = e
-          errorStop = true
-          handleEvent('error', ctr, ctx, ctg)
-        })
-      } else {
+      if (ctx.execute.route.type === 'static') {
         // Add Content Types
-        if (ctx.execute.route.data.addTypes) res.setHeader('Content-Type', handleContentType(ctx.execute.file))
+        if (ctx.execute.route.data.addTypes) res.setHeader('Content-Type', handleContentType(ctx.execute.file, ctg))
 
         // Read Content
         ctx.continue = false
@@ -510,6 +502,12 @@ export default async function handleHTTPRequest(req: IncomingMessage | Http2Serv
           }); stream.once('end', () => { ctx.events.emit('noWaiting'); ctx.content = Buffer.from('') })
           res.once('close', () => stream.close())
         }
+      } else {
+        await Promise.resolve(ctx.execute.route.code(ctr)).catch((e) => {
+          ctr.error = e
+          errorStop = true
+          handleEvent('error', ctr, ctx, ctg)
+        })
       }
 
       // Wait for Streams

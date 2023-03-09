@@ -3,9 +3,10 @@
 /// <reference types="node" />
 import { IncomingMessage, ServerResponse } from "http";
 import { Http2ServerRequest, Http2ServerResponse } from "http2";
-import valueCollection from "../classes/valueCollection";
-import { HTTPMethods } from "./general";
+import ValueCollection from "../classes/valueCollection";
+import { HTTPMethods, Routed } from "./internal";
 import ServerController from "../classes/webServer";
+import { Events } from "./internal";
 import { UrlWithStringQuery } from "url";
 export interface PrintOptions {
     /**
@@ -31,12 +32,12 @@ export interface PrintFileOptions {
      * @default false
     */ cache?: boolean;
 }
-export default interface Ctr<Custom = any, HasError = false, Body = any> {
+export interface HTTPRequestContext<Custom = {}, Body = any> {
     /** The Server Controller Class */ controller: ServerController;
-    /** A Collection of all Headers */ readonly headers: valueCollection<Lowercase<string>, string>;
-    /** A Collection of all Cookies */ readonly cookies: valueCollection<string, string>;
-    /** A Collection of all Parameters */ readonly params: valueCollection<string, string>;
-    /** A Collection of all Queries */ readonly queries: valueCollection<string, string>;
+    /** A Collection of all Headers */ readonly headers: ValueCollection<Lowercase<string>, string>;
+    /** A Collection of all Cookies */ readonly cookies: ValueCollection<string, string>;
+    /** A Collection of all Parameters */ readonly params: ValueCollection<string, string>;
+    /** A Collection of all Queries */ readonly queries: ValueCollection<string, string>;
     /** Client Infos */ readonly client: {
         /** The User Agent of the Client */ readonly userAgent: string;
         /** The HTTP Version that the Client is using */ readonly httpVersion: string;
@@ -49,12 +50,22 @@ export default interface Ctr<Custom = any, HasError = false, Body = any> {
     };
     /** The Raw HTTP Server Req Variable */ rawReq: IncomingMessage | Http2ServerRequest;
     /** The Raw HTTP Server Res Variable */ rawRes: ServerResponse | Http2ServerResponse;
-    /** The Error from the Request */ error?: HasError extends true ? Error : undefined;
-    /** Set an HTTP Header to add */ setHeader: (name: string, value: string | number) => Ctr;
-    /** Set a Custom Variable */ setCustom: <Type extends keyof Custom>(name: Type, value: Custom[Type]) => Ctr;
-    /** The Request Status to Send */ status: (code: number) => Ctr;
-    /** Redirect a Client to another URL */ redirect: (location: string, statusCode?: 301 | 302) => Ctr;
-    /** Print a Message to the Client (automatically Formatted) */ print: (msg: any, options?: PrintOptions) => Ctr;
-    /** Print the Content of a File to the Client */ printFile: (path: string, options?: PrintFileOptions) => Ctr;
+    /** The ERROR Object if one occured (mostly in the error event) */ error?: Error;
+    /** Set an HTTP Header to add */ setHeader: (name: string, value: string | number) => HTTPRequestContext;
+    /** Set a Custom Variable */ setCustom: <Type extends keyof Custom>(name: Type, value: Custom[Type]) => HTTPRequestContext;
+    /** The Request Status to Send */ status: (code: number) => HTTPRequestContext;
+    /** Redirect a Client to another URL */ redirect: (location: string, statusCode?: 301 | 302) => HTTPRequestContext;
+    /** Print a Message to the Client (automatically Formatted) */ print: (msg: any, options?: PrintOptions) => HTTPRequestContext;
+    /** Print the Content of a File to the Client */ printFile: (path: string, options?: PrintFileOptions) => HTTPRequestContext;
     /** Custom Variables that are Global */ '@': Custom;
 }
+export interface RouteFile {
+    /** The Request Method of the Route */ method: HTTPMethods;
+    /** The Request Path of the Route */ path: string;
+    /** The Code to run on the Request */ code: Routed;
+}
+export interface Event {
+    /** The Name of The Event */ event: Events;
+    /** The Async Code to run on the Event */ code: Routed;
+}
+export { HTTPMethods };

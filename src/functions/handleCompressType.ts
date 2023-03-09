@@ -1,8 +1,8 @@
 import { PassThrough } from "stream"
-import * as zlib from "zlib"
+
+import zlib from "zlib"
 
 export type CompressTypes = 'none' | 'gzip' | 'brotli' | 'deflate'
-
 export const CompressMapping = {
   gzip: 'gzip',
   brotli: 'br',
@@ -10,7 +10,7 @@ export const CompressMapping = {
   none: 'none',
 } as Record<CompressTypes, string>
 
-class createNone extends PassThrough {
+class CreateNone extends PassThrough {
   close: () => {}
 }
 
@@ -26,6 +26,6 @@ export default function handleCompressType(type: CompressTypes) {
       return zlib.createDeflate()
 
     default:
-      return new createNone()
+      return new CreateNone()
   }
 }

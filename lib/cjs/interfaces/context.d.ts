@@ -3,21 +3,21 @@
 /// <reference types="node" />
 import valueCollection from "src/classes/valueCollection";
 import ServerController from "src/classes/webServer";
-import { HTTPMethods } from "./general";
+import { HTTPMethods } from "./internal";
 import Route from "../interfaces/route";
-import Event from "../interfaces/event";
+import { Event } from "../interfaces/external";
 import { EventEmitter } from "stream";
 import { UrlWithStringQuery } from "url";
 import { Options } from "../classes/serverOptions";
 import Static from "./static";
-export type hours = '0' | '1' | '2' | '3' | '4' | '5' | '6' | '7' | '8' | '9' | '10' | '11' | '12' | '13' | '14' | '15' | '16' | '17' | '18' | '19' | '20' | '21' | '22' | '23';
+export type Hours = '0' | '1' | '2' | '3' | '4' | '5' | '6' | '7' | '8' | '9' | '10' | '11' | '12' | '13' | '14' | '15' | '16' | '17' | '18' | '19' | '20' | '21' | '22' | '23';
 export interface GlobalContext {
     /** The Server Controller Class */ controller: ServerController;
     /** The HTTP Server Options */ options: Options;
-    /** The Request Count */ requests: Record<hours | 'total', number>;
+    /** The Request Count */ requests: Record<Hours | 'total', number>;
     /** The Data Stats */ data: {
-        /** The Incoming Data Count */ incoming: Record<hours | 'total', number>;
-        /** The Outgoing Data Count */ outgoing: Record<hours | 'total', number>;
+        /** The Incoming Data Count */ incoming: Record<Hours | 'total', number>;
+        /** The Outgoing Data Count */ outgoing: Record<Hours | 'total', number>;
     };
     /** The Routes */ routes: {
         /** Normal Routes */ normal: Route[];
@@ -42,7 +42,6 @@ export interface RequestContext {
     /** The Execute URL Object */ execute: {
         /** The Route Object that was found */ route: Route | Static;
         /** The File to Read when Route is Static */ file: string;
-        /** Whether the Route is Static */ static: boolean;
         /** Whether the Route exists */ exists: boolean;
         /** Whether the Route is the Dashboard */ dashboard: boolean;
     };

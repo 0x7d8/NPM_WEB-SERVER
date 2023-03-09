@@ -1,6 +1,7 @@
 import Route from "../interfaces/route"
-import { ExternalRouter, LoadPath, Routed, HTTPMethods } from "src/interfaces/general"
-import Event, { Events } from "../interfaces/event"
+import { ExternalRouter, LoadPath, Routed, HTTPMethods } from "../interfaces/internal"
+import { Event } from "../interfaces/external"
+import { Events } from "../interfaces/internal"
 import Static from "../interfaces/static"
 
 import RouteBlock from "./router/routeBlock"
@@ -12,7 +13,7 @@ export const pathParser = (path: string, removeSingleSlash?: boolean) => {
 	if (!path.startsWith('/') && path !== '/') path = `/${path}`
 	if (path.includes('/?')) path = path.replace('/?', '?')
 
-	return ((removeSingleSlash && path === '/') ? '' : path)
+	return ((removeSingleSlash && path === '/') ? '' : path || '/')
 }
 
 export interface minifiedRoute {

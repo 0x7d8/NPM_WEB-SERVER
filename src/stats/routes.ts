@@ -1,6 +1,6 @@
 import { GlobalContext, RequestContext } from "../interfaces/context"
 import { pathParser } from "../classes/router"
-import ctr from "../interfaces/ctr"
+import { HTTPRequestContext } from "../interfaces/external"
 
 /** @ts-ignore */ 
 import { version } from "../pckg.json"
@@ -10,7 +10,7 @@ import * as os from "os"
 
 const coreCount = os.cpus().length
 
-export default async function statsRoute(ctr: ctr, ctg: GlobalContext, ctx: RequestContext, routes: number) {
+export default async function statsRoute(ctr: HTTPRequestContext, ctg: GlobalContext, ctx: RequestContext, routes: number) {
   const path = ctr.url.path.replace(pathParser(ctg.options.dashboard.path, false), '') || '/'
   switch (path) {
     case "/":

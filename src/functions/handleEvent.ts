@@ -1,8 +1,8 @@
 import { GlobalContext, RequestContext } from "../interfaces/context"
-import { Events } from "../interfaces/event"
-import Ctr from "../interfaces/ctr"
+import { Events } from "../interfaces/internal"
+import { HTTPRequestContext } from "../interfaces/external"
 
-export default async function handleEvent(event: Events, ctr: Ctr, ctx: RequestContext, ctg: GlobalContext) {
+export default async function handleEvent(event: Events, ctr: HTTPRequestContext, ctx: RequestContext, ctg: GlobalContext) {
   switch (event) {
     case "error": {
       const event = ctg.routes.event.find((event) => (event.event === 'error'))
@@ -14,7 +14,7 @@ export default async function handleEvent(event: Events, ctr: Ctr, ctx: RequestC
         ctx.content = Buffer.from(`An Error occured\n${(ctr.error as Error).stack}`)
       } else {
         // Custom Error
-        Promise.resolve(event.code(ctr as any as Ctr<any, true>)).catch((e) => {
+        Promise.resolve(event.code(ctr)).catch((e) => {
           console.log(e)
           ctr.status(500)
           ctx.content = Buffer.from(`An Error occured in your Error Event (what the hell?)\n${e.stack}`)

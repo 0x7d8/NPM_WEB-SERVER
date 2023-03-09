@@ -1,8 +1,8 @@
 import { GlobalContext, RequestContext } from "../interfaces/context"
 import handleCompressType, { CompressMapping } from "./handleCompressType"
-import ctr from "../interfaces/ctr"
+import { HTTPRequestContext } from "../interfaces/external"
 
-export default function handleCompression(ctr: ctr, ctx: RequestContext, ctg: GlobalContext) {
+export default function handleCompression(ctr: HTTPRequestContext, ctx: RequestContext, ctg: GlobalContext) {
   if (!ctx.compressed && !ctr.rawRes.headersSent && String(ctr.headers.get('accept-encoding')).includes(CompressMapping[ctg.options.compression])) {
     ctr.rawRes.setHeader('Content-Encoding', CompressMapping[ctg.options.compression])
     ctr.rawRes.setHeader('Vary', 'Accept-Encoding')
