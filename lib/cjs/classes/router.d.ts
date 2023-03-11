@@ -1,8 +1,6 @@
-import Route from "../interfaces/route";
-import { ExternalRouter, LoadPath, Routed, HTTPMethods } from "../interfaces/internal";
+import { Routed, HTTPMethods } from "../interfaces/internal";
 import { Event } from "../interfaces/external";
 import { Events } from "../interfaces/internal";
-import Static from "../interfaces/static";
 import RouteBlock from "./router/routeBlock";
 export declare const pathParser: (path: string, removeSingleSlash?: boolean) => string;
 export interface minifiedRoute {
@@ -11,12 +9,10 @@ export interface minifiedRoute {
     /** The Async Code to run on a Request */ code: Routed;
 }
 export default class RouteList {
-    protected externals: ExternalRouter[];
-    protected validations: Routed[];
-    protected loadPaths: LoadPath[];
-    protected statics: Static[];
-    protected routes: Route[];
-    protected events: Event[];
+    private externals;
+    private loadPaths;
+    private routes;
+    private events;
     /** List of Routes */
     constructor();
     /**
@@ -64,9 +60,9 @@ export default class RouteList {
   */
     getRoutes(): {
         events: Event[];
-        routes: Route[];
-        statics: Static[];
-        loadPaths: LoadPath[];
-        validations: Routed[];
+        routes: any[];
+        statics: any[];
+        loadPaths: any[];
+        validations: any[];
     };
 }

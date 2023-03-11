@@ -23,20 +23,16 @@ export interface minifiedRoute {
 }
 
 export default class RouteList {
-	protected externals: ExternalRouter[]
-	protected validations: Routed[]
-	protected loadPaths: LoadPath[]
-	protected statics: Static[]
-  protected routes: Route[]
-	protected events: Event[]
+	private externals: ExternalRouter[]
+	private loadPaths: LoadPath[]
+  private routes: Route[]
+	private events: Event[]
 
 	/** List of Routes */
 	constructor() {
 		this.routes = []
 		this.events = []
-		this.statics = []
 		this.loadPaths = []
-		this.validations = []
 
 		this.externals = []
 	}
@@ -102,20 +98,19 @@ export default class RouteList {
    * @since 3.1.0
   */
   getRoutes() {
+		const routes = [], statics = [], loadPaths= [], validations = []
     for (const external of this.externals) {
 			const result = external.object[external.method]()
-			this.routes.push(...result.routes)
-      this.statics.push(...result.statics)
-			this.loadPaths.push(...result.loadPaths)
-			this.validations.push(...result.validations)
+			routes.push(...result.routes)
+      statics.push(...result.statics)
+			loadPaths.push(...result.loadPaths)
+			validations.push(...result.validations)
 		}
 
 		return {
 			events: this.events,
-			routes: this.routes,
-			statics: this.statics,
-			loadPaths: this.loadPaths,
-			validations: this.validations
+			routes, statics,
+			loadPaths, validations
 		}
   }
 }

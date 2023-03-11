@@ -24,7 +24,7 @@ export default class ValueCollection<Key extends string | number | symbol = stri
   /** Get a Key */
   get(
     /** The Key to get */ key: Key,
-    /** The Fallback Value */ fallback: Value = undefined
+    /** The Fallback Value */ fallback?: Value
   ): Value | undefined {
     return this.data[key] ?? fallback
   }
