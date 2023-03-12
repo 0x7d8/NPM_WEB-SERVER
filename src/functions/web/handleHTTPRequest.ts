@@ -204,8 +204,10 @@ export default async function handleHTTPRequest(req: IncomingMessage | Http2Serv
         const urlParam = url.pathArray[partNumber]
         const reqParam = actualUrl[partNumber]
 
-        if (!/^<.*>$/.test(urlParam) && reqParam !== urlParam) break
-        else if (urlParam === reqParam) continue
+        if (!/^<.*>$/.test(urlParam) && reqParam !== urlParam) {
+          ctx.execute.exists = false
+          break
+        } else if (urlParam === reqParam) continue
         else if (/^<.*>$/.test(urlParam)) {
           params[urlParam.substring(1, urlParam.length - 1)] = reqParam
           ctx.execute.route = url
