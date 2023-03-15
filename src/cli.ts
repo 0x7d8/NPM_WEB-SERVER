@@ -49,24 +49,23 @@ if (args.includes('-v') || args.includes('--version')) {
 	console.log(`${colors.fg.blue}[INF] ${colors.reset}Version:`)
 	console.log(`${version}`)
 } else if (!isHelp() && fs.existsSync(path.join(process.cwd(), args[0]))) {
-	let remHTML = false, addTypes = true, notFoundPath = ''
+	let hideHTML = false, addTypes = true, notFoundPath = ''
 	for (const option of args.slice(1)) {
 		const [ key, value ] = option.slice(2).split('=')
 
 		if (key === 'port') webserverOptions.port = Number(value)
 		if (key === 'bind') webserverOptions.bind = value
-		if (key === 'remHTML') remHTML = Boolean(value)
-		if (key === 'addTypes') remHTML = Boolean(value)
+		if (key === 'hideHTML') hideHTML = true
 		if (key === 'compression') webserverOptions.compression = value as any
-		if (key === 'cors') webserverOptions.cors = Boolean(value)
-		if (key === 'proxy') webserverOptions.proxy = Boolean(value)
-		if (key === 'dashboard') webserverOptions.dashboard.enabled = Boolean(value)
+		if (key === 'cors') webserverOptions.cors = true
+		if (key === 'proxy') webserverOptions.proxy = true
+		if (key === 'dashboard') webserverOptions.dashboard.enabled = true
 		if (key === '404') notFoundPath = String(value).replace(/"|'+/g, '')
 	}
 
 	const server = new Server(webserverOptions)
 	server.prefix('/')
-		.static(path.join(process.cwd(), args[0]), { hideHTML: remHTML, addTypes })
+		.static(path.join(process.cwd(), args[0]), { hideHTML, addTypes })
 
 	if (notFoundPath) server.event('notfound', (ctr) => {
 		return ctr.status(404).printFile(path.join(process.cwd(), notFoundPath))
@@ -98,11 +97,10 @@ else {
 	console.log(`${colors.fg.gray}[arguments] ${colors.reset}`)
 	console.log(' --port=2023')
 	console.log(' --compression=gzip')
-	console.log(' --proxy=false')
-	console.log(' --cors=false')
+	console.log(' --proxy')
+	console.log(' --cors')
 	console.log(' --bind=0.0.0.0')
-	console.log(' --remHTML=false')
-	console.log(' --addTypes=true')
-	console.log(' --dashboard=false')
+	console.log(' --hideHTML')
+	console.log(' --dashboard')
 	console.log(' --404="static/404.html"')
 }
