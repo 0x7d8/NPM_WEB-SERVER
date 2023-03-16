@@ -19,8 +19,8 @@ export interface Options {
      * The RateLimit Functions
      * @default Map
      */ functions?: {
-			set: (key: string, value: number) => Promise<any>
-			get: (key: string) => Promise<number>
+			set: (key: string, value: number) => Promise<any> | any
+			get: (key: string) => Promise<number> | number
 		} | Map<string, number>
 	}
 

@@ -18,13 +18,7 @@ export const pathParser = (path: string | string[], removeSingleSlash?: boolean)
 		output += (removeSingleSlash && path === '/') ? '' : path || '/'
 	}
 
-	return output
-}
-
-export interface minifiedRoute {
-	/** The Request Method of the Route */ method: HTTPMethods
-	/** The Path on which this will be available (+ prefix) */ path: string
-	/** The Async Code to run on a Request */ code: Routed
+	return output.replace(/\/{2,}/g, '/')
 }
 
 export default class RouteList {
@@ -58,8 +52,7 @@ export default class RouteList {
 		if (this.events.some((obj) => (obj.event === event))) return this
 
 		this.events.push({
-			event: event,
-			code: code
+			event, code
 		}); return this
 	}
 

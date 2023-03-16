@@ -2,8 +2,9 @@ import * as ServerEvents from "../interfaces/serverEvents"
 import { GlobalContext } from "../interfaces/context"
 import ValueCollection from "./valueCollection"
 import ServerOptions, { Options } from "./serverOptions"
-import RouteList, { minifiedRoute, pathParser } from "./router"
+import RouteList, { pathParser } from "./router"
 import handleHTTPRequest, { getPreviousHours } from "../functions/web/handleHTTPRequest"
+import { RouteFile } from "../interfaces/external"
 import Route from "../interfaces/route"
 import { getAllFilesFilter } from "../misc/getAllFiles"
 import { promises as fs } from "fs"
@@ -280,7 +281,7 @@ export default class Webserver extends RouteList {
     for (const loadPath of this.getRoutes().loadPaths) {
       if (loadPath.type === 'cjs') {
         for (const file of await getAllFilesFilter(loadPath.path, 'js')) {
-          const route: minifiedRoute = require(file)
+          const route: Partial<RouteFile> = require(file)
 
           if (
             !('method' in route) ||
@@ -291,8 +292,8 @@ export default class Webserver extends RouteList {
           loadedRoutes.push({
             type: 'route',
             method: route.method,
-            path: pathParser([loadPath.prefix, route.path]),
-            pathArray: pathParser([loadPath.prefix, route.path]).split('/'),
+            path: pathParser([ loadPath.prefix, route.path ]),
+            pathArray: pathParser([ loadPath.prefix, route.path ]).split('/'),
             code: route.code,
             data: {
               validations: loadPath.validations
@@ -301,7 +302,7 @@ export default class Webserver extends RouteList {
         }
       } else {
         for (const file of await getAllFilesFilter(loadPath.path, 'js')) {
-          const route: minifiedRoute = (await import(file)).default
+          const route: Partial<RouteFile> = (await import(file)).default
 
           if (
             !('method' in route) ||
@@ -312,8 +313,8 @@ export default class Webserver extends RouteList {
           loadedRoutes.push({
             type: 'route',
             method: route.method,
-            path: pathParser([loadPath.prefix, route.path]),
-            pathArray: pathParser([loadPath.prefix, route.path]).split('/'),
+            path: pathParser([ loadPath.prefix, route.path ]),
+            pathArray: pathParser([ loadPath.prefix, route.path ]).split('/'),
             code: route.code,
             data: {
               validations: loadPath.validations

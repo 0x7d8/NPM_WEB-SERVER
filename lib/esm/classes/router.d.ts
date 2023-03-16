@@ -1,13 +1,8 @@
-import { Routed, HTTPMethods } from "../interfaces/internal";
+import { Routed } from "../interfaces/internal";
 import { Event } from "../interfaces/external";
 import { Events } from "../interfaces/internal";
 import RouteBlock from "./router/routeBlock";
 export declare const pathParser: (path: string | string[], removeSingleSlash?: boolean) => string;
-export interface minifiedRoute {
-    /** The Request Method of the Route */ method: HTTPMethods;
-    /** The Path on which this will be available (+ prefix) */ path: string;
-    /** The Async Code to run on a Request */ code: Routed;
-}
 export default class RouteList {
     private externals;
     private events;
