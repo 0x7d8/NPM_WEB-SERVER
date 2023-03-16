@@ -415,7 +415,7 @@ export default async function handleHTTPRequest(req: IncomingMessage | Http2Serv
         stream.on('data', (data: Buffer) => {
           res.write(data, 'binary')
         }).once('close', () => {
-          if (endRequest) ctx.events.emit('noWaiting')
+          if (endRequest ?? true) ctx.events.emit('noWaiting')
         })
 
         return ctr
