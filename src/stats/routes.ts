@@ -1,5 +1,6 @@
 import { GlobalContext, RequestContext } from "../interfaces/context"
 import { pathParser } from "../classes/router"
+import { getAllFiles } from "../misc/getAllFiles"
 import { HTTPRequestContext } from "../interfaces/external"
 
 /** @ts-ignore */ 
@@ -10,7 +11,7 @@ import * as os from "os"
 
 const coreCount = os.cpus().length
 
-export default async function statsRoute(ctr: HTTPRequestContext, ctg: GlobalContext, ctx: RequestContext, routes: number) {
+export default async function statsRoute(ctr: HTTPRequestContext, ctg: GlobalContext, ctx: RequestContext) {
   const path = ctr.url.path.replace(pathParser(ctg.options.dashboard.path, false), '') || '/'
   switch (path) {
     case "/":
@@ -24,6 +25,15 @@ export default async function statsRoute(ctr: HTTPRequestContext, ctg: GlobalCon
       const date = new Date()
       const startTime = date.getTime()
       const startUsage = process.cpuUsage()
+
+      const staticFiles = await new Promise<number>(async(resolve) => {
+        let staticFiles = 0
+        for (let staticNumber = 0; staticNumber <= ctg.routes.static.length - 1; staticNumber++) {
+          staticFiles += (await getAllFiles(ctg.routes.static[staticNumber].location)).length
+        }
+
+        resolve(staticFiles)
+      })
 
       const cpuUsage = await new Promise<number>((resolve) => setTimeout(() => {
         const currentUsage = process.cpuUsage(startUsage)
@@ -108,8 +118,9 @@ export default async function statsRoute(ctr: HTTPRequestContext, ctg: GlobalCon
           time: `${date.getHours()}:${date.getMinutes()}:${date.getSeconds()}`,
           usage: (process.memoryUsage().heapUsed / 1000 / 1000).toFixed(2)
         },
-        
-        routes: routes,
+
+        static_files: staticFiles,
+        routes: ctg.routes.normal.length,
         cached: ctg.cache.files.objectCount
           + ctg.cache.routes.objectCount
       })

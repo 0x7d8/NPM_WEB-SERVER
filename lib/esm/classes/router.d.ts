@@ -10,8 +10,6 @@ export interface minifiedRoute {
 }
 export default class RouteList {
     private externals;
-    private loadPaths;
-    private routes;
     private events;
     /** List of Routes */
     constructor();

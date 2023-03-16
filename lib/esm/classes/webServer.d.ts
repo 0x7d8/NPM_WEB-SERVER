@@ -10,7 +10,7 @@ export default class Webserver extends RouteList {
     server: http.Server | http2.Http2SecureServer;
     /** Server Controller */
     constructor(
-    /** The Server Options */ options: Options);
+    /** The Server Options */ options?: Options);
     /** Set new Options for the Server */
     setOptions(
     /** The Options */ options: Options): this;

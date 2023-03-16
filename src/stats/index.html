@@ -158,6 +158,20 @@
 
       <div class="w-96 mx-4 mb-8 text-center">
         <div class="p-1 bg-slate-600 rounded">
+          <h1 class="text-white">Static Files</h1>
+        </div>
+        <div class="mt-2 p-2 bg-slate-600 rounded">
+          <h1 id="stat-staticFiles" class="flex justify-center text-white">
+            <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-loader-2 animate-spin" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+              <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
+              <path d="M12 3a9 9 0 1 0 9 9"></path>
+            </svg>
+          </h1>
+        </div>
+      </div>
+
+      <div class="w-96 mx-4 mb-8 text-center">
+        <div class="p-1 bg-slate-600 rounded">
           <h1 class="text-white">Cached Objects</h1>
         </div>
         <div class="mt-2 p-2 bg-slate-600 rounded">
@@ -356,6 +370,7 @@
       document.querySelector('#stat-memory').innerText = res.memory.usage + 'MB'
       document.querySelector('#stat-response').innerText = duration + 'ms'
       document.querySelector('#stat-routes').innerText = res.routes
+      document.querySelector('#stat-staticFiles').innerText = res.static_files
       document.querySelector('#stat-cached').innerText = res.cached
 
       for (let stat = 1; stat <= res.requests.length - 1; stat++) {

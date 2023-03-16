@@ -1,11 +1,12 @@
 {
   "name": "rjweb-server",
-  "version": "4.2.4",
+  "version": "4.2.5",
   "description": "Easy and Lightweight Way to create a Web Server with Many Easy-to-use Features",
   "main": "./lib/cjs/index.js",
   "module": "./lib/esm/index.js",
   "scripts": {
     "build": "rm -rf lib && tsc && esbuild `find src \\( -name '*.ts' -o -name '*.tsx' \\)` --platform='node' --ignore-annotations --format='cjs' --outdir='lib/cjs' && esbuild `find src \\( -name '*.ts' -o -name '*.tsx' \\)` --platform='node' --ignore-annotations --format='esm' --outdir='lib/esm' && cp -r lib/typings/* lib/cjs && cp -r lib/typings/* lib/esm && rm -rf lib/typings && cp -r src/stats/index.html lib/cjs/stats/index.html && cp -r src/stats/index.html lib/esm/stats/index.html && cp package.json lib/cjs/pckg.json && cp package.json lib/esm/pckg.json",
+    "install:dev": "npm install -g --install-links .",
     "test": "yarn build && node test"
   },
   "repository": {

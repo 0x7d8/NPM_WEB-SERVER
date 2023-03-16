@@ -49,7 +49,7 @@ if (args.includes('-v') || args.includes('--version')) {
 	console.log(`${colors.fg.blue}[INF] ${colors.reset}Version:`)
 	console.log(`${version}`)
 } else if (!isHelp() && fs.existsSync(path.join(process.cwd(), args[0]))) {
-	let hideHTML = false, addTypes = true, notFoundPath = ''
+	let hideHTML = false, notFoundPath = ''
 	for (const option of args.slice(1)) {
 		const [ key, value ] = option.slice(2).split('=')
 
@@ -65,7 +65,7 @@ if (args.includes('-v') || args.includes('--version')) {
 
 	const server = new Server(webserverOptions)
 	server.prefix('/')
-		.static(path.join(process.cwd(), args[0]), { hideHTML, addTypes })
+		.static(path.join(process.cwd(), args[0]), { hideHTML })
 
 	if (notFoundPath) server.event('notfound', (ctr) => {
 		return ctr.status(404).printFile(path.join(process.cwd(), notFoundPath))

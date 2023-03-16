@@ -2,7 +2,6 @@ import Route from "../interfaces/route"
 import { ExternalRouter, LoadPath, Routed, HTTPMethods } from "../interfaces/internal"
 import { Event } from "../interfaces/external"
 import { Events } from "../interfaces/internal"
-import Static from "../interfaces/static"
 
 import RouteBlock from "./router/routeBlock"
 
@@ -24,15 +23,11 @@ export interface minifiedRoute {
 
 export default class RouteList {
 	private externals: ExternalRouter[]
-	private loadPaths: LoadPath[]
-  private routes: Route[]
 	private events: Event[]
 
 	/** List of Routes */
 	constructor() {
-		this.routes = []
 		this.events = []
-		this.loadPaths = []
 
 		this.externals = []
 	}

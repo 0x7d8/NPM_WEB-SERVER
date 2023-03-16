@@ -107,11 +107,14 @@ export default async function handleHTTPRequest(req: IncomingMessage | Http2Serv
     let params = {}
     const actualUrl = ctx.url.pathname.split('/')
 
+    // Check Static Paths
     const foundStatic = (file: string, url: Static) => {
       ctx.execute.file = file
       ctx.execute.route = url
       ctx.execute.exists = true
     }; for (let staticNumber = 0; staticNumber <= ctg.routes.static.length - 1; staticNumber++) {
+      if (ctx.execute.exists) break
+
       const url = ctg.routes.static[staticNumber]
 
       // Get From Cache
@@ -127,7 +130,6 @@ export default async function handleHTTPRequest(req: IncomingMessage | Http2Serv
 
       // Skip if not related
       if (!ctx.url.pathname.startsWith(url.path)) continue
-      if (ctx.execute.exists) break
 
       // Find File
       const urlPath = pathParser(ctx.url.pathname.replace(url.path, '')).substring(1)
@@ -150,7 +152,27 @@ export default async function handleHTTPRequest(req: IncomingMessage | Http2Serv
       } else if (await fileExists(url.location + '/' + urlPath)) foundStatic(path.resolve(url.location + '/' + urlPath), url)
     }
 
+    // Check Dashboard Paths
+    if (ctg.options.dashboard.enabled && (ctx.url.pathname === pathParser(ctg.options.dashboard.path) || ctx.url.pathname === pathParser(ctg.options.dashboard.path) + '/stats')) {
+      ctx.execute.route = {
+        type: 'route',
+        method: 'GET',
+        path: ctx.url.path,
+        pathArray: ctx.url.path.split('/'),
+        code: async(ctr) => await statsRoute(ctr, ctg, ctx),
+        data: {
+          validations: []
+        }
+      }
+
+      ctx.execute.exists = true
+      ctx.execute.dashboard = true
+    }
+
+    // Check Other Paths
     for (let urlNumber = 0; urlNumber <= ctg.routes.normal.length - 1; urlNumber++) {
+      if (ctx.execute.exists) break
+
       const url = ctg.routes.normal[urlNumber]
 
       // Get From Cache
@@ -164,29 +186,9 @@ export default async function handleHTTPRequest(req: IncomingMessage | Http2Serv
         break
       }
 
-      // Check for Dashboard Path
-      if (ctg.options.dashboard.enabled && (ctx.url.pathname === pathParser(ctg.options.dashboard.path) || ctx.url.pathname === pathParser(ctg.options.dashboard.path) + '/stats')) {
-        ctx.execute.route = {
-          type: 'route',
-          method: 'GET',
-          path: url.path,
-          pathArray: url.path.split('/'),
-          code: async(ctr) => await statsRoute(ctr, ctg, ctx, ctg.routes.normal.length),
-          data: {
-            validations: []
-          }
-        }
-
-        ctx.execute.exists = true
-        ctx.execute.dashboard = true
-
-        break
-      }
-
-      // Skip Common URLs
+      // Skip if not related
       if (url.method !== req.method) continue
       if (url.pathArray.length !== actualUrl.length) continue
-      if (ctx.execute.exists) break
 
       // Check for Static Paths
       if (url.path === ctx.url.pathname && url.method === req.method) {

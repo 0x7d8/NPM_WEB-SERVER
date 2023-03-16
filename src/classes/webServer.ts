@@ -17,13 +17,13 @@ export default class Webserver extends RouteList {
 
   /** Server Controller */
   constructor(
-    /** The Server Options */ options: Options
+    /** The Server Options */ options?: Options
   ) {
     super()
 
     this.globalContext = {
 			controller: this,
-      options: new ServerOptions(options ?? {}).getOptions(),
+      options: new ServerOptions(options || {}).getOptions(),
 			requests: {
 				total: 0,
 				0: 0, 1: 0, 2: 0, 3: 0,
@@ -216,7 +216,7 @@ export default class Webserver extends RouteList {
 
     for (const loadPath of this.getRoutes().loadPaths) {
       if (loadPath.type === 'cjs') {
-        for (const file of getAllFilesFilter(loadPath.path, 'js')) {
+        for (const file of await getAllFilesFilter(loadPath.path, 'js')) {
           const route: minifiedRoute = require(file)
 
           if (
@@ -237,7 +237,7 @@ export default class Webserver extends RouteList {
           })
         }
       } else {
-        for (const file of getAllFilesFilter(loadPath.path, 'js')) {
+        for (const file of await getAllFilesFilter(loadPath.path, 'js')) {
           const route: minifiedRoute = (await import(file)).default
 
           if (
