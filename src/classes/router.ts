@@ -34,7 +34,6 @@ export default class RouteList {
 
 	/**
 	 * Add a new Event Response
-	 * @sync This Function adds an event handler syncronously
 	 * @example
    * ```
    * // We will log every time a request is made
@@ -60,7 +59,6 @@ export default class RouteList {
 
 	/**
 	 * Add a new Block of Routes with a Prefix
-	 * @sync This Function adds a prefix block syncronously
 	 * @example
    * ```
    * const controller = new Server({ })
@@ -88,7 +86,6 @@ export default class RouteList {
 
 	/**
    * Internal Method for Generating Routes Object
-   * @sync This Function generates routes synchronously
    * @ignore This is meant for internal use
    * @since 3.1.0
   */

@@ -13,8 +13,7 @@ export default class RouteBlock {
     /** The Path of the Routes */ path: string, 
     /** The Validations to add */ validations?: Routed[]);
     /**
-     * (Sync) Add Validation
-     * @sync This Function adds Validation Syncronously
+     * Add Validation
      * @example
      * ```
      * // The /api route will automatically check for correct credentials
@@ -36,8 +35,7 @@ export default class RouteBlock {
     validate(
     /** The Function to Validate thr Request */ code: Routed): this;
     /**
-     * (Sync) Add a Route
-     * @sync This Function adds a Route Syncronously
+     * Add a Route
      * @example
      * ```
      * // The /devil route will be available on "path + /devil" so "/devil"
@@ -65,8 +63,7 @@ export default class RouteBlock {
     /** The Path on which this will be available */ path: string, 
     /** The Async Code to run on a Request */ code: Routed): this;
     /**
-     * (Sync) Add a Redirect
-     * @sync This Function adds a Redirect Syncronously
+     * Add a Redirect
      * @example
      * ```
      * // The /devil route will automatically redirect to google.com
@@ -83,8 +80,7 @@ export default class RouteBlock {
     /** The Request Path to Trigger the Redirect on */ request: string, 
     /** The Redirect Path to Redirect to */ redirect: string): this;
     /**
-     * (Sync) Load Static Files
-     * @sync This Function loads the static files Syncronously
+     * Load Static Files
      * @warning If new Files are added the Server needs to be reloaded
      * @example
      * ```
@@ -115,8 +111,7 @@ export default class RouteBlock {
         */ hideHTML?: boolean;
     }): this;
     /**
-     * (Sync) Load CJS Route Files
-     * @sync This Function schedules the route files to load Syncronously
+     * Load CJS Route Files
      * @example
      * ```
      * // All Files in "./routes" ending with .js will be loaded as routes
@@ -130,8 +125,7 @@ export default class RouteBlock {
     loadCJS(
     /** The Folder which will be used */ folder: string): this;
     /**
-     * (Async) Load ESM Route Files
-     * @sync This Function schedules the route files to load Syncronously
+     * Load ESM Route Files
      * @example
      * ```
      * // All Files in "./routes" ending with .js will be loaded as routes
@@ -146,7 +140,6 @@ export default class RouteBlock {
     /** The Folder which will be used */ folder: string): this;
     /**
        * Add a new Block of Routes with a Prefix
-     * @sync This Function adds a prefix block syncronously
      * @example
      * ```
      * const controller = new Server({ })
@@ -166,7 +159,6 @@ export default class RouteBlock {
     /** The Path Prefix */ prefix: string): RouteBlock;
     /**
      * Internal Method for Generating Routes Object
-     * @sync This Function generates routes synchronously
      * @ignore This is meant for internal use
      * @since 3.1.0
     */

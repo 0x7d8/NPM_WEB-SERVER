@@ -49,12 +49,12 @@ import webserver from "rjweb-server"
 
 Interface for ctr Object
 ```ts
-import { Ctr } from "rjweb-server/interfaces"
+import { HTTPRequestContext } from "rjweb-server"
 
 const server = new Server({ })
 
 server.prefix('/')
-  .add('GET', '/hello', async(ctr: Ctr) => {
+  .add('GET', '/hello', async(ctr: HTTPRequestContext) => {
     if (!ctr.queries.has("name")) return ctr.print('please supply the name query!!')
 
     return ctr.print(`Hello, ${ctr.queries.get("name")}! How are you doing?`)
@@ -71,8 +71,8 @@ interface Custom {
   count: number
 }
 
-interface Ctr<Body = any> extends HTTPRequestContext<Custom, Body> {}
-interface CtrFile<Body = any> extends RouteFile<Custom, Body> {}
+type Ctr<Body = any> = HTTPRequestContext<Custom, Body>
+type CtrFile<Body = any> = RouteFile<Custom, Body>
 
 const server = new Server({
   bind: '0.0.0.0', // The IP thats bound to
@@ -84,6 +84,11 @@ server.prefix('/')
     if (!ctr.queries.has("name")) return ctr.print('please supply the name queries!!')
 
     return ctr.print(`Hello, ${ctr.queries.get("name")}! You are Visit nr.${ctr['@'].count}`)
+  })
+  .add('POST', '/hello', async(ctr: Ctr<{ name?: string }>) => {
+    if (!('name' in ctr.body)) return ctr.print('please supply the name property!!')
+
+    return ctr.print(`Hello, ${ctr.body.name}! You are Visit nr.${ctr['@'].count}`)
   })
 
 let count = 0
@@ -106,7 +111,7 @@ server.start().then((s) => {
 
 Function File
 ```ts
-import { HTTPRequestContext, RouteFile } from "rjweb-server/interfaces"
+import { HTTPRequestContext, RouteFile } from "rjweb-server"
 
 interface Custom {
   count: number
@@ -116,8 +121,8 @@ interface Body {
   username?: string
 }
 
-interface Ctr<Body = any> extends HTTPRequestContext<Custom, Body> {}
-interface CtrFile<Body = any> extends RouteFile<Custom, Body> {}
+type Ctr<Body = any> = HTTPRequestContext<Custom, Body>
+type CtrFile<Body = any> = RouteFile<Custom, Body>
 
 export = {
   method: 'POST',
@@ -260,7 +265,7 @@ const server = new Server({
 server.prefix('/')
   .static('./html', {
     hideHTML: true // If enabled will remove the html ending from files when serving
-  }) // The html folder is in the root directory
+  }) // The html folder is in the root directory, NOTE: Static files will be prioritized over the defined routes
 
 server.start().then((s) => {
   console.log(`server started on port ${s.port}`)

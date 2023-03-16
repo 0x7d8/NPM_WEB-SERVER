@@ -1,26 +1,84 @@
-/// <reference types="node" />
-/// <reference types="node" />
 import * as ServerEvents from "../interfaces/serverEvents";
 import { Options } from "./serverOptions";
 import RouteList from "./router";
-import http2 from "http2";
-import http from "http";
 export default class Webserver extends RouteList {
     private globalContext;
-    server: http.Server | http2.Http2SecureServer;
-    /** Server Controller */
+    private server;
+    /**
+     * Initialize a new Server
+     * @example
+     * ```
+     * const controller = new Server({
+     *   port: 8000
+     * })
+     * ```
+     * @since 3.1.0
+    */
     constructor(
     /** The Server Options */ options?: Options);
-    /** Set new Options for the Server */
+    /**
+     * Override the set Server Options
+     * @example
+     * ```
+     * const controller = new Server({ })
+     *
+     * controller.setOptions({
+     *   port: 6900
+     * })
+     * ```
+     * @since 3.1.0
+    */
     setOptions(
     /** The Options */ options: Options): this;
-    /** Start the Server */
+    /**
+     * Start the Server
+     * @example
+     * ```
+     * const controller = new Server({ })
+     *
+     * controller.start()
+     *   .then((res) => {
+     *     console.log(`Server started on port ${res.port}`)
+     *   })
+     *   .catch((err) => {
+     *     console.error(err)
+     *   })
+     * ```
+     * @since 3.1.0
+    */
     start(): Promise<ServerEvents.StartSuccess>;
-    /** Load all Server Routes & Options */
-    reload(
-    /** Whether to restart the HTTP Server itself */ restartHTTP?: boolean): Promise<this>;
+    /**
+     * Reload the Server
+     * @example
+     * ```
+     * const controller = new Server({ })
+     *
+     * controller.reload()
+     *   .then((res) => {
+     *     console.log(`Server reloaded and started on port ${res.port}`)
+     *   })
+     *   .catch((err) => {
+     *     console.error(err)
+     *   })
+     * ```
+     * @since 3.1.0
+    */
+    reload(): Promise<this>;
     /**
      * Stop the Server
+     * @example
+     * ```
+     * const controller = new Server({ })
+     *
+     * controller.stop()
+     *   .then((res) => {
+     *     console.log('Server stopped')
+     *   })
+     *   .catch((err) => {
+     *     console.error(err)
+     *   })
+     * ```
+     * @since 3.1.0
     */
     stop(): Promise<ServerEvents.StopSuccess>;
     /** Load all External Paths */

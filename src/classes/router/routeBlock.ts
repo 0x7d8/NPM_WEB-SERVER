@@ -30,8 +30,7 @@ export default class RouteBlock {
   }
 
   /**
-   * (Sync) Add Validation
-   * @sync This Function adds Validation Syncronously
+   * Add Validation
    * @example
    * ```
    * // The /api route will automatically check for correct credentials
@@ -59,8 +58,7 @@ export default class RouteBlock {
 	}
 
   /**
-   * (Sync) Add a Route
-   * @sync This Function adds a Route Syncronously
+   * Add a Route
    * @example
    * ```
    * // The /devil route will be available on "path + /devil" so "/devil"
@@ -106,8 +104,7 @@ export default class RouteBlock {
 	}
 
   /**
-   * (Sync) Add a Redirect
-   * @sync This Function adds a Redirect Syncronously
+   * Add a Redirect
    * @example
    * ```
    * // The /devil route will automatically redirect to google.com
@@ -139,8 +136,7 @@ export default class RouteBlock {
 	}
 
   /**
-   * (Sync) Load Static Files
-   * @sync This Function loads the static files Syncronously
+   * Load Static Files
    * @warning If new Files are added the Server needs to be reloaded
    * @example
    * ```
@@ -188,8 +184,7 @@ export default class RouteBlock {
 	}
 
   /**
-   * (Sync) Load CJS Route Files
-   * @sync This Function schedules the route files to load Syncronously
+   * Load CJS Route Files
    * @example
    * ```
    * // All Files in "./routes" ending with .js will be loaded as routes
@@ -216,8 +211,7 @@ export default class RouteBlock {
 	}
 
   /**
-   * (Async) Load ESM Route Files
-   * @sync This Function schedules the route files to load Syncronously
+   * Load ESM Route Files
    * @example
    * ```
    * // All Files in "./routes" ending with .js will be loaded as routes
@@ -245,7 +239,6 @@ export default class RouteBlock {
 
   /**
 	 * Add a new Block of Routes with a Prefix
-   * @sync This Function adds a prefix block syncronously
    * @example
    * ```
    * const controller = new Server({ })
@@ -273,7 +266,6 @@ export default class RouteBlock {
 
   /**
    * Internal Method for Generating Routes Object
-   * @sync This Function generates routes synchronously
    * @ignore This is meant for internal use
    * @since 3.1.0
   */

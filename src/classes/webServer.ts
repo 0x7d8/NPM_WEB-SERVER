@@ -6,16 +6,25 @@ import RouteList, { minifiedRoute, pathParser } from "./router"
 import handleHTTPRequest, { getPreviousHours } from "../functions/web/handleHTTPRequest"
 import Route from "../interfaces/route"
 import { getAllFilesFilter } from "../misc/getAllFiles"
+import { promises as fs } from "fs"
 
 import http2 from "http2"
 import http from "http"
-import fs from "fs"
 
 export default class Webserver extends RouteList {
   private globalContext: GlobalContext
-  public server: http.Server | http2.Http2SecureServer
+  private server: http.Server | http2.Http2SecureServer
 
-  /** Server Controller */
+  /**
+   * Initialize a new Server
+   * @example
+   * ```
+   * const controller = new Server({
+   *   port: 8000
+   * })
+   * ```
+   * @since 3.1.0
+  */
   constructor(
     /** The Server Options */ options?: Options
   ) {
@@ -60,22 +69,6 @@ export default class Webserver extends RouteList {
 			}
 		}
 
-    if (this.globalContext.options.https.enabled) {
-      let key: Buffer, cert: Buffer
-      try {
-        key = fs.readFileSync(this.globalContext.options.https.keyFile)
-        cert = fs.readFileSync(this.globalContext.options.https.certFile)
-      } catch (e) {
-        throw new Error(`Cant access your HTTPS Key or Cert file! (${this.globalContext.options.https.keyFile} / ${this.globalContext.options.https.certFile})`)
-      }
-
-      this.server = http2.createSecureServer({
-        key, cert, allowHTTP1: true
-      })
-    } else this.server = new http.Server()
-
-    this.server.on('request', (req, res) => handleHTTPRequest(req, res, this.globalContext))
-
     // Stats Cleaner
     setInterval(() => {
 			const previousHours = getPreviousHours()
@@ -86,7 +79,18 @@ export default class Webserver extends RouteList {
 		}, 300000)
   }
 
-  /** Set new Options for the Server */
+  /**
+   * Override the set Server Options
+   * @example
+   * ```
+   * const controller = new Server({ })
+   * 
+   * controller.setOptions({
+   *   port: 6900
+   * })
+   * ```
+   * @since 3.1.0
+  */
   setOptions(
     /** The Options */ options: Options
   ) {
@@ -95,7 +99,22 @@ export default class Webserver extends RouteList {
     return this
   }
 
-  /** Start the Server */
+  /**
+   * Start the Server
+   * @example
+   * ```
+   * const controller = new Server({ })
+   * 
+   * controller.start()
+   *   .then((res) => {
+   *     console.log(`Server started on port ${res.port}`)
+   *   })
+   *   .catch((err) => {
+   *     console.error(err)
+   *   })
+   * ```
+   * @since 3.1.0
+  */
   start() {
     return new Promise(async(resolve: (value: ServerEvents.StartSuccess) => void, reject: (reason: ServerEvents.StartError) => void) => {
       let stopExecution = false
@@ -105,6 +124,22 @@ export default class Webserver extends RouteList {
       })
 
       if (stopExecution) return
+
+      if (this.globalContext.options.https.enabled) {
+        let key: Buffer, cert: Buffer
+        try {
+          key = await fs.readFile(this.globalContext.options.https.keyFile)
+          cert = await fs.readFile(this.globalContext.options.https.certFile)
+        } catch (e) {
+          throw new Error(`Cant access your HTTPS Key or Cert file! (${this.globalContext.options.https.keyFile} / ${this.globalContext.options.https.certFile})`)
+        }
+  
+        this.server = http2.createSecureServer({
+          key, cert, allowHTTP1: true
+        })
+      } else this.server = new http.Server()
+
+      this.server.on('request', (req, res) => handleHTTPRequest(req, res, this.globalContext))
 
       this.globalContext.routes.normal = this.getRoutes().routes
       this.globalContext.routes.event = this.getRoutes().events
@@ -118,10 +153,23 @@ export default class Webserver extends RouteList {
 		})
   }
 
-  /** Load all Server Routes & Options */
-  async reload(
-    /** Whether to restart the HTTP Server itself */ restartHTTP?: boolean
-  ) {
+  /**
+   * Reload the Server
+   * @example
+   * ```
+   * const controller = new Server({ })
+   * 
+   * controller.reload()
+   *   .then((res) => {
+   *     console.log(`Server reloaded and started on port ${res.port}`)
+   *   })
+   *   .catch((err) => {
+   *     console.error(err)
+   *   })
+   * ```
+   * @since 3.1.0
+  */
+  async reload() {
     this.globalContext.cache.files.clear()
     this.globalContext.cache.routes.clear()
 
@@ -157,16 +205,29 @@ export default class Webserver extends RouteList {
       12: 0, 13: 0, 14: 0, 15: 0,
       16: 0, 17: 0, 18: 0, 19: 0,
       20: 0, 21: 0, 22: 0, 23: 0
-    }; if (restartHTTP) {
-      await this.stop()
-      await this.start()
     }
+
+    await this.stop()
+    await this.start()
 
     return this
   }
 
   /**
    * Stop the Server
+   * @example
+   * ```
+   * const controller = new Server({ })
+   * 
+   * controller.stop()
+   *   .then((res) => {
+   *     console.log('Server stopped')
+   *   })
+   *   .catch((err) => {
+   *     console.error(err)
+   *   })
+   * ```
+   * @since 3.1.0
   */
   stop() {
     this.server.close()
@@ -203,7 +264,9 @@ export default class Webserver extends RouteList {
       12: 0, 13: 0, 14: 0, 15: 0,
       16: 0, 17: 0, 18: 0, 19: 0,
       20: 0, 21: 0, 22: 0, 23: 0
-    }; return new Promise((resolve: (value: ServerEvents.StopSuccess) => void, reject: (reason: ServerEvents.StopError) => void) => {
+    }
+
+    return new Promise((resolve: (value: ServerEvents.StopSuccess) => void, reject: (reason: ServerEvents.StopError) => void) => {
 			this.server.once('close', () => resolve({ success: true, message: 'WEBSERVER CLOSED' }))
 			this.server.once('error', (error: Error) => reject({ success: false, error, message: 'WEBSERVER CLOSING ERRORED' }))
 		})
