@@ -402,6 +402,13 @@ export default async function handleHTTPRequest(req: IncomingMessage | Http2Serv
         }
 
         return ctr
+      }, printStream(stream) {
+        ctx.waiting = true
+        stream.on('data', (data: Buffer) => {
+          res.write(data, 'binary')
+        }).once('close', () => ctx.events.emit('noWaiting'))
+
+        return ctr
       }
     }
 

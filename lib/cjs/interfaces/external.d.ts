@@ -1,6 +1,7 @@
 /// <reference types="node" />
 /// <reference types="node" />
 /// <reference types="node" />
+/// <reference types="node" />
 import { IncomingMessage, ServerResponse } from "http";
 import { Http2ServerRequest, Http2ServerResponse } from "http2";
 import ValueCollection from "../classes/valueCollection";
@@ -8,6 +9,7 @@ import { HTTPMethods, Routed } from "./internal";
 import ServerController from "../classes/webServer";
 import { Events } from "./internal";
 import { UrlWithStringQuery } from "url";
+import { Readable } from "stream";
 export interface PrintOptions {
     /**
      * The Content Type to use
@@ -57,6 +59,7 @@ export interface HTTPRequestContext<Custom = {}, Body = any> {
     /** Redirect a Client to another URL */ redirect: (location: string, statusCode?: 301 | 302) => HTTPRequestContext;
     /** Print a Message to the Client (automatically Formatted) */ print: (msg: any, options?: PrintOptions) => HTTPRequestContext;
     /** Print the Content of a File to the Client */ printFile: (path: string, options?: PrintFileOptions) => HTTPRequestContext;
+    /** Print the data event of a Stream to the Client */ printStream: (stream: Readable) => HTTPRequestContext;
     /** Custom Variables that are Global */ '@': Custom;
 }
 export interface RouteFile<Custom = {}, Body = any> {
