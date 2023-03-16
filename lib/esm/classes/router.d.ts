@@ -2,7 +2,7 @@ import { Routed, HTTPMethods } from "../interfaces/internal";
 import { Event } from "../interfaces/external";
 import { Events } from "../interfaces/internal";
 import RouteBlock from "./router/routeBlock";
-export declare const pathParser: (path: string, removeSingleSlash?: boolean) => string;
+export declare const pathParser: (path: string | string[], removeSingleSlash?: boolean) => string;
 export interface minifiedRoute {
     /** The Request Method of the Route */ method: HTTPMethods;
     /** The Path on which this will be available (+ prefix) */ path: string;

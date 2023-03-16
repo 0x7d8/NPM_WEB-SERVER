@@ -1,18 +1,24 @@
-import Route from "../interfaces/route"
-import { ExternalRouter, LoadPath, Routed, HTTPMethods } from "../interfaces/internal"
+import { ExternalRouter, Routed, HTTPMethods } from "../interfaces/internal"
 import { Event } from "../interfaces/external"
 import { Events } from "../interfaces/internal"
 
 import RouteBlock from "./router/routeBlock"
 
-export const pathParser = (path: string, removeSingleSlash?: boolean) => {
-	path = path.replace(/\/{2,}/g, '/')
+export const pathParser = (path: string | string[], removeSingleSlash?: boolean) => {
+	const paths = typeof path === 'string' ? [path] : path
+	let output = ''
 
-	if (path.endsWith('/') && path !== '/') path = path.slice(0, -1)
-	if (!path.startsWith('/') && path !== '/') path = `/${path}`
-	if (path.includes('/?')) path = path.replace('/?', '?')
+	for (let pathIndex = 0; pathIndex <= paths.length - 1; pathIndex++) {
+		path = paths[pathIndex].replace(/\/{2,}/g, '/')
 
-	return ((removeSingleSlash && path === '/') ? '' : path || '/')
+		if (path.endsWith('/') && path !== '/') path = path.slice(0, -1)
+		if (!path.startsWith('/') && path !== '/') path = `/${path}`
+		if (path.includes('/?')) path = path.replace('/?', '?')
+
+		output += (removeSingleSlash && path === '/') ? '' : path || '/'
+	}
+
+	return output
 }
 
 export interface minifiedRoute {

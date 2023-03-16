@@ -291,8 +291,8 @@ export default class Webserver extends RouteList {
           loadedRoutes.push({
             type: 'route',
             method: route.method,
-            path: loadPath.prefix + pathParser(route.path),
-            pathArray: (loadPath.prefix + pathParser(route.path)).split('/'),
+            path: pathParser([loadPath.prefix, route.path]),
+            pathArray: pathParser([loadPath.prefix, route.path]).split('/'),
             code: route.code,
             data: {
               validations: loadPath.validations
@@ -312,8 +312,8 @@ export default class Webserver extends RouteList {
           loadedRoutes.push({
             type: 'route',
             method: route.method,
-            path: loadPath.prefix + pathParser(route.path),
-            pathArray: (loadPath.prefix + pathParser(route.path)).split('/'),
+            path: pathParser([loadPath.prefix, route.path]),
+            pathArray: pathParser([loadPath.prefix, route.path]).split('/'),
             code: route.code,
             data: {
               validations: loadPath.validations
