@@ -57,9 +57,9 @@ export interface HTTPRequestContext<Custom = {}, Body = any> {
     /** Set a Custom Variable */ setCustom: <Type extends keyof Custom>(name: Type, value: Custom[Type]) => HTTPRequestContext;
     /** The Request Status to Send */ status: (code: number) => HTTPRequestContext;
     /** Redirect a Client to another URL */ redirect: (location: string, statusCode?: 301 | 302) => HTTPRequestContext;
-    /** Print a Message to the Client (automatically Formatted) */ print: (msg: any, options?: PrintOptions) => HTTPRequestContext;
+    /** Print a Message to the Client (automatically Formatted) */ print: (message: any, options?: PrintOptions) => HTTPRequestContext;
     /** Print the Content of a File to the Client */ printFile: (path: string, options?: PrintFileOptions) => HTTPRequestContext;
-    /** Print the data event of a Stream to the Client */ printStream: (stream: Readable) => HTTPRequestContext;
+    /** Print the data event of a Stream to the Client */ printStream: (stream: Readable, endRequest?: boolean) => HTTPRequestContext;
     /** Custom Variables that are Global */ '@': Custom;
 }
 export interface RouteFile<Custom = {}, Body = any> {

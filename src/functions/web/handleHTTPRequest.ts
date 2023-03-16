@@ -277,17 +277,22 @@ export default async function handleHTTPRequest(req: IncomingMessage | Http2Serv
       // Functions
       setHeader(name, value) {
         res.setHeader(name, value)
+
         return ctr
       }, setCustom(name, value) {
         ctr['@'][name] = value
+
         return ctr
       }, redirect(location, statusCode) {
         res.statusCode = statusCode ?? 302
         res.setHeader('Location', location)
+        ctx.events.emit('noWaiting')
+
         return ctr
-      }, print(msg, localOptions) {
-        const contentType = localOptions?.contentType ?? ''
-        const returnFunctions = localOptions?.returnFunctions ?? false
+      }, print(msg, options) {
+        const contentType = options?.contentType ?? ''
+        const returnFunctions = options?.returnFunctions ?? false
+        ctx.events.emit('noWaiting')
 
         switch (typeof msg) {
           case "object":
@@ -328,14 +333,17 @@ export default async function handleHTTPRequest(req: IncomingMessage | Http2Serv
             if (contentType) res.setHeader('Content-Type', contentType)
             ctx.content = Buffer.from('')
             break
-        }; return ctr
+        }
+
+        return ctr
       }, status(code) {
         res.statusCode = code ?? 200
+
         return ctr
-      }, printFile(file, localOptions) {
-        const addTypes = localOptions?.addTypes ?? true
-        const contentType = localOptions?.contentType ?? ''
-        const cache = localOptions?.cache ?? false
+      }, printFile(file, options) {
+        const addTypes = options?.addTypes ?? true
+        const contentType = options?.contentType ?? ''
+        const cache = options?.cache ?? false
 
         // Add Content Types
         if (addTypes && !contentType) ctr.setHeader('Content-Type', handleContentType(file, ctg))
@@ -402,11 +410,13 @@ export default async function handleHTTPRequest(req: IncomingMessage | Http2Serv
         }
 
         return ctr
-      }, printStream(stream) {
+      }, printStream(stream, endRequest) {
         ctx.waiting = true
         stream.on('data', (data: Buffer) => {
           res.write(data, 'binary')
-        }).once('close', () => ctx.events.emit('noWaiting'))
+        }).once('close', () => {
+          if (endRequest) ctx.events.emit('noWaiting')
+        })
 
         return ctr
       }
