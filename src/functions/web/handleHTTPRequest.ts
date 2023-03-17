@@ -327,7 +327,8 @@ export default async function handleHTTPRequest(req: IncomingMessage | Http2Serv
 
               ctx.content = parsedResult
               ctx.events.emit('noWaiting')
-            }) (); break
+            }) ()
+            break
 
           case "undefined":
             if (contentType) res.setHeader('Content-Type', contentType)
@@ -352,8 +353,8 @@ export default async function handleHTTPRequest(req: IncomingMessage | Http2Serv
         // Get File Content
         let stream: fs.ReadStream, errorStop = false
         if (ctr.headers.get('accept-encoding', '').includes(CompressMapping[ctg.options.compression])) {
-          ctr.rawRes.setHeader('Content-Encoding', CompressMapping[ctg.options.compression])
-          ctr.rawRes.setHeader('Vary', 'Accept-Encoding')
+          res.setHeader('Content-Encoding', CompressMapping[ctg.options.compression])
+          res.setHeader('Vary', 'Accept-Encoding')
 
           // Check Cache
           ctx.continue = false
@@ -413,7 +414,11 @@ export default async function handleHTTPRequest(req: IncomingMessage | Http2Serv
       }, printStream(stream, endRequest) {
         ctx.waiting = true
         stream.on('data', (data: Buffer) => {
+          if (!Buffer.isBuffer(data)) data = Buffer.from(data)
           res.write(data, 'binary')
+
+          ctg.data.outgoing.total += data.byteLength
+          ctg.data.outgoing[ctx.previousHours[4]] += data.byteLength
         }).once('close', () => {
           if (endRequest ?? true) ctx.events.emit('noWaiting')
         })
