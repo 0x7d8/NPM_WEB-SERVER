@@ -34,6 +34,16 @@ export interface PrintFileOptions {
      * @default false
     */ cache?: boolean;
 }
+export interface PrintStreamOptions {
+    /**
+     * Whether to end the Request after the Stream finishes
+     * @default true
+    */ endRequest?: boolean;
+    /**
+     * Whether to Destroy the Stream if the Request is aborted
+     * @default true
+    */ destroyAbort?: boolean;
+}
 export interface HTTPRequestContext<Custom = {}, Body = any> {
     /** The Server Controller Class */ controller: ServerController;
     /** A Collection of all Headers */ readonly headers: ValueCollection<Lowercase<string>, string>;
@@ -59,7 +69,7 @@ export interface HTTPRequestContext<Custom = {}, Body = any> {
     /** Redirect a Client to another URL */ redirect: (location: string, statusCode?: 301 | 302) => HTTPRequestContext;
     /** Print a Message to the Client (automatically Formatted) */ print: (message: any, options?: PrintOptions) => HTTPRequestContext;
     /** Print the Content of a File to the Client */ printFile: (path: string, options?: PrintFileOptions) => HTTPRequestContext;
-    /** Print the data event of a Stream to the Client */ printStream: (stream: Readable, endRequest?: boolean) => HTTPRequestContext;
+    /** Print the data event of a Stream to the Client */ printStream: (stream: Readable, options?: PrintStreamOptions) => HTTPRequestContext;
     /** Custom Variables that are Global */ '@': Custom;
 }
 export interface RouteFile<Custom = {}, Body = any> {

@@ -282,49 +282,51 @@ export default async function handleHTTPRequest(req: IncomingMessage | Http2Serv
         ctr['@'][name] = value
 
         return ctr
+      }, status(code) {
+        res.statusCode = code ?? 200
+
+        return ctr
       }, redirect(location, statusCode) {
         res.statusCode = statusCode ?? 302
         res.setHeader('Location', location)
         ctx.events.emit('noWaiting')
 
         return ctr
-      }, print(msg, options) {
+      }, print(message, options = {}) {
         const contentType = options?.contentType ?? ''
         const returnFunctions = options?.returnFunctions ?? false
         ctx.events.emit('noWaiting')
 
-        switch (typeof msg) {
+        switch (typeof message) {
           case "object":
             res.setHeader('Content-Type', 'application/json')
-            ctx.content = Buffer.from(JSON.stringify(msg))
+            ctx.content = Buffer.from(JSON.stringify(message))
             break
 
           case "string":
             if (contentType) res.setHeader('Content-Type', contentType)
-            ctx.content = Buffer.from(msg)
+            ctx.content = Buffer.from(message)
             break
 
           case "symbol":
             if (contentType) res.setHeader('Content-Type', contentType)
-            ctx.content = Buffer.from(msg.toString())
+            ctx.content = Buffer.from(message.toString())
             break
 
           case "bigint":
           case "number":
           case "boolean":
             if (contentType) res.setHeader('Content-Type', contentType)
-            ctx.content = Buffer.from(String(msg))
+            ctx.content = Buffer.from(String(message))
             break
 
           case "function":
             ctx.waiting = true; (async() => {
-              const result = await msg()
+              const result = await message()
               if (typeof result !== 'function') ctr.print(result, { contentType })
               else if (!returnFunctions) { (ctr as any).error = new Error('Cant return functions from functions, consider using async/await'); return handleEvent('error', ctr, ctx, ctg) }
               else { ctr.print(result, { contentType, returnFunctions }) }
-              const parsedResult = ctx.content
 
-              ctx.content = parsedResult
               ctx.events.emit('noWaiting')
             }) ()
             break
@@ -336,11 +338,7 @@ export default async function handleHTTPRequest(req: IncomingMessage | Http2Serv
         }
 
         return ctr
-      }, status(code) {
-        res.statusCode = code ?? 200
-
-        return ctr
-      }, printFile(file, options) {
+      }, printFile(file, options = {}) {
         const addTypes = options?.addTypes ?? true
         const contentType = options?.contentType ?? ''
         const cache = options?.cache ?? false
@@ -410,19 +408,37 @@ export default async function handleHTTPRequest(req: IncomingMessage | Http2Serv
         }
 
         return ctr
-      }, printStream(stream, endRequest) {
+      }, printStream(stream, options = {}) {
+        const endRequest = options?.endRequest ?? true
+        const destroyAbort = options?.destroyAbort ?? true
+
         ctx.waiting = true
 
-        ctx.events.once('endRequest', () => stream.destroy())
-        stream.on('data', (data: Buffer) => {
-          if (!Buffer.isBuffer(data)) data = Buffer.from(data)
+        const dataListener = (data: Buffer) => {
+          if (!Buffer.isBuffer(data)) {
+            const oldContent = Buffer.concat([ ctx.content ])
+            ctr.print(data)
+            data = Buffer.from(ctx.content)
+            ctx.content = oldContent
+          }
+
           res.write(data, 'binary')
 
           ctg.data.outgoing.total += data.byteLength
           ctg.data.outgoing[ctx.previousHours[4]] += data.byteLength
-        }).once('close', () => {
-          if (endRequest ?? true) ctx.events.emit('noWaiting')
-        })
+        }, closeListener = () => {
+          if (endRequest) ctx.events.emit('noWaiting')
+        }
+
+        if (destroyAbort) ctx.events.once('endRequest', () => stream.destroy())
+
+        stream
+          .on('data', dataListener)
+          .once('close', closeListener)
+
+        ctx.events.once('endRequest', () => stream
+          .removeListener('data', dataListener)
+          .removeListener('close', closeListener))
 
         return ctr
       }
