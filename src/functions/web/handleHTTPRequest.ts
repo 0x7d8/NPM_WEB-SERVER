@@ -44,7 +44,8 @@ export default async function handleHTTPRequest(req: IncomingMessage | Http2Serv
 
   // Handle Wait Events
   ctx.events.on('noWaiting', () => ctx.waiting = false)
-  req.once('close', () => ctx.events.emit('endRequest'))
+  req.once('aborted', () => ctx.events.emit('endRequest'))
+  res.once('close', () => ctx.events.emit('endRequest'))
 
   // Save & Check Request Body
   if (ctg.options.body.enabled) req.on('data', async(data: Buffer) => {
@@ -241,12 +242,10 @@ export default async function handleHTTPRequest(req: IncomingMessage | Http2Serv
       cookies[parts.shift().trim()] = parts.join('=')
     })
 
-    // Parse Request Body (if enabled)
-    if (req.headers['content-encoding'] === 'gzip')
-      ctx.body.raw = await new Promise((resolve) => zlib.gunzip(ctx.body.raw, (error, content) => { if (error) resolve(ctx.body.raw); else resolve(content) }))
+    // Parse Request Body
     if (ctg.options.body.parse) {
       try { ctx.body.parsed = JSON.parse(ctx.body.raw.toString()) }
-      catch (e) { ctx.body.parsed = ctx.body.raw.toString() }
+      catch (err) { ctx.body.parsed = ctx.body.raw.toString() }
     } else ctx.body.parsed = ctx.body.raw.toString()
 
     // Create Context Response Object
@@ -377,10 +376,11 @@ export default async function handleHTTPRequest(req: IncomingMessage | Http2Serv
 
           const compression = handleCompressType(ctg.options.compression)
           try { stream = fs.createReadStream(file); ctx.waiting = true; stream.pipe(compression); compression.pipe(res) }
-          catch (e) { errorStop = true; ctr.error = e; handleEvent('error', ctr, ctx, ctg) }
+          catch (err) { errorStop = true; ctr.error = err; handleEvent('error', ctr, ctx, ctg) }
           if (errorStop) return
 
           // Collect Data
+          ctx.events.once('endRequest', () => stream.destroy())
           compression.on('data', (content: Buffer) => {
             ctg.data.outgoing.total += content.byteLength
             ctg.data.outgoing[ctx.previousHours[4]] += content.byteLength
@@ -390,13 +390,13 @@ export default async function handleHTTPRequest(req: IncomingMessage | Http2Serv
               const oldData = ctg.cache.files.get(`file::${ctg.options.compression}::${file}`) ?? Buffer.from('')
               ctg.cache.files.set(`file::${ctg.options.compression}::${file}`, Buffer.concat([ oldData as Buffer, content ]))
             }
-          }); compression.once('end', () => { ctx.events.emit('noWaiting'); ctx.content = Buffer.from('') })
-          res.once('close', () => { stream.close(); compression.close() })
+          }); compression.once('close', () => { ctx.events.emit('noWaiting'); ctx.content = Buffer.from('') })
         } else {
           try { stream = fs.createReadStream(file); ctx.waiting = true; stream.pipe(res) }
-          catch (e) { errorStop = true; ctr.error = e; handleEvent('error', ctr, ctx, ctg) }
+          catch (err) { errorStop = true; ctr.error = err; handleEvent('error', ctr, ctx, ctg) }
 
           // Collect Data
+          ctx.events.once('endRequest', () => stream.destroy())
           stream.on('data', (content: Buffer) => {
             ctg.data.outgoing.total += content.byteLength
             ctg.data.outgoing[ctx.previousHours[4]] += content.byteLength
@@ -406,13 +406,14 @@ export default async function handleHTTPRequest(req: IncomingMessage | Http2Serv
               const oldData = ctg.cache.files.get(`file::${ctg.options.compression}::${file}`) ?? Buffer.from('')
               ctg.cache.files.set(`file::${ctg.options.compression}::${file}`, Buffer.concat([ oldData as Buffer, content ]))
             }
-          }); stream.once('end', () => { ctx.events.emit('noWaiting'); ctx.content = Buffer.from('') })
-          res.once('close', () => stream.close())
+          }); stream.once('close', () => { ctx.events.emit('noWaiting'); ctx.content = Buffer.from('') })
         }
 
         return ctr
       }, printStream(stream, endRequest) {
         ctx.waiting = true
+
+        ctx.events.once('endRequest', () => stream.destroy())
         stream.on('data', (data: Buffer) => {
           if (!Buffer.isBuffer(data)) data = Buffer.from(data)
           res.write(data, 'binary')
@@ -458,14 +459,13 @@ export default async function handleHTTPRequest(req: IncomingMessage | Http2Serv
       for (let authNumber = 0; authNumber <= ctx.execute.route.data.validations.length - 1; authNumber++) {
         const authCheck = ctx.execute.route.data.validations[authNumber]
 
-        await Promise.resolve(authCheck(ctr)).then(() => {
-          if (!String(res.statusCode).startsWith('2')) {
-            doContinue = false
-          }
-        }).catch((e) => {
+        try {
+          await Promise.resolve(authCheck(ctr))
+          if (!String(res.statusCode).startsWith('2')) doContinue = false
+        } catch (err) {
           doContinue = false
-          runError = e
-        })
+          runError = err
+        }
 
         if (!doContinue && runError) {
           ctr.error = runError
@@ -508,7 +508,7 @@ export default async function handleHTTPRequest(req: IncomingMessage | Http2Serv
 
           const compression = handleCompressType(ctg.options.compression)
           try { stream = fs.createReadStream(ctx.execute.file); ctx.waiting = true; stream.pipe(compression); compression.pipe(res) }
-          catch (e) { errorStop = true; ctr.error = e; handleEvent('error', ctr, ctx, ctg) }
+          catch (err) { errorStop = true; ctr.error = err; handleEvent('error', ctr, ctx, ctg) }
           if (errorStop) return
 
           // Write to Total Network
@@ -519,7 +519,7 @@ export default async function handleHTTPRequest(req: IncomingMessage | Http2Serv
           res.once('close', () => { stream.close(); compression.close() })
         } else {
           try { stream = fs.createReadStream(ctx.execute.file); ctx.waiting = true; stream.pipe(res) }
-          catch (e) { errorStop = true; ctr.error = e; handleEvent('error', ctr, ctx, ctg) }
+          catch (err) { errorStop = true; ctr.error = err; handleEvent('error', ctr, ctx, ctg) }
 
           // Write to Total Network
           stream.on('data', (content: Buffer) => {
@@ -529,11 +529,13 @@ export default async function handleHTTPRequest(req: IncomingMessage | Http2Serv
           res.once('close', () => stream.close())
         }
       } else {
-        await Promise.resolve(ctx.execute.route.code(ctr)).catch((e) => {
-          ctr.error = e
+        try {
+          await Promise.resolve(ctx.execute.route.code(ctr))
+        } catch (err) {
+          ctr.error = err
           errorStop = true
           handleEvent('error', ctr, ctx, ctg)
-        })
+        }
       }
 
       // Wait for Streams
