@@ -17,7 +17,7 @@ import { MiddlewareToHTTPContext } from "rjweb-server"
 import { Props as AdditionalProps1 } from "my-middleware"
 
 declare module "rjweb-server" {
-  export interface HTTPRequestContext extends MiddlewareToHTTPContext<[ AdditionalProps1 ]> {}
+  interface HTTPRequestContext extends MiddlewareToHTTPContext<[ AdditionalProps1 ]> {}
 }
 ```
 

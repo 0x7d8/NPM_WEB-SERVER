@@ -66,13 +66,13 @@ export interface HTTPRequestContext<Custom = {}, Body = any> {
     /** The Raw HTTP Server Req Variable */ rawReq: IncomingMessage | Http2ServerRequest;
     /** The Raw HTTP Server Res Variable */ rawRes: ServerResponse | Http2ServerResponse;
     /** The ERROR Object if one occured (mostly in the error event) */ error?: Error;
-    /** Set an HTTP Header to add */ setHeader: (name: string, value: string | number) => HTTPRequestContext;
-    /** Set a Custom Variable */ setCustom: <Type extends keyof Custom>(name: Type, value: Custom[Type]) => HTTPRequestContext;
-    /** The Request Status to Send */ status: (code: number) => HTTPRequestContext;
-    /** Redirect a Client to another URL */ redirect: (location: string, statusCode?: 301 | 302) => HTTPRequestContext;
-    /** Print a Message to the Client (automatically Formatted) */ print: (message: any, options?: PrintOptions) => HTTPRequestContext;
-    /** Print the Content of a File to the Client */ printFile: (path: string, options?: PrintFileOptions) => HTTPRequestContext;
-    /** Print the data event of a Stream to the Client */ printStream: (stream: Readable, options?: PrintStreamOptions) => HTTPRequestContext;
+    /** Set an HTTP Header to add */ setHeader: (name: string, value: string | number) => this;
+    /** Set a Custom Variable */ setCustom: <Type extends keyof Custom>(name: Type, value: Custom[Type]) => this;
+    /** The Request Status to Send */ status: (code: number) => this;
+    /** Redirect a Client to another URL */ redirect: (location: string, statusCode?: 301 | 302) => this;
+    /** Print a Message to the Client (automatically Formatted) */ print: (message: any, options?: PrintOptions) => this;
+    /** Print the Content of a File to the Client */ printFile: (path: string, options?: PrintFileOptions) => this;
+    /** Print the data event of a Stream to the Client */ printStream: (stream: Readable, options?: PrintStreamOptions) => this;
     /** Custom Variables that are Global */ '@': Custom;
 }
 export interface RouteFile<Custom = {}, Body = any> {
