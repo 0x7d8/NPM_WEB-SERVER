@@ -1,5 +1,5 @@
-import valueCollection from "src/classes/valueCollection"
-import ServerController from "src/classes/webServer"
+import valueCollection from "../classes/valueCollection"
+import ServerController from "../classes/webServer"
 import { HTTPMethods } from "./internal"
 import Route from "../interfaces/route"
 import { Event, Middleware } from "../interfaces/external"
