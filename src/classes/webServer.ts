@@ -24,16 +24,16 @@ export default class Webserver extends RouteList {
    *   port: 8000
    * })
    * ```
-   * @since 3.1.0
+   * @since 3.0.0
   */
   constructor(
-    /** The Server Options */ options?: Options
+    /** The Server Options */ options: Options = {}
   ) {
     super()
 
     this.globalContext = {
 			controller: this,
-      options: new ServerOptions(options || {}).getOptions(),
+      options: new ServerOptions(options).getOptions(),
 			requests: {
 				total: 0,
 				0: 0, 1: 0, 2: 0, 3: 0,
@@ -42,7 +42,8 @@ export default class Webserver extends RouteList {
 				12: 0, 13: 0, 14: 0, 15: 0,
 				16: 0, 17: 0, 18: 0, 19: 0,
 				20: 0, 21: 0, 22: 0, 23: 0
-			}, data: {
+			}, middlewares: this.middlewares,
+      data: {
 				incoming: {
 					total: 0,
 					0: 0, 1: 0, 2: 0, 3: 0,
@@ -90,7 +91,7 @@ export default class Webserver extends RouteList {
    *   port: 6900
    * })
    * ```
-   * @since 3.1.0
+   * @since 3.0.0
   */
   setOptions(
     /** The Options */ options: Options
@@ -114,7 +115,7 @@ export default class Webserver extends RouteList {
    *     console.error(err)
    *   })
    * ```
-   * @since 3.1.0
+   * @since 3.0.0
   */
   start() {
     return new Promise(async(resolve: (value: ServerEvents.StartSuccess) => void, reject: (reason: ServerEvents.StartError) => void) => {
@@ -168,7 +169,7 @@ export default class Webserver extends RouteList {
    *     console.error(err)
    *   })
    * ```
-   * @since 3.1.0
+   * @since 3.0.0
   */
   async reload() {
     this.globalContext.cache.files.clear()
@@ -228,7 +229,7 @@ export default class Webserver extends RouteList {
    *     console.error(err)
    *   })
    * ```
-   * @since 3.1.0
+   * @since 3.0.0
   */
   stop() {
     this.server.close()

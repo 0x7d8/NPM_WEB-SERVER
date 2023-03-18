@@ -2,7 +2,7 @@ import valueCollection from "src/classes/valueCollection"
 import ServerController from "src/classes/webServer"
 import { HTTPMethods } from "./internal"
 import Route from "../interfaces/route"
-import { Event } from "../interfaces/external"
+import { Event, Middleware } from "../interfaces/external"
 import { EventEmitter } from "stream"
 import { UrlWithStringQuery } from "url"
 import { Options } from "../classes/serverOptions"
@@ -19,6 +19,7 @@ export interface GlobalContext {
 	/** The Server Controller Class */ controller: ServerController
 	/** The HTTP Server Options */ options: Options
 	/** The Request Count */ requests: Record<Hours | 'total', number>
+	/** The Middlewares to run */ middlewares: Middleware[]
 	/** The Data Stats */ data: {
 		/** The Incoming Data Count */ incoming: Record<Hours | 'total', number>
 		/** The Outgoing Data Count */ outgoing: Record<Hours | 'total', number>

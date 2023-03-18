@@ -1,9 +1,10 @@
 import { Routed } from "../interfaces/internal";
-import { Event } from "../interfaces/external";
+import { Event, Middleware } from "../interfaces/external";
 import { Events } from "../interfaces/internal";
 import RouteBlock from "./router/routeBlock";
 export declare const pathParser: (path: string | string[], removeSingleSlash?: boolean) => string;
 export default class RouteList {
+    protected middlewares: Middleware[];
     private externals;
     private events;
     /** List of Routes */
@@ -24,6 +25,20 @@ export default class RouteList {
     event(
     /** The Event Name */ event: Events, 
     /** The Async Code to run on a Request */ code: Routed): this;
+    /**
+     * Add a new Middleware
+     * @example
+   * ```
+   * // We will use the custom middleware
+     * const middleware = require('middleware-package')
+   * const controller = new Server({ })
+   *
+   * controller.middleware(middleware())
+   * ```
+     * @since 4.4.0
+    */
+    middleware(
+    /** The Middleware to run on a Request */ middleware: Middleware): this;
     /**
      * Add a new Block of Routes with a Prefix
      * @example

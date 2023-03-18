@@ -10,6 +10,9 @@ import ServerController from "../classes/webServer";
 import { Events } from "./internal";
 import { UrlWithStringQuery } from "url";
 import { Readable } from "stream";
+import { GlobalContext, RequestContext } from "./context";
+type UnionToIntersection<U> = (U extends any ? (k: U) => void : never) extends ((k: infer I) => void) ? I : never;
+export type MiddlewareToHTTPContext<T extends object[]> = T extends (infer U)[] ? HTTPRequestContext & Record<keyof U, UnionToIntersection<U[keyof U]>> : never;
 export interface PrintOptions {
     /**
      * The Content Type to use
@@ -80,5 +83,9 @@ export interface RouteFile<Custom = {}, Body = any> {
 export interface Event {
     /** The Name of The Event */ event: Events;
     /** The Async Code to run on the Event */ code: Routed;
+}
+export interface Middleware {
+    /** The Name of The Middleware */ name: string;
+    /** The Async Code to run on a Request */ code: (ctr: HTTPRequestContext, ctx: RequestContext, ctg: GlobalContext) => Promise<any> | any;
 }
 export { HTTPMethods };

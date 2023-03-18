@@ -136,6 +136,19 @@ export = {
 } as CtrFile<Body>
 ```
 
+Middleware Intellisense
+```ts
+// webserver.d.ts
+
+import { MiddlewareToHTTPContext } from "rjweb-server"
+import { Props as AdditionalProps1 } from "random-middleware"
+import { Props as AdditionalProps2 } from "random-middlewareasd"
+
+declare module "rjweb-server" {
+  export interface HTTPRequestContext extends MiddlewareToHTTPContext<[ AdditionalProps1, AdditionalProps2 ]> {}
+}
+```
+
 ## Usage
 
 Initialize Server
@@ -212,7 +225,7 @@ const handleHello = async() => {
 
 server.routeBlock('/wait5sec')
   // this request will load for 5 seconds
-  .add('GET', '/func', async(ctr) => {
+  .add('GET', '/func', (ctr) => {
     return ctr.print(handleHello)
   }) // this request will also load for 5 seconds
   .add('GET', '/promise', async(ctr) => {
@@ -249,6 +262,28 @@ server.prefix('/account')
   .add('POST', '/edit', async(ctr) => {
     return ctr.print('Edited Account Infos!')
   })
+```
+
+Use Middleware
+```js
+const { Server } = require('rjweb-server')
+const someMiddleware = require('some-middleware')
+const someOtherMiddleware = require('some-other-middleware')
+
+const server = new Server({
+  bind: '0.0.0.0', // The IP thats bound to
+  cors: false, // If Cors Headers will be added
+  port: 5000, // The Port which the Server runs on
+  proxy: true // If enabled, alternate IPs will be shown
+})
+
+server.middleware(someMiddleware())
+server.middleware(someOtherMiddleware())
+// For Intellisense of the Middlewares look at the Typescript Section at the top of this file
+
+server.start().then((s) => {
+  console.log(`server started on port ${s.port}`)
+})
 ```
 
 Serve Static Files

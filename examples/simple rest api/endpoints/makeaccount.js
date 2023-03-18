@@ -1,8 +1,8 @@
-const webserver = require('rjweb-server')
 const accounts = new Map()
 
+/** @type {import('rjweb-server').RouteFile} */
 module.exports = {
-	type: webserver.types.post,
+	type: 'POST',
 	path: '/makeaccount',
 
 	async code(ctr) {

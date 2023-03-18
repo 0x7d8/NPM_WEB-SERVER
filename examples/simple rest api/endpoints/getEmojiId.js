@@ -1,12 +1,12 @@
-const webserver = require('rjweb-server')
 const emojis = {
 	berry: 1,
 	apple: 2
 }
 
+/** @type {import('rjweb-server').RouteFile} */
 module.exports = {
-	type: webserver.types.get,
-	path: '/getemojiid/:text',
+	type: 'GET',
+	path: '/getemojiid/<text>',
 
 	async code(ctr) {
 		let emoji = ''

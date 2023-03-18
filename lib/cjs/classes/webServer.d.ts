@@ -12,7 +12,7 @@ export default class Webserver extends RouteList {
      *   port: 8000
      * })
      * ```
-     * @since 3.1.0
+     * @since 3.0.0
     */
     constructor(
     /** The Server Options */ options?: Options);
@@ -26,7 +26,7 @@ export default class Webserver extends RouteList {
      *   port: 6900
      * })
      * ```
-     * @since 3.1.0
+     * @since 3.0.0
     */
     setOptions(
     /** The Options */ options: Options): this;
@@ -44,7 +44,7 @@ export default class Webserver extends RouteList {
      *     console.error(err)
      *   })
      * ```
-     * @since 3.1.0
+     * @since 3.0.0
     */
     start(): Promise<ServerEvents.StartSuccess>;
     /**
@@ -61,7 +61,7 @@ export default class Webserver extends RouteList {
      *     console.error(err)
      *   })
      * ```
-     * @since 3.1.0
+     * @since 3.0.0
     */
     reload(): Promise<this>;
     /**
@@ -78,7 +78,7 @@ export default class Webserver extends RouteList {
      *     console.error(err)
      *   })
      * ```
-     * @since 3.1.0
+     * @since 3.0.0
     */
     stop(): Promise<ServerEvents.StopSuccess>;
     /** Load all External Paths */

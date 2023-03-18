@@ -136,18 +136,17 @@ export default class RouteBlock {
 	}
 
   /**
-   * Load Static Files
-   * @warning If new Files are added the Server needs to be reloaded
+   * Serve Static Files
    * @example
    * ```
    * // All Files in "./static" will be served dynamically so they wont be loaded as routes by default
-   * // Due to the hideHTML Option being on files will be served differently, /index.html -> /; /about.html -> /about
+   * // Due to the hideHTML Option being on files will be served differently, /index.html -> /; /about.html -> /about; /contributors/index.html -> /contributors
    * const controller = new Server({ })
    * 
    * controller.prefix('/')
    *   .static('./static', {
    *     hideHTML: true, // If enabled will remove .html ending from files
-   *     addTypes: true, // If enabled will automatically add content-types to some file endings
+   *     addTypes: true, // If enabled will automatically add content-types to some file endings (including the custom ones defined in the main config)
    *   })
    * ```
    * @since 3.1.0
@@ -156,12 +155,12 @@ export default class RouteBlock {
 		/** The Folder which will be used */ folder: string,
 		/** Additional Configuration for Serving */ options: {
       /**
-       * Automatically add Content-Type to some file endings
+       * Whether to automatically add Content-Type to some file endings
        * @default true
        * @since 3.1.0
       */ addTypes?: boolean
       /**
-       * Automatically remove .html ending from files
+       * Whether to automatically remove .html ending from files
        * @default false
        * @since 3.1.0
       */ hideHTML?: boolean

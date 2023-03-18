@@ -444,8 +444,37 @@ export default async function handleHTTPRequest(req: IncomingMessage | Http2Serv
       }
     }
 
-    // Execute Custom Run Function
+    // Execute Middleware
     let errorStop = false
+    if (ctg.middlewares.length > 0) {
+      let doContinue = true, runError = null
+      for (let validateIndex = 0; validateIndex <= ctg.middlewares.length - 1; validateIndex++) {
+        const validate = ctg.middlewares[validateIndex]
+
+        try {
+          await Promise.resolve(validate.code(ctr, ctx, ctg))
+          if (!String(res.statusCode).startsWith('2')) doContinue = false
+        } catch (err) {
+          doContinue = false
+          runError = err
+        }
+
+        if (!doContinue && runError) {
+          ctr.error = runError
+          errorStop = true
+          handleEvent('error', ctr, ctx, ctg)
+          break
+        } else if (!doContinue) {
+          if (!res.getHeader('Content-Type')) ctr.setHeader('Content-Type', 'text/plain')
+          handleCompression(ctr, ctx, ctg)
+          break
+        }
+      }
+
+      if (!doContinue) return
+    }
+
+    // Execute Custom Run Function
     if (!ctx.execute.dashboard) errorStop = await handleEvent('request', ctr, ctx, ctg)
     if (errorStop) return
 
@@ -472,11 +501,11 @@ export default async function handleHTTPRequest(req: IncomingMessage | Http2Serv
     // Execute Validations
     if (ctx.execute.exists && ctx.execute.route.data.validations.length > 0) {
       let doContinue = true, runError = null
-      for (let authNumber = 0; authNumber <= ctx.execute.route.data.validations.length - 1; authNumber++) {
-        const authCheck = ctx.execute.route.data.validations[authNumber]
+      for (let validateIndex = 0; validateIndex <= ctx.execute.route.data.validations.length - 1; validateIndex++) {
+        const validate = ctx.execute.route.data.validations[validateIndex]
 
         try {
-          await Promise.resolve(authCheck(ctr))
+          await Promise.resolve(validate(ctr))
           if (!String(res.statusCode).startsWith('2')) doContinue = false
         } catch (err) {
           doContinue = false

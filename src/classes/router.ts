@@ -1,5 +1,5 @@
-import { ExternalRouter, Routed, HTTPMethods } from "../interfaces/internal"
-import { Event } from "../interfaces/external"
+import { ExternalRouter, Routed } from "../interfaces/internal"
+import { Event, Middleware } from "../interfaces/external"
 import { Events } from "../interfaces/internal"
 
 import RouteBlock from "./router/routeBlock"
@@ -22,14 +22,15 @@ export const pathParser = (path: string | string[], removeSingleSlash?: boolean)
 }
 
 export default class RouteList {
+	protected middlewares: Middleware[]
 	private externals: ExternalRouter[]
 	private events: Event[]
 
 	/** List of Routes */
 	constructor() {
 		this.events = []
-
 		this.externals = []
+		this.middlewares = []
 	}
 
 	/**
@@ -53,7 +54,31 @@ export default class RouteList {
 
 		this.events.push({
 			event, code
-		}); return this
+		})
+
+		return this
+	}
+
+	/**
+	 * Add a new Middleware
+	 * @example
+   * ```
+   * // We will use the custom middleware
+	 * const middleware = require('middleware-package')
+   * const controller = new Server({ })
+   * 
+   * controller.middleware(middleware())
+   * ```
+	 * @since 4.4.0
+	*/
+	middleware(
+		/** The Middleware to run on a Request */ middleware: Middleware
+	) {
+		if (this.middlewares.some((obj) => (obj.name === middleware.name))) return this
+
+		this.middlewares.push(middleware)
+		
+		return this
 	}
 
 	/**
