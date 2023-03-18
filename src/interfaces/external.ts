@@ -11,8 +11,8 @@ import { GlobalContext, RequestContext } from "./context"
 type UnionToIntersection<U>
 	= (U extends any ? (k: U) => void : never) extends ((k: infer I) => void) ? I : never
 
-export type MiddlewareToHTTPContext<T extends object[]>
-	= T extends (infer U)[] ? HTTPRequestContext & Record<keyof U, UnionToIntersection<U[keyof U]>> : never
+export type MiddlewareToProps<T extends object[]>
+	= T extends (infer U)[] ? Record<keyof U, UnionToIntersection<U[keyof U]>> : never
 
 export interface PrintOptions {
 	/**

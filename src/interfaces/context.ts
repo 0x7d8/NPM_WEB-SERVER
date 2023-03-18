@@ -1,4 +1,4 @@
-import valueCollection from "../classes/valueCollection"
+import ValueCollection from "../classes/valueCollection"
 import ServerController from "../classes/webServer"
 import { HTTPMethods } from "./internal"
 import Route from "../interfaces/route"
@@ -32,8 +32,8 @@ export interface GlobalContext {
   }
 
   /** The Cache Stores */ cache: {
-    /** The File Caches */ files: valueCollection<string, Buffer>
-    /** The Route Caches */ routes: valueCollection<string, { route: Route, params: Record<string, string>, file?: string }>
+    /** The File Caches */ files: ValueCollection<string, Buffer>
+    /** The Route Caches */ routes: ValueCollection<string, { route: Route, params: Record<string, string>, file?: string }>
   }
 }
 

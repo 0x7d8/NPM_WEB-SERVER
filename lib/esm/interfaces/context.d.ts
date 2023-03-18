@@ -1,7 +1,7 @@
 /// <reference types="node" />
 /// <reference types="node" />
 /// <reference types="node" />
-import valueCollection from "../classes/valueCollection";
+import ValueCollection from "../classes/valueCollection";
 import ServerController from "../classes/webServer";
 import { HTTPMethods } from "./internal";
 import Route from "../interfaces/route";
@@ -26,8 +26,8 @@ export interface GlobalContext {
         /** Event Routes */ event: Event[];
     };
     /** The Cache Stores */ cache: {
-        /** The File Caches */ files: valueCollection<string, Buffer>;
-        /** The Route Caches */ routes: valueCollection<string, {
+        /** The File Caches */ files: ValueCollection<string, Buffer>;
+        /** The Route Caches */ routes: ValueCollection<string, {
             route: Route;
             params: Record<string, string>;
             file?: string;

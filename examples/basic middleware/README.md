@@ -13,11 +13,11 @@ npm i my-middleware
 ```ts
 // webserver.d.ts
 
-import { MiddlewareToHTTPContext } from "rjweb-server"
+import { MiddlewareToProps } from "rjweb-server"
 import { Props as AdditionalProps1 } from "my-middleware"
 
 declare module "rjweb-server" {
-  interface HTTPRequestContext extends MiddlewareToHTTPContext<[ AdditionalProps1 ]> {}
+  export interface HTTPRequestContext extends MiddlewareToProps<[ AdditionalProps1 ]> {}
 }
 ```
 
