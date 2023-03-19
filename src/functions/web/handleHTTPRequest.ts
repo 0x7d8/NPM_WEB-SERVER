@@ -29,6 +29,7 @@ export default async function handleHTTPRequest(req: IncomingMessage | Http2Serv
     events: new EventEmitter(),
     waiting: false,
     continue: true,
+    handleError: () => null,
     execute: {
       route: null,
       file: null,
@@ -446,6 +447,14 @@ export default async function handleHTTPRequest(req: IncomingMessage | Http2Serv
 
     // Execute Middleware
     let errorStop = false
+
+    ctx.handleError = (err) => {
+      errorStop = true
+      ctr.error = err
+      handleEvent('error', ctr, ctx, ctg)
+      ctx.events.emit('endRequest')
+    }
+
     if (ctg.middlewares.length > 0) {
       let doContinue = true, runError = null
       for (let validateIndex = 0; validateIndex <= ctg.middlewares.length - 1; validateIndex++) {

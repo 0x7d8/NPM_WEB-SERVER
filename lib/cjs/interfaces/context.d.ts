@@ -40,6 +40,7 @@ export interface RequestContext {
     /** The Event Emitter */ events: EventEmitter;
     /** Whether waiting is required */ waiting: boolean;
     /** Whether to Continue with execution */ continue: boolean;
+    /** The Function to handle an Error in a Async Middleware */ handleError: (err: Error) => void;
     /** The Execute URL Object */ execute: {
         /** The Route Object that was found */ route: Route | Static;
         /** The File to Read when Route is Static */ file: string;
