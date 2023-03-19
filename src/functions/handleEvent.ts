@@ -9,16 +9,18 @@ export default async function handleEvent(event: Events, ctr: HTTPRequestContext
 
       if (!event) {
         // Default Error
-        console.log(ctr.error)
+        console.error(ctr.error)
         ctr.status(500)
         ctx.content = Buffer.from(`An Error occured\n${(ctr.error as Error).stack}`)
       } else {
         // Custom Error
-        Promise.resolve(event.code(ctr)).catch((e) => {
-          console.log(e)
+        try {
+          await Promise.resolve(event.code(ctr))
+        } catch (err) {
+          console.error(err)
           ctr.status(500)
-          ctx.content = Buffer.from(`An Error occured in your Error Event (what the hell?)\n${e.stack}`)
-        })
+          ctx.content = Buffer.from(`An Error occured in your Error Event (what the hell?)\n${err.stack}`)
+        }
       }
     }
 
@@ -28,13 +30,15 @@ export default async function handleEvent(event: Events, ctr: HTTPRequestContext
 
       if (event) {
         // Custom Request
-        await Promise.resolve(event.code(ctr)).catch((e) => {
+        try {
+          await Promise.resolve(event.code(ctr))
+        } catch (err) {
           errorStop = true
 
-          console.log(e)
+          console.error(err)
           ctr.status(500)
-          ctx.content = Buffer.from(`An Error occured in your Request Event\n${e.stack}`)
-        })
+          ctx.content = Buffer.from(`An Error occured in your Request Event\n${err.stack}`)
+        }
       }; return errorStop
     }
 
@@ -48,13 +52,15 @@ export default async function handleEvent(event: Events, ctr: HTTPRequestContext
         ctx.content = Buffer.from(`Couldnt find [${ctr.url.method}] ${ctr.url.pathname}`)
       } else {
         // Custom NotFound
-        await Promise.resolve(event.code(ctr)).catch((e) => {
+        try {
+          await Promise.resolve(event.code(ctr))
+        } catch (err) {
           errorStop = true
 
-          console.log(e)
+          console.error(err)
           ctr.status(500)
-          ctx.content = Buffer.from(`An Error occured in your Notfound Event\n${e.stack}`)
-        })
+          ctx.content = Buffer.from(`An Error occured in your Notfound Event\n${err.stack}`)
+        }
       }; return errorStop
     }
   }

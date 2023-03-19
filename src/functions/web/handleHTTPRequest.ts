@@ -452,7 +452,7 @@ export default async function handleHTTPRequest(req: IncomingMessage | Http2Serv
       errorStop = true
       ctr.error = err
       handleEvent('error', ctr, ctx, ctg)
-      ctx.events.emit('endRequest')
+      ctx.events.emit('noWaiting')
     }
 
     if (ctg.middlewares.length > 0) {
