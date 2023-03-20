@@ -81,12 +81,12 @@ export interface Options {
 }
 
 export default class ServerOptions {
-  private data: Options
+	private data: Options
 
-  /** Server Options Helper */
-  constructor(options: Partial<Options>) {
+	/** Server Options Helper */
+	constructor(options: Partial<Options>) {
 		this.data = this.mergeOptions({
-      body: {
+			body: {
 				enabled: true,
 				parse: true,
 				maxSize: 5,
@@ -101,13 +101,13 @@ export default class ServerOptions {
 			}, headers: {},
 			contentTypes: {},
 			bind: '0.0.0.0',
-      proxy: false,
+			proxy: false,
 			compression: 'none',
-      cors: false,
-      port: 2023,
-      poweredBy: true
-    }, options)
-  }
+			cors: false,
+			port: 2023,
+			poweredBy: true
+		}, options)
+	}
 
 	private mergeOptions(...objects: Partial<Options>[]): Options {
 		const isObject = (obj: Options) => (obj && typeof obj === 'object')
@@ -128,8 +128,8 @@ export default class ServerOptions {
 		}, {}) as any
 	}
 
-  /** Get the Resulting Options */
-  getOptions() {
-    return this.data
-  }
+	/** Get the Resulting Options */
+	getOptions() {
+		return this.data
+	}
 }

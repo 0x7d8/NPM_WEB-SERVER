@@ -36,14 +36,14 @@ export default class RouteList {
 	/**
 	 * Add a new Event Response
 	 * @example
-   * ```
-   * // We will log every time a request is made
-   * const controller = new Server({ })
-   * 
-   * controller.event('httpRequest', (ctr) => {
+	 * ```
+	 * // We will log every time a request is made
+	 * const controller = new Server({ })
+	 * 
+	 * controller.event('httpRequest', (ctr) => {
 	 *   console.log(`${ctr.url.method} Request made to ${ctr.url.path}`)
 	 * })
-   * ```
+	 * ```
 	 * @since 4.0.0
 	*/
 	event<EventName extends Events>(
@@ -62,13 +62,13 @@ export default class RouteList {
 	/**
 	 * Add a new Middleware
 	 * @example
-   * ```
-   * // We will use the custom middleware
+	 * ```
+	 * // We will use the custom middleware
 	 * const middleware = require('middleware-package')
-   * const controller = new Server({ })
-   * 
-   * controller.middleware(middleware())
-   * ```
+	 * const controller = new Server({ })
+	 * 
+	 * controller.middleware(middleware())
+	 * ```
 	 * @since 4.4.0
 	*/
 	middleware(
@@ -84,20 +84,20 @@ export default class RouteList {
 	/**
 	 * Add a new Block of Routes with a Prefix
 	 * @example
-   * ```
-   * const controller = new Server({ })
-   * 
-   * controller.path('/', (path) => path
+	 * ```
+	 * const controller = new Server({ })
+	 * 
+	 * controller.path('/', (path) => path
 	 *   .http('GET', '/cool', (ctr) => {
-   *     ctr.print('cool!')
-   *   })
+	 *     ctr.print('cool!')
+	 *   })
 	 *   .path('/api', (path) => path
 	 *     .http('GET', '/', (ctr) => {
-   *       ctr.print('Welcome to the API')
-   *     })
+	 *       ctr.print('Welcome to the API')
+	 *     })
 	 *   )
 	 * )
-   * ```
+	 * ```
 	 * @since 5.0.0
 	*/
 	path(
@@ -113,16 +113,16 @@ export default class RouteList {
 
 
 	/**
-   * Internal Method for Generating Routes Object
-   * @ignore This is meant for internal use
-   * @since 3.1.0
-  */
-  getRoutes() {
+	 * Internal Method for Generating Routes Object
+	 * @ignore This is meant for internal use
+	 * @since 3.1.0
+	*/
+	getRoutes() {
 		const routes = [], statics = [], loadPaths= []
-    for (const external of this.externals) {
+		for (const external of this.externals) {
 			const result = external.object[external.method]()
 			routes.push(...result.routes)
-      statics.push(...result.statics)
+			statics.push(...result.statics)
 			loadPaths.push(...result.loadPaths)
 		}
 
@@ -131,5 +131,5 @@ export default class RouteList {
 			routes, statics,
 			loadPaths
 		}
-  }
+	}
 }
