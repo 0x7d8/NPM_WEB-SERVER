@@ -10,10 +10,10 @@ import { HTTPRequestContext } from "../../interfaces/external"
 import { IncomingMessage, ServerResponse } from "http"
 import { Http2ServerRequest, Http2ServerResponse } from "http2"
 import handleContentType from "../handleContentType"
+import parseContent, { Returns as ParseContentReturns } from "../parseContent"
 import Static from "../../interfaces/static"
 
 import queryUrl from "querystring"
-import zlib from "zlib"
 import path from "path"
 import url from "url"
 import fs from "fs"
@@ -49,42 +49,27 @@ export default async function handleHTTPRequest(req: IncomingMessage | Http2Serv
   res.once('close', () => ctx.events.emit('endRequest'))
 
   // Save & Check Request Body
-  if (ctg.options.body.enabled) req.on('data', async(data: Buffer) => {
+  if (ctg.options.body.enabled) req.on('data', (data: Buffer) => {
     ctx.body.chunks.push(data)
 
     ctg.data.incoming.total += data.byteLength
     ctg.data.incoming[ctx.previousHours[4]] += data.byteLength
-  }).once('end', () => {
+  }).once('end', async() => {
     ctx.body.raw = Buffer.concat(ctx.body.chunks)
     ctx.body.chunks = []
 
     if (ctx.body.raw.byteLength >= (ctg.options.body.maxSize * 1e6)) {
       res.statusCode = 413
       ctx.continue = false
-      switch (typeof ctg.options.body.message) {
-        case "object":
-          res.setHeader('Content-Type', 'application/json')
-          ctx.content = Buffer.from(JSON.stringify(ctg.options.body.message))
-          break
 
-        case "string":
-          ctx.content = Buffer.from(ctg.options.body.message)
-          break
+      const result = await parseContent(ctg.options.body.message)
 
-        case "symbol":
-          ctx.content = Buffer.from(ctg.options.body.message.toString())
-          break
+      for (const header in result.headers) {
+        res.setHeader(header, result.headers[header])
+      }
 
-        case "bigint":
-        case "number":
-        case "boolean":
-          ctx.content = Buffer.from(String(ctg.options.body.message))
-          break
-
-        case "undefined":
-          ctx.content = Buffer.from('')
-          break
-      }; return handleCompression({ headers: new ValueCollection(req.headers as any, decodeURIComponent), rawRes: res } as any, ctx, ctg)
+      ctx.content = result.content
+      return handleCompression({ headers: new ValueCollection(req.headers as any, decodeURIComponent), rawRes: res } as any, ctx, ctg)
     }
 
     if (ctx.continue) ctx.events.emit('startRequest')
@@ -244,7 +229,7 @@ export default async function handleHTTPRequest(req: IncomingMessage | Http2Serv
     })
 
     // Parse Request Body
-    if (ctg.options.body.parse) {
+    if (ctg.options.body.parse && req.headers['content-type'] === 'application/json') {
       try { ctx.body.parsed = JSON.parse(ctx.body.raw.toString()) }
       catch (err) { ctx.body.parsed = ctx.body.raw.toString() }
     } else ctx.body.parsed = ctx.body.raw.toString()
@@ -295,48 +280,25 @@ export default async function handleHTTPRequest(req: IncomingMessage | Http2Serv
         return ctr
       }, print(message, options = {}) {
         const contentType = options?.contentType ?? ''
-        const returnFunctions = options?.returnFunctions ?? false
         ctx.events.emit('noWaiting')
 
-        switch (typeof message) {
-          case "object":
-            res.setHeader('Content-Type', 'application/json')
-            ctx.content = Buffer.from(JSON.stringify(message))
-            break
+        ctx.waiting = true; ((async() => {
+          let result: ParseContentReturns
+          try {
+            result = await parseContent(message)
+          } catch (err) {
+            return ctx.handleError(err)
+          }
 
-          case "string":
-            if (contentType) res.setHeader('Content-Type', contentType)
-            ctx.content = Buffer.from(message)
-            break
+          if (contentType) res.setHeader('Content-Type', contentType)
+          for (const header in result.headers) {
+            res.setHeader(header, result.headers[header])
+          }
 
-          case "symbol":
-            if (contentType) res.setHeader('Content-Type', contentType)
-            ctx.content = Buffer.from(message.toString())
-            break
+          ctx.content = result.content
 
-          case "bigint":
-          case "number":
-          case "boolean":
-            if (contentType) res.setHeader('Content-Type', contentType)
-            ctx.content = Buffer.from(String(message))
-            break
-
-          case "function":
-            ctx.waiting = true; (async() => {
-              const result = await message()
-              if (typeof result !== 'function') ctr.print(result, { contentType })
-              else if (!returnFunctions) { (ctr as any).error = new Error('Cant return functions from functions, consider using async/await'); return handleEvent('error', ctr, ctx, ctg) }
-              else { ctr.print(result, { contentType, returnFunctions }) }
-
-              ctx.events.emit('noWaiting')
-            }) ()
-            break
-
-          case "undefined":
-            if (contentType) res.setHeader('Content-Type', contentType)
-            ctx.content = Buffer.from('')
-            break
-        }
+          ctx.events.emit('noWaiting')
+        })) ()
 
         return ctr
       }, printFile(file, options = {}) {
@@ -375,7 +337,7 @@ export default async function handleHTTPRequest(req: IncomingMessage | Http2Serv
 
           const compression = handleCompressType(ctg.options.compression)
           try { stream = fs.createReadStream(file); ctx.waiting = true; stream.pipe(compression); compression.pipe(res) }
-          catch (err) { errorStop = true; ctr.error = err; handleEvent('error', ctr, ctx, ctg) }
+          catch (err) { errorStop = true; handleEvent('runtimeError', ctr, ctx, ctg, err) }
           if (errorStop) return
 
           // Collect Data
@@ -392,7 +354,7 @@ export default async function handleHTTPRequest(req: IncomingMessage | Http2Serv
           }); compression.once('close', () => { ctx.events.emit('noWaiting'); ctx.content = Buffer.from('') })
         } else {
           try { stream = fs.createReadStream(file); ctx.waiting = true; stream.pipe(res) }
-          catch (err) { errorStop = true; ctr.error = err; handleEvent('error', ctr, ctx, ctg) }
+          catch (err) { errorStop = true; handleEvent('runtimeError', ctr, ctx, ctg, err) }
 
           // Collect Data
           ctx.events.once('endRequest', () => stream.destroy())
@@ -415,12 +377,11 @@ export default async function handleHTTPRequest(req: IncomingMessage | Http2Serv
 
         ctx.waiting = true
 
-        const dataListener = (data: Buffer) => {
-          if (!Buffer.isBuffer(data)) {
-            const oldContent = Buffer.concat([ ctx.content ])
-            ctr.print(data)
-            data = Buffer.from(ctx.content)
-            ctx.content = oldContent
+        const dataListener = async(data: Buffer) => {
+          try {
+            data = (await parseContent(data)).content
+          } catch (err) {
+            return ctx.handleError(err)
           }
 
           res.write(data, 'binary')
@@ -450,8 +411,7 @@ export default async function handleHTTPRequest(req: IncomingMessage | Http2Serv
 
     ctx.handleError = (err) => {
       errorStop = true
-      ctr.error = err
-      handleEvent('error', ctr, ctx, ctg)
+      handleEvent('runtimeError', ctr, ctx, ctg, err)
       ctx.events.emit('noWaiting')
     }
 
@@ -469,9 +429,8 @@ export default async function handleHTTPRequest(req: IncomingMessage | Http2Serv
         }
 
         if (!doContinue && runError) {
-          ctr.error = runError
           errorStop = true
-          handleEvent('error', ctr, ctx, ctg)
+          handleEvent('runtimeError', ctr, ctx, ctg, runError)
           break
         } else if (!doContinue) {
           if (!res.getHeader('Content-Type')) ctr.setHeader('Content-Type', 'text/plain')
@@ -484,28 +443,8 @@ export default async function handleHTTPRequest(req: IncomingMessage | Http2Serv
     }
 
     // Execute Custom Run Function
-    if (!ctx.execute.dashboard) errorStop = await handleEvent('request', ctr, ctx, ctg)
+    if (!ctx.execute.dashboard) errorStop = await handleEvent('httpRequest', ctr, ctx, ctg)
     if (errorStop) return
-
-    // Rate Limiting
-    if (ctg.options.rateLimits.enabled) {
-      for (const rule of ctg.options.rateLimits.list) {
-        if (ctx.url.pathname.startsWith(rule.path)) {
-          res.setHeader('X-RateLimit-Limit', rule.times)
-          res.setHeader('X-RateLimit-Remaining', rule.times - (await ctg.options.rateLimits.functions.get(hostIp + rule.path) ?? 0))
-          res.setHeader('X-RateLimit-Reset-Every', rule.timeout)
-
-          await ctg.options.rateLimits.functions.set(hostIp + rule.path, (await ctg.options.rateLimits.functions.get(hostIp + rule.path) ?? 0) + 1)
-          setTimeout(async() => { await ctg.options.rateLimits.functions.set(hostIp + rule.path, (await ctg.options.rateLimits.functions.get(hostIp + rule.path) ?? 0) - 1) }, rule.timeout)
-          if (await ctg.options.rateLimits.functions.get(hostIp + rule.path) > rule.times) {
-            res.statusCode = 429
-            errorStop = true
-            ctr.print(ctg.options.rateLimits.message)
-            return handleCompression(ctr, ctx, ctg)
-          }
-        }
-      }
-    }
 
     // Execute Validations
     if (ctx.execute.exists && ctx.execute.route.data.validations.length > 0) {
@@ -522,9 +461,8 @@ export default async function handleHTTPRequest(req: IncomingMessage | Http2Serv
         }
 
         if (!doContinue && runError) {
-          ctr.error = runError
           errorStop = true
-          handleEvent('error', ctr, ctx, ctg)
+          handleEvent('runtimeError', ctr, ctx, ctg, runError)
           break
         } else if (!doContinue) {
           if (!res.getHeader('Content-Type')) ctr.setHeader('Content-Type', 'text/plain')
@@ -540,8 +478,7 @@ export default async function handleHTTPRequest(req: IncomingMessage | Http2Serv
     if (ctg.options.dashboard.enabled && !ctx.execute.dashboard) {
       ctg.requests.total++
       ctg.requests[ctx.previousHours[4]]++
-    }; if (await new Promise((resolve) => {
-      if (!ctx.waiting) return resolve(false)
+    }; if (ctx.waiting) if (await new Promise((resolve) => {
       ctx.events.once('noWaiting', () => resolve(false))
       ctx.events.once('endRequest', () => resolve(true))
     })) return
@@ -562,7 +499,7 @@ export default async function handleHTTPRequest(req: IncomingMessage | Http2Serv
 
           const compression = handleCompressType(ctg.options.compression)
           try { stream = fs.createReadStream(ctx.execute.file); ctx.waiting = true; stream.pipe(compression); compression.pipe(res) }
-          catch (err) { errorStop = true; ctr.error = err; handleEvent('error', ctr, ctx, ctg) }
+          catch (err) { errorStop = true; handleEvent('runtimeError', ctr, ctx, ctg, err) }
           if (errorStop) return
 
           // Write to Total Network
@@ -570,41 +507,38 @@ export default async function handleHTTPRequest(req: IncomingMessage | Http2Serv
             ctg.data.outgoing.total += content.byteLength
             ctg.data.outgoing[ctx.previousHours[4]] += content.byteLength
           }); compression.once('end', () => { ctx.events.emit('noWaiting'); ctx.content = Buffer.from('') })
-          res.once('close', () => { stream.close(); compression.close() })
+          ctx.events.once('endRequest', () => { stream.destroy(); compression.destroy() })
         } else {
           try { stream = fs.createReadStream(ctx.execute.file); ctx.waiting = true; stream.pipe(res) }
-          catch (err) { errorStop = true; ctr.error = err; handleEvent('error', ctr, ctx, ctg) }
+          catch (err) { errorStop = true; handleEvent('runtimeError', ctr, ctx, ctg, err) }
 
           // Write to Total Network
           stream.on('data', (content: Buffer) => {
             ctg.data.outgoing.total += content.byteLength
             ctg.data.outgoing[ctx.previousHours[4]] += content.byteLength
           }); stream.once('end', () => { ctx.events.emit('noWaiting'); ctx.content = Buffer.from('') })
-          res.once('close', () => stream.close())
+          ctx.events.once('endRequest', () => stream.destroy())
         }
       } else {
         try {
           await Promise.resolve(ctx.execute.route.code(ctr))
         } catch (err) {
-          ctr.error = err
           errorStop = true
-          handleEvent('error', ctr, ctx, ctg)
+          handleEvent('runtimeError', ctr, ctx, ctg, err)
         }
       }
 
       // Wait for Streams
-      await new Promise((resolve) => {
-        if (!ctx.waiting) return resolve(true)
+      if (ctx.waiting) await new Promise((resolve) => {
         ctx.events.once('noWaiting', () => resolve(false))
       }); if (ctx.content && ctx.continue) {
         handleCompression(ctr, ctx, ctg)
       } else res.end()
     } else if (!errorStop) {
-      handleEvent('notfound', ctr, ctx, ctg)
+      handleEvent('http404', ctr, ctx, ctg)
 
       // Wait for Streams
-      await new Promise((resolve) => {
-        if (!ctx.waiting) return resolve(true)
+      if (ctx.waiting) await new Promise((resolve) => {
         ctx.events.once('noWaiting', () => resolve(false))
       }); if (ctx.content && ctx.continue) {
         handleCompression(ctr, ctx, ctg)

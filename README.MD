@@ -53,12 +53,13 @@ import { HTTPRequestContext } from "rjweb-server"
 
 const server = new Server({ })
 
-server.prefix('/')
-  .add('GET', '/hello', async(ctr: HTTPRequestContext) => {
+server.path('/', (path) => path
+  .http('GET', '/hello', async(ctr: HTTPRequestContext) => {
     if (!ctr.queries.has("name")) return ctr.print('please supply the name query!!')
 
     return ctr.print(`Hello, ${ctr.queries.get("name")}! How are you doing?`)
   })
+)
 
 // ...
 ```
@@ -79,26 +80,27 @@ const server = new Server({
   port: 5000, // The Port which the Server runs on
 })
 
-server.prefix('/')
-  .add('GET', '/hello', async(ctr: Ctr) => {
+server.path('/', (path) => path
+  .http('GET', '/hello', async(ctr: Ctr) => {
     if (!ctr.queries.has("name")) return ctr.print('please supply the name queries!!')
 
     return ctr.print(`Hello, ${ctr.queries.get("name")}! You are Visit nr.${ctr['@'].count}`)
   })
-  .add('POST', '/hello', async(ctr: Ctr<{ name?: string }>) => {
+  .http('POST', '/hello', async(ctr: Ctr<{ name?: string }>) => {
     if (!('name' in ctr.body)) return ctr.print('please supply the name property!!')
 
     return ctr.print(`Hello, ${ctr.body.name}! You are Visit nr.${ctr['@'].count}`)
   })
+)
 
 let count = 0
-server.event('request', async(ctr: Ctr) => {
+server.event('httpRequest', async(ctr: Ctr) => {
   ctr.setCustom('count', ++count) 
 
   console.log(`request made to ${decodeURI(ctr.url.pathname)} by ${ctr.client.ip}`)
-}).event('error', async(ctr: Ctr) => {
+}).event('runtimeError', async(ctr: Ctr, error) => {
   console.log(`error on path ${decodeURI(ctr.url.pathname)}!!!`)
-  console.error(ctr.error.stack)
+  console.error(error)
 
   ctr.status(500)
   ctr.print('server error')
@@ -168,21 +170,21 @@ const server = new Server({
 })
 
 // ctr.params.get... is :name:, example /hello/0x4096
-server.prefix('/') // The / is the Path Prefix for all children paths
-  .add('POST', '/post', async(ctr) => {
+server.path('/', (path) => path // The / is the Path Prefix for all children paths
+  .http('POST', '/post', async(ctr) => {
     return ctr.print(`Hello, ${ctr.body}! How are you doing?`)
   })
-  .add('GET', '/profile/<user>', async(ctr) => {
+  .http('GET', '/profile/<user>', async(ctr) => {
     return ctr.printFile(`../images/profile/${ctr.params.get('user')}.png`, { addTypes: true })
   })
-  .add('GET', '/reloadserver', async(ctr) => {
+  .http('GET', '/reloadserver', async(ctr) => {
     if (!ctr.queries.has('password')) return ctr.print('provide the password to do this!!')
     if (ctr.queries.get('password') !== 'imApassword123!') return ctr.print('the password is incorrect!!')
 
     setTimeout(() => ctr.controller.reload(), 1000)
     return ctr.print('server reloaded')
   })
-  .add('GET', '/redirect/<website>', async(ctr) => {
+  .http('GET', '/redirect/<website>', async(ctr) => {
     switch (ctr.params.get('website')) {
       case "google":
         return ctr.redirect('https://www.google.com')
@@ -195,10 +197,16 @@ server.prefix('/') // The / is the Path Prefix for all children paths
     }
   })
   .redirect('/googleplz', 'https://www.google.com')
-  .prefix('/api')
-    .add('GET', '/', (ctr) => ctr.print('welcome to api!'))
-    .prefix('/v2')
-      .add('GET', '/', (ctr) => ctr.print('welcome to v2 api!'))
+  .path('/api', (path) => path
+    .http('GET', '/', (ctr) => ctr.print('welcome to api!'))
+    .prefix('/v1', (path) => path
+      .http('GET', '/', (ctr) => ctr.print('welcome to v1 api!'))
+    )
+    .prefix('/v2', (path) => path
+      .http('GET', '/', (ctr) => ctr.print('welcome to v2 api!'))
+    )
+  )
+)
 
 server.start().then((s) => {
   console.log(`server started on port ${s.port}`)
@@ -223,15 +231,16 @@ const handleHello = async() => {
   return 'You just waited 5 seconds !!'
 }
 
-server.routeBlock('/wait5sec')
+server.path('/wait5sec', (path) => path
   // this request will load for 5 seconds
-  .add('GET', '/func', (ctr) => {
+  .http('GET', '/func', (ctr) => {
     return ctr.print(handleHello)
   }) // this request will also load for 5 seconds
-  .add('GET', '/promise', async(ctr) => {
+  .http('GET', '/promise', async(ctr) => {
     await wait(5000)
     return ctr.print('You just waited 5 seconds !!')
   })
+)
 
 server.start().then((s) => {
   console.log(`server started on port ${s.port}`)
@@ -249,19 +258,20 @@ const server = new Server({
   proxy: true // If enabled, alternate IPs will be shown
 })
 
-server.prefix('/account')
+server.path('/account', (path) => path
   .validate(async(ctr) => { // Will Validate every request starting with the route block prefix (/account)
     if (!ctr.queries.has('password')) return ctr.status(401).print('Unauthorized')
     if (ctr.queries.get('password') !== '123456 or database request or sum') return ctr.status(401).print('Unauthorized')
 
     return ctr.status(200) // <- Everything is OK
   })
-  .add('GET', '/', async(ctr) => {
+  .http('GET', '/', async(ctr) => {
     return ctr.print('Account Infos: idk')
   })
-  .add('POST', '/edit', async(ctr) => {
+  .http('POST', '/edit', async(ctr) => {
     return ctr.print('Edited Account Infos!')
   })
+)
 ```
 
 Use Middleware
@@ -297,10 +307,11 @@ const server = new Server({
   proxy: true // If enabled, alternate IPs will be shown
 })
 
-server.prefix('/')
+server.path('/', (path) => path
   .static('./html', {
     hideHTML: true // If enabled will remove the html ending from files when serving
   }) // The html folder is in the root directory, NOTE: Static files will be prioritized over the defined routes
+)
 
 server.start().then((s) => {
   console.log(`server started on port ${s.port}`)
@@ -376,14 +387,14 @@ const server = new Server({
   proxy: true
 })
 
-server.event('notfound', async(ctr) => {
+server.event('http404', async(ctr) => {
   ctr.status(404)
   return ctr.print(`page "${ctr.url.pathname}" not found`)
 })
 
-server.event('error', async(ctr) => {
+server.event('runtimeError', async(ctr, error) => {
   ctr.status(500)
-  ctr.print(`ERROR!!! ${ctr.error.message}`)
+  ctr.print(`ERROR!!! ${error.stack}`)
   return console.log(ctr.error)
 })
 
@@ -403,77 +414,9 @@ const server = new Server({
   proxy: true
 })
 
-server.event('request', async(ctr) => {
+server.event('httpRequest', async(ctr) => {
   return console.log(`request made to ${decodeURI(ctr.url.href)} by ${ctr.client.ip}`)
   // DO NOT write any data or end the request
-})
-
-server.start().then((s) => {
-  console.log(`server started on port ${s.port}`)
-})
-```
-
-### Rate Limits
-With Database (EXAMPLE, PLEASE EDIT)
-```js
-const { Server } = require('rjweb-server')
-
-const server = new Server({
-  bind: '0.0.0.0',
-  cors: false,
-  port: 5000,
-  rateLimits: {
-    enabled: true,
-    message: 'You are being rate limited',
-    list: [
-      {
-        path: '/auth',
-        times: 5,
-        timeout: 10000
-      },
-      {
-        path: '/fetch',
-        times: 3,
-        timeout: 5000
-      }
-    ], functions: {
-      set: async(key, value) => (await db.queries('update ratelimits set value = ? where key = ?;', [value, key])),
-      get: async(key) => ((await db.queries('select value from ratelimits where key = ?;', [key])).data.rows[0].value)
-    }
-  }
-})
-
-server.start().then((s) => {
-  console.log(`server started on port ${s.port}`)
-})
-```
-
-With Map
-```js
-const { Server } = require('rjweb-server')
-
-const rateLimits = new Map()
-
-const server = new Server({
-  bind: '0.0.0.0',
-  cors: false,
-  port: 5000,
-  rateLimits: {
-    enabled: true,
-    message: 'You are being rate limited',
-    list: [
-      {
-        path: '/auth',
-        times: 5,
-        timeout: 10000
-      },
-      {
-        path: '/fetch',
-        times: 3,
-        timeout: 5000
-      }
-    ], functions: rateLimits
-  }
 })
 
 server.start().then((s) => {
@@ -493,9 +436,10 @@ const server = new Server({
   proxy: true
 })
 
-server.prefix('/')
+server.path('/', (path) => path
   .loadCJS('./functions') // This loads CJS files (module.exports)
   .loadESM('./functions') // This loads ESM files (export default)
+)
 
 server.start().then((s) => {
   console.log(`server started on port ${s.port}`)

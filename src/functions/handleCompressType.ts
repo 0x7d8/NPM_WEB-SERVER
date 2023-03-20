@@ -7,12 +7,8 @@ export const CompressMapping = {
   gzip: 'gzip',
   brotli: 'br',
   deflate: 'deflate',
-  none: 'none',
+  none: 'none'
 } as Record<CompressTypes, string>
-
-class CreateNone extends PassThrough {
-  close: () => {}
-}
 
 export default function handleCompressType(type: CompressTypes) {
   switch (type) {
@@ -26,6 +22,6 @@ export default function handleCompressType(type: CompressTypes) {
       return zlib.createDeflate()
 
     default:
-      return new CreateNone()
+      return new PassThrough()
   }
 }

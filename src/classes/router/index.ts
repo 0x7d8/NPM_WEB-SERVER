@@ -1,8 +1,8 @@
-import { ExternalRouter, Routed } from "../interfaces/internal"
-import { Event, Middleware } from "../interfaces/external"
-import { Events } from "../interfaces/internal"
+import { ExternalRouter } from "../../interfaces/internal"
+import { Middleware } from "../../interfaces/external"
+import Event, { EventHandlerMap, Events } from "../../interfaces/event"
 
-import RouteBlock from "./router/routeBlock"
+import RoutePath from "./path"
 
 export const pathParser = (path: string | string[], removeSingleSlash?: boolean) => {
 	const paths = typeof path === 'string' ? [path] : path
@@ -40,20 +40,20 @@ export default class RouteList {
    * // We will log every time a request is made
    * const controller = new Server({ })
    * 
-   * controller.event('request', (ctr) => {
+   * controller.event('httpRequest', (ctr) => {
 	 *   console.log(`${ctr.url.method} Request made to ${ctr.url.path}`)
 	 * })
    * ```
 	 * @since 4.0.0
 	*/
-	event(
-		/** The Event Name */ event: Events,
-		/** The Async Code to run on a Request */ code: Routed
+	event<EventName extends Events>(
+		/** The Event Name */ event: EventName,
+		/** The Async Code to run on a Request */ code: EventHandlerMap[EventName]
 	) {
-		if (this.events.some((obj) => (obj.event === event))) return this
+		if (this.events.some((obj) => (obj.name === event))) return this
 
 		this.events.push({
-			event, code
+			name: event as any, code
 		})
 
 		return this
@@ -87,24 +87,28 @@ export default class RouteList {
    * ```
    * const controller = new Server({ })
    * 
-   * controller.prefix('/')
-   *   .add('GET', '/cool', (ctr) => {
+   * controller.path('/', (path) => path
+	 *   .http('GET', '/cool', (ctr) => {
    *     ctr.print('cool!')
    *   })
-   *   .prefix('/api')
-   *     .add('GET', '/', (ctr) => {
+	 *   .path('/api', (path) => path
+	 *     .http('GET', '/', (ctr) => {
    *       ctr.print('Welcome to the API')
    *     })
+	 *   )
+	 * )
    * ```
-	 * @since 4.0.0
+	 * @since 5.0.0
 	*/
-	prefix(
-		/** The Path Prefix */ prefix: string
+	path(
+		/** The Path Prefix */ prefix: string,
+		/** The Code to handle the Prefix */ code: (path: RoutePath) => RoutePath
 	) {
-		const routeBlock = new RouteBlock(prefix)
-		this.externals.push({ method: 'get', object: routeBlock })
+		const routePath = new RoutePath(prefix)
+		this.externals.push({ method: 'getRoutes', object: routePath })
+		code(routePath)
 
-		return routeBlock
+		return this
 	}
 
 
@@ -114,19 +118,18 @@ export default class RouteList {
    * @since 3.1.0
   */
   getRoutes() {
-		const routes = [], statics = [], loadPaths= [], validations = []
+		const routes = [], statics = [], loadPaths= []
     for (const external of this.externals) {
 			const result = external.object[external.method]()
 			routes.push(...result.routes)
       statics.push(...result.statics)
 			loadPaths.push(...result.loadPaths)
-			validations.push(...result.validations)
 		}
 
 		return {
 			events: this.events,
 			routes, statics,
-			loadPaths, validations
+			loadPaths
 		}
   }
 }

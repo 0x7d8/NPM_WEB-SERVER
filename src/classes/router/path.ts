@@ -1,26 +1,26 @@
 import { ExternalRouter, LoadPath, Routed, HTTPMethods } from "../../interfaces/internal"
 import Static from "../../interfaces/static"
 import Route from "../../interfaces/route"
-import { pathParser } from "../router"
+import { pathParser } from "."
 import types from "../../misc/methods"
 
 import path from "path"
 import fs from "fs"
 
-export default class RouteBlock {
+export default class RoutePath {
   protected externals: ExternalRouter[]
   protected validations: Routed[]
   protected loadPaths: LoadPath[]
   protected statics: Static[]
   protected routes: Route[]
-  protected path: string
+  protected httpPath: string
 
   /** Generate Route Block */
   constructor(
     /** The Path of the Routes */ path: string,
     /** The Validations to add */ validations?: Routed[]
   ) {
-    this.path = pathParser(path)
+    this.httpPath = pathParser(path)
     this.routes = []
     this.statics = []
     this.loadPaths = []
@@ -34,11 +34,11 @@ export default class RouteBlock {
    * @example
    * ```
    * // The /api route will automatically check for correct credentials
-   * // Obviously still putting the prefix (in this case / from the routeBlock in front)
+   * // Obviously still putting the prefix (in this case / from the RoutePath in front)
    * // Please note that in order to respond unautorized the status cant be 2xx
    * const controller = new Server({ })
    * 
-   * controller.prefix('/api')
+   * controller.path('/api', (path) => path
    *   .validate(async(ctr) => {
    *     if (!ctr.headers.has('Authorization')) return ctr.status(401).print('Unauthorized')
    *     if (ctr.headers.get('Authorization') !== 'key123 or db request ig') return ctr.status(401).print('Unauthorized')
@@ -46,6 +46,7 @@ export default class RouteBlock {
    *     return ctr.status(200)
    *   })
    *   .redirect('/pics', 'https://google.com/search?q=devil')
+   * )
    * ```
    * @since 3.2.1
   */
@@ -58,7 +59,7 @@ export default class RouteBlock {
 	}
 
   /**
-   * Add a Route
+   * Add a HTTP Route
    * @example
    * ```
    * // The /devil route will be available on "path + /devil" so "/devil"
@@ -66,22 +67,23 @@ export default class RouteBlock {
    * const controller = new Server({ })
    * let devilsMessage = 'Im the one who knocks'
    * 
-   * controller.prefix('/')
-   *   .add(webserver.types.get, '/devil', async(ctr) => {
+   * controller.path('/', (path) => path
+   *   .http('GET', '/devil', async(ctr) => {
    *     return ctr
    *       .status(666)
    *       .print(devilsMessage)
    *   })
-   *   .add(webserver.types.post, '/devil', async(ctr) => {
+   *   .http('POST', '/devil', async(ctr) => {
    *     devilsMessage = ctr.body
    *     return ctr
    *       .status(999)
    *       .print('The Devils message was set')
    *   })
+   * )
    * ```
-   * @since 3.1.0
+   * @since 5.0.0
   */
-	add(
+	http(
 		/** The Request Method */ method: HTTPMethods,
 		/** The Path on which this will be available */ path: string,
 		/** The Async Code to run on a Request */ code: Routed
@@ -92,8 +94,8 @@ export default class RouteBlock {
 		this.routes.push({
       type: 'route',
 			method: method,
-			path: pathParser(this.path + path),
-			pathArray: pathParser(this.path + path).split('/'),
+			path: pathParser(this.httpPath + path),
+			pathArray: pathParser(this.httpPath + path).split('/'),
 			code: code,
 			data: {
         validations: this.validations
@@ -108,12 +110,13 @@ export default class RouteBlock {
    * @example
    * ```
    * // The /devil route will automatically redirect to google.com
-   * // Obviously still putting the prefix (in this case / from the routeBlock in front)
+   * // Obviously still putting the prefix (in this case / from the RoutePath in front)
    * const controller = new Server({ })
    * 
-   * controller.prefix('/')
+   * controller.path('/', (path) => path
    *   .redirect('/devil', 'https://google.com')
    *   .redirect('/devilpics', 'https://google.com/search?q=devil')
+   * )
    * ```
    * @since 3.1.0
   */
@@ -124,8 +127,8 @@ export default class RouteBlock {
 		this.routes.push({
       type: 'route',
 			method: 'GET',
-			path: pathParser(this.path + request),
-			pathArray: pathParser(this.path + request).split('/'),
+			path: pathParser(this.httpPath + request),
+			pathArray: pathParser(this.httpPath + request).split('/'),
 			code: (ctr) => ctr.redirect(redirect),
       data: {
         validations: this.validations
@@ -143,11 +146,12 @@ export default class RouteBlock {
    * // Due to the hideHTML Option being on files will be served differently, /index.html -> /; /about.html -> /about; /contributors/index.html -> /contributors
    * const controller = new Server({ })
    * 
-   * controller.prefix('/')
+   * controller.path('/', (path) => path
    *   .static('./static', {
    *     hideHTML: true, // If enabled will remove .html ending from files
    *     addTypes: true, // If enabled will automatically add content-types to some file endings (including the custom ones defined in the main config)
    *   })
+   * )
    * ```
    * @since 3.1.0
   */
@@ -171,7 +175,7 @@ export default class RouteBlock {
 
 		this.statics.push({
       type: 'static',
-			path: pathParser(this.path),
+			path: pathParser(this.httpPath),
       location: folder,
 			data: {
 				addTypes, hideHTML,
@@ -189,8 +193,9 @@ export default class RouteBlock {
    * // All Files in "./routes" ending with .js will be loaded as routes
    * const controller = new Server({ })
    * 
-   * controller.prefix('/')
+   * controller.path('/', (path) => path
    *   .loadCJS('./routes')
+   * )
    * ```
    * @since 3.1.0
   */
@@ -201,7 +206,7 @@ export default class RouteBlock {
 
     this.loadPaths.push({
       path: path.resolve(folder),
-      prefix: this.path,
+      prefix: this.httpPath,
       type: 'cjs',
       validations: this.validations
     })
@@ -216,8 +221,9 @@ export default class RouteBlock {
    * // All Files in "./routes" ending with .js will be loaded as routes
    * const controller = new Server({ })
    * 
-   * controller.prefix('/')
+   * controller.path('/', (path) => path
    *   .loadESM('./routes')
+   * )
    * ```
    * @since 4.0.0
   */
@@ -228,7 +234,7 @@ export default class RouteBlock {
 
     this.loadPaths.push({
       path: path.resolve(folder),
-      prefix: this.path,
+      prefix: this.httpPath,
       type: 'esm',
       validations: this.validations
     })
@@ -238,28 +244,32 @@ export default class RouteBlock {
 
   /**
 	 * Add a new Block of Routes with a Prefix
-   * @example
+	 * @example
    * ```
    * const controller = new Server({ })
    * 
-   * controller.prefix('/')
-   *   .add('GET', '/cool', (ctr) => {
+   * controller.path('/', (path) => path
+	 *   .http('GET', '/cool', (ctr) => {
    *     ctr.print('cool!')
    *   })
-   *   .prefix('/api')
-   *     .add('GET', '/', (ctr) => {
+	 *   .path('/api', (path) => path
+	 *     .http('GET', '/', (ctr) => {
    *       ctr.print('Welcome to the API')
    *     })
+	 *   )
+	 * )
    * ```
-	 * @since 4.0.0
+	 * @since 5.0.0
 	*/
-	prefix(
-		/** The Path Prefix */ prefix: string
+	path(
+		/** The Path Prefix */ prefix: string,
+		/** The Code to handle the Prefix */ code: (path: RoutePath) => RoutePath
 	) {
-		const routeBlock = new RouteBlock(this.path + '/' + prefix ?? '/', this.validations)
-		this.externals.push({ method: 'get', object: routeBlock })
+		const routePath = new RoutePath(prefix, [...this.validations])
+		this.externals.push({ method: 'getRoutes', object: routePath })
+		code(routePath)
 
-		return routeBlock
+		return this
 	}
 
 
@@ -268,7 +278,7 @@ export default class RouteBlock {
    * @ignore This is meant for internal use
    * @since 3.1.0
   */
-  get() {
+  getRoutes() {
     for (const external of this.externals) {
 			const result = external.object[external.method]()
 			this.routes.push(...result.routes)
@@ -279,8 +289,7 @@ export default class RouteBlock {
 		return {
       routes: this.routes,
       statics: this.statics,
-      loadPaths: this.loadPaths,
-      validations: this.validations
+      loadPaths: this.loadPaths
     }
   }
 }

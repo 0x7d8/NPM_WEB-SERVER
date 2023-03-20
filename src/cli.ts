@@ -64,14 +64,15 @@ if (args.includes('-v') || args.includes('--version')) {
 	}
 
 	const server = new Server(webserverOptions)
-	server.prefix('/')
+	server.path('/', (r) => r
 		.static(path.join(process.cwd(), args[0]), { hideHTML })
+	)
 
-	if (notFoundPath) server.event('notfound', (ctr) => {
+	if (notFoundPath) server.event('http404', (ctr) => {
 		return ctr.status(404).printFile(path.join(process.cwd(), notFoundPath))
 	})
 
-	server.event('request', (ctr) => {
+	server.event('httpRequest', (ctr) => {
 		console.log(`${colors.fg.blue}[INF] ${colors.fg.cyan}[${ctr.url.method}] ${colors.fg.gray}${ctr.url.href}${colors.reset} FROM ${ctr.client.ip}`)
 	})
 

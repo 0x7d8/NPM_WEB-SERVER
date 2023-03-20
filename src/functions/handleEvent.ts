@@ -1,21 +1,22 @@
 import { GlobalContext, RequestContext } from "../interfaces/context"
-import { Events } from "../interfaces/internal"
+import { Events } from "../interfaces/event"
 import { HTTPRequestContext } from "../interfaces/external"
 
-export default async function handleEvent(event: Events, ctr: HTTPRequestContext, ctx: RequestContext, ctg: GlobalContext) {
+export default async function handleEvent(event: Events, ctr: HTTPRequestContext, ctx: RequestContext, ctg: GlobalContext, error?: Error) {
   switch (event) {
-    case "error": {
-      const event = ctg.routes.event.find((event) => (event.event === 'error'))
+    case "runtimeError": {
+      const event = ctg.routes.event.find((event) => event.name === 'runtimeError')
 
       if (!event) {
         // Default Error
-        console.error(ctr.error)
+        console.error(error)
         ctr.status(500)
-        ctx.content = Buffer.from(`An Error occured\n${(ctr.error as Error).stack}`)
+        ctx.content = Buffer.from(`An Error occured\n${error.stack}`)
       } else {
         // Custom Error
         try {
-          await Promise.resolve(event.code(ctr))
+          if (event.name !== 'runtimeError') return
+          await Promise.resolve(event.code(ctr, error))
         } catch (err) {
           console.error(err)
           ctr.status(500)
@@ -24,13 +25,14 @@ export default async function handleEvent(event: Events, ctr: HTTPRequestContext
       }
     }
 
-    case "request": {
+    case "httpRequest": {
       let errorStop = false
-      const event = ctg.routes.event.find((event) => (event.event === 'request'))
+      const event = ctg.routes.event.find((event) => (event.name === 'httpRequest'))
 
       if (event) {
         // Custom Request
         try {
+          if (event.name !== 'httpRequest') return
           await Promise.resolve(event.code(ctr))
         } catch (err) {
           errorStop = true
@@ -42,9 +44,9 @@ export default async function handleEvent(event: Events, ctr: HTTPRequestContext
       }; return errorStop
     }
 
-    case "notfound": {
+    case "http404": {
       let errorStop = false
-      const event = ctg.routes.event.find((event) => (event.event === 'notfound'))
+      const event = ctg.routes.event.find((event) => (event.name === 'http404'))
 
       if (!event) {
         // Default NotFound
@@ -53,6 +55,7 @@ export default async function handleEvent(event: Events, ctr: HTTPRequestContext
       } else {
         // Custom NotFound
         try {
+          if (event.name !== 'http404') return
           await Promise.resolve(event.code(ctr))
         } catch (err) {
           errorStop = true

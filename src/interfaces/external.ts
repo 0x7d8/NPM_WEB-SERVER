@@ -1,9 +1,9 @@
 import { IncomingMessage, ServerResponse } from "http"
 import { Http2ServerRequest, Http2ServerResponse } from "http2"
 import ValueCollection from "../classes/valueCollection"
-import { HTTPMethods, Routed } from "./internal"
+import { HTTPMethods } from "./internal"
 import ServerController from "../classes/webServer"
-import { Events } from "./internal"
+import Event from "./event"
 import { UrlWithStringQuery } from "url"
 import { Readable } from "stream"
 import { GlobalContext, RequestContext } from "./context"
@@ -19,10 +19,6 @@ export interface PrintOptions {
 	 * The Content Type to use
 	 * @default ""
 	*/ contentType?: string
-	/**
-	 * Whether to evaluate returned Function (If Function was sent)
-	 * @default false
-	*/ returnFunctions?: boolean
 }
 
 export interface PrintFileOptions {
@@ -71,8 +67,6 @@ export interface HTTPRequestContext<Custom = {}, Body = any> {
 	/** The Raw HTTP Server Req Variable */ rawReq: IncomingMessage | Http2ServerRequest
 	/** The Raw HTTP Server Res Variable */ rawRes: ServerResponse | Http2ServerResponse
 
-	/** The ERROR Object if one occured (mostly in the error event) */ error?: Error
-
 	/** Set an HTTP Header to add */ setHeader: (name: string, value: string | number) => this
 	/** Set a Custom Variable */ setCustom: <Type extends keyof Custom>(name: Type, value: Custom[Type]) => this
 	/** The Request Status to Send */ status: (code: number) => this
@@ -91,14 +85,9 @@ export interface RouteFile<Custom = {}, Body = any> {
   /** The Code to run on the Request */ code: (ctr: HTTPRequestContext<Custom, Body>) => Promise<any> | any
 }
 
-export interface Event {
-	/** The Name of The Event */ event: Events
-	/** The Async Code to run on the Event */ code: Routed
-}
-
 export interface Middleware {
   /** The Name of The Middleware */ name: string
   /** The Async Code to run on a Request */ code: (ctr: HTTPRequestContext, ctx: RequestContext, ctg: GlobalContext) => Promise<any> | any
 }
 
-export { HTTPMethods }
+export { HTTPMethods, Event }

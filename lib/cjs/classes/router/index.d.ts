@@ -1,7 +1,6 @@
-import { Routed } from "../interfaces/internal";
-import { Event, Middleware } from "../interfaces/external";
-import { Events } from "../interfaces/internal";
-import RouteBlock from "./router/routeBlock";
+import { Middleware } from "../../interfaces/external";
+import Event, { EventHandlerMap, Events } from "../../interfaces/event";
+import RoutePath from "./path";
 export declare const pathParser: (path: string | string[], removeSingleSlash?: boolean) => string;
 export default class RouteList {
     protected middlewares: Middleware[];
@@ -16,15 +15,15 @@ export default class RouteList {
    * // We will log every time a request is made
    * const controller = new Server({ })
    *
-   * controller.event('request', (ctr) => {
+   * controller.event('httpRequest', (ctr) => {
      *   console.log(`${ctr.url.method} Request made to ${ctr.url.path}`)
      * })
    * ```
      * @since 4.0.0
     */
-    event(
-    /** The Event Name */ event: Events, 
-    /** The Async Code to run on a Request */ code: Routed): this;
+    event<EventName extends Events>(
+    /** The Event Name */ event: EventName, 
+    /** The Async Code to run on a Request */ code: EventHandlerMap[EventName]): this;
     /**
      * Add a new Middleware
      * @example
@@ -45,19 +44,22 @@ export default class RouteList {
    * ```
    * const controller = new Server({ })
    *
-   * controller.prefix('/')
-   *   .add('GET', '/cool', (ctr) => {
+   * controller.path('/', (path) => path
+     *   .http('GET', '/cool', (ctr) => {
    *     ctr.print('cool!')
    *   })
-   *   .prefix('/api')
-   *     .add('GET', '/', (ctr) => {
+     *   .path('/api', (path) => path
+     *     .http('GET', '/', (ctr) => {
    *       ctr.print('Welcome to the API')
    *     })
+     *   )
+     * )
    * ```
-     * @since 4.0.0
+     * @since 5.0.0
     */
-    prefix(
-    /** The Path Prefix */ prefix: string): RouteBlock;
+    path(
+    /** The Path Prefix */ prefix: string, 
+    /** The Code to handle the Prefix */ code: (path: RoutePath) => RoutePath): this;
     /**
    * Internal Method for Generating Routes Object
    * @ignore This is meant for internal use
@@ -68,6 +70,5 @@ export default class RouteList {
         routes: any[];
         statics: any[];
         loadPaths: any[];
-        validations: any[];
     };
 }

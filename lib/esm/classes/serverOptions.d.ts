@@ -1,27 +1,5 @@
-import rateLimitRule from "../interfaces/ratelimitRule";
 import { CompressTypes } from "../functions/handleCompressType";
 export interface Options {
-    /** RateLimit Settings */ rateLimits?: {
-        /**
-         * Whether Ratelimits are enabled
-         * @default false
-        */ enabled?: boolean;
-        /**
-         * The Message that gets sent when a ratelimit maxes out
-         * @default "Rate Limited"
-        */ message?: any;
-        /**
-         * The List of Ratelimit Rules
-         * @default []
-        */ list?: rateLimitRule[];
-        /**
-     * The RateLimit Functions
-     * @default Map
-     */ functions?: {
-            set: (key: string, value: number) => Promise<any> | any;
-            get: (key: string) => Promise<number> | number;
-        } | Map<string, number>;
-    };
     /** HTTP Body Settings */ body?: {
         /**
          * Whether recieving HTTP Bodies is enabled
