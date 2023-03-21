@@ -44,6 +44,10 @@ export interface RequestContext {
 	/** Whether waiting is required */ waiting: boolean
 	/** Whether to Continue with execution */ continue: boolean
 	/** The Function to handle an Error in a Async Middleware */ handleError: (err: Error) => void
+	/** The Response Status that will be sent */ status: number
+	/** The Headers the Request was made with */ headers: Record<Lowercase<string>, string>
+	/** The Headers scheduled to be sent */ sendHeaders: Record<Lowercase<string>, string>
+	/** The Remote IP as Buffer */ remote: Buffer
 	/** The Execute URL Object */ execute: {
 		/** The Route Object that was found */ route: Route | Static
 		/** The File to Read when Route is Static */ file: string

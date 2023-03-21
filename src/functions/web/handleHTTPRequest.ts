@@ -7,11 +7,11 @@ import handleCompression from "../handleCompression"
 import statsRoute from "../../stats/routes"
 import handleEvent from "../handleEvent"
 import { HTTPRequestContext } from "../../interfaces/external"
-import { IncomingMessage, ServerResponse } from "http"
-import { Http2ServerRequest, Http2ServerResponse } from "http2"
+import { HttpRequest, HttpResponse } from "uWebSockets.js"
 import handleContentType from "../handleContentType"
 import parseContent, { Returns as ParseContentReturns } from "../parseContent"
 import Static from "../../interfaces/static"
+import { Version } from "../.."
 
 import queryUrl from "querystring"
 import path from "path"
@@ -21,7 +21,7 @@ import fs from "fs"
 export const getPreviousHours = () =>
 	Array.from({ length: 5 }, (_, i) => (new Date().getHours() - (4 - i) + 24) % 24)
 
-export default async function handleHTTPRequest(req: IncomingMessage | Http2ServerRequest, res: ServerResponse | Http2ServerResponse, ctg: GlobalContext) {
+export default async function handleHTTPRequest(req: HttpRequest, res: HttpResponse, ctg: GlobalContext) {
 	// Create Local ConTeXt
 	let ctx: RequestContext = {
 		content: Buffer.alloc(0),
@@ -30,6 +30,10 @@ export default async function handleHTTPRequest(req: IncomingMessage | Http2Serv
 		waiting: false,
 		continue: true,
 		handleError: () => null,
+		status: 200,
+		headers: {},
+		sendHeaders: {},
+		remote: Buffer.from(res.getRemoteAddressAsText()),
 		execute: {
 			route: null,
 			file: null,
@@ -39,55 +43,71 @@ export default async function handleHTTPRequest(req: IncomingMessage | Http2Serv
 			chunks: [],
 			raw: Buffer.alloc(0),
 			parsed: ''
-		}, url: { ...url.parse(pathParser(req.url)), method: req.method as any },
+		}, url: { ...url.parse(pathParser(req.getUrl() + '?' + req.getQuery())), method: req.getMethod().toUpperCase() as any },
 		previousHours: getPreviousHours()
 	}; ctx.url.pathname = decodeURI(ctx.url.pathname)
 
+	// Parse Headers
+	req.forEach((key, value) => {
+		ctx.headers[key] = value
+	})
+
 	// Handle Wait Events
 	ctx.events.on('noWaiting', () => ctx.waiting = false)
-	req.once('aborted', () => ctx.events.emit('endRequest'))
-	res.once('close', () => ctx.events.emit('endRequest'))
+	res.onAborted(() => ctx.events.emit('endRequest'))
 
 	// Save & Check Request Body
-	if (ctg.options.body.enabled) req.on('data', (data: Buffer) => {
-		ctx.body.chunks.push(data)
+	if (ctg.options.body.enabled && !['GET', 'HEAD'].includes(ctx.url.method)) res.onData(async(data, isLast) => {
+		ctx.body.chunks.push(Buffer.from(data))
 
 		ctg.data.incoming.total += data.byteLength
 		ctg.data.incoming[ctx.previousHours[4]] += data.byteLength
-	}).once('end', async() => {
-		ctx.body.raw = Buffer.concat(ctx.body.chunks)
-		ctx.body.chunks = []
 
-		if (ctx.body.raw.byteLength >= (ctg.options.body.maxSize * 1e6)) {
-			res.statusCode = 413
-			ctx.continue = false
+		if (isLast) {
+			ctx.body.raw = Buffer.concat(ctx.body.chunks)
+			ctx.body.chunks = []
 
-			const result = await parseContent(ctg.options.body.message)
+			if (ctx.body.raw.byteLength >= (ctg.options.body.maxSize * 1e6)) {
+				res.writeStatus('413')
+				ctx.continue = false
 
-			for (const header in result.headers) {
-				res.setHeader(header, result.headers[header])
+				const result = await parseContent(ctg.options.body.message)
+
+				for (const header in result.headers) {
+					ctx.sendHeaders[header] = result.headers[header]
+				}
+
+				ctx.content = result.content
+				return handleCompression({ headers: new ValueCollection(ctx.headers, decodeURIComponent), rawRes: res } as any, ctx, ctg, false)
 			}
 
-			ctx.content = result.content
-			return handleCompression({ headers: new ValueCollection(req.headers as any, decodeURIComponent), rawRes: res } as any, ctx, ctg)
+			if (ctx.continue) ctx.events.emit('startRequest')
 		}
-
-		if (ctx.continue) ctx.events.emit('startRequest')
 	})
 
 	ctx.events.once('startRequest', async() => {
+		let endRequest = false
+		ctx.events.once('endRequest', () => endRequest = true)
+
+		// Add X-Powered-By Header (if enabled)
+		if (ctg.options.poweredBy) ctx.sendHeaders['rjweb-server'] = Version
+
 		// Add Headers
 		Object.keys(ctg.options.headers).forEach((key) => {
-			res.setHeader(key, ctg.options.headers[key])
+			ctx.sendHeaders[key] = ctg.options.headers[key]
 		})
 
 		// Handle CORS Requests
 		if (ctg.options.cors) {
-			res.setHeader('Access-Control-Allow-Headers', '*')
-			res.setHeader('Access-Control-Allow-Origin', '*')
-			res.setHeader('Access-Control-Request-Method', '*')
-			res.setHeader('Access-Control-Allow-Methods', '*')
-			if (req.method === 'OPTIONS') return res.end('')
+			ctx.sendHeaders['Access-Control-Allow-Headers'] = '*'
+			ctx.sendHeaders['Access-Control-Allow-Origin'] = '*'
+			ctx.sendHeaders['Access-Control-Request-Method'] = '*'
+			ctx.sendHeaders['Access-Control-Allow-Methods'] = '*'
+			if (endRequest) return
+
+			for (const header in ctx.sendHeaders) {
+				res.writeHeader(header, ctx.sendHeaders[header])
+			}; if (ctx.url.method === 'OPTIONS') return res.end('')
 		}
 
 		// Check if URL exists
@@ -174,11 +194,11 @@ export default async function handleHTTPRequest(req: IncomingMessage | Http2Serv
 			}
 
 			// Skip if not related
-			if (url.method !== req.method) continue
+			if (url.method !== ctx.url.method) continue
 			if (url.pathArray.length !== actualUrl.length) continue
 
 			// Check for Static Paths
-			if (url.path === ctx.url.pathname && url.method === req.method) {
+			if (url.path === ctx.url.pathname && url.method === ctx.url.method) {
 				ctx.execute.route = url
 				ctx.execute.exists = true
 
@@ -213,23 +233,20 @@ export default async function handleHTTPRequest(req: IncomingMessage | Http2Serv
 			continue
 		}
 
-		// Add X-Powered-By Header (if enabled)
-		if (ctg.options.poweredBy) res.setHeader('X-Powered-By', 'rjweb-server')
-
 		// Get Correct Host IP
 		let hostIp: string
-		if (ctg.options.proxy && req.headers['x-forwarded-for']) hostIp = req.headers['x-forwarded-for'] as string
-		else hostIp = req.socket.remoteAddress
+		if (ctg.options.proxy && ctx.headers['x-forwarded-for']) hostIp = ctx.headers['x-forwarded-for']
+		else hostIp = ctx.remote.toString().split(':')[0]
 
 		// Turn Cookies into Object
 		let cookies = {}
-		if (req.headers.cookie) req.headers.cookie.split(';').forEach((cookie) => {
+		if (ctx.headers['cookie']) ctx.headers['cookie'].split(';').forEach((cookie) => {
 			const parts = cookie.split('=')
 			cookies[parts.shift().trim()] = parts.join('=')
 		})
 
 		// Parse Request Body
-		if (ctg.options.body.parse && req.headers['content-type'] === 'application/json') {
+		if (ctg.options.body.parse && ctx.headers['content-type'] === 'application/json') {
 			try { ctx.body.parsed = JSON.parse(ctx.body.raw.toString()) }
 			catch (err) { ctx.body.parsed = ctx.body.raw.toString() }
 		} else ctx.body.parsed = ctx.body.raw.toString()
@@ -238,16 +255,15 @@ export default async function handleHTTPRequest(req: IncomingMessage | Http2Serv
 		let ctr: HTTPRequestContext = {
 			// Properties
 			controller: ctg.controller,
-			headers: new ValueCollection(req.headers as any, decodeURIComponent),
+			headers: new ValueCollection(ctx.headers, decodeURIComponent),
 			cookies: new ValueCollection(cookies, decodeURIComponent),
 			params: new ValueCollection(params, decodeURIComponent),
 			queries: new ValueCollection(queryUrl.parse(ctx.url.query) as any, decodeURIComponent),
 
 			// Variables
 			client: {
-				userAgent: req.headers['user-agent'],
-				httpVersion: req.httpVersion,
-				port: req.socket.remotePort,
+				userAgent: ctx.headers['user-agent'],
+				port: Number(ctx.remote.toString().split(':')[1]),
 				ip: hostIp
 			}, body: ctx.body.parsed,
 			url: ctx.url,
@@ -261,7 +277,7 @@ export default async function handleHTTPRequest(req: IncomingMessage | Http2Serv
 
 			// Functions
 			setHeader(name, value) {
-				res.setHeader(name, value)
+				ctx.sendHeaders[name] = value
 
 				return ctr
 			}, setCustom(name, value) {
@@ -269,12 +285,13 @@ export default async function handleHTTPRequest(req: IncomingMessage | Http2Serv
 
 				return ctr
 			}, status(code) {
-				res.statusCode = code ?? 200
+				res.writeStatus(String(code ?? 200))
+				ctx.status = code
 
 				return ctr
 			}, redirect(location, statusCode) {
-				res.statusCode = statusCode ?? 302
-				res.setHeader('Location', location)
+				ctr.status(statusCode ?? 302)
+				ctx.sendHeaders['Location'] = location
 				ctx.events.emit('noWaiting')
 
 				return ctr
@@ -290,9 +307,9 @@ export default async function handleHTTPRequest(req: IncomingMessage | Http2Serv
 						return ctx.handleError(err)
 					}
 
-					if (contentType) res.setHeader('Content-Type', contentType)
+					if (contentType) ctx.sendHeaders['Content-Type'] = contentType
 					for (const header in result.headers) {
-						res.setHeader(header, result.headers[header])
+						ctx.sendHeaders[header] = result.headers[header]
 					}
 
 					ctx.content = result.content
@@ -307,14 +324,14 @@ export default async function handleHTTPRequest(req: IncomingMessage | Http2Serv
 				const cache = options?.cache ?? false
 
 				// Add Content Types
-				if (addTypes && !contentType) ctr.setHeader('Content-Type', handleContentType(file, ctg))
-				else if (contentType) res.setHeader('Content-Type', contentType)
+				if (addTypes && !contentType) ctx.sendHeaders['Content-Type'] = handleContentType(file, ctg)
+				else if (contentType) ctx.sendHeaders['Content-Type'] = contentType
 
 				// Get File Content
 				let stream: fs.ReadStream, errorStop = false
 				if (ctr.headers.get('accept-encoding', '').includes(CompressMapping[ctg.options.compression])) {
-					res.setHeader('Content-Encoding', CompressMapping[ctg.options.compression])
-					res.setHeader('Vary', 'Accept-Encoding')
+					ctx.sendHeaders['Content-Encoding'] = CompressMapping[ctg.options.compression]
+					ctx.sendHeaders['Vary'] = 'Accept-Encoding'
 
 					// Check Cache
 					ctx.continue = false
@@ -336,7 +353,7 @@ export default async function handleHTTPRequest(req: IncomingMessage | Http2Serv
 					}
 
 					const compression = handleCompressType(ctg.options.compression)
-					try { stream = fs.createReadStream(file); ctx.waiting = true; stream.pipe(compression); compression.pipe(res) }
+					try { stream = fs.createReadStream(file); ctx.waiting = true; stream.pipe(compression) }
 					catch (err) { errorStop = true; handleEvent('runtimeError', ctr, ctx, ctg, err) }
 					if (errorStop) return
 
@@ -346,6 +363,8 @@ export default async function handleHTTPRequest(req: IncomingMessage | Http2Serv
 						ctg.data.outgoing.total += content.byteLength
 						ctg.data.outgoing[ctx.previousHours[4]] += content.byteLength
 
+						res.write(content)
+
 						// Write to Cache Store
 						if (cache) {
 							const oldData = ctg.cache.files.get(`file::${ctg.options.compression}::${file}`) ?? Buffer.from('')
@@ -353,7 +372,7 @@ export default async function handleHTTPRequest(req: IncomingMessage | Http2Serv
 						}
 					}); compression.once('close', () => { ctx.events.emit('noWaiting'); ctx.content = Buffer.from('') })
 				} else {
-					try { stream = fs.createReadStream(file); ctx.waiting = true; stream.pipe(res) }
+					try { stream = fs.createReadStream(file); ctx.waiting = true }
 					catch (err) { errorStop = true; handleEvent('runtimeError', ctr, ctx, ctg, err) }
 
 					// Collect Data
@@ -361,6 +380,8 @@ export default async function handleHTTPRequest(req: IncomingMessage | Http2Serv
 					stream.on('data', (content: Buffer) => {
 						ctg.data.outgoing.total += content.byteLength
 						ctg.data.outgoing[ctx.previousHours[4]] += content.byteLength
+
+						res.write(content)
 
 						// Write to Cache Store
 						if (cache) {
@@ -384,7 +405,7 @@ export default async function handleHTTPRequest(req: IncomingMessage | Http2Serv
 						return ctx.handleError(err)
 					}
 
-					res.write(data, 'binary')
+					res.write(data)
 
 					ctg.data.outgoing.total += data.byteLength
 					ctg.data.outgoing[ctx.previousHours[4]] += data.byteLength
@@ -412,17 +433,17 @@ export default async function handleHTTPRequest(req: IncomingMessage | Http2Serv
 		ctx.handleError = (err) => {
 			errorStop = true
 			handleEvent('runtimeError', ctr, ctx, ctg, err)
-			ctx.events.emit('noWaiting')
+				.then(() => ctx.events.emit('noWaiting'))
 		}
 
 		if (ctg.middlewares.length > 0) {
 			let doContinue = true, runError = null
-			for (let validateIndex = 0; validateIndex <= ctg.middlewares.length - 1; validateIndex++) {
-				const validate = ctg.middlewares[validateIndex]
+			for (let middlewareIndex = 0; middlewareIndex <= ctg.middlewares.length - 1; middlewareIndex++) {
+				const middleware = ctg.middlewares[middlewareIndex]
 
 				try {
-					await Promise.resolve(validate.code(ctr, ctx, ctg))
-					if (!String(res.statusCode).startsWith('2')) doContinue = false
+					await Promise.resolve(middleware.code(ctr, ctx, ctg))
+					if (!String(ctx.status).startsWith('2')) doContinue = false
 				} catch (err) {
 					doContinue = false
 					runError = err
@@ -430,17 +451,16 @@ export default async function handleHTTPRequest(req: IncomingMessage | Http2Serv
 
 				if (!doContinue && runError) {
 					errorStop = true
-					handleEvent('runtimeError', ctr, ctx, ctg, runError)
-					break
-				} else if (!doContinue) {
-					if (!res.getHeader('Content-Type')) ctr.setHeader('Content-Type', 'text/plain')
-					handleCompression(ctr, ctx, ctg)
+					ctx.handleError(runError)
+				}; if (!doContinue) {
+					if (!ctx.sendHeaders['Content-Type']) ctx.sendHeaders['Content-Type'] = 'text/plain'
+					handleCompression(ctr, ctx, ctg, endRequest)
 					break
 				}
 			}
 
 			if (!doContinue) return
-		}
+		}; if (errorStop) return
 
 		// Execute Custom Run Function
 		if (!ctx.execute.dashboard) errorStop = await handleEvent('httpRequest', ctr, ctx, ctg)
@@ -454,7 +474,7 @@ export default async function handleHTTPRequest(req: IncomingMessage | Http2Serv
 
 				try {
 					await Promise.resolve(validate(ctr))
-					if (!String(res.statusCode).startsWith('2')) doContinue = false
+					if (!String(ctx.status).startsWith('2')) doContinue = false
 				} catch (err) {
 					doContinue = false
 					runError = err
@@ -462,17 +482,16 @@ export default async function handleHTTPRequest(req: IncomingMessage | Http2Serv
 
 				if (!doContinue && runError) {
 					errorStop = true
-					handleEvent('runtimeError', ctr, ctx, ctg, runError)
-					break
-				} else if (!doContinue) {
-					if (!res.getHeader('Content-Type')) ctr.setHeader('Content-Type', 'text/plain')
-					handleCompression(ctr, ctx, ctg)
+					ctx.handleError(runError)
+				}; if (!doContinue) {
+					if (!ctx.sendHeaders['Content-Type']) ctx.sendHeaders['Content-Type'] = 'text/plain'
+					handleCompression(ctr, ctx, ctg, endRequest)
 					break
 				}
 			}
 
 			if (!doContinue) return
-		}
+		}; if (errorStop) return
 
 		// Execute Page
 		if (ctg.options.dashboard.enabled && !ctx.execute.dashboard) {
@@ -486,7 +505,7 @@ export default async function handleHTTPRequest(req: IncomingMessage | Http2Serv
 		if (ctx.execute.exists && !errorStop) {
 			if (ctx.execute.route.type === 'static') {
 				// Add Content Types
-				if (ctx.execute.route.data.addTypes) res.setHeader('Content-Type', handleContentType(ctx.execute.file, ctg))
+				if (ctx.execute.route.data.addTypes) ctx.sendHeaders['Content-Type'] = handleContentType(ctx.execute.file, ctg)
 
 				// Read Content
 				ctx.continue = false
@@ -494,29 +513,51 @@ export default async function handleHTTPRequest(req: IncomingMessage | Http2Serv
 				// Get File Content
 				let stream: fs.ReadStream, errorStop = false
 				if (ctg.options.compression && ctr.headers.get('accept-encoding', '').includes(CompressMapping[ctg.options.compression])) {
-					ctr.rawRes.setHeader('Content-Encoding', CompressMapping[ctg.options.compression])
-					ctr.rawRes.setHeader('Vary', 'Accept-Encoding')
+					ctx.sendHeaders['Content-Encoding'] = CompressMapping[ctg.options.compression]
+					ctx.sendHeaders['Vary'] = 'Accept-Encoding'
 
 					const compression = handleCompressType(ctg.options.compression)
-					try { stream = fs.createReadStream(ctx.execute.file); ctx.waiting = true; stream.pipe(compression); compression.pipe(res) }
+					try { stream = fs.createReadStream(ctx.execute.file); ctx.waiting = true; stream.pipe(compression) }
 					catch (err) { errorStop = true; handleEvent('runtimeError', ctr, ctx, ctg, err) }
 					if (errorStop) return
+
+					// Write Headers
+					for (const header in ctx.sendHeaders) {
+						if (!endRequest) res.writeHeader(header, ctx.sendHeaders[header])
+					}
 
 					// Write to Total Network
 					compression.on('data', (content: Buffer) => {
 						ctg.data.outgoing.total += content.byteLength
 						ctg.data.outgoing[ctx.previousHours[4]] += content.byteLength
-					}); compression.once('end', () => { ctx.events.emit('noWaiting'); ctx.content = Buffer.from('') })
+
+						if (!endRequest) res.write(content)
+					}).once('end', () => {
+						ctx.events.emit('noWaiting')
+						ctx.content = Buffer.alloc(0)
+					})
+
 					ctx.events.once('endRequest', () => { stream.destroy(); compression.destroy() })
 				} else {
-					try { stream = fs.createReadStream(ctx.execute.file); ctx.waiting = true; stream.pipe(res) }
+					try { stream = fs.createReadStream(ctx.execute.file); ctx.waiting = true }
 					catch (err) { errorStop = true; handleEvent('runtimeError', ctr, ctx, ctg, err) }
+
+					// Write Headers
+					for (const header in ctx.sendHeaders) {
+						if (!endRequest) res.writeHeader(header, ctx.sendHeaders[header])
+					}
 
 					// Write to Total Network
 					stream.on('data', (content: Buffer) => {
 						ctg.data.outgoing.total += content.byteLength
 						ctg.data.outgoing[ctx.previousHours[4]] += content.byteLength
-					}); stream.once('end', () => { ctx.events.emit('noWaiting'); ctx.content = Buffer.from('') })
+
+						if (!endRequest) res.write(content)
+					}).once('end', () => {
+						ctx.events.emit('noWaiting')
+						ctx.content = Buffer.alloc(0)
+					})
+
 					ctx.events.once('endRequest', () => stream.destroy())
 				}
 			} else {
@@ -524,7 +565,7 @@ export default async function handleHTTPRequest(req: IncomingMessage | Http2Serv
 					await Promise.resolve(ctx.execute.route.code(ctr))
 				} catch (err) {
 					errorStop = true
-					handleEvent('runtimeError', ctr, ctx, ctg, err)
+					await handleEvent('runtimeError', ctr, ctx, ctg, err)
 				}
 			}
 
@@ -532,17 +573,19 @@ export default async function handleHTTPRequest(req: IncomingMessage | Http2Serv
 			if (ctx.waiting) await new Promise((resolve) => {
 				ctx.events.once('noWaiting', () => resolve(false))
 			}); if (ctx.content && ctx.continue) {
-				handleCompression(ctr, ctx, ctg)
-			} else res.end()
+				handleCompression(ctr, ctx, ctg, endRequest)
+			} else { if (!endRequest) res.end() }
 		} else if (!errorStop) {
-			handleEvent('http404', ctr, ctx, ctg)
+			await handleEvent('http404', ctr, ctx, ctg)
 
 			// Wait for Streams
 			if (ctx.waiting) await new Promise((resolve) => {
 				ctx.events.once('noWaiting', () => resolve(false))
 			}); if (ctx.content && ctx.continue) {
-				handleCompression(ctr, ctx, ctg)
-			} else res.end()
+				handleCompression(ctr, ctx, ctg, endRequest)
+			} else { if (!endRequest) res.end() }
 		}
-	}); if (!ctg.options.body.enabled) ctx.events.emit('startRequest')
+	})
+
+	if (!ctg.options.body.enabled || ['GET', 'HEAD'].includes(ctx.url.method)) ctx.events.emit('startRequest')
 }

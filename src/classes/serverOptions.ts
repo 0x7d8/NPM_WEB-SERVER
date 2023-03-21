@@ -47,7 +47,7 @@ export interface Options {
 	}
 
 	/** Header Settings */ headers?: {
-		[key: string]: string | number
+		[key: string]: string
 	}
 
 	/** Content-Type Settings */ contentTypes?: {
@@ -75,7 +75,7 @@ export interface Options {
 	 * @default 2023
 	*/ port?: number
 	/**
-	 * Add X-Powered-By Header
+	 * Whether the rjweb-server Header will be added
 	 * @default true
 	*/ poweredBy?: boolean
 }

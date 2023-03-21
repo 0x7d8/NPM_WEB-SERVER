@@ -1,5 +1,4 @@
-import { IncomingMessage, ServerResponse } from "http"
-import { Http2ServerRequest, Http2ServerResponse } from "http2"
+import { HttpRequest, HttpResponse } from "uWebSockets.js"
 import ValueCollection from "../classes/valueCollection"
 import { HTTPMethods } from "./internal"
 import ServerController from "../classes/webServer"
@@ -56,7 +55,6 @@ export interface HTTPRequestContext<Custom = {}, Body = any> {
 
 	/** Client Infos */ readonly client: {
 		/** The User Agent of the Client */ readonly userAgent: string
-		/** The HTTP Version that the Client is using */ readonly httpVersion: string
 		/** The Port that the Client is using */ readonly port: number
 		/** The Ip that the Client is using */ readonly ip: string
 	}
@@ -64,10 +62,10 @@ export interface HTTPRequestContext<Custom = {}, Body = any> {
 	/** The Request Body (JSON Automatically parsed) */ readonly body: Body
 	/** The Requested URL */ readonly url: UrlWithStringQuery & { method: HTTPMethods }
 
-	/** The Raw HTTP Server Req Variable */ rawReq: IncomingMessage | Http2ServerRequest
-	/** The Raw HTTP Server Res Variable */ rawRes: ServerResponse | Http2ServerResponse
+	/** The Raw HTTP Server Req Variable */ rawReq: HttpRequest
+	/** The Raw HTTP Server Res Variable */ rawRes: HttpResponse
 
-	/** Set an HTTP Header to add */ setHeader: (name: string, value: string | number) => this
+	/** Set an HTTP Header to add */ setHeader: (name: string, value: string) => this
 	/** Set a Custom Variable */ setCustom: <Type extends keyof Custom>(name: Type, value: Custom[Type]) => this
 	/** The Request Status to Send */ status: (code: number) => this
 	/** Redirect a Client to another URL */ redirect: (location: string, statusCode?: 301 | 302) => this

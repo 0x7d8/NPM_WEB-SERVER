@@ -13,7 +13,7 @@ export const pathParser = (path: string | string[], removeSingleSlash?: boolean)
 
 		if (path.endsWith('/') && path !== '/') path = path.slice(0, -1)
 		if (!path.startsWith('/') && path !== '/') path = `/${path}`
-		if (path.includes('/?') && path.split('/').length > 2) path = path.replace('/?', '?')
+		if (path.endsWith('?')) path = path.slice(0, -1)
 
 		output += (removeSingleSlash && path === '/') ? '' : path || '/'
 	}

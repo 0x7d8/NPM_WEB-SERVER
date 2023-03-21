@@ -9,12 +9,12 @@ import Route from "../interfaces/route"
 import { getAllFilesFilter } from "../misc/getAllFiles"
 import { promises as fs } from "fs"
 
-import http2 from "http2"
-import http from "http"
+import uWebsocket from "uWebSockets.js"
 
 export default class Webserver extends RouteList {
 	private globalContext: GlobalContext
-	private server: http.Server | http2.Http2SecureServer
+	private server: uWebsocket.TemplatedApp
+	private socket: uWebsocket.us_listen_socket
 
 	/**
 	 * Initialize a new Server
@@ -128,20 +128,20 @@ export default class Webserver extends RouteList {
 			if (stopExecution) return
 
 			if (this.globalContext.options.https.enabled) {
-				let key: Buffer, cert: Buffer
 				try {
-					key = await fs.readFile(this.globalContext.options.https.keyFile)
-					cert = await fs.readFile(this.globalContext.options.https.certFile)
+					await fs.readFile(this.globalContext.options.https.keyFile)
+					await fs.readFile(this.globalContext.options.https.certFile)
 				} catch (e) {
 					throw new Error(`Cant access your HTTPS Key or Cert file! (${this.globalContext.options.https.keyFile} / ${this.globalContext.options.https.certFile})`)
 				}
 	
-				this.server = http2.createSecureServer({
-					key, cert, allowHTTP1: true
+				this.server = uWebsocket.SSLApp({
+					ca_file_name: this.globalContext.options.https.keyFile,
+					cert_file_name: this.globalContext.options.https.certFile
 				})
-			} else this.server = new http.Server()
+			} else this.server = uWebsocket.App()
 
-			this.server.on('request', (req, res) => handleHTTPRequest(req, res, this.globalContext))
+			this.server.any('/*', (res, req) => handleHTTPRequest(req, res, this.globalContext))
 
 			this.globalContext.routes.normal = this.getRoutes().routes
 			this.globalContext.routes.event = this.getRoutes().events
@@ -149,9 +149,12 @@ export default class Webserver extends RouteList {
 
 			this.globalContext.routes.normal.push(...loadedRoutes as Route[])
 
-			this.server.listen(this.globalContext.options.port, this.globalContext.options.bind)
-			this.server.once('listening', () => resolve({ success: true, port: this.globalContext.options.port, message: 'WEBSERVER STARTED' }))
-			this.server.once('error', (error: Error) => { this.server.close(); reject({ success: false, error, message: 'WEBSERVER ERRORED' }) })
+			this.server.listen(this.globalContext.options.bind, this.globalContext.options.port, (listen) => {
+				if (!listen) reject({ success: false, error: listen as any, message: 'WEBSERVER ERRORED' })
+
+				this.socket = listen
+				resolve({ success: true, port: this.globalContext.options.port, message: 'WEBSERVER STARTED' })
+			})
 		})
 	}
 
@@ -209,7 +212,7 @@ export default class Webserver extends RouteList {
 			20: 0, 21: 0, 22: 0, 23: 0
 		}
 
-		await this.stop()
+		this.stop()
 		await this.start()
 
 		return this
@@ -232,7 +235,7 @@ export default class Webserver extends RouteList {
 	 * @since 3.0.0
 	*/
 	stop() {
-		this.server.close()
+		uWebsocket.us_listen_socket_close(this.socket)
 		this.globalContext.cache.files.clear()
 		this.globalContext.cache.routes.clear()
 
@@ -268,10 +271,7 @@ export default class Webserver extends RouteList {
 			20: 0, 21: 0, 22: 0, 23: 0
 		}
 
-		return new Promise((resolve: (value: ServerEvents.StopSuccess) => void, reject: (reason: ServerEvents.StopError) => void) => {
-			this.server.once('close', () => resolve({ success: true, message: 'WEBSERVER CLOSED' }))
-			this.server.once('error', (error: Error) => reject({ success: false, error, message: 'WEBSERVER CLOSING ERRORED' }))
-		})
+		return { success: true, message: 'WEBSERVER CLOSED' }
 	}
 
 
