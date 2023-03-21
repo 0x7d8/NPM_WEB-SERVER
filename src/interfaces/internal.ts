@@ -1,5 +1,10 @@
 import { HTTPRequestContext } from "./external"
 
+export type Task = {
+	type: 'context' | 'execution'
+	function: Function
+}
+
 export type LoadPath = {
 	path: string
 	prefix: string

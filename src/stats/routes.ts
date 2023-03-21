@@ -1,4 +1,4 @@
-import { GlobalContext, RequestContext } from "../interfaces/context"
+import { GlobalContext, InternalContext } from "../interfaces/context"
 import { pathParser } from "../classes/router"
 import { getAllFiles } from "../misc/getAllFiles"
 import { HTTPRequestContext } from "../interfaces/external"
@@ -11,7 +11,7 @@ import * as os from "os"
 
 const coreCount = os.cpus().length
 
-export default async function statsRoute(ctr: HTTPRequestContext, ctg: GlobalContext, ctx: RequestContext) {
+export default async function statsRoute(ctr: HTTPRequestContext, ctg: GlobalContext, ctx: InternalContext) {
   const path = ctr.url.path.replace(pathParser(ctg.options.dashboard.path, false), '') || '/'
   switch (path) {
     case "/":

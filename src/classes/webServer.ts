@@ -141,7 +141,8 @@ export default class Webserver extends RouteList {
 				})
 			} else this.server = uWebsocket.App()
 
-			this.server.any('/*', (res, req) => handleHTTPRequest(req, res, this.globalContext))
+			this.server
+				.any('/*', (res, req) => handleHTTPRequest(req, res, this.globalContext))
 
 			this.globalContext.routes.normal = this.getRoutes().routes
 			this.globalContext.routes.event = this.getRoutes().events

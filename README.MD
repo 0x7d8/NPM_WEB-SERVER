@@ -1,4 +1,4 @@
-<h1 align="center">Welcome to rjweb-server v4 👋</h1>
+<h1 align="center">Welcome to rjweb-server v5 👋</h1>
 <div align="center">
   <a href="https://www.npmjs.com/package/rjweb-server" target="_blank">
     <img alt="Version" src="https://img.shields.io/npm/v/rjweb-server.svg">
@@ -49,7 +49,7 @@ import webserver from "rjweb-server"
 
 Interface for ctr Object
 ```ts
-import { HTTPRequestContext } from "rjweb-server"
+import { Server, HTTPRequestContext } from "rjweb-server"
 
 const server = new Server({ })
 

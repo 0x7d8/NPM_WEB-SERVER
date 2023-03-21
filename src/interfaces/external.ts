@@ -5,7 +5,7 @@ import ServerController from "../classes/webServer"
 import Event from "./event"
 import { UrlWithStringQuery } from "url"
 import { Readable } from "stream"
-import { GlobalContext, RequestContext } from "./context"
+import { GlobalContext, InternalContext } from "./context"
 
 type UnionToIntersection<U>
 	= (U extends any ? (k: U) => void : never) extends ((k: infer I) => void) ? I : never
@@ -81,7 +81,7 @@ export interface RouteFile<Custom = {}, Body = any> {
 
 export interface Middleware {
   /** The Name of The Middleware */ name: string
-  /** The Async Code to run on a Request */ code: (ctr: HTTPRequestContext, ctx: RequestContext, ctg: GlobalContext) => Promise<any> | any
+  /** The Async Code to run on a Request */ code: (ctr: HTTPRequestContext, ctx: InternalContext, ctg: GlobalContext) => Promise<any> | any
 }
 
 export { HTTPMethods, Event }
