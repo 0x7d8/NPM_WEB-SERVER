@@ -11,7 +11,7 @@ export default function handleCompression(ctr: HTTPRequestContext, ctx: RequestC
 
 		// Write Headers
 		for (const header in ctx.sendHeaders) {
-			ctr.rawRes.writeHeader(header, ctx.sendHeaders[header])
+			if (!endRequest) ctr.rawRes.writeHeader(header, ctx.sendHeaders[header])
 		}
 
 		const compression = handleCompressType(ctg.options.compression)
@@ -19,13 +19,18 @@ export default function handleCompression(ctr: HTTPRequestContext, ctx: RequestC
 			ctg.data.outgoing.total += data.byteLength
 			ctg.data.outgoing[ctx.previousHours[4]] += data.byteLength
 
-			ctr.rawRes.write(data)
+			if (!endRequest) ctr.rawRes.write(data)
 		}).once('close', () => ctr.rawRes.end())
 
 		compression.end(ctx.content)
 	} else {
 		ctg.data.outgoing.total += ctx.content.byteLength
 		ctg.data.outgoing[ctx.previousHours[4]] += ctx.content.byteLength
+
+		// Write Headers
+		for (const header in ctx.sendHeaders) {
+			if (!endRequest) ctr.rawRes.writeHeader(header, ctx.sendHeaders[header])
+		}
 
 		ctr.rawRes.end(ctx.content)
 	}

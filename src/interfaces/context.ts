@@ -41,7 +41,9 @@ export interface RequestContext {
 	/** The Content to Write */ content: Buffer
 	/** Whether the Content is already compressed */ compressed: boolean
 	/** The Event Emitter */ events: EventEmitter
-	/** Whether waiting is required */ waiting: boolean
+	/** Whether to wait for a non Queue Async Event */ waiting: boolean
+	/** The Current Async Queue to await */ queue: Function[]
+	/** Schedule an Async Task for Execution */ addToQueue: (callback: Function) => number
 	/** Whether to Continue with execution */ continue: boolean
 	/** The Function to handle an Error in a Async Middleware */ handleError: (err: Error) => void
 	/** The Response Status that will be sent */ status: number

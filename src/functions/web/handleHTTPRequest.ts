@@ -18,6 +18,21 @@ import path from "path"
 import url from "url"
 import fs from "fs"
 
+export const runQueue = (ctr: HTTPRequestContext, ctx: RequestContext, ctg: GlobalContext) => new Promise<void>(async(resolve) => {
+	for (const callback of ctx.queue) {
+		try {
+			await Promise.resolve(callback())
+		} catch (err) {
+			ctx.queue = []
+			await handleEvent('runtimeError', ctr, ctx, ctg, err)
+			await runQueue(ctr, ctx, ctg)
+			break
+		}
+	}
+
+	resolve()
+})
+
 export const getPreviousHours = () =>
 	Array.from({ length: 5 }, (_, i) => (new Date().getHours() - (4 - i) + 24) % 24)
 
@@ -28,7 +43,10 @@ export default async function handleHTTPRequest(req: HttpRequest, res: HttpRespo
 		compressed: false,
 		events: new EventEmitter(),
 		waiting: false,
-		continue: true,
+		queue: [],
+		addToQueue(callback) {
+			return ctx.queue.push(callback)
+		}, continue: true,
 		handleError: () => null,
 		status: 200,
 		headers: {},
@@ -56,6 +74,10 @@ export default async function handleHTTPRequest(req: HttpRequest, res: HttpRespo
 	ctx.events.on('noWaiting', () => ctx.waiting = false)
 	res.onAborted(() => ctx.events.emit('endRequest'))
 
+	// Handle Aborts
+	let endRequest = false
+	ctx.events.once('endRequest', () => endRequest = true)
+
 	// Save & Check Request Body
 	if (ctg.options.body.enabled && !['GET', 'HEAD'].includes(ctx.url.method)) res.onData(async(data, isLast) => {
 		ctx.body.chunks.push(Buffer.from(data))
@@ -74,11 +96,11 @@ export default async function handleHTTPRequest(req: HttpRequest, res: HttpRespo
 				const result = await parseContent(ctg.options.body.message)
 
 				for (const header in result.headers) {
-					ctx.sendHeaders[header] = result.headers[header]
+					if (!endRequest) ctx.sendHeaders[header] = result.headers[header]
 				}
 
 				ctx.content = result.content
-				return handleCompression({ headers: new ValueCollection(ctx.headers, decodeURIComponent), rawRes: res } as any, ctx, ctg, false)
+				return handleCompression({ headers: new ValueCollection(ctx.headers, decodeURIComponent), rawRes: res } as any, ctx, ctg, endRequest)
 			}
 
 			if (ctx.continue) ctx.events.emit('startRequest')
@@ -86,9 +108,6 @@ export default async function handleHTTPRequest(req: HttpRequest, res: HttpRespo
 	})
 
 	ctx.events.once('startRequest', async() => {
-		let endRequest = false
-		ctx.events.once('endRequest', () => endRequest = true)
-
 		// Add X-Powered-By Header (if enabled)
 		if (ctg.options.poweredBy) ctx.sendHeaders['rjweb-server'] = Version
 
@@ -277,7 +296,18 @@ export default async function handleHTTPRequest(req: HttpRequest, res: HttpRespo
 
 			// Functions
 			setHeader(name, value) {
-				ctx.sendHeaders[name] = value
+				ctx.addToQueue((async() => {
+					let result: ParseContentReturns
+					try {
+						result = await parseContent(value)
+					} catch (err) {
+						return ctx.handleError(err)
+					}
+
+					ctx.sendHeaders[name] = result.content
+
+					ctx.events.emit('noWaiting')
+				}))
 
 				return ctr
 			}, setCustom(name, value) {
@@ -285,7 +315,7 @@ export default async function handleHTTPRequest(req: HttpRequest, res: HttpRespo
 
 				return ctr
 			}, status(code) {
-				res.writeStatus(String(code ?? 200))
+				if (!endRequest) res.writeStatus(String(code ?? 200))
 				ctx.status = code
 
 				return ctr
@@ -299,7 +329,7 @@ export default async function handleHTTPRequest(req: HttpRequest, res: HttpRespo
 				const contentType = options?.contentType ?? ''
 				ctx.events.emit('noWaiting')
 
-				ctx.waiting = true; ((async() => {
+				ctx.addToQueue((async() => {
 					let result: ParseContentReturns
 					try {
 						result = await parseContent(message)
@@ -307,121 +337,122 @@ export default async function handleHTTPRequest(req: HttpRequest, res: HttpRespo
 						return ctx.handleError(err)
 					}
 
-					if (contentType) ctx.sendHeaders['Content-Type'] = contentType
 					for (const header in result.headers) {
 						ctx.sendHeaders[header] = result.headers[header]
-					}
+					}; if (contentType) ctx.sendHeaders['Content-Type'] = contentType
 
 					ctx.content = result.content
 
 					ctx.events.emit('noWaiting')
-				})) ()
+				}))
 
 				return ctr
 			}, printFile(file, options = {}) {
 				const addTypes = options?.addTypes ?? true
-				const contentType = options?.contentType ?? ''
 				const cache = options?.cache ?? false
 
-				// Add Content Types
-				if (addTypes && !contentType) ctx.sendHeaders['Content-Type'] = handleContentType(file, ctg)
-				else if (contentType) ctx.sendHeaders['Content-Type'] = contentType
-
-				// Get File Content
-				let stream: fs.ReadStream, errorStop = false
+				// Add Headers
+				if (addTypes && !ctx.sendHeaders['Content-Type'])
+					ctx.sendHeaders['Content-Type'] = handleContentType(file, ctg)
 				if (ctr.headers.get('accept-encoding', '').includes(CompressMapping[ctg.options.compression])) {
 					ctx.sendHeaders['Content-Encoding'] = CompressMapping[ctg.options.compression]
 					ctx.sendHeaders['Vary'] = 'Accept-Encoding'
-
-					// Check Cache
-					ctx.continue = false
-					if (ctg.cache.files.has(`file::${file}`)) {
-						ctg.data.outgoing.total += (ctg.cache.files.get(`file::${file}`) as Buffer).byteLength
-						ctg.data.outgoing[ctx.previousHours[4]] += (ctg.cache.files.get(`file::${file}`) as Buffer).byteLength
-						ctx.content = (ctg.cache.files.get(`file::${file}`) as Buffer)
-						ctx.continue = true
-
-						return ctr
-					} else if (ctg.cache.files.has(`file::${ctg.options.compression}::${file}`)) {
-						ctx.compressed = true
-						ctg.data.outgoing.total += (ctg.cache.files.get(`file::${ctg.options.compression}::${file}`) as Buffer).byteLength
-						ctg.data.outgoing[ctx.previousHours[4]] += (ctg.cache.files.get(`file::${ctg.options.compression}::${file}`) as Buffer).byteLength
-						ctx.content = (ctg.cache.files.get(`file::${ctg.options.compression}::${file}`) as Buffer)
-						ctx.continue = true
-
-						return ctr
-					}
-
-					const compression = handleCompressType(ctg.options.compression)
-					try { stream = fs.createReadStream(file); ctx.waiting = true; stream.pipe(compression) }
-					catch (err) { errorStop = true; handleEvent('runtimeError', ctr, ctx, ctg, err) }
-					if (errorStop) return
-
-					// Collect Data
-					ctx.events.once('endRequest', () => stream.destroy())
-					compression.on('data', (content: Buffer) => {
-						ctg.data.outgoing.total += content.byteLength
-						ctg.data.outgoing[ctx.previousHours[4]] += content.byteLength
-
-						res.write(content)
-
-						// Write to Cache Store
-						if (cache) {
-							const oldData = ctg.cache.files.get(`file::${ctg.options.compression}::${file}`) ?? Buffer.from('')
-							ctg.cache.files.set(`file::${ctg.options.compression}::${file}`, Buffer.concat([ oldData as Buffer, content ]))
-						}
-					}); compression.once('close', () => { ctx.events.emit('noWaiting'); ctx.content = Buffer.from('') })
-				} else {
-					try { stream = fs.createReadStream(file); ctx.waiting = true }
-					catch (err) { errorStop = true; handleEvent('runtimeError', ctr, ctx, ctg, err) }
-
-					// Collect Data
-					ctx.events.once('endRequest', () => stream.destroy())
-					stream.on('data', (content: Buffer) => {
-						ctg.data.outgoing.total += content.byteLength
-						ctg.data.outgoing[ctx.previousHours[4]] += content.byteLength
-
-						res.write(content)
-
-						// Write to Cache Store
-						if (cache) {
-							const oldData = ctg.cache.files.get(`file::${ctg.options.compression}::${file}`) ?? Buffer.from('')
-							ctg.cache.files.set(`file::${ctg.options.compression}::${file}`, Buffer.concat([ oldData as Buffer, content ]))
-						}
-					}); stream.once('close', () => { ctx.events.emit('noWaiting'); ctx.content = Buffer.from('') })
 				}
+
+				ctx.addToQueue((() => new Promise<void>((resolve) => {
+					// Get File Content
+					let stream: fs.ReadStream, errorStop = false
+					if (ctr.headers.get('accept-encoding', '').includes(CompressMapping[ctg.options.compression])) {
+						// Check Cache
+						ctx.continue = false
+						if (ctg.cache.files.has(`file::${file}`)) {
+							ctg.data.outgoing.total += (ctg.cache.files.get(`file::${file}`) as Buffer).byteLength
+							ctg.data.outgoing[ctx.previousHours[4]] += (ctg.cache.files.get(`file::${file}`) as Buffer).byteLength
+							ctx.content = (ctg.cache.files.get(`file::${file}`) as Buffer)
+							ctx.continue = true
+
+							return ctr
+						} else if (ctg.cache.files.has(`file::${ctg.options.compression}::${file}`)) {
+							ctx.compressed = true
+							ctg.data.outgoing.total += (ctg.cache.files.get(`file::${ctg.options.compression}::${file}`) as Buffer).byteLength
+							ctg.data.outgoing[ctx.previousHours[4]] += (ctg.cache.files.get(`file::${ctg.options.compression}::${file}`) as Buffer).byteLength
+							ctx.content = (ctg.cache.files.get(`file::${ctg.options.compression}::${file}`) as Buffer)
+							ctx.continue = true
+
+							return ctr
+						}
+
+						const compression = handleCompressType(ctg.options.compression)
+						try { stream = fs.createReadStream(file); stream.pipe(compression) }
+						catch (err) { errorStop = true; handleEvent('runtimeError', ctr, ctx, ctg, err) }
+						if (errorStop) return
+
+						// Collect Data
+						ctx.events.once('endRequest', () => stream.destroy())
+						compression.on('data', (content: Buffer) => {
+							ctg.data.outgoing.total += content.byteLength
+							ctg.data.outgoing[ctx.previousHours[4]] += content.byteLength
+
+							if (!endRequest) res.write(content)
+
+							// Write to Cache Store
+							if (cache) {
+								const oldData = ctg.cache.files.get(`file::${ctg.options.compression}::${file}`) ?? Buffer.from('')
+								ctg.cache.files.set(`file::${ctg.options.compression}::${file}`, Buffer.concat([ oldData as Buffer, content ]))
+							}
+						}); compression.once('close', () => { resolve(); ctx.content = Buffer.from('') })
+					} else {
+						try { stream = fs.createReadStream(file) }
+						catch (err) { errorStop = true; handleEvent('runtimeError', ctr, ctx, ctg, err) }
+
+						// Collect Data
+						ctx.events.once('endRequest', () => stream.destroy())
+						stream.on('data', (content: Buffer) => {
+							ctg.data.outgoing.total += content.byteLength
+							ctg.data.outgoing[ctx.previousHours[4]] += content.byteLength
+
+							if (!endRequest) res.write(content)
+
+							// Write to Cache Store
+							if (cache) {
+								const oldData = ctg.cache.files.get(`file::${ctg.options.compression}::${file}`) ?? Buffer.from('')
+								ctg.cache.files.set(`file::${ctg.options.compression}::${file}`, Buffer.concat([ oldData as Buffer, content ]))
+							}
+						}); stream.once('close', () => { resolve(); ctx.content = Buffer.from('') })
+					}
+				})))
 
 				return ctr
 			}, printStream(stream, options = {}) {
-				const endRequest = options?.endRequest ?? true
+				const endStreamRequest = options?.endRequest ?? true
 				const destroyAbort = options?.destroyAbort ?? true
 
-				ctx.waiting = true
-
-				const dataListener = async(data: Buffer) => {
-					try {
-						data = (await parseContent(data)).content
-					} catch (err) {
-						return ctx.handleError(err)
+				ctx.addToQueue(() => new Promise<void>((resolve) => {
+					const dataListener = async(data: Buffer) => {
+						try {
+							data = (await parseContent(data)).content
+						} catch (err) {
+							return ctx.handleError(err)
+						}
+	
+						if (!endRequest) res.write(data)
+	
+						ctg.data.outgoing.total += data.byteLength
+						ctg.data.outgoing[ctx.previousHours[4]] += data.byteLength
+					}, closeListener = () => {
+						if (endStreamRequest) resolve()
 					}
-
-					res.write(data)
-
-					ctg.data.outgoing.total += data.byteLength
-					ctg.data.outgoing[ctx.previousHours[4]] += data.byteLength
-				}, closeListener = () => {
-					if (endRequest) ctx.events.emit('noWaiting')
-				}
-
-				if (destroyAbort) ctx.events.once('endRequest', () => stream.destroy())
-
-				stream
-					.on('data', dataListener)
-					.once('close', closeListener)
-
-				ctx.events.once('endRequest', () => stream
-					.removeListener('data', dataListener)
-					.removeListener('close', closeListener))
+	
+					if (destroyAbort) ctx.events.once('endRequest', () => stream.destroy())
+	
+					stream
+						.on('data', dataListener)
+						.once('close', closeListener)
+	
+					ctx.events.once('endRequest', () => stream
+						.removeListener('data', dataListener)
+						.removeListener('close', closeListener))
+				}))
 
 				return ctr
 			}
@@ -432,8 +463,8 @@ export default async function handleHTTPRequest(req: HttpRequest, res: HttpRespo
 
 		ctx.handleError = (err) => {
 			errorStop = true
-			handleEvent('runtimeError', ctr, ctx, ctg, err)
-				.then(() => ctx.events.emit('noWaiting'))
+			ctx.addToQueue(() => new Promise<void>((resolve) => handleEvent('runtimeError', ctr, ctx, ctg, err)
+				.then(() => resolve())))
 		}
 
 		if (ctg.middlewares.length > 0) {
@@ -568,6 +599,14 @@ export default async function handleHTTPRequest(req: HttpRequest, res: HttpRespo
 					await handleEvent('runtimeError', ctr, ctx, ctg, err)
 				}
 			}
+
+			// Write Headers
+			for (const header in ctx.sendHeaders) {
+				if (!endRequest) res.writeHeader(header, ctx.sendHeaders[header])
+			}
+
+			// Execute Queue
+			if (ctx.queue.length > 0) await runQueue(ctr, ctx, ctg)
 
 			// Wait for Streams
 			if (ctx.waiting) await new Promise((resolve) => {

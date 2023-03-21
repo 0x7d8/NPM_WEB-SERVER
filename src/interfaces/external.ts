@@ -26,10 +26,6 @@ export interface PrintFileOptions {
 	 * @default true
 	*/ addTypes?: boolean
 	/**
-	 * The Content Type to use
-	 * @default ""
-	*/ contentType?: string
-	/**
 	 * Whether to Cache the sent Files after accessed once (only renew after restart)
 	 * @default false
 	*/ cache?: boolean
@@ -65,7 +61,7 @@ export interface HTTPRequestContext<Custom = {}, Body = any> {
 	/** The Raw HTTP Server Req Variable */ rawReq: HttpRequest
 	/** The Raw HTTP Server Res Variable */ rawRes: HttpResponse
 
-	/** Set an HTTP Header to add */ setHeader: (name: string, value: string) => this
+	/** Set an HTTP Header to add */ setHeader: (name: string, value: any) => this
 	/** Set a Custom Variable */ setCustom: <Type extends keyof Custom>(name: Type, value: Custom[Type]) => this
 	/** The Request Status to Send */ status: (code: number) => this
 	/** Redirect a Client to another URL */ redirect: (location: string, statusCode?: 301 | 302) => this
