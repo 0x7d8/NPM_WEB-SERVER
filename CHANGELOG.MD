@@ -1,3 +1,11 @@
+## 5.2.2
+
+- Dont leak Headers from the OPTIONS Handler on Requests
+
+## 5.2.1
+
+- Write Headers on OPTIONS Request
+
 ## 5.2.0
 
 - Rewrote the entire HTTP Handler to have increased performance & mainstream the queue worker

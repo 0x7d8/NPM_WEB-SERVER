@@ -474,7 +474,7 @@ rjw-srv -h
 
 Example
 ```sh
-rjw-srv ./static --port=4444 --remHTML=true
+rjw-srv ./static --port=4444 --hideHTML
 ```
 
 ## Official Middlewares

@@ -97,12 +97,14 @@ export default function handleHTTPRequest(req: HttpRequest, res: HttpResponse, c
 		ctx.response.headers['Access-Control-Request-Method'] = '*'
 		ctx.response.headers['Access-Control-Allow-Methods'] = '*'
 
-		// Write Headers
-		for (const header in ctx.response.headers) {
-			if (!isAborted) res.writeHeader(header, ctx.response.headers[header])
-		}
+		if (ctx.url.method === 'OPTIONS') {
+			// Write Headers
+			for (const header in ctx.response.headers) {
+				if (!isAborted) res.writeHeader(header, ctx.response.headers[header])
+			}
 
-		if (ctx.url.method === 'OPTIONS') return res.end('')
+			return res.end('')
+		}
 	}
 
 	// Handle Incoming HTTP Data
