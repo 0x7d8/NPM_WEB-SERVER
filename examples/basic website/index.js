@@ -7,10 +7,11 @@ const server = new Server({
 	port: 5000
 })
 
-server.prefix('/')
+server.path('/', (p) => p
 	.static(path.join(__dirname, 'static'), {
 		hideHTML: true
 	})
+)
 
 server.start().then((res) => {
 	console.log(`website started on port ${res.port}`)

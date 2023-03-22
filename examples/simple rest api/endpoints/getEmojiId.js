@@ -5,7 +5,7 @@ const emojis = {
 
 /** @type {import('rjweb-server').RouteFile} */
 module.exports = {
-	type: 'GET',
+	method: 'GET',
 	path: '/getemojiid/<text>',
 
 	async code(ctr) {

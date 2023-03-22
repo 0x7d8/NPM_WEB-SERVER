@@ -2,7 +2,7 @@ const accounts = new Map()
 
 /** @type {import('rjweb-server').RouteFile} */
 module.exports = {
-	type: 'POST',
+	method: 'POST',
 	path: '/makeaccount',
 
 	async code(ctr) {

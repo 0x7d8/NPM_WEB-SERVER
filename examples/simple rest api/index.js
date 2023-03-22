@@ -7,8 +7,9 @@ const server = new Server({
 	port: 5000
 })
 
-server.prefix('/')
+server.path('/', (p) => p
 	.loadCJS(path.join(__dirname, 'endpoints'))
+)
 
 server.start().then((res) => {
 	console.log(`api started on port ${res.port}`)

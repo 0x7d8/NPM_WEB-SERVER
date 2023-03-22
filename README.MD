@@ -477,6 +477,10 @@ Example
 rjw-srv ./static --port=4444 --remHTML=true
 ```
 
+## Official Middlewares
+- rjweb-server-ejs (To Render EJS templates easily)
+- rjweb-server-ratelimit (To add rate limiting easily)
+
 ## Full Example
 
 ### Javascript

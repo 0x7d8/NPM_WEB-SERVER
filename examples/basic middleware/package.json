@@ -5,7 +5,7 @@
   "main": "./lib/cjs/index.js",
   "module": "./lib/esm/index.js",
   "dependencies": {
-    "rjweb-server": "^4.4.0"
+    "rjweb-server": "^5.0.0"
   },
   "devDependencies": {
     "my-middleware": "link:."
