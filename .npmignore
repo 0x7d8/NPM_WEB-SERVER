@@ -1,11 +1,7 @@
-# TESTING
 test/
-
-# SOURCE
 src/
-
-# OTHER
 examples/
 .github/
 pnpm-lock.yaml
 tsconfig.json
+CHANGELOG.MD

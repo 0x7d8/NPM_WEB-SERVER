@@ -1,3 +1,21 @@
+## 5.2.0
+
+- Rewrote the entire HTTP Handler to have increased performance & mainstream the queue worker
+- All Old Middleware that are using noWaiting will not work properly
+
+## 5.1.2
+
+- Add an Async Queue worker to the Webserver in order to imrpove async tasks
+- Middleware if used should switch from the manual noWaiting to the queue
+
+## 5.1.1
+
+- Fix Problem with the Path parser & the always attached query string
+
+## 5.1.0
+
+- Switch to Uwebsockets for HTTP and HTTPS to allow websockets down the line
+
 ## 5.0.0
 
 - Added a Changelog
