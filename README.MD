@@ -142,12 +142,12 @@ Middleware Intellisense
 ```ts
 // webserver.d.ts
 
-import { MiddlewareToHTTPContext } from "rjweb-server"
+import { MiddlewareToProps } from "rjweb-server"
 import { Props as AdditionalProps1 } from "random-middleware"
 import { Props as AdditionalProps2 } from "random-middlewareasd"
 
 declare module "rjweb-server" {
-  export interface HTTPRequestContext extends MiddlewareToHTTPContext<[ AdditionalProps1, AdditionalProps2 ]> {}
+  export interface HTTPRequestContext extends MiddlewareToProps<[ AdditionalProps1, AdditionalProps2 ]> {}
 }
 ```
 
