@@ -85,6 +85,11 @@ export default function handleHTTPRequest(req: HttpRequest, res: HttpResponse, c
 		ctx.response.headers[key] = ctg.options.headers[key]
 	})
 
+	// Handle Aborting Requests
+	let isAborted = false
+	res.onAborted(() => ctx.events.emit('requestAborted'))
+	ctx.events.once('requestAborted', () => isAborted = true)
+
 	// Handle CORS Requests
 	if (ctg.options.cors) {
 		ctx.response.headers['Access-Control-Allow-Headers'] = '*'
@@ -92,13 +97,13 @@ export default function handleHTTPRequest(req: HttpRequest, res: HttpResponse, c
 		ctx.response.headers['Access-Control-Request-Method'] = '*'
 		ctx.response.headers['Access-Control-Allow-Methods'] = '*'
 
+		// Write Headers
+		for (const header in ctx.response.headers) {
+			if (!isAborted) res.writeHeader(header, ctx.response.headers[header])
+		}
+
 		if (ctx.url.method === 'OPTIONS') return res.end('')
 	}
-
-	// Handle Aborting Requests
-	let isAborted = false
-	res.onAborted(() => ctx.events.emit('requestAborted'))
-	ctx.events.once('requestAborted', () => isAborted = true)
 
 	// Handle Incoming HTTP Data
 	const chunks: Buffer[] = []
