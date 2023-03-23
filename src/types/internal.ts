@@ -12,11 +12,6 @@ export type LoadPath = {
 	validations: Routed[]
 }
 
-export type Events =
-	| 'error'
-	| 'request'
-	| 'notfound'
-
 export type HTTPMethods =
 	| 'OPTIONS'
 	| 'DELETE'

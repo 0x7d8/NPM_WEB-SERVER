@@ -135,7 +135,7 @@ export interface HTTPRequestContext<Custom = {}, Body = any> {
 	 * ctr.setHeader('Content-Type', 'text/plain').print('hello sir')
 	 * ```
 	 * @since 0.6.3
-	*/ setHeader: (name: string, value: Content) => this
+	*/ setHeader(name: string, value: Content): this
 	/**
 	 * Set a Custom Variable
 	 * @example
@@ -145,7 +145,7 @@ export interface HTTPRequestContext<Custom = {}, Body = any> {
 	 * ctr["@"].hello // 123
 	 * ```
 	 * @since 1.2.1
-	*/ setCustom: <Type extends keyof Custom>(name: Type, value: Custom[Type]) => this
+	*/ setCustom<Type extends keyof Custom>(name: Type, value: Custom[Type]): this
 	/**
 	 * The Request Status to Send
 	 * @example
@@ -153,7 +153,7 @@ export interface HTTPRequestContext<Custom = {}, Body = any> {
 	 * ctr.status(401).print('Unauthorized')
 	 * ```
 	 * @since 0.0.2
-	*/ status: (code: number) => this
+	*/ status(code: number): this
 	/**
 	 * Redirect a Client to another URL
 	 * @example
@@ -161,7 +161,7 @@ export interface HTTPRequestContext<Custom = {}, Body = any> {
 	 * ctr.redirect('https://example.com') // Will redirect to that URL
 	 * ```
 	 * @since 2.8.5
-	*/ redirect: (location: string, statusCode?: 301 | 302) => this
+	*/ redirect(location: string, statusCode?: 301 | 302): this
 	/**
 	 * Print a Message to the Client (automatically Formatted)
 	 * @example
@@ -175,7 +175,7 @@ export interface HTTPRequestContext<Custom = {}, Body = any> {
 	 * ctr.print('this is text!')
 	 * ```
 	 * @since 0.0.2
-	*/ print: (content: Content, options?: PrintOptions) => this
+	*/ print(content: Content, options?: PrintOptions): this
 	/**
 	 * Print the Content of a File to the Client
 	 * @example
@@ -185,7 +185,7 @@ export interface HTTPRequestContext<Custom = {}, Body = any> {
 	 * })
 	 * ```
 	 * @since 0.6.3
-	*/ printFile: (path: string, options?: PrintFileOptions) => this
+	*/ printFile(path: string, options?: PrintFileOptions): this
 	/**
 	 * Print the data event of a Stream to the Client
 	 * @example
@@ -196,7 +196,7 @@ export interface HTTPRequestContext<Custom = {}, Body = any> {
 	 * // in this case though just use ctr.printFile since it does exactly this
 	 * ```
 	 * @since 4.3.0
-	*/ printStream: (stream: Readable, options?: PrintStreamOptions) => this
+	*/ printStream(stream: Readable, options?: PrintStreamOptions): this
 
 	/**
 	 * Custom Variables that are available everywhere

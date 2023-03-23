@@ -17,7 +17,7 @@ export default async function statsRoute(ctr: HTTPRequestContext, ctg: GlobalCon
     case "/":
       const dashboard = (await fs.readFile(`${__dirname}/index.html`, 'utf8'))
         .replaceAll('/rjweb-dashboard', pathParser(ctg.options.dashboard.path))
-        .replace('VERSION 1.1.1', `VERSION ${version}`)
+        .replace('1.1.1', version)
 
       return ctr.print(dashboard)
 
@@ -42,7 +42,7 @@ export default async function statsRoute(ctr: HTTPRequestContext, ctg: GlobalCon
         resolve((currentUsage.system + currentUsage.user) / timeDelta)
       }, 500))
 
-      return ctr.print({
+      ctr.print({
         requests: [
           ctg.requests.total,
           {

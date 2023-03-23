@@ -16,8 +16,8 @@ export type Hours =
 	| '20' | '21' | '22' | '23'
 
 export type InternalEvents = {
-	startRequest: () => void
-	requestAborted: () => void
+	startRequest(): void
+	requestAborted(): void
 }
 
 export interface InternalContext {
@@ -30,9 +30,9 @@ export interface InternalContext {
 	/** The Error that occured while executing HTTP Logic */ error: Error
 	/** The List of Headers that the Client sent */ headers: Record<Lowercase<string>, string>
 	/** An Event Emitter Responsible for all Events */ events: TypedEventEmitter<InternalEvents>
-	/** The Function to handle an Error in an Async Scenario */ handleError: (err: Error) => void
-	/** Schedule an Async Task for Execution */ scheduleQueue: (type: Task['type'], callback: Task['function']) => void
-	/** Run all current Functions contained in the Queue */ runQueue: () => Promise<Error | null>
+	/** The Function to handle an Error in an Async Scenario */ handleError(err: Error): void
+	/** Schedule an Async Task for Execution */ scheduleQueue(type: Task['type'], callback: Task['function']): void
+	/** Run all current Functions contained in the Queue */ runQueue(): Promise<Error | null>
 
 	/** The Current Request Body */ body: {
 		/** The Body as a raw Buffer */ raw: Buffer

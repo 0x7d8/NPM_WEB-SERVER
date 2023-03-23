@@ -10,7 +10,7 @@ export const pathParser = (path: string | string[], removeSingleSlash?: boolean)
 	const paths = typeof path === 'string' ? [path] : path
 	let output = ''
 
-	for (let pathIndex = 0; pathIndex <= paths.length - 1; pathIndex++) {
+	for (let pathIndex = 0; pathIndex < paths.length; pathIndex++) {
 		path = paths[pathIndex].replace(/\/{2,}/g, '/')
 
 		if (path.endsWith('?')) path = path.slice(0, -1)
@@ -172,8 +172,7 @@ export default class RouteList {
 		}
 
 		return {
-			events: this.events,
-			routes, statics,
+			events: this.events, routes, statics,
 			loadPaths, contentTypes, defaultHeaders
 		}
 	}

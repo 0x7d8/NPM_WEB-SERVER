@@ -67,6 +67,10 @@ export interface Options {
 	 * @default 2023
 	*/ port?: number
 	/**
+	 * Whether the Cache should be used for Routes, etc
+	 * @default true
+	*/ cache?: boolean
+	/**
 	 * Whether the rjweb-server Header will be added
 	 * @default true
 	*/ poweredBy?: boolean
@@ -95,6 +99,7 @@ export default class ServerOptions {
 			compression: 'none',
 			cors: false,
 			port: 2023,
+			cache: true,
 			poweredBy: true
 		}, options)
 	}

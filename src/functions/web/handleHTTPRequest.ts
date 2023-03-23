@@ -145,7 +145,7 @@ export default function handleHTTPRequest(req: HttpRequest, res: HttpResponse, c
 
 			// Set Cache
 			ctg.cache.routes.set(`route::static::${ctx.url.pathname}`, { route: url, file })
-		}; for (let staticNumber = 0; staticNumber <= ctg.routes.static.length - 1; staticNumber++) {
+		}; for (let staticNumber = 0; staticNumber < ctg.routes.static.length; staticNumber++) {
 			if (ctx.execute.exists) break
 
 			const url = ctg.routes.static[staticNumber]
@@ -186,19 +186,23 @@ export default function handleHTTPRequest(req: HttpRequest, res: HttpResponse, c
 		}
 
 		// Check Dashboard Paths
-		if (!ctx.execute.exists && ctg.options.dashboard.enabled && (ctx.url.pathname === pathParser(ctg.options.dashboard.path) || ctx.url.pathname === pathParser(ctg.options.dashboard.path) + '/stats')) {
-			ctx.execute.route = {
-				type: 'route',
-				method: 'GET',
-				path: ctx.url.path,
-				pathArray: ctx.url.path.split('/'),
-				code: async(ctr) => await statsRoute(ctr, ctg, ctx),
-				data: {
-					validations: []
-				}
-			}
+		if (ctg.options.dashboard.enabled) {
+			const parsedPath = pathParser(ctg.options.dashboard.path)
 
-			ctx.execute.exists = true
+			if (ctx.url.path === parsedPath || ctx.url.path === parsedPath + '/stats') {
+				ctx.execute.route = {
+					type: 'route',
+					method: 'GET',
+					path: ctx.url.path,
+					pathArray: ctx.url.path.split('/'),
+					code: async(ctr) => await statsRoute(ctr, ctg, ctx),
+					data: {
+						validations: []
+					}
+				}
+	
+				ctx.execute.exists = true
+			}
 		}
 
 		// Check Other Paths
@@ -331,13 +335,13 @@ export default function handleHTTPRequest(req: HttpRequest, res: HttpResponse, c
 				ctx.response.headers['location'] = location
 
 				return ctr
-			}, print(message, options = {}) {
+			}, print(content, options = {}) {
 				const contentType = options?.contentType ?? ''
 
 				ctx.scheduleQueue('execution', (async() => {
 					let result: ParseContentReturns
 					try {
-						result = await parseContent(message)
+						result = await parseContent(content)
 					} catch (err) {
 						return ctx.handleError(err)
 					}
@@ -468,7 +472,7 @@ export default function handleHTTPRequest(req: HttpRequest, res: HttpResponse, c
 
 				return ctr
 			}, printStream(stream, options = {}) {
-				const endStreamRequest = options?.endRequest ?? true
+				const endRequest = options?.endRequest ?? true
 				const destroyAbort = options?.destroyAbort ?? true
 
 				ctx.scheduleQueue('execution', () => new Promise<void>((resolve) => {
@@ -498,7 +502,7 @@ export default function handleHTTPRequest(req: HttpRequest, res: HttpResponse, c
 							ctg.data.outgoing[ctx.previousHours[4]] += data.byteLength
 						}, closeListener = () => {
 							if (destroyAbort) ctx.events.removeListener('requestAborted', destroyStream)
-							if (endStreamRequest) {
+							if (endRequest) {
 								resolve()
 								res.end()
 							}

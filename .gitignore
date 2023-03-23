@@ -11,4 +11,3 @@ jspm_packages/
 .eslintcache
 lib/
 test/
-src/stats/tailwind.config.js

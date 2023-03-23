@@ -31,11 +31,12 @@ export default class Webserver extends RouteList {
 	) {
 		super()
 
+		options = new ServerOptions(options).getOptions()
 		this.globalContext = {
 			controller: this,
 			contentTypes: {},
 			defaultHeaders: {},
-			options: new ServerOptions(options).getOptions(),
+			options,
 			requests: {
 				total: 0,
 				0: 0, 1: 0, 2: 0, 3: 0,
@@ -68,8 +69,8 @@ export default class Webserver extends RouteList {
 				static: [],
 				event: [],
 			}, cache: {
-				files: new ValueCollection(),
-				routes: new ValueCollection()
+				files: new ValueCollection(undefined, undefined, options.cache),
+				routes: new ValueCollection(undefined, undefined, options.cache)
 			}
 		}
 

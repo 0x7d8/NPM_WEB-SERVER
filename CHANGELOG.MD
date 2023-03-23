@@ -1,3 +1,9 @@
+## 5.3.1
+
+- Add ability to toggle caching in the Config
+- Clean up Type Files
+- Add .map() to Value Collections
+
 ## 5.3.0
 
 - Rename Interfaces Folder to Types
