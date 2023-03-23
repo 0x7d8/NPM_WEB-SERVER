@@ -1,3 +1,12 @@
+## 5.3.0
+
+- Rename Interfaces Folder to Types
+- Removed headers and contentTypes from Config
+- Addded defaultHeaders and contentTypes routers to replace config
+- Handle too large HTTP POST Bodies correctly
+- Support Sets for print()
+- Added more JSDocs to the HTTPRequestContext
+
 ## 5.2.2
 
 - Dont leak Headers from the OPTIONS Handler on Requests

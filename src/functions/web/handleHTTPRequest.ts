@@ -1,10 +1,10 @@
-import { GlobalContext, InternalContext } from "../../interfaces/context"
+import { GlobalContext, InternalContext } from "../../types/context"
 import { HttpRequest, HttpResponse } from "uWebSockets.js"
 import { pathParser } from "../../classes/router/index"
 import { parse as parseURL } from "url"
 import { resolve as pathResolve } from "path"
 import parseContent, { Returns as ParseContentReturns } from "../parseContent"
-import { Task } from "../../interfaces/internal"
+import { Task } from "../../types/internal"
 import statsRoute from "../../stats/routes"
 import { promises as fs, createReadStream } from "fs"
 import handleContentType from "../handleContentType"
@@ -15,7 +15,7 @@ import ValueCollection from "../../classes/valueCollection"
 import handleEvent from "../handleEvent"
 import { Version } from "../../index"
 import EventEmitter from "events"
-import Static from "../../interfaces/static"
+import Static from "../../types/static"
 
 export const getPreviousHours = () =>
 	Array.from({ length: 5 }, (_, i) => (new Date().getHours() - (4 - i) + 24) % 24)
@@ -81,8 +81,8 @@ export default function handleHTTPRequest(req: HttpRequest, res: HttpResponse, c
 	ctg.requests[ctx.previousHours[4]]++
 
 	// Add Headers
-	Object.keys(ctg.options.headers).forEach((key) => {
-		ctx.response.headers[key] = ctg.options.headers[key]
+	Object.keys(ctg.defaultHeaders).forEach((key) => {
+		ctx.response.headers[key] = ctg.defaultHeaders[key]
 	})
 
 	// Handle Aborting Requests
@@ -118,7 +118,6 @@ export default function handleHTTPRequest(req: HttpRequest, res: HttpResponse, c
 
 		if (isLast) {
 			ctx.body.raw = Buffer.concat(chunks)
-			ctx.events.emit('startRequest')
 
 			if (ctx.body.raw.byteLength >= (ctg.options.body.maxSize * 1e6)) {
 				res.writeStatus('413')
@@ -126,6 +125,8 @@ export default function handleHTTPRequest(req: HttpRequest, res: HttpResponse, c
 				const result = await parseContent(ctg.options.body.message)
 				return res.end(result.content)
 			}
+
+			ctx.events.emit('startRequest')
 		}
 	})
 

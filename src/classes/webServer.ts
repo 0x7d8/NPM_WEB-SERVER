@@ -1,11 +1,11 @@
-import * as ServerEvents from "../interfaces/serverEvents"
-import { GlobalContext } from "../interfaces/context"
+import * as ServerEvents from "../types/serverEvents"
+import { GlobalContext } from "../types/context"
 import ValueCollection from "./valueCollection"
 import ServerOptions, { Options } from "./serverOptions"
 import RouteList, { pathParser } from "./router"
 import handleHTTPRequest, { getPreviousHours } from "../functions/web/handleHTTPRequest"
-import { RouteFile } from "../interfaces/external"
-import Route from "../interfaces/route"
+import { RouteFile } from "../types/external"
+import Route from "../types/route"
 import { getAllFilesFilter } from "../misc/getAllFiles"
 import { promises as fs } from "fs"
 
@@ -33,6 +33,8 @@ export default class Webserver extends RouteList {
 
 		this.globalContext = {
 			controller: this,
+			contentTypes: {},
+			defaultHeaders: {},
 			options: new ServerOptions(options).getOptions(),
 			requests: {
 				total: 0,
@@ -144,9 +146,12 @@ export default class Webserver extends RouteList {
 			this.server
 				.any('/*', (res, req) => handleHTTPRequest(req, res, this.globalContext))
 
-			this.globalContext.routes.normal = this.getRoutes().routes
-			this.globalContext.routes.event = this.getRoutes().events
-			this.globalContext.routes.static = this.getRoutes().statics
+			const routes = await this.getRoutes()
+			this.globalContext.routes.normal = routes.routes
+			this.globalContext.routes.event = routes.events
+			this.globalContext.routes.static = routes.statics
+			this.globalContext.contentTypes = routes.contentTypes
+			this.globalContext.defaultHeaders = routes.defaultHeaders
 
 			this.globalContext.routes.normal.push(...loadedRoutes as Route[])
 
@@ -179,9 +184,12 @@ export default class Webserver extends RouteList {
 		this.globalContext.cache.files.clear()
 		this.globalContext.cache.routes.clear()
 
-		this.globalContext.routes.normal = this.getRoutes().routes
-		this.globalContext.routes.event = this.getRoutes().events
-		this.globalContext.routes.static = this.getRoutes().statics
+		const routes = await this.getRoutes()
+		this.globalContext.routes.normal = routes.routes
+		this.globalContext.routes.event = routes.events
+		this.globalContext.routes.static = routes.statics
+		this.globalContext.contentTypes = routes.contentTypes
+		this.globalContext.defaultHeaders = routes.defaultHeaders
 
 		this.globalContext.routes.normal.push(...await this.loadExternalPaths())
 
@@ -235,14 +243,10 @@ export default class Webserver extends RouteList {
 	 * ```
 	 * @since 3.0.0
 	*/
-	stop() {
+	async stop() {
 		uWebsocket.us_listen_socket_close(this.socket)
 		this.globalContext.cache.files.clear()
 		this.globalContext.cache.routes.clear()
-
-		this.globalContext.routes.normal = this.getRoutes().routes
-		this.globalContext.routes.event = this.getRoutes().events
-		this.globalContext.routes.static = this.getRoutes().statics
 
 		this.globalContext.data = {
 			incoming: {
@@ -280,7 +284,7 @@ export default class Webserver extends RouteList {
 	private async loadExternalPaths() {
 		const loadedRoutes: Route[] = []
 
-		for (const loadPath of this.getRoutes().loadPaths) {
+		for (const loadPath of (await this.getRoutes()).loadPaths) {
 			if (loadPath.type === 'cjs') {
 				for (const file of await getAllFilesFilter(loadPath.path, 'js')) {
 					const route: Partial<RouteFile> = require(file)

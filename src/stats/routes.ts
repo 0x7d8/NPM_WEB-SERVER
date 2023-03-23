@@ -1,7 +1,7 @@
-import { GlobalContext, InternalContext } from "../interfaces/context"
+import { GlobalContext, InternalContext } from "../types/context"
 import { pathParser } from "../classes/router"
 import { getAllFiles } from "../misc/getAllFiles"
-import { HTTPRequestContext } from "../interfaces/external"
+import { HTTPRequestContext } from "../types/external"
 
 /** @ts-ignore */ 
 import { version } from "../pckg.json"

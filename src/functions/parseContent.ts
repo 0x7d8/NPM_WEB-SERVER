@@ -1,14 +1,16 @@
-import { isMap,  } from "util/types"
+import { isMap, isSet } from "util/types"
 
 export type Content =
 	| string
 	| Buffer
 	| Map<any, any>
+	| Set<any>
 	| number
 	| boolean
 	| Record<any, any>
 	| symbol
 	| Function
+	| Content[]
 
 export interface Returns {
 	headers: Record<string, string>
@@ -19,11 +21,18 @@ export default async function parseContent(content: Content): Promise<Returns> {
 	let returnObject: Returns = { headers: {}, content: Buffer.alloc(0) }
 	if (Buffer.isBuffer(content)) return { headers: {}, content }
 	if (isMap(content)) content = Object.fromEntries(content)
+	if (isSet(content)) content = Object.fromEntries(content.entries())
 
 	switch (typeof content) {
 		case "object":
 			returnObject.headers['Content-Type'] = 'application/json'
-			returnObject.content = Buffer.from(JSON.stringify(content))
+
+			try {
+				returnObject.content = Buffer.from(JSON.stringify(content))
+			} catch (err) {
+				returnObject.content = Buffer.from('Failed to parse JSON Data')
+			}
+
 			break
 
 		case "string":

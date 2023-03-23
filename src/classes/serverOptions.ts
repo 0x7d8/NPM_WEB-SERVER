@@ -46,14 +46,6 @@ export interface Options {
 		*/ path?: string
 	}
 
-	/** Header Settings */ headers?: {
-		[key: string]: string
-	}
-
-	/** Content-Type Settings */ contentTypes?: {
-		[fileEnding: string]: string
-	}
-
 	/**
 	 * Where the Server should bind to
 	 * @default "0.0.0.0"
@@ -98,9 +90,7 @@ export default class ServerOptions {
 			}, dashboard: {
 				enabled: false,
 				path: '/rjweb-dashboard'
-			}, headers: {},
-			contentTypes: {},
-			bind: '0.0.0.0',
+			}, bind: '0.0.0.0',
 			proxy: false,
 			compression: 'none',
 			cors: false,

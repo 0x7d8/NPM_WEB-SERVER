@@ -4,4 +4,4 @@ export { default as Server } from "./classes/webServer"
 export { version as Version } from "./pckg.json"
 
 /** Interfaces */
-export * from "./interfaces/external"
+export * from "./types/external"

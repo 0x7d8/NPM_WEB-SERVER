@@ -1,6 +1,6 @@
-import { ExternalRouter, LoadPath, Routed, HTTPMethods } from "../../interfaces/internal"
-import Static from "../../interfaces/static"
-import Route from "../../interfaces/route"
+import { ExternalRouter, LoadPath, Routed, HTTPMethods } from "../../types/internal"
+import Static from "../../types/static"
+import Route from "../../types/route"
 import { pathParser } from "."
 import types from "../../misc/methods"
 
@@ -51,7 +51,7 @@ export default class RoutePath {
 	 * @since 3.2.1
 	*/
 	validate(
-		/** The Function to Validate thr Request */ code: Routed
+		/** The Function to Validate the Request */ code: Routed
 	) {
 		this.validations.push(code)
 
@@ -275,10 +275,9 @@ export default class RoutePath {
 
 	/**
 	 * Internal Method for Generating Routes Object
-	 * @ignore This is meant for internal use
 	 * @since 3.1.0
 	*/
-	getRoutes() {
+	protected getRoutes() {
 		for (const external of this.externals) {
 			const result = external.object[external.method]()
 			this.routes.push(...result.routes)

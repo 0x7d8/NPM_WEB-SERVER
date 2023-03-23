@@ -1,9 +1,8 @@
 import ValueCollection from "../classes/valueCollection"
 import ServerController from "../classes/webServer"
 import { HTTPMethods, Task } from "./internal"
-import Route from "../interfaces/route"
-import { Event, Middleware } from "../interfaces/external"
-import { EventEmitter } from "stream"
+import Route from "./route"
+import { Event, Middleware } from "./external"
 import { UrlWithStringQuery } from "url"
 import { Options } from "../classes/serverOptions"
 import Static from "./static"
@@ -57,6 +56,8 @@ export interface InternalContext {
 
 export interface GlobalContext {
 	/** The Server Controller Class */ controller: ServerController
+	/** The File -> Content Type Mapping */ contentTypes: Record<string, string>
+	/** The Default HTTP Headers List */ defaultHeaders: Record<Lowercase<string>, string>
 	/** The HTTP Server Options */ options: Options
 	/** The Request Count */ requests: Record<Hours | 'total', number>
 	/** The Middlewares to run */ middlewares: Middleware[]

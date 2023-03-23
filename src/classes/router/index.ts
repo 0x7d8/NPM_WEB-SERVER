@@ -1,8 +1,10 @@
-import { ExternalRouter } from "../../interfaces/internal"
-import { Middleware } from "../../interfaces/external"
-import Event, { EventHandlerMap, Events } from "../../interfaces/event"
+import { ExternalRouter } from "../../types/internal"
+import { Middleware } from "../../types/external"
+import Event, { EventHandlerMap, Events } from "../../types/event"
 
 import RoutePath from "./path"
+import RouteContentTypes from "./contentTypes"
+import RouteDefaultHeaders from "./defaultHeaders"
 
 export const pathParser = (path: string | string[], removeSingleSlash?: boolean) => {
 	const paths = typeof path === 'string' ? [path] : path
@@ -111,25 +113,68 @@ export default class RouteList {
 		return this
 	}
 
+	/**
+	 * Add a new Block of File -> Content Types Mapping
+	 * @example
+	 * ```
+	 * const controller = new Server({ })
+	 * 
+	 * controller.contentTypes()
+	 *   .add('.png', 'image/png')
+	 * ```
+	 * @since 5.3.0
+	*/
+	contentTypes(
+		/** The Content Types to import from a JSON */ contentTypes: Record<string, string> = {}
+	) {
+		const routeContentTypes = new RouteContentTypes(contentTypes)
+		this.externals.push({ method: 'getTypes', object: routeContentTypes })
+
+		return routeContentTypes
+	}
+
+	/**
+	 * Add a new Block of Default Headers
+	 * @example
+	 * ```
+	 * const controller = new Server({ })
+	 * 
+	 * controller.defaultHeaders()
+	 *   .add('Copyright', 2023)
+	 * ```
+	 * @since 5.3.0
+	*/
+	defaultHeaders(
+		/** The Headers to import from a JSON */ defaultHeaders: Record<Lowercase<string>, string> = {}
+	) {
+		const routeDefaultHeaders = new RouteDefaultHeaders(defaultHeaders)
+		this.externals.push({ method: 'getHeaders', object: routeDefaultHeaders })
+
+		return routeDefaultHeaders
+	}
+
 
 	/**
 	 * Internal Method for Generating Routes Object
-	 * @ignore This is meant for internal use
 	 * @since 3.1.0
 	*/
-	getRoutes() {
-		const routes = [], statics = [], loadPaths= []
+	protected async getRoutes() {
+		const routes = [], statics = [], loadPaths = []
+		let contentTypes = {}, defaultHeaders = {}
 		for (const external of this.externals) {
-			const result = external.object[external.method]()
-			routes.push(...result.routes)
-			statics.push(...result.statics)
-			loadPaths.push(...result.loadPaths)
+			const result = await external.object[external.method]()
+
+			if ('routes' in result) routes.push(...result.routes)
+			if ('statics' in result) statics.push(...result.statics)
+			if ('loadPaths' in result) loadPaths.push(...result.loadPaths)
+			if ('contentTypes' in result) contentTypes = { ...contentTypes, ...result.contentTypes }
+			if ('defaultHeaders' in result) defaultHeaders = { ...defaultHeaders, ...result.defaultHeaders }
 		}
 
 		return {
 			events: this.events,
 			routes, statics,
-			loadPaths
+			loadPaths, contentTypes, defaultHeaders
 		}
 	}
 }

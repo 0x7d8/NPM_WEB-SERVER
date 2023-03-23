@@ -1,6 +1,6 @@
-import { GlobalContext, InternalContext } from "../interfaces/context"
-import { Events } from "../interfaces/event"
-import { HTTPRequestContext } from "../interfaces/external"
+import { GlobalContext, InternalContext } from "../types/context"
+import { Events } from "../types/event"
+import { HTTPRequestContext } from "../types/external"
 
 export default async function handleEvent(event: Events, ctr: HTTPRequestContext, ctx: InternalContext, ctg: GlobalContext) {
 	switch (event) {
