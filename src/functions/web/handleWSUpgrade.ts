@@ -492,11 +492,11 @@ export default function handleWSUpgrade(req: HttpRequest, res: HttpResponse, con
 	        ctg.webSockets[ctx.previousHours[4]]++
 
           return res.cork(() => {
-            res.upgrade(
+            if (!isAborted) res.upgrade(
               { ctx, params, custom: ctr["@"] } satisfies WebSocketContext,
-              req.getHeader('sec-websocket-key'),
-              req.getHeader('sec-websocket-protocol'),
-              req.getHeader('sec-websocket-extensions'),
+              ctx.headers['sec-websocket-key'],
+              ctx.headers['sec-websocket-protocol'],
+              ctx.headers['sec-websocket-extensions'],
               connection
             )
           })

@@ -1,3 +1,8 @@
+## 5.4.2
+
+- Check if Request is aborted before upgrading
+- Use Internal Header Store for upgrading
+
 ## 5.4.1
 
 - Fix Sending Normal & Empty Messages in WebSockets
