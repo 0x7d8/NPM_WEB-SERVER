@@ -1,9 +1,8 @@
 import { GlobalContext, InternalContext } from "../types/context"
 import { Events } from "../types/event"
-import { HTTPRequestContext } from "../types/external"
 
-export default async function handleEvent(event: Events, ctr: HTTPRequestContext, ctx: InternalContext, ctg: GlobalContext) {
-	switch (event) {
+export default async function handleEvent(eventParam: Events, ctr: any, ctx: InternalContext, ctg: GlobalContext) {
+	switch (eventParam) {
 		case "runtimeError": {
 			const event = ctg.routes.event.find((event) => event.name === 'runtimeError')
 
@@ -23,6 +22,31 @@ export default async function handleEvent(event: Events, ctr: HTTPRequestContext
 					console.error(err)
 					ctx.response.status = 500
 					ctx.response.content = Buffer.from(`An Error occured in your Error Event (what the hell?)\n${err.stack}`)
+					ctx.execute.event = 'none'
+				}
+			}
+
+			break
+		}
+
+		case "wsConnectError":
+		case "wsMessageError":
+		case "wsCloseError": {
+			const event = ctg.routes.event.find((event) => event.name === eventParam)
+
+			if (!event) {
+				// Default WsError
+				console.error(ctx.error)
+				ctx.response.content = Buffer.from(`An Error occured\n${ctx.error.stack}`)
+				ctx.execute.event = 'none'
+			} else {
+				// Custom WsError
+				try {
+					await Promise.resolve(event.code(ctr, ctx.error))
+					ctx.execute.event = 'none'
+				} catch (err) {
+					console.error(err)
+					ctx.response.content = Buffer.from(`An Error occured in your WsError Event (what the hell?)\n${err.stack}`)
 					ctx.execute.event = 'none'
 				}
 			}

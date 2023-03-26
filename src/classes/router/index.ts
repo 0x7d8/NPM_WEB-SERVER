@@ -55,8 +55,8 @@ export default class RouteList {
 		if (this.events.some((obj) => (obj.name === event))) return this
 
 		this.events.push({
-			name: event as any, code
-		})
+			name: event, code
+		} as any)
 
 		return this
 	}
@@ -159,12 +159,13 @@ export default class RouteList {
 	 * @since 3.1.0
 	*/
 	protected async getRoutes() {
-		const routes = [], statics = [], loadPaths = []
+		const routes = [], webSockets = [], statics = [], loadPaths = []
 		let contentTypes = {}, defaultHeaders = {}
 		for (const external of this.externals) {
 			const result = await external.object[external.method]()
 
 			if ('routes' in result) routes.push(...result.routes)
+			if ('webSockets' in result) webSockets.push(...result.webSockets)
 			if ('statics' in result) statics.push(...result.statics)
 			if ('loadPaths' in result) loadPaths.push(...result.loadPaths)
 			if ('contentTypes' in result) contentTypes = { ...contentTypes, ...result.contentTypes }
@@ -172,7 +173,7 @@ export default class RouteList {
 		}
 
 		return {
-			events: this.events, routes, statics,
+			events: this.events, routes, webSockets, statics,
 			loadPaths, contentTypes, defaultHeaders
 		}
 	}

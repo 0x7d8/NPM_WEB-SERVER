@@ -1,11 +1,14 @@
 import { ExternalRouter, LoadPath, Routed, HTTPMethods } from "../../types/internal"
 import Static from "../../types/static"
 import Route from "../../types/route"
+import WebSocket from "../../types/webSocket"
 import { pathParser } from "."
 import types from "../../misc/methods"
 
 import path from "path"
 import fs from "fs"
+
+import RouteWS from "./ws"
 
 export default class RoutePath {
 	protected externals: ExternalRouter[]
@@ -13,6 +16,7 @@ export default class RoutePath {
 	protected loadPaths: LoadPath[]
 	protected statics: Static[]
 	protected routes: Route[]
+	protected webSockets: WebSocket[]
 	protected httpPath: string
 
 	/** Generate Route Block */
@@ -23,6 +27,7 @@ export default class RoutePath {
 		this.httpPath = pathParser(path)
 		this.routes = []
 		this.statics = []
+		this.webSockets = []
 		this.loadPaths = []
 
 		this.validations = validations || []
@@ -94,13 +99,45 @@ export default class RoutePath {
 		this.routes.push({
 			type: 'route',
 			method: method,
-			path: pathParser(this.httpPath + path),
-			pathArray: pathParser(this.httpPath + path).split('/'),
+			path: pathParser([this.httpPath, path]),
+			pathArray: pathParser([this.httpPath, path]).split('/'),
 			code: code,
 			data: {
 				validations: this.validations
 			}
 		})
+
+		return this
+	}
+
+	/**
+	 * Add a Websocket Route
+	 * @example
+	 * ```
+	 * // The /devil route will be available on "path + /devil" so "/devil"
+	 * // Paths wont collide if the request methods are different
+	 * const controller = new Server({ })
+	 * let devilsMessage = 'Im the one who knocks'
+	 * 
+	 * controller.path('/', (path) => path
+	 *   .ws('/uptime', (ws) => ws
+	 *     .onConnect(async(ctr) => {
+	 *       console.log('Connected to ws!')
+	 *     })
+	 *   )
+	 * )
+	 * ```
+	 * @since 5.4.0
+	*/
+	ws(
+		/** The Path on which this will be available */ path: string,
+		/** The Code to handle the Socket */ code: (path: RouteWS) => RouteWS
+	) {
+		if (this.webSockets.some((obj) => (obj.path === pathParser(path)))) return this
+
+		const routeWS = new RouteWS(pathParser([this.httpPath, path]), [...this.validations])
+		this.externals.push({ method: 'getWebSocket', object: routeWS })
+		code(routeWS)
 
 		return this
 	}
@@ -265,7 +302,7 @@ export default class RoutePath {
 		/** The Path Prefix */ prefix: string,
 		/** The Code to handle the Prefix */ code: (path: RoutePath) => RoutePath
 	) {
-		const routePath = new RoutePath(prefix, [...this.validations])
+		const routePath = new RoutePath(pathParser([this.httpPath, prefix]), [...this.validations])
 		this.externals.push({ method: 'getRoutes', object: routePath })
 		code(routePath)
 
@@ -277,18 +314,21 @@ export default class RoutePath {
 	 * Internal Method for Generating Routes Object
 	 * @since 3.1.0
 	*/
-	protected getRoutes() {
+	protected async getRoutes() {
+		const routes = [...this.routes], webSockets = [...this.webSockets],
+			statics = [...this.statics], loadPaths = [...this.loadPaths]
 		for (const external of this.externals) {
-			const result = external.object[external.method]()
-			this.routes.push(...result.routes)
-			this.statics.push(...result.statics)
-			this.loadPaths.push(...result.loadPaths)
+			const result = await external.object[external.method]()
+
+			if ('routes' in result) routes.push(...result.routes)
+			if ('webSockets' in result) webSockets.push(...result.webSockets)
+			if ('statics' in result) statics.push(...result.statics)
+			if ('loadPaths' in result) loadPaths.push(...result.loadPaths)
 		}
 
 		return {
-			routes: this.routes,
-			statics: this.statics,
-			loadPaths: this.loadPaths
+			routes, webSockets,
+			statics, loadPaths
 		}
 	}
 }

@@ -65,6 +65,28 @@ export default async function statsRoute(ctr: HTTPRequestContext, ctg: GlobalCon
             hour: ctx.previousHours[4],
             amount: ctg.requests[ctx.previousHours[4]]
           }
+        ], web_sockets: [
+          ctg.webSockets.total,
+          {
+            hour: ctx.previousHours[0],
+            amount: ctg.webSockets[ctx.previousHours[0]]
+          },
+          {
+            hour: ctx.previousHours[1],
+            amount: ctg.webSockets[ctx.previousHours[1]]
+          },
+          {
+            hour: ctx.previousHours[2],
+            amount: ctg.webSockets[ctx.previousHours[2]]
+          },
+          {
+            hour: ctx.previousHours[3],
+            amount: ctg.webSockets[ctx.previousHours[3]]
+          },
+          {
+            hour: ctx.previousHours[4],
+            amount: ctg.webSockets[ctx.previousHours[4]]
+          }
         ], data: {
           incoming: [
             ctg.data.incoming.total,
@@ -120,7 +142,7 @@ export default async function statsRoute(ctr: HTTPRequestContext, ctg: GlobalCon
         },
 
         static_files: staticFiles,
-        routes: ctg.routes.normal.length,
+        routes: ctg.routes.normal.length + ctg.routes.websocket.length,
         cached: ctg.cache.files.objectCount
           + ctg.cache.routes.objectCount
       })

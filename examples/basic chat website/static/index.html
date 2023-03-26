@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Chat Test</title>
+</head>
+<body>
+  <label for="username">Username</label>
+  <input type="text" id="username" />
+  <button onclick="handleConnect()" id="connect">Connect</button>
+
+  <div style="margin-top: 1rem; margin-bottom: 4rem;">
+    <label for="message">Message</label>
+    <input type="text" id="message" disabled />
+    <button onclick="handleMessage()" id="send" disabled>Send</button>
+  </div>
+
+  <p id="chat"></p>
+</body>
+<script>
+  let socket
+  function handleConnect() {
+    document.querySelector('#connect').disabled = true
+    document.querySelector('#username').disabled = true
+
+    document.querySelector('#send').disabled = false
+    document.querySelector('#message').disabled = false
+
+    socket = new WebSocket('wss://test.paperstudios.dev/chat/ws?username=' + document.querySelector('#username').value)
+
+    socket.onmessage = (event) => {
+      document.querySelector('#chat').innerText += '\n' + event.data
+    }
+  }
+
+  function handleMessage() {
+    socket.send(document.querySelector('#message').value)
+  }
+</script>
+</html>

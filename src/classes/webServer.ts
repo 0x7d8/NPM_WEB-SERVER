@@ -4,12 +4,17 @@ import ValueCollection from "./valueCollection"
 import ServerOptions, { Options } from "./serverOptions"
 import RouteList, { pathParser } from "./router"
 import handleHTTPRequest, { getPreviousHours } from "../functions/web/handleHTTPRequest"
+import handleWSUpgrade from "../functions/web/handleWSUpgrade"
+import handleWSOpen from "../functions/web/handleWSOpen"
+import handleWSMessage from "../functions/web/handleWSMessage"
+import handleWSClose from "../functions/web/handleWSClose"
 import { RouteFile } from "../types/external"
 import Route from "../types/route"
 import { getAllFilesFilter } from "../misc/getAllFiles"
 import { promises as fs } from "fs"
 
 import uWebsocket from "uWebSockets.js"
+import path from "path"
 
 export default class Webserver extends RouteList {
 	private globalContext: GlobalContext
@@ -45,6 +50,14 @@ export default class Webserver extends RouteList {
 				12: 0, 13: 0, 14: 0, 15: 0,
 				16: 0, 17: 0, 18: 0, 19: 0,
 				20: 0, 21: 0, 22: 0, 23: 0
+			}, webSockets: {
+				total: 0,
+				0: 0, 1: 0, 2: 0, 3: 0,
+				4: 0, 5: 0, 6: 0, 7: 0,
+				8: 0, 9: 0, 10: 0, 11: 0,
+				12: 0, 13: 0, 14: 0, 15: 0,
+				16: 0, 17: 0, 18: 0, 19: 0,
+				20: 0, 21: 0, 22: 0, 23: 0
 			}, middlewares: this.middlewares,
 			data: {
 				incoming: {
@@ -66,6 +79,7 @@ export default class Webserver extends RouteList {
 				}
 			}, routes: {
 				normal: [],
+				websocket: [],
 				static: [],
 				event: [],
 			}, cache: {
@@ -132,23 +146,33 @@ export default class Webserver extends RouteList {
 
 			if (this.globalContext.options.https.enabled) {
 				try {
-					await fs.readFile(this.globalContext.options.https.keyFile)
-					await fs.readFile(this.globalContext.options.https.certFile)
+					await fs.readFile(path.resolve(this.globalContext.options.https.keyFile))
+					await fs.readFile(path.resolve(this.globalContext.options.https.certFile))
 				} catch (e) {
 					throw new Error(`Cant access your HTTPS Key or Cert file! (${this.globalContext.options.https.keyFile} / ${this.globalContext.options.https.certFile})`)
 				}
-	
+
 				this.server = uWebsocket.SSLApp({
-					ca_file_name: this.globalContext.options.https.keyFile,
-					cert_file_name: this.globalContext.options.https.certFile
+					ca_file_name: path.resolve(this.globalContext.options.https.keyFile),
+					cert_file_name: path.resolve(this.globalContext.options.https.certFile)
 				})
 			} else this.server = uWebsocket.App()
 
 			this.server
 				.any('/*', (res, req) => handleHTTPRequest(req, res, this.globalContext))
+				.ws('/*', {
+					maxBackpressure: 512 * 1024 * 1024,
+					sendPingsAutomatically: true,
+					maxPayloadLength: this.globalContext.options.body.maxSize * 1e6,
+					upgrade: (res, req, connection) => handleWSUpgrade(req, res, connection, this.globalContext),
+					open: (ws: any) => handleWSOpen(ws, this.globalContext),
+					message: (ws: any, message) => handleWSMessage(ws, message, this.globalContext),
+					close: (ws: any, code, message) => handleWSClose(ws, message, this.globalContext)
+				})
 
 			const routes = await this.getRoutes()
 			this.globalContext.routes.normal = routes.routes
+			this.globalContext.routes.websocket = routes.webSockets
 			this.globalContext.routes.event = routes.events
 			this.globalContext.routes.static = routes.statics
 			this.globalContext.contentTypes = routes.contentTypes
@@ -187,6 +211,7 @@ export default class Webserver extends RouteList {
 
 		const routes = await this.getRoutes()
 		this.globalContext.routes.normal = routes.routes
+		this.globalContext.routes.websocket = routes.webSockets
 		this.globalContext.routes.event = routes.events
 		this.globalContext.routes.static = routes.statics
 		this.globalContext.contentTypes = routes.contentTypes

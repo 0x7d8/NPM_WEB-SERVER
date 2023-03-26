@@ -1,4 +1,4 @@
-import { HTTPRequestContext } from "./external"
+import { HTTPRequestContext, WSRequestContext } from "./external"
 
 export type Task = {
 	type: 'context' | 'execution'
@@ -27,3 +27,4 @@ export type ExternalRouter = {
 }
 
 export type Routed = (ctr: HTTPRequestContext) => Promise<any> | any
+export type RoutedWS<Type extends WSRequestContext['type']> = (ctr: WSRequestContext) => Promise<any> | any

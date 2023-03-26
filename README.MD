@@ -196,6 +196,11 @@ server.path('/', (path) => path // The / is the Path Prefix for all children pat
         return ctr.print('Im only smart enough to redirect to google and youtube :P')
     }
   })
+  .ws('/echo', (ws) => ws
+    .onMessage((ctr) => {
+      ctr.print(ctr.message)
+    })
+  )
   .redirect('/googleplz', 'https://www.google.com')
   .path('/api', (path) => path
     .http('GET', '/', (ctr) => ctr.print('welcome to api!'))
@@ -211,6 +216,43 @@ server.path('/', (path) => path // The / is the Path Prefix for all children pat
 server.start().then((s) => {
   console.log(`server started on port ${s.port}`)
 })
+```
+
+Print to multiple Websockets Periodically
+```js
+const { Server } = require('rjweb-server')
+const { Readable } = require('stream')
+
+// This Stream will count up every second
+const dataStream = (() => {
+	let i = 0
+
+  return new Readable({
+		objectMode: true,
+		construct() {
+			setInterval(() => {
+        this.push(++i)
+      }, 1000)
+		},
+  })
+}) ()
+
+const server = new Server({
+  bind: '0.0.0.0', // The IP thats bound to
+  cors: false, // If Cors Headers will be added
+  port: 5000, // The Port which the Server runs on
+  proxy: true // If enabled, alternate IPs will be shown
+})
+
+server.path('/', (path) => path
+  .ws('/infos', (ws) => ws
+    .onConnect((ctr) => {
+      ctr.printStream(dataStream, {
+        destroyAbort: false
+      })
+    })
+  )
+)
 ```
 
 Print Promises

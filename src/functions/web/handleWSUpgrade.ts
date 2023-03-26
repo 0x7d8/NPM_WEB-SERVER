@@ -1,27 +1,23 @@
 import { GlobalContext, InternalContext } from "../../types/context"
-import { HttpRequest, HttpResponse } from "uWebSockets.js"
-import { pathParser } from "../../classes/router/index"
-import { parse as parseURL } from "url"
-import { resolve as pathResolve } from "path"
-import parseContent, { Returns as ParseContentReturns } from "../parseContent"
+import { HttpRequest, HttpResponse, us_socket_context_t } from "uWebSockets.js"
+import { getPreviousHours } from "./handleHTTPRequest"
 import { Task } from "../../types/internal"
-import statsRoute from "../../stats/routes"
-import { promises as fs, createReadStream } from "fs"
-import handleContentType from "../handleContentType"
-import handleCompressType, { CompressMapping } from "../handleCompressType"
+import { parse as parseURL } from "url"
 import { parse as parseQuery } from "querystring"
-import { HTTPRequestContext } from "../../index"
-import ValueCollection from "../../classes/valueCollection"
+import parseContent, { Returns as ParseContentReturns } from "../parseContent"
+import handleCompressType, { CompressMapping } from "../handleCompressType"
+import handleContentType from "../handleContentType"
 import handleEvent from "../handleEvent"
-import { Version } from "../../index"
-import EventEmitter from "events"
-import Static from "../../types/static"
+import ValueCollection from "../../classes/valueCollection"
+import { HTTPRequestContext } from "../../types/external"
+import { pathParser } from "../../classes/router"
+import { createReadStream } from "fs"
+import { Version } from "../.."
+import { EventEmitter } from "events"
+import { WebSocketContext } from "../../types/webSocket"
 
-export const getPreviousHours = () =>
-	Array.from({ length: 5 }, (_, i) => (new Date().getHours() - (4 - i) + 24) % 24)
-
-export default function handleHTTPRequest(req: HttpRequest, res: HttpResponse, ctg: GlobalContext) {
-	let ctx: InternalContext = {
+export default function handleWSUpgrade(req: HttpRequest, res: HttpResponse, connection: us_socket_context_t, ctg: GlobalContext) {
+  let ctx: InternalContext = {
 		queue: [],
 		scheduleQueue(type, callback) {
 			ctx.queue.push({ type, function: callback })
@@ -109,113 +105,20 @@ export default function handleHTTPRequest(req: HttpRequest, res: HttpResponse, c
 		}
 	}
 
-	// Handle Incoming HTTP Data
-	const chunks: Buffer[] = []
-	res.onData(async(rawChunk, isLast) => {
-		const chunk = Buffer.from(rawChunk)
-		chunks.push(chunk)
-
-		ctg.data.incoming.total += chunk.byteLength
-		ctg.data.incoming[ctx.previousHours[4]] += chunk.byteLength
-
-		if (isLast) {
-			ctx.body.raw = Buffer.concat(chunks)
-
-			if (ctx.body.raw.byteLength >= (ctg.options.body.maxSize * 1e6)) {
-				res.writeStatus('413')
-
-				const result = await parseContent(ctg.options.body.message)
-				return res.end(result.content)
-			}
-
-			ctx.events.emit('startRequest')
-		}
-	})
-
-
-	// Handle Response Data
-	ctx.events.once('startRequest', async() => {
-		/// Check if URL exists
+  {(async() => {
+    /// Check if URL exists
 		let params = {}
 		const actualUrl = ctx.url.pathname.split('/')
 
-		// Check Static Paths
-		const foundStatic = (file: string, url: Static) => {
-			ctx.execute.file = file
-			ctx.execute.route = url
-			ctx.execute.exists = true
-
-			// Set Cache
-			ctg.cache.routes.set(`route::static::${ctx.url.pathname}`, { route: url, file })
-		}; for (let staticNumber = 0; staticNumber < ctg.routes.static.length; staticNumber++) {
+		// Check WS Paths
+		if (!ctx.execute.exists) for (let urlNumber = 0; urlNumber < ctg.routes.websocket.length; urlNumber++) {
 			if (ctx.execute.exists) break
 
-			const url = ctg.routes.static[staticNumber]
+			const url = ctg.routes.websocket[urlNumber]
 
 			// Get From Cache
-			if (ctg.cache.routes.has(`route::static::${ctx.url.pathname}`)) {
-				const url = ctg.cache.routes.get(`route::static::${ctx.url.pathname}`)
-
-				ctx.execute.file = url.file
-				ctx.execute.route = url.route
-				ctx.execute.exists = true
-
-				break
-			}
-
-			// Skip if not related
-			if (!ctx.url.pathname.startsWith(url.path)) continue
-
-			// Find File
-			const urlPath = pathParser(ctx.url.pathname.replace(url.path, '')).substring(1)
-
-			const fileExists = async(location: string) => {
-				location = pathResolve(location)
-
-				try {
-					const res = await fs.stat(location)
-					return res.isFile()
-				} catch (err) {
-					return false
-				}
-			}
-
-			if (url.data.hideHTML) {
-				if (await fileExists(url.location + '/' + urlPath + '/index.html')) foundStatic(pathResolve(url.location + '/' + urlPath + '/index.html'), url)
-				else if (await fileExists(url.location + '/' + urlPath + '.html')) foundStatic(pathResolve(url.location + '/' + urlPath + '.html'), url)
-				else if (await fileExists(url.location + '/' + urlPath)) foundStatic(pathResolve(url.location + '/' + urlPath), url)
-			} else if (await fileExists(url.location + '/' + urlPath)) foundStatic(pathResolve(url.location + '/' + urlPath), url)
-		}
-
-		// Check Dashboard Paths
-		if (ctg.options.dashboard.enabled) {
-			const parsedPath = pathParser(ctg.options.dashboard.path)
-
-			if (ctx.url.path === parsedPath || ctx.url.path === parsedPath + '/stats') {
-				ctx.execute.route = {
-					type: 'route',
-					method: 'GET',
-					path: ctx.url.path,
-					pathArray: ctx.url.path.split('/'),
-					code: async(ctr) => await statsRoute(ctr, ctg, ctx),
-					data: {
-						validations: []
-					}
-				}
-	
-				ctx.execute.exists = true
-			}
-		}
-
-		// Check Other Paths
-		if (!ctx.execute.exists) for (let urlNumber = 0; urlNumber < ctg.routes.normal.length; urlNumber++) {
-			if (ctx.execute.exists) break
-
-			const url = ctg.routes.normal[urlNumber]
-
-			// Get From Cache
-			if (ctg.cache.routes.has(`route::normal::${ctx.url.pathname}::${ctx.url.method}`)) {
-				const url = ctg.cache.routes.get(`route::normal::${ctx.url.pathname}::${ctx.url.method}`)
+			if (ctg.cache.routes.has(`route::ws::${ctx.url.pathname}`)) {
+				const url = ctg.cache.routes.get(`route::ws::${ctx.url.pathname}`)
 
 				params = url.params
 				ctx.execute.route = url.route
@@ -225,16 +128,15 @@ export default function handleHTTPRequest(req: HttpRequest, res: HttpResponse, c
 			}
 
 			// Skip if not related
-			if (url.method !== ctx.url.method) continue
 			if (url.pathArray.length !== actualUrl.length) continue
 
 			// Check for Static Paths
-			if (url.path === ctx.url.pathname && url.method === ctx.url.method) {
+			if (url.path === ctx.url.pathname) {
 				ctx.execute.route = url
 				ctx.execute.exists = true
 
 				// Set Cache
-				ctg.cache.routes.set(`route::normal::${ctx.url.pathname}::${ctx.url.method}`, { route: url, params: {} })
+				ctg.cache.routes.set(`route::ws::${ctx.url.pathname}`, { route: url, params: {} })
 
 				break
 			}
@@ -257,7 +159,7 @@ export default function handleHTTPRequest(req: HttpRequest, res: HttpResponse, c
 				}; continue
 			}; if (ctx.execute.exists) {
 				// Set Cache
-				ctg.cache.routes.set(`route::normal::${ctx.url.pathname}::${ctx.url.method}`, { route: url, params: params })
+				ctg.cache.routes.set(`route::ws::${ctx.url.pathname}`, { route: url, params: params })
 
 				break
 			}
@@ -265,7 +167,7 @@ export default function handleHTTPRequest(req: HttpRequest, res: HttpResponse, c
 			continue
 		}
 
-		// Get Correct Host IP
+    // Get Correct Host IP
 		let hostIp: string
 		if (ctg.options.proxy && ctx.headers['x-forwarded-for']) hostIp = ctx.headers['x-forwarded-for']
 		else hostIp = ctx.remoteAddress.split(':')[0]
@@ -582,16 +484,22 @@ export default function handleHTTPRequest(req: HttpRequest, res: HttpResponse, c
 				return resolve()
 			}; if (eventOnly) return resolve()
 
-			// Execute Static Route
-			if (ctx.execute.route.type === 'static') {
-				ctr.printFile(ctx.execute.file)
-				return resolve()
-			}
-
 			// Execute Normal Route
-			if (ctx.execute.route.type === 'route' && ctx.executeCode) {
+			if (ctx.execute.route.type === 'websocket' && ctx.executeCode) {
 				try {
-					await Promise.resolve(ctx.execute.route.code(ctr))
+					ctx.continueSend = false
+          ctg.webSockets.total++
+	        ctg.webSockets[ctx.previousHours[4]]++
+
+          return res.cork(() => {
+            res.upgrade(
+              { ctx, params, custom: ctr["@"] } satisfies WebSocketContext,
+              req.getHeader('sec-websocket-key'),
+              req.getHeader('sec-websocket-protocol'),
+              req.getHeader('sec-websocket-extensions'),
+              connection
+            )
+          })
 				} catch (err) {
 					ctx.error = err
 					ctx.execute.event = 'runtimeError'
@@ -653,5 +561,5 @@ export default function handleHTTPRequest(req: HttpRequest, res: HttpResponse, c
 				else if (!isAborted) res.end(ctx.response.content)
 			}
 		})
-	})
+  }) ()}
 }

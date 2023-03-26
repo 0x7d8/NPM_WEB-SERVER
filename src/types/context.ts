@@ -7,6 +7,7 @@ import { UrlWithStringQuery } from "url"
 import { Options } from "../classes/serverOptions"
 import Static from "./static"
 import TypedEventEmitter from "./typedEventEmitter"
+import WebSocket from "./webSocket"
 
 export type Hours =
 	| '0' | '1' | '2' | '3' | '4'
@@ -40,7 +41,7 @@ export interface InternalContext {
 	}
 
 	/** The Execute Object */ execute: {
-		/** The Route Object that was found */ route: Route | Static
+		/** The Route Object that was found */ route: Route | Static | WebSocket
 		/** The File to Read when Route is Static */ file: string
 		/** Whether the Route exists */ exists: boolean
 		/** The Event to execute instead of the Route */ event: 'none' | Event['name']
@@ -60,6 +61,7 @@ export interface GlobalContext {
 	/** The Default HTTP Headers List */ defaultHeaders: Record<Lowercase<string>, string>
 	/** The HTTP Server Options */ options: Options
 	/** The Request Count */ requests: Record<Hours | 'total', number>
+	/** The WebSockets Opened */ webSockets: Record<Hours | 'total', number>
 	/** The Middlewares to run */ middlewares: Middleware[]
 	/** The Data Stats */ data: {
 		/** The Incoming Data Count */ incoming: Record<Hours | 'total', number>
@@ -68,12 +70,13 @@ export interface GlobalContext {
 
   /** The Routes */ routes: {
     /** Normal Routes */ normal: Route[]
+		/** Websocket Routes */ websocket: WebSocket[]
 		/** Static Routes */ static: Static[]
     /** Event Routes */ event: Event[]
   }
 
   /** The Cache Stores */ cache: {
     /** The File Caches */ files: ValueCollection<string, Buffer>
-    /** The Route Caches */ routes: ValueCollection<string, { route: Route | Static, params?: Record<string, string>, file?: string }>
+    /** The Route Caches */ routes: ValueCollection<string, { route: Route | Static | WebSocket, params?: Record<string, string>, file?: string }>
   }
 }

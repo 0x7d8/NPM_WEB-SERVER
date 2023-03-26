@@ -1,3 +1,13 @@
+## 5.4.0
+
+- Add WebSocket Support 🎉
+- Fix Broken Caching for Normal Routes
+- Fix Issues with Routes Duplicating when reloading
+- Cork Correctly on CORS OPTIONS Requests
+- Fix Invalid Prefixes when using nested paths
+- Export ValueCollection
+- Add Chat Website example
+
 ## 5.3.1
 
 - Add ability to toggle caching in the Config

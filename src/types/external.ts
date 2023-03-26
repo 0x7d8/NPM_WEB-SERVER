@@ -32,6 +32,8 @@ export interface PrintFileOptions {
 	*/ cache?: boolean
 }
 
+export { WSRequestContext } from "./webSocket"
+
 export interface PrintStreamOptions {
 	/**
 	 * Whether to end the Request after the Stream finishes
@@ -43,7 +45,7 @@ export interface PrintStreamOptions {
 	*/ destroyAbort?: boolean
 }
 
-export interface HTTPRequestContext<Custom = {}, Body = any> {
+export interface HTTPRequestContext<Custom = {}, Body = unknown> {
   /**
 	 * The Server Controller Class Instance
 	 * @example
