@@ -4,11 +4,13 @@ import { parse as parseQuery } from "querystring"
 import parseContent, { Returns as ParseContentReturns } from "../parseContent"
 import ValueCollection from "../../classes/valueCollection"
 import { WebSocketConnect, WebSocketContext } from "../../types/webSocket"
+import { getPreviousHours } from "./handleHTTPRequest"
 import handleEvent from "../handleEvent"
 
 export default function handleWSOpen(ws: WebSocket<WebSocketContext>, ctg: GlobalContext) {
 	let custom = ws.getUserData().custom
   let ctx = ws.getUserData().ctx
+	ctx.previousHours = getPreviousHours()
 	ctx.continueSend = true
 	ctx.queue = []
 
@@ -84,7 +86,11 @@ export default function handleWSOpen(ws: WebSocket<WebSocketContext>, ctg: Globa
 						return ctx.handleError(err)
 					}
 
-					ctx.response.content = result.content
+					try {
+						ws.send(result.content)
+						ctg.webSockets.messages.outgoing.total++
+						ctg.webSockets.messages.outgoing[ctx.previousHours[4]]++
+					} catch { }
 				}))
 
 				return ctr
@@ -109,6 +115,9 @@ export default function handleWSOpen(ws: WebSocket<WebSocketContext>, ctg: Globa
 								}
 
 								try {
+									ctg.webSockets.messages.outgoing.total++
+									ctg.webSockets.messages.outgoing[ctx.previousHours[4]]++
+
 									ws.send(data)
 								} catch { ctx.events.emit('requestAborted') }
 
@@ -184,7 +193,12 @@ export default function handleWSOpen(ws: WebSocket<WebSocketContext>, ctg: Globa
 		// Handle Reponse
 		if (ctx.continueSend) ws.cork(() => {
 			try {
-				if (ctx.response.content.byteLength > 0) ws.send(ctx.response.content)
+				if (ctx.response.content.byteLength > 0) {
+					ctg.webSockets.messages.outgoing.total++
+					ctg.webSockets.messages.outgoing[ctx.previousHours[4]]++
+
+					ws.send(ctx.response.content)
+				}
 			} catch { }
 		})
   }) ()}

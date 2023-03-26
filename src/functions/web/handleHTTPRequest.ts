@@ -188,23 +188,19 @@ export default function handleHTTPRequest(req: HttpRequest, res: HttpResponse, c
 		}
 
 		// Check Dashboard Paths
-		if (ctg.options.dashboard.enabled) {
-			const parsedPath = pathParser(ctg.options.dashboard.path)
-
-			if (ctx.url.path === parsedPath || ctx.url.path === parsedPath + '/stats') {
-				ctx.execute.route = {
-					type: 'route',
-					method: 'GET',
-					path: ctx.url.path,
-					pathArray: ctx.url.path.split('/'),
-					code: async(ctr) => await statsRoute(ctr, ctg, ctx),
-					data: {
-						validations: []
-					}
+		if (ctg.options.dashboard.enabled && ctx.url.path === pathParser(ctg.options.dashboard.path)) {
+			ctx.execute.route = {
+				type: 'route',
+				method: 'GET',
+				path: ctx.url.path,
+				pathArray: ctx.url.path.split('/'),
+				code: async(ctr) => await statsRoute(ctr, ctg, ctx, 'http'),
+				data: {
+					validations: []
 				}
-	
-				ctx.execute.exists = true
 			}
+	
+			ctx.execute.exists = true
 		}
 
 		// Check Other Paths

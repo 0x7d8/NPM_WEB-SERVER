@@ -61,8 +61,15 @@ export interface GlobalContext {
 	/** The Default HTTP Headers List */ defaultHeaders: Record<Lowercase<string>, string>
 	/** The HTTP Server Options */ options: Options
 	/** The Request Count */ requests: Record<Hours | 'total', number>
-	/** The WebSockets Opened */ webSockets: Record<Hours | 'total', number>
 	/** The Middlewares to run */ middlewares: Middleware[]
+	/** The WebSocket Stats */ webSockets: {
+		/** The Amount of Sockets Opened */ opened: Record<Hours | 'total', number>
+		/** The Amount of Socket Messages recieved */ messages: {
+			/** The Incoming Message Count */ incoming: Record<Hours | 'total', number>
+			/** The Outgoing Message Count */ outgoing: Record<Hours | 'total', number>
+		}
+	}
+
 	/** The Data Stats */ data: {
 		/** The Incoming Data Count */ incoming: Record<Hours | 'total', number>
 		/** The Outgoing Data Count */ outgoing: Record<Hours | 'total', number>

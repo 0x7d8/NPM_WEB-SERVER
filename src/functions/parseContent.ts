@@ -29,7 +29,7 @@ export default async function parseContent(content: Content): Promise<Returns> {
 
 			try {
 				returnObject.content = Buffer.from(JSON.stringify(content))
-			} catch (err) {
+			} catch {
 				returnObject.content = Buffer.from('Failed to parse JSON Data')
 			}
 

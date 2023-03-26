@@ -4,10 +4,12 @@ import { parse as parseQuery } from "querystring"
 import ValueCollection from "../../classes/valueCollection"
 import { WebSocketClose, WebSocketContext } from "../../types/webSocket"
 import handleEvent from "../handleEvent"
+import { getPreviousHours } from "./handleHTTPRequest"
 
 export default function handleWSClose(ws: WebSocket<WebSocketContext>, message: ArrayBuffer, ctg: GlobalContext) {
 	let custom = ws.getUserData().custom
   let ctx = ws.getUserData().ctx
+	ctx.previousHours = getPreviousHours()
 	ctx.body.raw = Buffer.from(message)
 	ctx.events.emit('requestAborted')
 

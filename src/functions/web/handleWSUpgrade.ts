@@ -13,6 +13,7 @@ import { HTTPRequestContext } from "../../types/external"
 import { pathParser } from "../../classes/router"
 import { createReadStream } from "fs"
 import { Version } from "../.."
+import statsRoute from "../../stats/routes"
 import { EventEmitter } from "events"
 import { WebSocketContext } from "../../types/webSocket"
 
@@ -110,7 +111,22 @@ export default function handleWSUpgrade(req: HttpRequest, res: HttpResponse, con
 		let params = {}
 		const actualUrl = ctx.url.pathname.split('/')
 
-		// Check WS Paths
+		// Check Dashboard Paths
+		if (ctg.options.dashboard.enabled && ctx.url.path === pathParser(ctg.options.dashboard.path) + '/stats') {
+			ctx.execute.route = {
+				type: 'websocket',
+				path: ctx.url.path,
+				pathArray: ctx.url.path.split('/'),
+				onConnect: async(ctr) => await statsRoute(ctr, ctg, ctx, 'socket'),
+				data: {
+					validations: []
+				}
+			}
+
+			ctx.execute.exists = true
+		}
+
+		// Check Other Paths
 		if (!ctx.execute.exists) for (let urlNumber = 0; urlNumber < ctg.routes.websocket.length; urlNumber++) {
 			if (ctx.execute.exists) break
 
@@ -488,8 +504,8 @@ export default function handleWSUpgrade(req: HttpRequest, res: HttpResponse, con
 			if (ctx.execute.route.type === 'websocket' && ctx.executeCode) {
 				try {
 					ctx.continueSend = false
-          ctg.webSockets.total++
-	        ctg.webSockets[ctx.previousHours[4]]++
+          ctg.webSockets.opened.total++
+	        ctg.webSockets.opened[ctx.previousHours[4]]++
 
           return res.cork(() => {
             if (!isAborted) res.upgrade(

@@ -1,3 +1,10 @@
+## 5.5.0
+
+- Add Websocket Message Count to Dashboard
+- Use Websockets for Dashboard Stats
+- Allow ctr.print() to be called multiple times in a websocket
+- Remove Request ms from Dashboard since it now uses websockets
+
 ## 5.4.2
 
 - Check if Request is aborted before upgrading

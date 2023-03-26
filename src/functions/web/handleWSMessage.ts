@@ -5,16 +5,21 @@ import parseContent, { Returns as ParseContentReturns } from "../parseContent"
 import ValueCollection from "../../classes/valueCollection"
 import { WebSocketContext, WebSocketMessage } from "../../types/webSocket"
 import handleEvent from "../handleEvent"
+import { getPreviousHours } from "./handleHTTPRequest"
 
 export default function handleWSConnect(ws: WebSocket<WebSocketContext>, message: ArrayBuffer, ctg: GlobalContext) {
 	let custom = ws.getUserData().custom
   let ctx = ws.getUserData().ctx
+	ctx.previousHours = getPreviousHours()
 	ctx.body.raw = Buffer.from(message)
 	ctx.continueSend = true
 	ctx.queue = []
 
 	ctg.data.incoming.total += message.byteLength
 	ctg.data.incoming[ctx.previousHours[4]] += message.byteLength
+
+	ctg.webSockets.messages.incoming.total++
+	ctg.webSockets.messages.incoming[ctx.previousHours[4]]++
 
 	ctx.handleError = (err) => {
 		ctx.error = err
@@ -95,7 +100,11 @@ export default function handleWSConnect(ws: WebSocket<WebSocketContext>, message
 						return ctx.handleError(err)
 					}
 
-					ctx.response.content = result.content
+					try {
+						ws.send(result.content)
+						ctg.webSockets.messages.outgoing.total++
+						ctg.webSockets.messages.outgoing[ctx.previousHours[4]]++
+					} catch { }
 				}))
 
 				return ctr
@@ -120,6 +129,9 @@ export default function handleWSConnect(ws: WebSocket<WebSocketContext>, message
 								}
 			
 								try {
+									ctg.webSockets.messages.outgoing.total++
+									ctg.webSockets.messages.outgoing[ctx.previousHours[4]]++
+
 									ws.send(data)
 								} catch { ctx.events.emit('requestAborted') }
 
@@ -195,7 +207,12 @@ export default function handleWSConnect(ws: WebSocket<WebSocketContext>, message
 		// Handle Reponse
 		if (ctx.continueSend) ws.cork(() => {
 			try {
-				if (ctx.response.content.byteLength > 0) ws.send(ctx.response.content)
+				if (ctx.response.content.byteLength > 0) {
+					ctg.webSockets.messages.outgoing.total++
+					ctg.webSockets.messages.outgoing[ctx.previousHours[4]]++
+
+					ws.send(ctx.response.content)
+				}
 			} catch { }
 		})
   }) ()}
