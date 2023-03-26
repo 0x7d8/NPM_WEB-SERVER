@@ -216,6 +216,7 @@ export default function handleWSUpgrade(req: HttpRequest, res: HttpResponse, con
 				port: Number(ctx.remoteAddress.split(':')[1]),
 				ip: hostIp
 			}, body: ctx.body.parsed,
+			rawBody: ctx.body.raw.toString(),
 			url: ctx.url,
 
 			// Raw Values

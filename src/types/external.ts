@@ -117,6 +117,10 @@ export interface HTTPRequestContext<Custom = {}, Body = unknown> {
 	 * @since 0.4.0
 	*/ readonly body: Body
 	/**
+	 * The Raw Request Body
+	 * @since 5.5.2
+	*/ readonly rawBody: string
+	/**
 	 * The Requested URL
 	 * @since 0.0.2
 	*/ readonly url: UrlWithStringQuery & { method: HTTPMethods }

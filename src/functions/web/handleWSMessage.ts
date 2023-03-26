@@ -62,6 +62,7 @@ export default function handleWSConnect(ws: WebSocket<WebSocketContext>, message
 				port: Number(ctx.remoteAddress.split(':')[1]),
 				ip: hostIp
 			}, message: ctx.body.parsed,
+			rawMessage: ctx.body.raw.toString(),
 			url: ctx.url,
 
 			// Custom Variables

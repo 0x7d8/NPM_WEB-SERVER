@@ -229,6 +229,10 @@ export interface WebSocketMessage<Custom = {}, Body = unknown> {
 	 * @since 5.4.0
 	*/ readonly message: Body
 	/**
+	 * The Raw Socket Message
+	 * @since 5.5.2
+	*/ readonly rawMessage: string
+	/**
 	 * The Requested URL
 	 * @since 5.4.0
 	*/ readonly url: UrlWithStringQuery
@@ -360,6 +364,10 @@ export interface WebSocketClose<Custom = {}, Body = unknown> {
 	 * The Socket Message (JSON Automatically parsed if enabled)
 	 * @since 5.4.0
 	*/ readonly message: Body
+	/**
+	 * The Raw Socket Message
+	 * @since 5.5.2
+	*/ readonly rawMessage: string
 	/**
 	 * The Requested URL
 	 * @since 5.4.0

@@ -1,3 +1,8 @@
+## 5.5.2
+
+- Add ctr.rawBody and ctr.rawMessage to always allow getting unparsed messages
+- Update Basic Chat App Example to add Chat History
+
 ## 5.5.1
 
 - Clean up Dashboard Socket Interval when Closing
