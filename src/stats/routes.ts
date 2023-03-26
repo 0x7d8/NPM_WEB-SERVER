@@ -22,13 +22,17 @@ export default async function statsRoute(ctr: HTTPRequestContext | WebSocketConn
     }
 
     case "socket": {
+      let interval: NodeJS.Timer
       ctr.printStream((() => {
         const readable = new Readable({
           objectMode: true,
-          read() {}
+          read() {},
+          destroy() {
+            clearInterval(interval)
+          }
         })
 
-        setInterval(async() => {
+        interval = setInterval(async() => {
           const date = new Date()
           const startTime = date.getTime()
           const startUsage = process.cpuUsage()

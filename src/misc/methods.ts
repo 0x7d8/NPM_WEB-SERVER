@@ -1,9 +1,9 @@
 export default [
-	"OPTIONS",
-	"DELETE",
-	"PATCH",
-	"HEAD",
-	"POST",
-	"PUT",
-	"GET"
+	'OPTIONS',
+	'DELETE',
+	'PATCH',
+	'HEAD',
+	'POST',
+	'PUT',
+	'GET'
 ]

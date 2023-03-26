@@ -47,15 +47,14 @@ export default class ValueCollection<Key extends string | number | symbol = stri
 
 	/** Clear the Stored Objects */
 	clear(
-		/** Excluded Keys */ excluded?: Key[]
+		/** Excluded Keys */ excluded: Key[] = []
 	): number {
-		excluded = excluded ?? []
 		if (!this.allowModify) return 0
 
 		let keys = 0
 		for (const key in this.data) {
 			if (excluded.includes(key)) continue
-			this.data[key] = undefined
+			delete this.data[key]
 			keys++
 		}
 
@@ -64,10 +63,8 @@ export default class ValueCollection<Key extends string | number | symbol = stri
 
 	/** Get all Objects as JSON */
 	toJSON(
-		/** Excluded Keys */ excluded?: Key[]
+		/** Excluded Keys */ excluded: Key[] = []
 	): Record<Key, Value> {
-		excluded = excluded ?? []
-
 		let keys = {} as any
 		for (const key in this.data) {
 			if (excluded.includes(key)) continue
@@ -79,10 +76,8 @@ export default class ValueCollection<Key extends string | number | symbol = stri
 
 	/** Get all Values as Array */
 	toArray(
-		/** Excluded Keys */ excluded?: Key[]
+		/** Excluded Keys */ excluded: Key[] = []
 	): Value[] {
-		excluded = excluded ?? []
-
 		let keys = [] as any
 		for (const key in this.data) {
 			if (excluded.includes(key)) continue
@@ -95,10 +90,9 @@ export default class ValueCollection<Key extends string | number | symbol = stri
 	/** Loop over all Keys */
 	forEach(
 		/** Callback Function */ callback: (key: Key, value: Value, index: number) => Promise<any> | any,
-		/** Excluded Keys */ excluded?: Key[]
+		/** Excluded Keys */ excluded: Key[] = []
 	) {
 		callback = callback ?? (() => undefined)
-		excluded = excluded ?? []
 
 		{(Object.keys(this.data) as Key[])
 			.filter((key) => !excluded.includes(key))
@@ -110,10 +104,9 @@ export default class ValueCollection<Key extends string | number | symbol = stri
 	/** Map the Keys to a new Array */
 	map(
 		/** Callback Function */ callback: (key: Key, value: Value, index: number, data: Record<Key, Value>) => any,
-		/** Excluded Keys */ excluded?: Key[]
+		/** Excluded Keys */ excluded: Key[] = []
 	): any[] {
 		callback = callback ?? ((value) => value)
-		excluded = excluded ?? []
 
 		let sortedData = Object.assign({}, this.data)
 		for (const key in sortedData) {

@@ -1,3 +1,4 @@
+import { Content } from "../functions/parseContent"
 import { CompressTypes } from "../functions/handleCompressType"
 
 export interface Options {
@@ -7,17 +8,17 @@ export interface Options {
 		 * @default true
 		*/ enabled?: boolean
 		/**
-		 * Whether to try parsing the HTTP Body as JSON
+		 * Whether to try parsing the HTTP Body / WS Message as JSON
 		 * @default true
 		*/ parse?: boolean
 		/**
-		 * The Maximum Size of the HTTP Body in MB
+		 * The Maximum Size of the HTTP Body / WS Message in MB
 		 * @default 5
 		*/ maxSize?: number
 		/**
 		 * The Message that gets sent when the HTTP Body Size is exceeded
 		 * @default "Payload too large"
-		*/ message?: any
+		*/ message?: Content
 	}
 
 	/** HTTPS Settings */ https?: {

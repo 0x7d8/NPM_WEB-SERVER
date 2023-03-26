@@ -318,9 +318,9 @@ export default class Webserver extends RouteList {
 	 * @since 3.0.0
 	*/
 	async stop() {
-		uWebsocket.us_listen_socket_close(this.socket)
 		this.globalContext.cache.files.clear()
 		this.globalContext.cache.routes.clear()
+		uWebsocket.us_listen_socket_close(this.socket)
 
 		this.globalContext.data = {
 			incoming: {

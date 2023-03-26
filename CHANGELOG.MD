@@ -1,3 +1,9 @@
+## 5.5.1
+
+- Clean up Dashboard Socket Interval when Closing
+- Clear Cache correctly when reloading
+- Use newer Syntax in some places
+
 ## 5.5.0
 
 - Add Websocket Message Count to Dashboard
