@@ -13,6 +13,9 @@ export default function handleWSConnect(ws: WebSocket<WebSocketContext>, message
 	ctx.continueSend = true
 	ctx.queue = []
 
+	ctg.data.incoming.total += message.byteLength
+	ctg.data.incoming[ctx.previousHours[4]] += message.byteLength
+
 	ctx.handleError = (err) => {
 		ctx.error = err
 		ctx.execute.event = 'wsMessageError'
@@ -192,7 +195,7 @@ export default function handleWSConnect(ws: WebSocket<WebSocketContext>, message
 		// Handle Reponse
 		if (ctx.continueSend) ws.cork(() => {
 			try {
-				ws.send(ctx.response.content)
+				if (ctx.response.content.byteLength > 0) ws.send(ctx.response.content)
 			} catch { }
 		})
   }) ()}

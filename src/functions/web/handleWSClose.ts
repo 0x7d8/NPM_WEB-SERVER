@@ -11,6 +11,9 @@ export default function handleWSClose(ws: WebSocket<WebSocketContext>, message: 
 	ctx.body.raw = Buffer.from(message)
 	ctx.events.emit('requestAborted')
 
+	ctg.data.incoming.total += message.byteLength
+	ctg.data.incoming[ctx.previousHours[4]] += message.byteLength
+
 	ctx.handleError = (err) => {
 		ctx.error = err
 		ctx.execute.event = 'wsCloseError'

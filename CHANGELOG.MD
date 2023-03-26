@@ -1,3 +1,7 @@
+## 5.4.1
+
+- Fix Sending Normal & Empty Messages in WebSockets
+
 ## 5.4.0
 
 - Add WebSocket Support 🎉

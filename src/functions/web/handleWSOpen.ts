@@ -184,7 +184,7 @@ export default function handleWSOpen(ws: WebSocket<WebSocketContext>, ctg: Globa
 		// Handle Reponse
 		if (ctx.continueSend) ws.cork(() => {
 			try {
-				ws.send(ctx.response.content)
+				if (ctx.response.content.byteLength > 0) ws.send(ctx.response.content)
 			} catch { }
 		})
   }) ()}
