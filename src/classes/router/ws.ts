@@ -1,4 +1,4 @@
-import { Routed, RoutedWS } from "../../types/internal"
+import { Routed } from "../../types/internal"
 import WebSocket from "../../types/webSocket"
 
 export default class RouteWS {

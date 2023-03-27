@@ -2,10 +2,12 @@ import { HTTPMethods } from "../index"
 import { parse, UrlWithStringQuery } from "url"
 
 export const pathParser = (path: string | string[], removeSingleSlash?: boolean) => {
-	const paths = typeof path === 'string' ? [path] : path
+  if (!path) return '/'
+
+	const paths = Array.isArray(path) ? path : [path]
 	let output = ''
 
-	for (let pathIndex = 0; pathIndex < paths.length; pathIndex++) {
+	for (let pathIndex = 0; pathIndex < paths?.length; pathIndex++) {
 		path = paths[pathIndex].replace(/\/{2,}/g, '/')
 
 		if (path.endsWith('?')) path = path.slice(0, -1)

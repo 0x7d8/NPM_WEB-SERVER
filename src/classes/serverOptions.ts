@@ -110,7 +110,9 @@ export default class ServerOptions {
 		const handleObject = (original: Record<string, any>, user: Record<string, any>) => {
 			let output: Record<string, any> = {}
 			Object.keys(original).forEach((key) => {
-				if (key in user) output[key] = user[key]
+				if (typeof original[key] === 'object' && key in user) output[key] = handleObject(original[key], user[key])
+				else if (typeof original[key] === 'object') output[key] = original[key]
+				else if (key in user) output[key] = user[key]
 				else output[key] = original[key]
 			})
 
@@ -122,6 +124,7 @@ export default class ServerOptions {
 
 	/** Get the Resulting Options */
 	getOptions() {
+		console.log(this.data)
 		return this.data
 	}
 }

@@ -1,3 +1,9 @@
+## 5.6.1
+
+- Dont continue parsing path if Path is undefined
+- Use Array.isArray for more safety when path parsing
+- Fix Options Parser not following nested Objects correctly
+
 ## 5.6.0
 
 - Switch Typescript to strict mode
