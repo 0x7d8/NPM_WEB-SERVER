@@ -105,7 +105,7 @@ export default function handleHTTPRequest(req: HttpRequest, res: HttpResponse, c
 					if (!isAborted) res.writeHeader(header, ctx.response.headers[header])
 				}
 
-				res.end('')
+				if (!isAborted) res.end('')
 			})
 		}
 	}
@@ -123,10 +123,14 @@ export default function handleHTTPRequest(req: HttpRequest, res: HttpResponse, c
 			ctx.body.raw = Buffer.concat(chunks)
 
 			if (ctx.body.raw.byteLength >= (ctg.options.body.maxSize * 1e6)) {
-				res.writeStatus('413')
-
 				const result = await parseContent(ctg.options.body.message)
-				return res.end(result.content)
+
+				if (!isAborted) return res.cork(() => {
+					if (!isAborted) res.writeStatus('413')
+
+					if (!isAborted) res.end(result.content)
+				})
+				else return
 			}
 
 			ctx.events.emit('startRequest')
@@ -416,7 +420,7 @@ export default function handleHTTPRequest(req: HttpRequest, res: HttpResponse, c
 								ctx.response.content = Buffer.alloc(0)
 								ctx.events.removeListener('requestAborted', destroyStreams)
 								resolve()
-								res.end()
+								if (!isAborted) res.end()
 							})
 
 							const stream = createReadStream(file)
@@ -461,7 +465,7 @@ export default function handleHTTPRequest(req: HttpRequest, res: HttpResponse, c
 								ctx.response.content = Buffer.alloc(0)
 								ctx.events.removeListener('requestAborted', destroyStream)
 								resolve()
-								res.end()
+								if (!isAborted) res.end()
 							})
 
 							// Destroy if required
@@ -504,7 +508,7 @@ export default function handleHTTPRequest(req: HttpRequest, res: HttpResponse, c
 							if (destroyAbort) ctx.events.removeListener('requestAborted', destroyStream)
 							if (endRequest) {
 								resolve()
-								res.end()
+								if (!isAborted) res.end()
 							}
 						}, errorListener = (error: Error) => {
 							ctx.handleError(error)

@@ -87,25 +87,6 @@ export default function handleWSUpgrade(req: HttpRequest, res: HttpResponse, con
 	res.onAborted(() => ctx.events.emit('requestAborted'))
 	ctx.events.once('requestAborted', () => isAborted = true)
 
-	// Handle CORS Requests
-	if (ctg.options.cors) {
-		ctx.response.headers['access-control-allow-headers'] = '*'
-		ctx.response.headers['access-control-allow-origin'] = '*'
-		ctx.response.headers['access-control-request-method'] = '*'
-		ctx.response.headers['access-control-allow-methods'] = '*'
-
-		if (ctx.url.method === 'OPTIONS') {
-			return res.cork(() => {
-				// Write Headers
-				for (const header in ctx.response.headers) {
-					if (!isAborted) res.writeHeader(header, ctx.response.headers[header])
-				}
-
-				res.end('')
-			})
-		}
-	}
-
   {(async() => {
     /// Check if URL exists
 		let params: Record<string, string> = {}
@@ -337,7 +318,7 @@ export default function handleWSUpgrade(req: HttpRequest, res: HttpResponse, con
 								ctx.response.content = Buffer.alloc(0)
 								ctx.events.removeListener('requestAborted', destroyStreams)
 								resolve()
-								res.end()
+								if (!isAborted) res.end()
 							})
 
 							const stream = createReadStream(file)
@@ -382,7 +363,7 @@ export default function handleWSUpgrade(req: HttpRequest, res: HttpResponse, con
 								ctx.response.content = Buffer.alloc(0)
 								ctx.events.removeListener('requestAborted', destroyStream)
 								resolve()
-								res.end()
+								if (!isAborted) res.end()
 							})
 
 							// Destroy if required
@@ -425,7 +406,7 @@ export default function handleWSUpgrade(req: HttpRequest, res: HttpResponse, con
 							if (destroyAbort) ctx.events.removeListener('requestAborted', destroyStream)
 							if (endRequest) {
 								resolve()
-								res.end()
+								if (!isAborted) res.end()
 							}
 						}, errorListener = (error: Error) => {
 							ctx.handleError(error)

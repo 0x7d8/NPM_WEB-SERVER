@@ -1,3 +1,8 @@
+## 5.6.4
+
+- Always make sure request isnt aborted before sending data
+- Dont handle CORS headers on WebSockets since it wont affect anything
+
 ## 5.6.3
 
 - Remove Debug Logs
