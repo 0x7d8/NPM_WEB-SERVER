@@ -1,3 +1,7 @@
+## 5.6.2
+
+- Fix Default 404 Page displaying undefined
+
 ## 5.6.1
 
 - Dont continue parsing path if Path is undefined

@@ -80,7 +80,7 @@ export default async function handleEvent(eventParam: Events, ctr: any, ctx: Int
 				// Default Http404
 				ctx.response.status = 404
 				ctx.response.headers['content-type'] = 'text/plain'
-				ctx.response.content = Buffer.from(`Couldnt find [${ctr.url.method}] ${ctr.url.pathname}`)
+				ctx.response.content = Buffer.from(`Couldnt find [${ctr.url.method}] ${ctr.url.path}`)
 			} else {
 				// Custom Http404
 				try {
