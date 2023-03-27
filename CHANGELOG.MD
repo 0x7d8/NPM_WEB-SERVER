@@ -1,3 +1,7 @@
+## 5.6.3
+
+- Remove Debug Logs
+
 ## 5.6.2
 
 - Fix Default 404 Page displaying undefined

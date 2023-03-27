@@ -124,7 +124,6 @@ export default class ServerOptions {
 
 	/** Get the Resulting Options */
 	getOptions() {
-		console.log(this.data)
 		return this.data
 	}
 }
