@@ -22,6 +22,8 @@ export default function handleWSConnect(ws: WebSocket<WebSocketContext>, message
 	ctg.webSockets.messages.incoming[ctx.previousHours[4]]++
 
 	ctx.handleError = (err) => {
+		if (!err) return
+
 		ctx.error = err
 		ctx.execute.event = 'wsMessageError'
 	}
@@ -33,10 +35,10 @@ export default function handleWSConnect(ws: WebSocket<WebSocketContext>, message
 		else hostIp = ctx.remoteAddress.split(':')[0]
 
 		// Turn Cookies into Object
-		let cookies = {}
+		let cookies: Record<string, string> = {}
 		if (ctx.headers['cookie']) ctx.headers['cookie'].split(';').forEach((cookie) => {
 			const parts = cookie.split('=')
-			cookies[parts.shift().trim()] = parts.join('=')
+			cookies[parts.shift()!.trim()] = parts.join('=')
 		})
 
 		// Parse Socket Message
@@ -51,7 +53,7 @@ export default function handleWSConnect(ws: WebSocket<WebSocketContext>, message
 
 			// Properties
 			controller: ctg.controller,
-			headers: new ValueCollection(ctx.headers, decodeURIComponent),
+			headers: new ValueCollection(ctx.headers, decodeURIComponent) as any,
 			cookies: new ValueCollection(cookies, decodeURIComponent),
 			params: new ValueCollection(ws.getUserData().params, decodeURIComponent),
 			queries: new ValueCollection(parseQuery(ctx.url.query) as any, decodeURIComponent),
@@ -82,13 +84,15 @@ export default function handleWSConnect(ws: WebSocket<WebSocketContext>, message
 					let result: ParseContentReturns
 					try {
 						result = await parseContent(message)
-					} catch (err) {
+					} catch (err: any) {
 						return ctx.handleError(err)
 					}
 
-					ws.cork(() => {
+					try {
 						ws.end(0, result.content)
-					})
+					} catch { }
+
+					ctx.queue = []
 				}))
 
 				return ctr
@@ -97,7 +101,7 @@ export default function handleWSConnect(ws: WebSocket<WebSocketContext>, message
 					let result: ParseContentReturns
 					try {
 						result = await parseContent(content)
-					} catch (err) {
+					} catch (err: any) {
 						return ctx.handleError(err)
 					}
 
@@ -125,7 +129,7 @@ export default function handleWSConnect(ws: WebSocket<WebSocketContext>, message
 							const dataListener = async(data: Buffer) => {
 								try {
 									data = (await parseContent(data)).content
-								} catch (err) {
+								} catch (err: any) {
 									return ctx.handleError(err)
 								}
 			
@@ -177,12 +181,13 @@ export default function handleWSConnect(ws: WebSocket<WebSocketContext>, message
 				await handleEvent(ctx.execute.event, ctr, ctx, ctg)
 				return resolve()
 			}; if (eventOnly) return resolve()
+			if (!ctx.execute.route) return
 
 			// Execute Normal Route
 			if ('onMessage' in ctx.execute.route && ctx.execute.route.type === 'websocket' && ctx.executeCode) {
 				try {
-					await Promise.resolve(ctx.execute.route.onMessage(ctr))
-				} catch (err) {
+					await Promise.resolve(ctx.execute.route.onMessage!(ctr))
+				} catch (err: any) {
 					ctx.error = err
 					ctx.execute.event = 'wsMessageError'
 					await runPageLogic()

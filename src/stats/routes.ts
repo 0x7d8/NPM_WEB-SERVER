@@ -1,5 +1,5 @@
 import { GlobalContext, InternalContext } from "../types/context"
-import { pathParser } from "../classes/router"
+import { pathParser } from "../classes/URLObject"
 import { getAllFiles } from "../misc/getAllFiles"
 import { HTTPRequestContext } from "../types/external"
 import { WebSocketConnect } from "../types/webSocket"

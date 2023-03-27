@@ -43,7 +43,7 @@ const colors = {
 
 const isHelp = () => (!args[0] || args.includes('-h') || args.includes('--help'))
 
-const webserverOptions: Partial<Options> = { dashboard: {} }
+const webserverOptions: Options = { dashboard: {} }
 const args = process.argv.slice(2)
 if (args.includes('-v') || args.includes('--version')) {
 	console.log(`${colors.fg.blue}[INF] ${colors.reset}Version:`)
@@ -59,7 +59,7 @@ if (args.includes('-v') || args.includes('--version')) {
 		if (key === 'compression') webserverOptions.compression = value as any
 		if (key === 'cors') webserverOptions.cors = true
 		if (key === 'proxy') webserverOptions.proxy = true
-		if (key === 'dashboard') webserverOptions.dashboard.enabled = true
+		if (key === 'dashboard') webserverOptions.dashboard!.enabled = true
 		if (key === '404') notFoundPath = String(value).replace(/"|'+/g, '')
 	}
 
@@ -73,7 +73,7 @@ if (args.includes('-v') || args.includes('--version')) {
 	})
 
 	server.event('httpRequest', (ctr) => {
-		console.log(`${colors.fg.blue}[INF] ${colors.fg.cyan}[${ctr.url.method}] ${colors.fg.gray}${ctr.url.href}${colors.reset} FROM ${ctr.client.ip}`)
+		console.log(`${colors.fg.blue}[INF] ${colors.fg.cyan}[${ctr.url.method}] ${colors.fg.gray}${ctr.url.path}${colors.reset} FROM ${ctr.client.ip}`)
 	})
 
 	server.start().then((res) => {

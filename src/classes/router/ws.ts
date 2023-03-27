@@ -7,7 +7,7 @@ export default class RouteWS {
 	/** Generate Content Type Block */
 	constructor(
 		/** The Path of the Routes */ path: string,
-		/** The Validations to add */ validations?: Routed[]
+		/** The Validations to add */ validations: Routed[] = []
 	) {
 		this.data = {
 			type: 'websocket',

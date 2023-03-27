@@ -1,5 +1,6 @@
 {
   "compilerOptions": {
+    "strict": true,
     "baseUrl": ".",
     "module": "CommonJS",
     "moduleResolution": "Node16",

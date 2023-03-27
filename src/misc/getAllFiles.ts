@@ -1,6 +1,6 @@
 import { promises as fs } from "fs"
 
-export const getAllFiles = async(dirPath: string, arrayOfFiles?: string[]) => {
+export const getAllFiles = async(dirPath: string, arrayOfFiles?: string[]): Promise<string[]> => {
 	arrayOfFiles = arrayOfFiles || []
 
 	const files = await fs.readdir(dirPath)
@@ -17,7 +17,7 @@ export const getAllFiles = async(dirPath: string, arrayOfFiles?: string[]) => {
 	return arrayOfFiles
 }
 
-export const getAllFilesFilter = async(dirPath: string, suffix: string, arrayOfFiles?: string[]) => {
+export const getAllFilesFilter = async(dirPath: string, suffix: string, arrayOfFiles?: string[]): Promise<string[]> => {
 	arrayOfFiles = arrayOfFiles || []
 
 	arrayOfFiles = (await getAllFiles(dirPath, arrayOfFiles)).filter((file) => file.endsWith(suffix))

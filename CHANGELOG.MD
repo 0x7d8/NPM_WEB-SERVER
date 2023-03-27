@@ -1,3 +1,12 @@
+## 5.6.0
+
+- Switch Typescript to strict mode
+- Allow undefined for ctr.print()
+- Fix errors when using ctr.close() on websockets
+- Add Custom URL Object to improve Typescript happiness
+- Use DeepRequired for Internal Server Options
+- Moved pathParser to URLObject
+
 ## 5.5.2
 
 - Add ctr.rawBody and ctr.rawMessage to always allow getting unparsed messages

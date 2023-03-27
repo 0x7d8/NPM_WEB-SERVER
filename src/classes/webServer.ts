@@ -2,13 +2,14 @@ import * as ServerEvents from "../types/serverEvents"
 import { GlobalContext } from "../types/context"
 import ValueCollection from "./valueCollection"
 import ServerOptions, { Options } from "./serverOptions"
-import RouteList, { pathParser } from "./router"
+import RouteList from "./router"
 import handleHTTPRequest, { getPreviousHours } from "../functions/web/handleHTTPRequest"
 import handleWSUpgrade from "../functions/web/handleWSUpgrade"
 import handleWSOpen from "../functions/web/handleWSOpen"
 import handleWSMessage from "../functions/web/handleWSMessage"
 import handleWSClose from "../functions/web/handleWSClose"
 import { RouteFile } from "../types/external"
+import { pathParser } from "./URLObject"
 import Route from "../types/route"
 import { getAllFilesFilter } from "../misc/getAllFiles"
 import { promises as fs } from "fs"
@@ -18,8 +19,8 @@ import path from "path"
 
 export default class Webserver extends RouteList {
 	private globalContext: GlobalContext
-	private server: uWebsocket.TemplatedApp
-	private socket: uWebsocket.us_listen_socket
+	private server: uWebsocket.TemplatedApp = uWebsocket.App()
+	private socket: uWebsocket.us_listen_socket = 0
 
 	/**
 	 * Initialize a new Server
@@ -36,12 +37,12 @@ export default class Webserver extends RouteList {
 	) {
 		super()
 
-		options = new ServerOptions(options).getOptions()
+		const fullOptions = new ServerOptions(options).getOptions()
 		this.globalContext = {
 			controller: this,
 			contentTypes: {},
 			defaultHeaders: {},
-			options,
+			options: fullOptions,
 			requests: {
 				total: 0,
 				0: 0, 1: 0, 2: 0, 3: 0,
@@ -103,8 +104,8 @@ export default class Webserver extends RouteList {
 				static: [],
 				event: [],
 			}, cache: {
-				files: new ValueCollection(undefined, undefined, options.cache),
-				routes: new ValueCollection(undefined, undefined, options.cache)
+				files: new ValueCollection(undefined, undefined, fullOptions.cache),
+				routes: new ValueCollection(undefined, undefined, fullOptions.cache)
 			}
 		}
 
@@ -112,9 +113,9 @@ export default class Webserver extends RouteList {
 		setInterval(() => {
 			const previousHours = getPreviousHours()
 
-			this.globalContext.requests[previousHours[0] - 1] = 0
-			this.globalContext.data.incoming[previousHours[0] - 1] = 0
-			this.globalContext.data.outgoing[previousHours[0] - 1] = 0
+			this.globalContext.requests[previousHours[6]] = 0
+			this.globalContext.data.incoming[previousHours[6]] = 0
+			this.globalContext.data.outgoing[previousHours[6]] = 0
 		}, 300000)
 	}
 
@@ -361,7 +362,7 @@ export default class Webserver extends RouteList {
 		for (const loadPath of (await this.getRoutes()).loadPaths) {
 			if (loadPath.type === 'cjs') {
 				for (const file of await getAllFilesFilter(loadPath.path, 'js')) {
-					const route: Partial<RouteFile> = require(file)
+					const route: RouteFile = require(file)
 
 					if (
 						!('method' in route) ||
@@ -382,7 +383,7 @@ export default class Webserver extends RouteList {
 				}
 			} else {
 				for (const file of await getAllFilesFilter(loadPath.path, 'js')) {
-					const route: Partial<RouteFile> = (await import(file)).default
+					const route: RouteFile = (await import(file)).default
 
 					if (
 						!('method' in route) ||

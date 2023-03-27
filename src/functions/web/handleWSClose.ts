@@ -17,6 +17,8 @@ export default function handleWSClose(ws: WebSocket<WebSocketContext>, message: 
 	ctg.data.incoming[ctx.previousHours[4]] += message.byteLength
 
 	ctx.handleError = (err) => {
+		if (!err) return
+
 		ctx.error = err
 		ctx.execute.event = 'wsCloseError'
 	}
@@ -28,10 +30,10 @@ export default function handleWSClose(ws: WebSocket<WebSocketContext>, message: 
 		else hostIp = ctx.remoteAddress.split(':')[0]
 
 		// Turn Cookies into Object
-		let cookies = {}
+		let cookies: Record<string, string> = {}
 		if (ctx.headers['cookie']) ctx.headers['cookie'].split(';').forEach((cookie) => {
 			const parts = cookie.split('=')
-			cookies[parts.shift().trim()] = parts.join('=')
+			cookies[parts.shift()!.trim()] = parts.join('=')
 		})
 
 		// Parse Socket Message
@@ -46,7 +48,7 @@ export default function handleWSClose(ws: WebSocket<WebSocketContext>, message: 
 
 			// Properties
 			controller: ctg.controller,
-			headers: new ValueCollection(ctx.headers, decodeURIComponent),
+			headers: new ValueCollection(ctx.headers, decodeURIComponent) as any,
 			cookies: new ValueCollection(cookies, decodeURIComponent),
 			params: new ValueCollection(ws.getUserData().params, decodeURIComponent),
 			queries: new ValueCollection(parseQuery(ctx.url.query) as any, decodeURIComponent),
@@ -78,12 +80,13 @@ export default function handleWSClose(ws: WebSocket<WebSocketContext>, message: 
 				await handleEvent(ctx.execute.event, ctr, ctx, ctg)
 				return resolve()
 			}; if (eventOnly) return resolve()
+			if (!ctx.execute.route) return
 
 			// Execute Normal Route
 			if ('onClose' in ctx.execute.route && ctx.execute.route.type === 'websocket' && ctx.executeCode) {
 				try {
-					await Promise.resolve(ctx.execute.route.onClose(ctr))
-				} catch (err) {
+					await Promise.resolve(ctx.execute.route.onClose!(ctr))
+				} catch (err: any) {
 					ctx.error = err
 					ctx.execute.event = 'wsCloseError'
 					await runPageLogic()

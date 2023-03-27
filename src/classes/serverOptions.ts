@@ -1,5 +1,6 @@
 import { Content } from "../functions/parseContent"
 import { CompressTypes } from "../functions/handleCompressType"
+import { DeepRequired } from "../types/internal"
 
 export interface Options {
 	/** HTTP Body Settings */ body?: {
@@ -78,10 +79,10 @@ export interface Options {
 }
 
 export default class ServerOptions {
-	private data: Options
+	private data: DeepRequired<Options>
 
 	/** Server Options Helper */
-	constructor(options: Partial<Options>) {
+	constructor(options: Options) {
 		this.data = this.mergeOptions({
 			body: {
 				enabled: true,
@@ -105,23 +106,18 @@ export default class ServerOptions {
 		}, options)
 	}
 
-	private mergeOptions(...objects: Partial<Options>[]): Options {
-		const isObject = (obj: Options) => (obj && typeof obj === 'object')
-
-		return objects.reduce((prev, obj) => {
-			Object.keys(obj).forEach((key) => {
-				const pVal = prev[key]
-				const oVal = obj[key]
-
-				if (key !== 'functions' && key !== 'routes') {
-					if (Array.isArray(pVal) && Array.isArray(oVal)) prev[key] = pVal.concat(...oVal)
-					else if (isObject(pVal) && isObject(oVal)) prev[key] = this.mergeOptions(pVal, oVal)
-					else prev[key] = oVal
-				} else prev[key] = oVal
+	private mergeOptions(original: Options, user: Options): DeepRequired<Options> {
+		const handleObject = (original: Record<string, any>, user: Record<string, any>) => {
+			let output: Record<string, any> = {}
+			Object.keys(original).forEach((key) => {
+				if (key in user) output[key] = user[key]
+				else output[key] = original[key]
 			})
-			
-			return prev
-		}, {}) as any
+
+			return output
+		}
+
+		return handleObject(original, user) as any
 	}
 
 	/** Get the Resulting Options */

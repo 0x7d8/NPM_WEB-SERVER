@@ -2,7 +2,7 @@ import { ExternalRouter, LoadPath, Routed, HTTPMethods } from "../../types/inter
 import Static from "../../types/static"
 import Route from "../../types/route"
 import WebSocket from "../../types/webSocket"
-import { pathParser } from "."
+import { pathParser } from "../URLObject"
 import types from "../../misc/methods"
 
 import path from "path"
@@ -318,7 +318,7 @@ export default class RoutePath {
 		const routes = [...this.routes], webSockets = [...this.webSockets],
 			statics = [...this.statics], loadPaths = [...this.loadPaths]
 		for (const external of this.externals) {
-			const result = await external.object[external.method]()
+			const result = await (external.object as any)[external.method]()
 
 			if ('routes' in result) routes.push(...result.routes)
 			if ('webSockets' in result) webSockets.push(...result.webSockets)

@@ -6,23 +6,6 @@ import RoutePath from "./path"
 import RouteContentTypes from "./contentTypes"
 import RouteDefaultHeaders from "./defaultHeaders"
 
-export const pathParser = (path: string | string[], removeSingleSlash?: boolean) => {
-	const paths = typeof path === 'string' ? [path] : path
-	let output = ''
-
-	for (let pathIndex = 0; pathIndex < paths.length; pathIndex++) {
-		path = paths[pathIndex].replace(/\/{2,}/g, '/')
-
-		if (path.endsWith('?')) path = path.slice(0, -1)
-		if (path.endsWith('/') && path !== '/') path = path.slice(0, -1)
-		if (!path.startsWith('/') && path !== '/') path = `/${path}`
-
-		output += (removeSingleSlash && path === '/') ? '' : path || '/'
-	}
-
-	return output.replace(/\/{2,}/g, '/')
-}
-
 export default class RouteList {
 	protected middlewares: Middleware[]
 	private externals: ExternalRouter[]
@@ -162,7 +145,7 @@ export default class RouteList {
 		const routes = [], webSockets = [], statics = [], loadPaths = []
 		let contentTypes = {}, defaultHeaders = {}
 		for (const external of this.externals) {
-			const result = await external.object[external.method]()
+			const result = await (external.object as any)[external.method]()
 
 			if ('routes' in result) routes.push(...result.routes)
 			if ('webSockets' in result) webSockets.push(...result.webSockets)

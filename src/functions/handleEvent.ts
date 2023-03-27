@@ -10,15 +10,15 @@ export default async function handleEvent(eventParam: Events, ctr: any, ctx: Int
 				// Default RuntimeError
 				console.error(ctx.error)
 				ctx.response.status = 500
-				ctx.response.content = Buffer.from(`An Error occured\n${ctx.error.stack}`)
+				ctx.response.content = Buffer.from(`An Error occured\n${ctx.error!.stack}`)
 				ctx.execute.event = 'none'
 			} else {
 				// Custom RuntimeError
 				try {
 					if (event.name !== 'runtimeError') return
-					await Promise.resolve(event.code(ctr, ctx.error))
+					await Promise.resolve(event.code(ctr, ctx.error!))
 					ctx.execute.event = 'none'
-				} catch (err) {
+				} catch (err: any) {
 					console.error(err)
 					ctx.response.status = 500
 					ctx.response.content = Buffer.from(`An Error occured in your Error Event (what the hell?)\n${err.stack}`)
@@ -37,14 +37,14 @@ export default async function handleEvent(eventParam: Events, ctr: any, ctx: Int
 			if (!event) {
 				// Default WsError
 				console.error(ctx.error)
-				ctx.response.content = Buffer.from(`An Error occured\n${ctx.error.stack}`)
+				ctx.response.content = Buffer.from(`An Error occured\n${ctx.error!.stack}`)
 				ctx.execute.event = 'none'
 			} else {
 				// Custom WsError
 				try {
-					await Promise.resolve(event.code(ctr, ctx.error))
+					await Promise.resolve(event.code(ctr, ctx.error!))
 					ctx.execute.event = 'none'
-				} catch (err) {
+				} catch (err: any) {
 					console.error(err)
 					ctx.response.content = Buffer.from(`An Error occured in your WsError Event (what the hell?)\n${err.stack}`)
 					ctx.execute.event = 'none'
@@ -63,7 +63,7 @@ export default async function handleEvent(eventParam: Events, ctr: any, ctx: Int
 					if (event.name !== 'httpRequest') return
 					await Promise.resolve(event.code(ctr))
 					ctx.execute.event = 'none'
-				} catch (err) {
+				} catch (err: any) {
 					ctx.error = err
 					await handleEvent('runtimeError', ctr, ctx, ctg)
 					ctx.execute.event = 'none'
@@ -87,7 +87,7 @@ export default async function handleEvent(eventParam: Events, ctr: any, ctx: Int
 					if (event.name !== 'http404') return
 					await Promise.resolve(event.code(ctr))
 					ctx.execute.event = 'none'
-				} catch (err) {
+				} catch (err: any) {
 					ctx.error = err
 					await handleEvent('runtimeError', ctr, ctx, ctg)
 					ctx.execute.event = 'none'

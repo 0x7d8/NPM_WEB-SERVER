@@ -27,9 +27,9 @@ export default class ValueCollection<Key extends string | number | symbol = stri
 	/** Get a Key */
 	get(
 		/** The Key to get */ key: Key,
-		/** The Fallback Value */ fallback?: Value
-	): Value | undefined {
-		return this.data[key] ?? fallback
+		/** The Fallback Value */ fallback?: Value | undefined
+	): Value {
+		return this.data[key] ?? (fallback as any)
 	}
 
 	/** Set a Key */
@@ -110,7 +110,7 @@ export default class ValueCollection<Key extends string | number | symbol = stri
 
 		let sortedData = Object.assign({}, this.data)
 		for (const key in sortedData) {
-			if (excluded.includes(key)) sortedData[key] = undefined
+			if (excluded.includes(key)) delete sortedData[key]
 		}
 
 		return (Object.keys(this.data) as Key[])

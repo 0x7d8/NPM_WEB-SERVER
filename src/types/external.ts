@@ -3,10 +3,10 @@ import ValueCollection from "../classes/valueCollection"
 import { HTTPMethods } from "./internal"
 import ServerController from "../classes/webServer"
 import Event from "./event"
-import { UrlWithStringQuery } from "url"
 import { Readable } from "stream"
 import { GlobalContext, InternalContext } from "./context"
 import { Content } from "../functions/parseContent"
+import URLObject from "../classes/URLObject"
 
 type UnionToIntersection<U>
 	= (U extends any ? (k: U) => void : never) extends ((k: infer I) => void) ? I : never
@@ -123,7 +123,7 @@ export interface HTTPRequestContext<Custom = {}, Body = unknown> {
 	/**
 	 * The Requested URL
 	 * @since 0.0.2
-	*/ readonly url: UrlWithStringQuery & { method: HTTPMethods }
+	*/ readonly url: URLObject
 
 	/**
 	 * The Raw HTTP Server Req Variable

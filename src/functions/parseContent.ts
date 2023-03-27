@@ -7,6 +7,7 @@ export type Content =
 	| Set<any>
 	| number
 	| boolean
+	| undefined
 	| Record<any, any>
 	| symbol
 	| Function

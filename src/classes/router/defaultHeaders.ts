@@ -5,7 +5,7 @@ export default class RouteContentTypes {
 
 	/** Generate Content Type Block */
 	constructor(
-		/** Headers to import */ defaultHeaders: Record<Lowercase<string>, Content> = {}
+		/** Headers to import */ defaultHeaders: Record<string, Content> = {}
 	) {
 		this.defaultHeaders = defaultHeaders
 	}
@@ -36,11 +36,11 @@ export default class RouteContentTypes {
 	 * @since 5.3.0
 	*/
 	protected async getHeaders() {
-		const parsedHeaders: Record<Lowercase<string>, string> = {}
+		const parsedHeaders: Record<string, string> = {}
 
 		for (const header in this.defaultHeaders) {
 			try {
-				const value = (await parseContent(this.defaultHeaders[header])).content.toString()
+				const value = (await parseContent(this.defaultHeaders[header as any])).content.toString()
 				parsedHeaders[header] = value
 			} catch (err) { }
 		}

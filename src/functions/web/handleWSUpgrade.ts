@@ -2,7 +2,6 @@ import { GlobalContext, InternalContext } from "../../types/context"
 import { HttpRequest, HttpResponse, us_socket_context_t } from "uWebSockets.js"
 import { getPreviousHours } from "./handleHTTPRequest"
 import { Task } from "../../types/internal"
-import { parse as parseURL } from "url"
 import { parse as parseQuery } from "querystring"
 import parseContent, { Returns as ParseContentReturns } from "../parseContent"
 import handleCompressType, { CompressMapping } from "../handleCompressType"
@@ -10,12 +9,13 @@ import handleContentType from "../handleContentType"
 import handleEvent from "../handleEvent"
 import ValueCollection from "../../classes/valueCollection"
 import { HTTPRequestContext } from "../../types/external"
-import { pathParser } from "../../classes/router"
+import { pathParser } from "../../classes/URLObject"
 import { createReadStream } from "fs"
 import { Version } from "../.."
 import statsRoute from "../../stats/routes"
 import { EventEmitter } from "events"
 import { WebSocketContext } from "../../types/webSocket"
+import URLObject from "../../classes/URLObject"
 
 export default function handleWSUpgrade(req: HttpRequest, res: HttpResponse, connection: us_socket_context_t, ctg: GlobalContext) {
   let ctx: InternalContext = {
@@ -31,7 +31,7 @@ export default function handleWSUpgrade(req: HttpRequest, res: HttpResponse, con
 			for (let queueIndex = 0; !!sortedQueue[queueIndex]; queueIndex++) {
 				try {
 					await Promise.resolve(sortedQueue[queueIndex].function())
-				} catch (err) {
+				} catch (err: any) {
 					result = err
 					break
 				}
@@ -39,12 +39,12 @@ export default function handleWSUpgrade(req: HttpRequest, res: HttpResponse, con
 
 			return result
 		}, handleError(err) {
+			if (!err) return
+
 			ctx.error = err
 			ctx.execute.event = 'runtimeError'
-		}, url: {
-			...parseURL(pathParser(req.getUrl() + '?' + req.getQuery())),
-			method: req.getMethod().toUpperCase() as any
-		}, continueSend: true,
+		}, url: new URLObject(req.getUrl() + '?' + req.getQuery(), req.getMethod()),
+		continueSend: true,
 		executeCode: true,
 		remoteAddress: Buffer.from(res.getRemoteAddressAsText()).toString(),
 		error: null,
@@ -108,8 +108,8 @@ export default function handleWSUpgrade(req: HttpRequest, res: HttpResponse, con
 
   {(async() => {
     /// Check if URL exists
-		let params = {}
-		const actualUrl = ctx.url.pathname.split('/')
+		let params: Record<string, string> = {}
+		const actualUrl = ctx.url.path.split('/')
 
 		// Check Dashboard Paths
 		if (ctg.options.dashboard.enabled && ctx.url.path === pathParser(ctg.options.dashboard.path) + '/stats') {
@@ -133,10 +133,10 @@ export default function handleWSUpgrade(req: HttpRequest, res: HttpResponse, con
 			const url = ctg.routes.websocket[urlNumber]
 
 			// Get From Cache
-			if (ctg.cache.routes.has(`route::ws::${ctx.url.pathname}`)) {
-				const url = ctg.cache.routes.get(`route::ws::${ctx.url.pathname}`)
+			if (ctg.cache.routes.has(`route::ws::${ctx.url.path}`)) {
+				const url = ctg.cache.routes.get(`route::ws::${ctx.url.path}`)
 
-				params = url.params
+				params = url.params!
 				ctx.execute.route = url.route
 				ctx.execute.exists = true
 
@@ -147,12 +147,12 @@ export default function handleWSUpgrade(req: HttpRequest, res: HttpResponse, con
 			if (url.pathArray.length !== actualUrl.length) continue
 
 			// Check for Static Paths
-			if (url.path === ctx.url.pathname) {
+			if (url.path === ctx.url.path) {
 				ctx.execute.route = url
 				ctx.execute.exists = true
 
 				// Set Cache
-				ctg.cache.routes.set(`route::ws::${ctx.url.pathname}`, { route: url, params: {} })
+				ctg.cache.routes.set(`route::ws::${ctx.url.path}`, { route: url, params: {} })
 
 				break
 			}
@@ -175,7 +175,7 @@ export default function handleWSUpgrade(req: HttpRequest, res: HttpResponse, con
 				}; continue
 			}; if (ctx.execute.exists) {
 				// Set Cache
-				ctg.cache.routes.set(`route::ws::${ctx.url.pathname}`, { route: url, params: params })
+				ctg.cache.routes.set(`route::ws::${ctx.url.path}`, { route: url, params: params })
 
 				break
 			}
@@ -189,10 +189,10 @@ export default function handleWSUpgrade(req: HttpRequest, res: HttpResponse, con
 		else hostIp = ctx.remoteAddress.split(':')[0]
 
 		// Turn Cookies into Object
-		let cookies = {}
+		let cookies: Record<string, string> = {}
 		if (ctx.headers['cookie']) ctx.headers['cookie'].split(';').forEach((cookie) => {
 			const parts = cookie.split('=')
-			cookies[parts.shift().trim()] = parts.join('=')
+			cookies[parts.shift()!.trim()] = parts.join('=')
 		})
 
 		// Parse Request Body
@@ -205,10 +205,10 @@ export default function handleWSUpgrade(req: HttpRequest, res: HttpResponse, con
 		let ctr: HTTPRequestContext = {
 			// Properties
 			controller: ctg.controller,
-			headers: new ValueCollection(ctx.headers, decodeURIComponent),
+			headers: new ValueCollection(ctx.headers, decodeURIComponent) as any,
 			cookies: new ValueCollection(cookies, decodeURIComponent),
 			params: new ValueCollection(params, decodeURIComponent),
-			queries: new ValueCollection(parseQuery(ctx.url.query) as any, decodeURIComponent),
+			queries: new ValueCollection(parseQuery(ctx.url.query as any) as any, decodeURIComponent),
 
 			// Variables
 			client: {
@@ -234,7 +234,7 @@ export default function handleWSUpgrade(req: HttpRequest, res: HttpResponse, con
 					let result: ParseContentReturns
 					try {
 						result = await parseContent(value)
-					} catch (err) {
+					} catch (err: any) {
 						return ctx.handleError(err)
 					}
 
@@ -263,7 +263,7 @@ export default function handleWSUpgrade(req: HttpRequest, res: HttpResponse, con
 					let result: ParseContentReturns
 					try {
 						result = await parseContent(content)
-					} catch (err) {
+					} catch (err: any) {
 						return ctx.handleError(err)
 					}
 
@@ -413,7 +413,7 @@ export default function handleWSUpgrade(req: HttpRequest, res: HttpResponse, con
 						const dataListener = async(data: Buffer) => {
 							try {
 								data = (await parseContent(data)).content
-							} catch (err) {
+							} catch (err: any) {
 								return ctx.handleError(err)
 							}
 		
@@ -465,7 +465,7 @@ export default function handleWSUpgrade(req: HttpRequest, res: HttpResponse, con
 					await Promise.resolve(middleware.code(ctr, ctx, ctg))
 					if (!String(ctx.response.status).startsWith('2')) ctx.executeCode = false
 					if (ctx.error) doContinue = false
-				} catch (err) {
+				} catch (err: any) {
 					doContinue = false
 					ctx.error = err
 				}
@@ -478,14 +478,14 @@ export default function handleWSUpgrade(req: HttpRequest, res: HttpResponse, con
 		await handleEvent('httpRequest', ctr, ctx, ctg)
 
 		// Execute Validations
-		if (ctx.execute.exists && ctx.execute.route.data.validations.length > 0 && !ctx.error) {
-			for (let validateIndex = 0; validateIndex <= ctx.execute.route.data.validations.length - 1; validateIndex++) {
-				const validate = ctx.execute.route.data.validations[validateIndex]
+		if (ctx.execute.exists && ctx.execute.route!.data.validations.length > 0 && !ctx.error) {
+			for (let validateIndex = 0; validateIndex <= ctx.execute.route!.data.validations.length - 1; validateIndex++) {
+				const validate = ctx.execute.route!.data.validations[validateIndex]
 
 				try {
 					await Promise.resolve(validate(ctr))
 					if (!String(ctx.response.status).startsWith('2')) ctx.executeCode = false
-				} catch (err) {
+				} catch (err: any) {
 					ctx.error = err
 					ctx.execute.event = 'runtimeError'
 				}
@@ -500,6 +500,7 @@ export default function handleWSUpgrade(req: HttpRequest, res: HttpResponse, con
 				await handleEvent(ctx.execute.event, ctr, ctx, ctg)
 				return resolve()
 			}; if (eventOnly) return resolve()
+			if (!ctx.execute.route) return
 
 			// Execute Normal Route
 			if (ctx.execute.route.type === 'websocket' && ctx.executeCode) {
@@ -517,7 +518,7 @@ export default function handleWSUpgrade(req: HttpRequest, res: HttpResponse, con
               connection
             )
           })
-				} catch (err) {
+				} catch (err: any) {
 					ctx.error = err
 					ctx.execute.event = 'runtimeError'
 					await runPageLogic()

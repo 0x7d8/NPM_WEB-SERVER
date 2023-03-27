@@ -1,11 +1,11 @@
 import ValueCollection from "../classes/valueCollection"
-import { UrlWithStringQuery } from "url"
 import { PrintStreamOptions } from "./external"
 import { Routed } from "./internal"
 import { Content } from "../functions/parseContent"
 import ServerController from "../classes/webServer"
 import { Readable } from "stream"
 import { InternalContext } from "./context"
+import URLObject from "../classes/URLObject"
 
 export default interface Websocket {
 	/** The Type of this Object */ type: 'websocket'
@@ -99,7 +99,7 @@ export interface WebSocketConnect<Custom = {}> {
 	/**
 	 * The Requested URL
 	 * @since 5.4.0
-	*/ readonly url: UrlWithStringQuery
+	*/ readonly url: URLObject
 
 	/**
 	 * Set a Custom Variable
@@ -124,7 +124,7 @@ export interface WebSocketConnect<Custom = {}> {
 	 * ctr.close('this is text!')
 	 * ```
 	 * @since 5.4.0
-	*/ close(content: Content): this
+	*/ close(content?: Content): this
 	/**
 	 * Print a Message to the Client (automatically Formatted)
 	 * @example
@@ -235,7 +235,7 @@ export interface WebSocketMessage<Custom = {}, Body = unknown> {
 	/**
 	 * The Requested URL
 	 * @since 5.4.0
-	*/ readonly url: UrlWithStringQuery
+	*/ readonly url: URLObject
 
 	/**
 	 * Set a Custom Variable
@@ -260,7 +260,7 @@ export interface WebSocketMessage<Custom = {}, Body = unknown> {
 	 * ctr.close('this is text!')
 	 * ```
 	 * @since 5.4.0
-	*/ close(content: Content): this
+	*/ close(content?: Content): this
 	/**
 	 * Print a Message to the Client (automatically Formatted)
 	 * @example
@@ -371,7 +371,7 @@ export interface WebSocketClose<Custom = {}, Body = unknown> {
 	/**
 	 * The Requested URL
 	 * @since 5.4.0
-	*/ readonly url: UrlWithStringQuery
+	*/ readonly url: URLObject
 
 	/**
 	 * Set a Custom Variable

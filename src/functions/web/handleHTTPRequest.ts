@@ -1,7 +1,7 @@
-import { GlobalContext, InternalContext } from "../../types/context"
+import { GlobalContext, Hours, InternalContext } from "../../types/context"
 import { HttpRequest, HttpResponse } from "uWebSockets.js"
-import { pathParser } from "../../classes/router/index"
-import { parse as parseURL } from "url"
+import { pathParser } from "../../classes/URLObject"
+import URLObject from "../../classes/URLObject"
 import { resolve as pathResolve } from "path"
 import parseContent, { Returns as ParseContentReturns } from "../parseContent"
 import { Task } from "../../types/internal"
@@ -17,8 +17,9 @@ import { Version } from "../../index"
 import EventEmitter from "events"
 import Static from "../../types/static"
 
-export const getPreviousHours = () =>
-	Array.from({ length: 5 }, (_, i) => (new Date().getHours() - (4 - i) + 24) % 24)
+export const getPreviousHours = (): Hours[] => {
+	return Array.from({ length: 7 }, (_, i) => (new Date().getHours() - (4 - i) + 24) % 24) as any
+}
 
 export default function handleHTTPRequest(req: HttpRequest, res: HttpResponse, ctg: GlobalContext) {
 	let ctx: InternalContext = {
@@ -34,7 +35,7 @@ export default function handleHTTPRequest(req: HttpRequest, res: HttpResponse, c
 			for (let queueIndex = 0; !!sortedQueue[queueIndex]; queueIndex++) {
 				try {
 					await Promise.resolve(sortedQueue[queueIndex].function())
-				} catch (err) {
+				} catch (err: any) {
 					result = err
 					break
 				}
@@ -42,12 +43,12 @@ export default function handleHTTPRequest(req: HttpRequest, res: HttpResponse, c
 
 			return result
 		}, handleError(err) {
+			if (!err) return
+
 			ctx.error = err
 			ctx.execute.event = 'runtimeError'
-		}, url: {
-			...parseURL(pathParser(req.getUrl() + '?' + req.getQuery())),
-			method: req.getMethod().toUpperCase() as any
-		}, continueSend: true,
+		}, url: new URLObject(req.getUrl() + '?' + req.getQuery(), req.getMethod()),
+		continueSend: true,
 		executeCode: true,
 		remoteAddress: Buffer.from(res.getRemoteAddressAsText()).toString(),
 		error: null,
@@ -136,8 +137,8 @@ export default function handleHTTPRequest(req: HttpRequest, res: HttpResponse, c
 	// Handle Response Data
 	ctx.events.once('startRequest', async() => {
 		/// Check if URL exists
-		let params = {}
-		const actualUrl = ctx.url.pathname.split('/')
+		let params: Record<string, string> = {}
+		const actualUrl = ctx.url.path.split('/')
 
 		// Check Static Paths
 		const foundStatic = (file: string, url: Static) => {
@@ -146,28 +147,28 @@ export default function handleHTTPRequest(req: HttpRequest, res: HttpResponse, c
 			ctx.execute.exists = true
 
 			// Set Cache
-			ctg.cache.routes.set(`route::static::${ctx.url.pathname}`, { route: url, file })
+			ctg.cache.routes.set(`route::static::${ctx.url.path}`, { route: url, file })
 		}; for (let staticNumber = 0; staticNumber < ctg.routes.static.length; staticNumber++) {
 			if (ctx.execute.exists) break
 
 			const url = ctg.routes.static[staticNumber]
 
 			// Get From Cache
-			if (ctg.cache.routes.has(`route::static::${ctx.url.pathname}`)) {
-				const url = ctg.cache.routes.get(`route::static::${ctx.url.pathname}`)
+			if (ctg.cache.routes.has(`route::static::${ctx.url.path}`)) {
+				const url = ctg.cache.routes.get(`route::static::${ctx.url.path}`)
 
-				ctx.execute.file = url.file
-				ctx.execute.route = url.route
+				ctx.execute.file = url.file!
+				ctx.execute.route = url.route!
 				ctx.execute.exists = true
 
 				break
 			}
 
 			// Skip if not related
-			if (!ctx.url.pathname.startsWith(url.path)) continue
+			if (!ctx.url.path.startsWith(url.path)) continue
 
 			// Find File
-			const urlPath = pathParser(ctx.url.pathname.replace(url.path, '')).substring(1)
+			const urlPath = pathParser(ctx.url.path.replace(url.path, '')).substring(1)
 
 			const fileExists = async(location: string) => {
 				location = pathResolve(location)
@@ -210,10 +211,10 @@ export default function handleHTTPRequest(req: HttpRequest, res: HttpResponse, c
 			const url = ctg.routes.normal[urlNumber]
 
 			// Get From Cache
-			if (ctg.cache.routes.has(`route::normal::${ctx.url.pathname}::${ctx.url.method}`)) {
-				const url = ctg.cache.routes.get(`route::normal::${ctx.url.pathname}::${ctx.url.method}`)
+			if (ctg.cache.routes.has(`route::normal::${ctx.url.path}::${ctx.url.method}`)) {
+				const url = ctg.cache.routes.get(`route::normal::${ctx.url.path}::${ctx.url.method}`)
 
-				params = url.params
+				params = url.params!
 				ctx.execute.route = url.route
 				ctx.execute.exists = true
 
@@ -225,12 +226,12 @@ export default function handleHTTPRequest(req: HttpRequest, res: HttpResponse, c
 			if (url.pathArray.length !== actualUrl.length) continue
 
 			// Check for Static Paths
-			if (url.path === ctx.url.pathname && url.method === ctx.url.method) {
+			if (url.path === ctx.url.path && url.method === ctx.url.method) {
 				ctx.execute.route = url
 				ctx.execute.exists = true
 
 				// Set Cache
-				ctg.cache.routes.set(`route::normal::${ctx.url.pathname}::${ctx.url.method}`, { route: url, params: {} })
+				ctg.cache.routes.set(`route::normal::${ctx.url.path}::${ctx.url.method}`, { route: url, params: {} })
 
 				break
 			}
@@ -253,7 +254,7 @@ export default function handleHTTPRequest(req: HttpRequest, res: HttpResponse, c
 				}; continue
 			}; if (ctx.execute.exists) {
 				// Set Cache
-				ctg.cache.routes.set(`route::normal::${ctx.url.pathname}::${ctx.url.method}`, { route: url, params: params })
+				ctg.cache.routes.set(`route::normal::${ctx.url.path}::${ctx.url.method}`, { route: url, params: params })
 
 				break
 			}
@@ -267,10 +268,10 @@ export default function handleHTTPRequest(req: HttpRequest, res: HttpResponse, c
 		else hostIp = ctx.remoteAddress.split(':')[0]
 
 		// Turn Cookies into Object
-		let cookies = {}
+		let cookies: Record<string, string> = {}
 		if (ctx.headers['cookie']) ctx.headers['cookie'].split(';').forEach((cookie) => {
 			const parts = cookie.split('=')
-			cookies[parts.shift().trim()] = parts.join('=')
+			cookies[parts.shift()!.trim()] = parts.join('=')
 		})
 
 		// Parse Request Body
@@ -283,10 +284,10 @@ export default function handleHTTPRequest(req: HttpRequest, res: HttpResponse, c
 		let ctr: HTTPRequestContext = {
 			// Properties
 			controller: ctg.controller,
-			headers: new ValueCollection(ctx.headers, decodeURIComponent),
+			headers: new ValueCollection(ctx.headers, decodeURIComponent) as any,
 			cookies: new ValueCollection(cookies, decodeURIComponent),
 			params: new ValueCollection(params, decodeURIComponent),
-			queries: new ValueCollection(parseQuery(ctx.url.query) as any, decodeURIComponent),
+			queries: new ValueCollection(parseQuery(ctx.url.query as any) as any, decodeURIComponent),
 
 			// Variables
 			client: {
@@ -312,7 +313,7 @@ export default function handleHTTPRequest(req: HttpRequest, res: HttpResponse, c
 					let result: ParseContentReturns
 					try {
 						result = await parseContent(value)
-					} catch (err) {
+					} catch (err: any) {
 						return ctx.handleError(err)
 					}
 
@@ -341,7 +342,7 @@ export default function handleHTTPRequest(req: HttpRequest, res: HttpResponse, c
 					let result: ParseContentReturns
 					try {
 						result = await parseContent(content)
-					} catch (err) {
+					} catch (err: any) {
 						return ctx.handleError(err)
 					}
 
@@ -491,7 +492,7 @@ export default function handleHTTPRequest(req: HttpRequest, res: HttpResponse, c
 						const dataListener = async(data: Buffer) => {
 							try {
 								data = (await parseContent(data)).content
-							} catch (err) {
+							} catch (err: any) {
 								return ctx.handleError(err)
 							}
 		
@@ -543,7 +544,7 @@ export default function handleHTTPRequest(req: HttpRequest, res: HttpResponse, c
 					await Promise.resolve(middleware.code(ctr, ctx, ctg))
 					if (!String(ctx.response.status).startsWith('2')) ctx.executeCode = false
 					if (ctx.error) doContinue = false
-				} catch (err) {
+				} catch (err: any) {
 					doContinue = false
 					ctx.error = err
 				}
@@ -556,14 +557,14 @@ export default function handleHTTPRequest(req: HttpRequest, res: HttpResponse, c
 		await handleEvent('httpRequest', ctr, ctx, ctg)
 
 		// Execute Validations
-		if (ctx.execute.exists && ctx.execute.route.data.validations.length > 0 && !ctx.error) {
-			for (let validateIndex = 0; validateIndex <= ctx.execute.route.data.validations.length - 1; validateIndex++) {
-				const validate = ctx.execute.route.data.validations[validateIndex]
+		if (ctx.execute.exists && ctx.execute.route!.data.validations.length > 0 && !ctx.error) {
+			for (let validateIndex = 0; validateIndex <= ctx.execute.route!.data.validations.length - 1; validateIndex++) {
+				const validate = ctx.execute.route!.data.validations[validateIndex]
 
 				try {
 					await Promise.resolve(validate(ctr))
 					if (!String(ctx.response.status).startsWith('2')) ctx.executeCode = false
-				} catch (err) {
+				} catch (err: any) {
 					ctx.error = err
 					ctx.execute.event = 'runtimeError'
 				}
@@ -573,15 +574,16 @@ export default function handleHTTPRequest(req: HttpRequest, res: HttpResponse, c
 		// Execute Page Logic
 		const runPageLogic = (eventOnly?: boolean) => new Promise<void>(async(resolve) => {
 			// Execute Event
-			if (!ctx.execute.exists) ctx.execute.event = 'http404'
+			if (!ctx.execute.exists || !ctx.execute.route) ctx.execute.event = 'http404'
 			if (ctx.execute.event !== 'none') {
 				await handleEvent(ctx.execute.event, ctr, ctx, ctg)
 				return resolve()
 			}; if (eventOnly) return resolve()
+			if (!ctx.execute.route) return
 
 			// Execute Static Route
 			if (ctx.execute.route.type === 'static') {
-				ctr.printFile(ctx.execute.file)
+				ctr.printFile(ctx.execute.file!)
 				return resolve()
 			}
 
@@ -589,7 +591,7 @@ export default function handleHTTPRequest(req: HttpRequest, res: HttpResponse, c
 			if (ctx.execute.route.type === 'route' && ctx.executeCode) {
 				try {
 					await Promise.resolve(ctx.execute.route.code(ctr))
-				} catch (err) {
+				} catch (err: any) {
 					ctx.error = err
 					ctx.execute.event = 'runtimeError'
 					await runPageLogic()
