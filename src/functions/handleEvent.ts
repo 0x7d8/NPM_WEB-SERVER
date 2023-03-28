@@ -54,6 +54,25 @@ export default async function handleEvent(eventParam: Events, ctr: any, ctx: Int
 			break
 		}
 
+		case "wsRequest": {
+			const event = ctg.routes.event.find((event) => (event.name === 'wsRequest'))
+
+			if (event) {
+				// Custom HttpRequest
+				try {
+					if (event.name !== 'wsRequest') return
+					await Promise.resolve(event.code(ctr))
+					ctx.execute.event = 'none'
+				} catch (err: any) {
+					ctx.error = err
+					await handleEvent('runtimeError', ctr, ctx, ctg)
+					ctx.execute.event = 'none'
+				}
+			}
+
+			break
+		}
+
 		case "httpRequest": {
 			const event = ctg.routes.event.find((event) => (event.name === 'httpRequest'))
 

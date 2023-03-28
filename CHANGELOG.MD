@@ -1,3 +1,8 @@
+## 5.7.3
+
+- Add wsRequest Event
+- Add missing isAborted check @ CORS Headers
+
 ## 5.7.2
 
 - Add missing isAborted check

@@ -21,6 +21,11 @@ interface WsCloseError {
 	/** The Code to run when the Event occurs */ code(ctr: WebSocketClose, err: Error): Promise<any> | any
 }
 
+interface WsRequest {
+	/** The Name of the Event */ name: 'wsRequest'
+	/** The Code to run when the Event occurs */ code(ctr: HTTPRequestContext): Promise<any> | any
+}
+
 interface HttpRequest {
 	/** The Name of the Event */ name: 'httpRequest'
 	/** The Code to run when the Event occurs */ code(ctr: HTTPRequestContext): Promise<any> | any
@@ -36,11 +41,12 @@ type EventHandlerMap = {
 	wsConnectError: WsConnectError['code']
 	wsMessageError: WsMessageError['code']
 	wsCloseError: WsCloseError['code']
+	wsRequest: WsRequest['code']
 	httpRequest: HttpRequest['code']
 	http404: Http404['code']
 }
 
-type Event = RuntimeError | WsConnectError | WsMessageError | WsCloseError | HttpRequest | Http404
+type Event = RuntimeError | WsConnectError | WsMessageError | WsCloseError | WsRequest | HttpRequest | Http404
 type Events = Event['name']
 
 export { EventHandlerMap, Events }

@@ -102,7 +102,7 @@ export default function handleHTTPRequest(req: HttpRequest, res: HttpResponse, s
 		ctx.response.headers['access-control-allow-methods'] = '*'
 
 		if (ctx.url.method === 'OPTIONS') {
-			return res.cork(() => {
+			if (!isAborted) return res.cork(() => {
 				// Write Headers
 				for (const header in ctx.response.headers) {
 					if (!isAborted) res.writeHeader(header, ctx.response.headers[header])
@@ -110,6 +110,7 @@ export default function handleHTTPRequest(req: HttpRequest, res: HttpResponse, s
 
 				if (!isAborted) res.end('')
 			})
+			else return
 		}
 	}
 
@@ -618,7 +619,8 @@ export default function handleHTTPRequest(req: HttpRequest, res: HttpResponse, s
 		}
 
 		// Execute Custom Run Function
-		await handleEvent('httpRequest', ctr, ctx, ctg)
+		if (requestType === 'http') await handleEvent('httpRequest', ctr, ctx, ctg)
+		else await handleEvent('wsRequest', ctr, ctx, ctg)
 
 		// Execute Validations
 		if (ctx.execute.exists && ctx.execute.route!.data.validations.length > 0 && !ctx.error) {
