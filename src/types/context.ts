@@ -2,7 +2,7 @@ import ValueCollection from "../classes/valueCollection"
 import ServerController from "../classes/webServer"
 import { Task } from "./internal"
 import Route from "./route"
-import { Event, Middleware } from "./external"
+import { Event, MiddlewareProduction } from "./external"
 import URLObject from "../classes/URLObject"
 import { Options } from "../classes/serverOptions"
 import Static from "./static"
@@ -31,6 +31,7 @@ export interface InternalContext {
 	/** The Clients Remote IP Address */ remoteAddress: string
 	/** The Error that occured while executing HTTP Logic */ error: Error | null
 	/** The List of Headers that the Client sent */ headers: Record<string, string>
+	/** The List of Cookies that the Client sent */ cookies: Record<string, string>
 	/** An Event Emitter Responsible for all Events */ events: TypedEventEmitter<InternalEvents>
 	/** The Function to handle an Error in an Async Scenario */ handleError(err: Error | null): void
 	/** Schedule an Async Task for Execution */ scheduleQueue(type: Task['type'], callback: Task['function']): void
@@ -62,7 +63,7 @@ export interface GlobalContext {
 	/** The Default HTTP Headers List */ defaultHeaders: Record<string, string>
 	/** The HTTP Server Options */ options: DeepRequired<Options>
 	/** The Request Count */ requests: Record<Hours | 'total', number>
-	/** The Middlewares to run */ middlewares: Middleware[]
+	/** The Middlewares to run */ middlewares: ReturnType<MiddlewareProduction['init']>[]
 	/** The WebSocket Stats */ webSockets: {
 		/** The Amount of Sockets Opened */ opened: Record<Hours | 'total', number>
 		/** The Amount of Socket Messages recieved */ messages: {

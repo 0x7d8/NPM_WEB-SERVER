@@ -5,5 +5,5 @@ export default [
 	'HEAD',
 	'POST',
 	'PUT',
-	'GET'
+	'GET',
 ]

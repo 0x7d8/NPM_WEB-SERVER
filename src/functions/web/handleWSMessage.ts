@@ -5,7 +5,7 @@ import parseContent, { Returns as ParseContentReturns } from "../parseContent"
 import ValueCollection from "../../classes/valueCollection"
 import { WebSocketContext, WebSocketMessage } from "../../types/webSocket"
 import handleEvent from "../handleEvent"
-import { getPreviousHours } from "./handleHTTPRequest"
+import { getPreviousHours } from "./handleRequest"
 
 export default function handleWSConnect(ws: WebSocket<WebSocketContext>, message: ArrayBuffer, ctg: GlobalContext) {
 	let custom = ws.getUserData().custom
@@ -34,17 +34,10 @@ export default function handleWSConnect(ws: WebSocket<WebSocketContext>, message
 		if (ctg.options.proxy && ctx.headers['x-forwarded-for']) hostIp = ctx.headers['x-forwarded-for']
 		else hostIp = ctx.remoteAddress.split(':')[0]
 
-		// Turn Cookies into Object
-		let cookies: Record<string, string> = {}
-		if (ctx.headers['cookie']) ctx.headers['cookie'].split(';').forEach((cookie) => {
-			const parts = cookie.split('=')
-			cookies[parts.shift()!.trim()] = parts.join('=')
-		})
-
 		// Parse Socket Message
 		if (ctg.options.body.parse) {
 			try { ctx.body.parsed = JSON.parse(ctx.body.raw.toString()) }
-			catch (err) { ctx.body.parsed = ctx.body.raw.toString() }
+			catch { ctx.body.parsed = ctx.body.raw.toString() }
 		} else ctx.body.parsed = ctx.body.raw.toString()
 
 		// Create Context Response Object
@@ -54,7 +47,7 @@ export default function handleWSConnect(ws: WebSocket<WebSocketContext>, message
 			// Properties
 			controller: ctg.controller,
 			headers: new ValueCollection(ctx.headers, decodeURIComponent) as any,
-			cookies: new ValueCollection(cookies, decodeURIComponent),
+			cookies: new ValueCollection(ctx.cookies, decodeURIComponent),
 			params: new ValueCollection(ws.getUserData().params, decodeURIComponent),
 			queries: new ValueCollection(parseQuery(ctx.url.query) as any, decodeURIComponent),
 
@@ -171,6 +164,22 @@ export default function handleWSConnect(ws: WebSocket<WebSocketContext>, message
 				}))
 
 				return ctr
+			}
+		}
+
+		// Execute Middleware
+		if (ctg.middlewares.length > 0 && !ctx.error) {
+			for (let middlewareIndex = 0; middlewareIndex < ctg.middlewares.length; middlewareIndex++) {
+				const middleware = ctg.middlewares[middlewareIndex]
+				if (!('wsMessageEvent' in middleware.data)) continue
+
+				try {
+					await Promise.resolve(middleware.data.wsMessageEvent!(middleware.localContext, () => ctx.executeCode = false, ctr, ctx, ctg))
+					if (ctx.error) throw ctx.error
+				} catch (err: any) {
+					ctx.handleError(err)
+					break
+				}
 			}
 		}
 

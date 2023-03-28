@@ -7,6 +7,7 @@ import { Readable } from "stream"
 import { GlobalContext, InternalContext } from "./context"
 import { Content } from "../functions/parseContent"
 import URLObject from "../classes/URLObject"
+import Status from "../misc/statusEnum"
 
 type UnionToIntersection<U>
 	= (U extends any ? (k: U) => void : never) extends ((k: infer I) => void) ? I : never
@@ -46,6 +47,11 @@ export interface PrintStreamOptions {
 }
 
 export interface HTTPRequestContext<Custom = {}, Body = unknown> {
+	/**
+	 * The Type of the Request
+	 * @since 5.7.0
+	*/ type: 'http' | 'upgrade'
+
   /**
 	 * The Server Controller Class Instance
 	 * @example
@@ -159,7 +165,7 @@ export interface HTTPRequestContext<Custom = {}, Body = unknown> {
 	 * ctr.status(401).print('Unauthorized')
 	 * ```
 	 * @since 0.0.2
-	*/ status(code: number): this
+	*/ status(code: Status): this
 	/**
 	 * Redirect a Client to another URL
 	 * @example
@@ -217,9 +223,8 @@ export interface RouteFile<Custom = {}, Body = any> {
   /** The Code to run on the Request */ code: (ctr: HTTPRequestContext<Custom, Body>) => Promise<any> | any
 }
 
-export interface Middleware {
-  /** The Name of The Middleware */ name: string
-  /** The Async Code to run on a Request */ code: (ctr: HTTPRequestContext, ctx: InternalContext, ctg: GlobalContext) => Promise<any> | any
-}
-
 export { HTTPMethods, Event }
+
+export { default as Status } from "../misc/statusEnum"
+export { default as Methods } from "../misc/methodsEnum"
+export { MiddlewareProduction } from "../classes/middlewareBuilder"

@@ -329,8 +329,8 @@ const server = new Server({
   proxy: true // If enabled, alternate IPs will be shown
 })
 
-server.middleware(someMiddleware())
-server.middleware(someOtherMiddleware())
+server.middleware(someMiddleware.init())
+server.middleware(someOtherMiddleware.init())
 // For Intellisense of the Middlewares look at the Typescript Section at the top of this file
 
 server.start().then((s) => {

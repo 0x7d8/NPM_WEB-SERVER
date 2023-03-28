@@ -1,3 +1,13 @@
+### 5.7.0
+
+- Add an Enum based of RFC Docs for HTTP Statuses
+- Add an Enum based on HTTP Request Methods
+- Add a native Middleware Builder
+- Add dedicated Stop Function to Middlewares
+- Add Init Event to Middlewares
+- Add Custom Contexts to Middlewares
+- Add Websocket Support to Middlewares
+
 ## 5.6.4
 
 - Always make sure request isnt aborted before sending data

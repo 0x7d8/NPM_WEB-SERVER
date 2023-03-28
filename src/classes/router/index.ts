@@ -1,5 +1,5 @@
 import { ExternalRouter } from "../../types/internal"
-import { Middleware } from "../../types/external"
+import { MiddlewareProduction } from "../../types/external"
 import Event, { EventHandlerMap, Events } from "../../types/event"
 
 import RoutePath from "./path"
@@ -7,7 +7,7 @@ import RouteContentTypes from "./contentTypes"
 import RouteDefaultHeaders from "./defaultHeaders"
 
 export default class RouteList {
-	protected middlewares: Middleware[]
+	protected middlewares: ReturnType<MiddlewareProduction['init']>[]
 	private externals: ExternalRouter[]
 	private events: Event[]
 
@@ -57,10 +57,8 @@ export default class RouteList {
 	 * @since 4.4.0
 	*/
 	middleware(
-		/** The Middleware to run on a Request */ middleware: Middleware
+		/** The Middleware to run on a Request */ middleware: ReturnType<MiddlewareProduction['init']>
 	) {
-		if (this.middlewares.some((obj) => (obj.name === middleware.name))) return this
-
 		this.middlewares.push(middleware)
 		
 		return this

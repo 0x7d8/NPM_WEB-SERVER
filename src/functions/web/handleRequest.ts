@@ -1,24 +1,30 @@
-import { GlobalContext, InternalContext } from "../../types/context"
+import { GlobalContext, Hours, InternalContext } from "../../types/context"
 import { HttpRequest, HttpResponse, us_socket_context_t } from "uWebSockets.js"
-import { getPreviousHours } from "./handleHTTPRequest"
-import { Task } from "../../types/internal"
-import { parse as parseQuery } from "querystring"
-import parseContent, { Returns as ParseContentReturns } from "../parseContent"
-import handleCompressType, { CompressMapping } from "../handleCompressType"
-import handleContentType from "../handleContentType"
-import handleEvent from "../handleEvent"
-import ValueCollection from "../../classes/valueCollection"
-import { HTTPRequestContext } from "../../types/external"
 import { pathParser } from "../../classes/URLObject"
-import { createReadStream } from "fs"
-import { Version } from "../.."
-import statsRoute from "../../stats/routes"
-import { EventEmitter } from "events"
-import { WebSocketContext } from "../../types/webSocket"
 import URLObject from "../../classes/URLObject"
+import { resolve as pathResolve } from "path"
+import parseContent, { Returns as ParseContentReturns } from "../parseContent"
+import { Task } from "../../types/internal"
+import statsRoute from "../../stats/routes"
+import { promises as fs, createReadStream } from "fs"
+import handleContentType from "../handleContentType"
+import handleCompressType, { CompressMapping } from "../handleCompressType"
+import { parse as parseQuery } from "querystring"
+import { HTTPRequestContext } from "../../index"
+import ValueCollection from "../../classes/valueCollection"
+import handleEvent from "../handleEvent"
+import { Version } from "../../index"
+import EventEmitter from "events"
+import Status from "../../misc/statusEnum"
+import Static from "../../types/static"
+import { WebSocketContext } from "src/types/webSocket"
 
-export default function handleWSUpgrade(req: HttpRequest, res: HttpResponse, connection: us_socket_context_t, ctg: GlobalContext) {
-  let ctx: InternalContext = {
+export const getPreviousHours = (): Hours[] => {
+	return Array.from({ length: 7 }, (_, i) => (new Date().getHours() - (4 - i) + 24) % 24) as any
+}
+
+export default function handleHTTPRequest(req: HttpRequest, res: HttpResponse, socket: us_socket_context_t | null, requestType: 'http' | 'upgrade', ctg: GlobalContext) {
+	let ctx: InternalContext = {
 		queue: [],
 		scheduleQueue(type, callback) {
 			ctx.queue.push({ type, function: callback })
@@ -49,6 +55,7 @@ export default function handleWSUpgrade(req: HttpRequest, res: HttpResponse, con
 		remoteAddress: Buffer.from(res.getRemoteAddressAsText()).toString(),
 		error: null,
 		headers: {},
+		cookies: {},
 		events: new EventEmitter() as any,
 		previousHours: getPreviousHours(),
 		body: {
@@ -87,107 +94,265 @@ export default function handleWSUpgrade(req: HttpRequest, res: HttpResponse, con
 	res.onAborted(() => ctx.events.emit('requestAborted'))
 	ctx.events.once('requestAborted', () => isAborted = true)
 
-  {(async() => {
-    /// Check if URL exists
+	// Handle CORS Requests
+	if (ctg.options.cors && requestType === 'http') {
+		ctx.response.headers['access-control-allow-headers'] = '*'
+		ctx.response.headers['access-control-allow-origin'] = '*'
+		ctx.response.headers['access-control-request-method'] = '*'
+		ctx.response.headers['access-control-allow-methods'] = '*'
+
+		if (ctx.url.method === 'OPTIONS') {
+			return res.cork(() => {
+				// Write Headers
+				for (const header in ctx.response.headers) {
+					if (!isAborted) res.writeHeader(header, ctx.response.headers[header])
+				}
+
+				if (!isAborted) res.end('')
+			})
+		}
+	}
+
+	// Handle Incoming HTTP Data
+	const chunks: Buffer[] = []
+	if (requestType === 'http') res.onData(async(rawChunk, isLast) => {
+		const chunk = Buffer.from(rawChunk)
+		chunks.push(chunk)
+
+		ctg.data.incoming.total += chunk.byteLength
+		ctg.data.incoming[ctx.previousHours[4]] += chunk.byteLength
+
+		if (isLast) {
+			ctx.body.raw = Buffer.concat(chunks)
+
+			if (ctx.body.raw.byteLength >= (ctg.options.body.maxSize * 1e6)) {
+				const result = await parseContent(ctg.options.body.message)
+
+				if (!isAborted) return res.cork(() => {
+					if (!isAborted) res.writeStatus('413')
+
+					if (!isAborted) res.end(result.content)
+				})
+				else return
+			}
+
+			ctx.events.emit('startRequest')
+		}
+	})
+
+
+	// Handle Response Data
+	ctx.events.once('startRequest', async() => {
+		/// Check if URL exists
 		let params: Record<string, string> = {}
 		const actualUrl = ctx.url.path.split('/')
 
-		// Check Dashboard Paths
-		if (ctg.options.dashboard.enabled && ctx.url.path === pathParser(ctg.options.dashboard.path) + '/stats') {
-			ctx.execute.route = {
-				type: 'websocket',
-				path: ctx.url.path,
-				pathArray: ctx.url.path.split('/'),
-				onConnect: async(ctr) => await statsRoute(ctr, ctg, ctx, 'socket'),
-				data: {
-					validations: []
-				}
-			}
-
-			ctx.execute.exists = true
-		}
-
-		// Check Other Paths
-		if (!ctx.execute.exists) for (let urlNumber = 0; urlNumber < ctg.routes.websocket.length; urlNumber++) {
-			if (ctx.execute.exists) break
-
-			const url = ctg.routes.websocket[urlNumber]
-
-			// Get From Cache
-			if (ctg.cache.routes.has(`route::ws::${ctx.url.path}`)) {
-				const url = ctg.cache.routes.get(`route::ws::${ctx.url.path}`)
-
-				params = url.params!
-				ctx.execute.route = url.route
-				ctx.execute.exists = true
-
-				break
-			}
-
-			// Skip if not related
-			if (url.pathArray.length !== actualUrl.length) continue
-
-			// Check for Static Paths
-			if (url.path === ctx.url.path) {
+		if (requestType === 'http') {
+			// Check Static Paths
+			const foundStatic = (file: string, url: Static) => {
+				ctx.execute.file = file
 				ctx.execute.route = url
 				ctx.execute.exists = true
 
 				// Set Cache
-				ctg.cache.routes.set(`route::ws::${ctx.url.path}`, { route: url, params: {} })
+				ctg.cache.routes.set(`route::static::${ctx.url.path}`, { route: url, file })
+			}; for (let staticNumber = 0; staticNumber < ctg.routes.static.length; staticNumber++) {
+				if (ctx.execute.exists) break
 
-				break
+				const url = ctg.routes.static[staticNumber]
+
+				// Get From Cache
+				if (ctg.cache.routes.has(`route::static::${ctx.url.path}`)) {
+					const url = ctg.cache.routes.get(`route::static::${ctx.url.path}`)
+
+					ctx.execute.file = url.file!
+					ctx.execute.route = url.route!
+					ctx.execute.exists = true
+
+					break
+				}
+
+				// Skip if not related
+				if (!ctx.url.path.startsWith(url.path)) continue
+
+				// Find File
+				const urlPath = pathParser(ctx.url.path.replace(url.path, '')).substring(1)
+
+				const fileExists = async(location: string) => {
+					location = pathResolve(location)
+
+					try {
+						const res = await fs.stat(location)
+						return res.isFile()
+					} catch (err) {
+						return false
+					}
+				}
+
+				if (url.data.hideHTML) {
+					if (await fileExists(url.location + '/' + urlPath + '/index.html')) foundStatic(pathResolve(url.location + '/' + urlPath + '/index.html'), url)
+					else if (await fileExists(url.location + '/' + urlPath + '.html')) foundStatic(pathResolve(url.location + '/' + urlPath + '.html'), url)
+					else if (await fileExists(url.location + '/' + urlPath)) foundStatic(pathResolve(url.location + '/' + urlPath), url)
+				} else if (await fileExists(url.location + '/' + urlPath)) foundStatic(pathResolve(url.location + '/' + urlPath), url)
 			}
 
-			// Check Parameters
-			for (let partNumber = 0; partNumber < url.pathArray.length; partNumber++) {
-				const urlParam = url.pathArray[partNumber]
-				const reqParam = actualUrl[partNumber]
+			// Check Dashboard Paths
+			if (ctg.options.dashboard.enabled && ctx.url.path === pathParser(ctg.options.dashboard.path)) {
+				ctx.execute.route = {
+					type: 'route',
+					method: 'GET',
+					path: ctx.url.path,
+					pathArray: ctx.url.path.split('/'),
+					code: async(ctr) => await statsRoute(ctr, ctg, ctx, 'http'),
+					data: {
+						validations: []
+					}
+				}
 
-				if (!/^<.*>$/.test(urlParam) && reqParam !== urlParam) {
-					ctx.execute.exists = false
+				ctx.execute.exists = true
+			}
+
+			// Check Other Paths
+			if (!ctx.execute.exists) for (let urlNumber = 0; urlNumber < ctg.routes.normal.length; urlNumber++) {
+				if (ctx.execute.exists) break
+
+				const url = ctg.routes.normal[urlNumber]
+
+				// Get From Cache
+				if (ctg.cache.routes.has(`route::normal::${ctx.url.path}::${ctx.url.method}`)) {
+					const url = ctg.cache.routes.get(`route::normal::${ctx.url.path}::${ctx.url.method}`)
+
+					params = url.params!
+					ctx.execute.route = url.route
+					ctx.execute.exists = true
+
 					break
-				} else if (urlParam === reqParam) continue
-				else if (/^<.*>$/.test(urlParam)) {
-					params[urlParam.substring(1, urlParam.length - 1)] = reqParam
+				}
+
+				// Skip if not related
+				if (url.method !== ctx.url.method) continue
+				if (url.pathArray.length !== actualUrl.length) continue
+
+				// Check for Static Paths
+				if (url.path === ctx.url.path && url.method === ctx.url.method) {
 					ctx.execute.route = url
 					ctx.execute.exists = true
 
-					continue
-				}; continue
-			}; if (ctx.execute.exists) {
-				// Set Cache
-				ctg.cache.routes.set(`route::ws::${ctx.url.path}`, { route: url, params: params })
+					// Set Cache
+					ctg.cache.routes.set(`route::normal::${ctx.url.path}::${ctx.url.method}`, { route: url, params: {} })
 
-				break
+					break
+				}
+
+				// Check Parameters
+				for (let partNumber = 0; partNumber < url.pathArray.length; partNumber++) {
+					const urlParam = url.pathArray[partNumber]
+					const reqParam = actualUrl[partNumber]
+
+					if (!/^<.*>$/.test(urlParam) && reqParam !== urlParam) {
+						ctx.execute.exists = false
+						break
+					} else if (urlParam === reqParam) continue
+					else if (/^<.*>$/.test(urlParam)) {
+						params[urlParam.substring(1, urlParam.length - 1)] = reqParam
+						ctx.execute.route = url
+						ctx.execute.exists = true
+
+						continue
+					}; continue
+				}; if (ctx.execute.exists) {
+					// Set Cache
+					ctg.cache.routes.set(`route::normal::${ctx.url.path}::${ctx.url.method}`, { route: url, params: params })
+
+					break
+				}
+
+				continue
 			}
+		} else {
+			// Check Websocket Paths
+			if (!ctx.execute.exists) for (let urlNumber = 0; urlNumber < ctg.routes.websocket.length; urlNumber++) {
+				if (ctx.execute.exists) break
 
-			continue
+				const url = ctg.routes.websocket[urlNumber]
+
+				// Get From Cache
+				if (ctg.cache.routes.has(`route::ws::${ctx.url.path}`)) {
+					const url = ctg.cache.routes.get(`route::ws::${ctx.url.path}`)
+
+					params = url.params!
+					ctx.execute.route = url.route
+					ctx.execute.exists = true
+
+					break
+				}
+
+				// Skip if not related
+				if (url.pathArray.length !== actualUrl.length) continue
+
+				// Check for Static Paths
+				if (url.path === ctx.url.path) {
+					ctx.execute.route = url
+					ctx.execute.exists = true
+
+					// Set Cache
+					ctg.cache.routes.set(`route::ws::${ctx.url.path}`, { route: url, params: {} })
+
+					break
+				}
+
+				// Check Parameters
+				for (let partNumber = 0; partNumber < url.pathArray.length; partNumber++) {
+					const urlParam = url.pathArray[partNumber]
+					const reqParam = actualUrl[partNumber]
+
+					if (!/^<.*>$/.test(urlParam) && reqParam !== urlParam) {
+						ctx.execute.exists = false
+						break
+					} else if (urlParam === reqParam) continue
+					else if (/^<.*>$/.test(urlParam)) {
+						params[urlParam.substring(1, urlParam.length - 1)] = reqParam
+						ctx.execute.route = url
+						ctx.execute.exists = true
+
+						continue
+					}; continue
+				}; if (ctx.execute.exists) {
+					// Set Cache
+					ctg.cache.routes.set(`route::ws::${ctx.url.path}`, { route: url, params: params })
+
+					break
+				}
+
+				continue
+			}
 		}
 
-    // Get Correct Host IP
+		// Get Correct Host IP
 		let hostIp: string
 		if (ctg.options.proxy && ctx.headers['x-forwarded-for']) hostIp = ctx.headers['x-forwarded-for']
 		else hostIp = ctx.remoteAddress.split(':')[0]
 
 		// Turn Cookies into Object
-		let cookies: Record<string, string> = {}
 		if (ctx.headers['cookie']) ctx.headers['cookie'].split(';').forEach((cookie) => {
 			const parts = cookie.split('=')
-			cookies[parts.shift()!.trim()] = parts.join('=')
+			ctx.cookies[parts.shift()!.trim()] = parts.join('=')
 		})
 
 		// Parse Request Body
 		if (ctg.options.body.parse && ctx.headers['content-type'] === 'application/json') {
 			try { ctx.body.parsed = JSON.parse(ctx.body.raw.toString()) }
-			catch (err) { ctx.body.parsed = ctx.body.raw.toString() }
+			catch { ctx.body.parsed = ctx.body.raw.toString() }
 		} else ctx.body.parsed = ctx.body.raw.toString()
 
 		// Create Context Response Object
 		let ctr: HTTPRequestContext = {
+			type: requestType,
+
 			// Properties
 			controller: ctg.controller,
 			headers: new ValueCollection(ctx.headers, decodeURIComponent) as any,
-			cookies: new ValueCollection(cookies, decodeURIComponent),
+			cookies: new ValueCollection(ctx.cookies, decodeURIComponent),
 			params: new ValueCollection(params, decodeURIComponent),
 			queries: new ValueCollection(parseQuery(ctx.url.query as any) as any, decodeURIComponent),
 
@@ -228,11 +393,11 @@ export default function handleWSUpgrade(req: HttpRequest, res: HttpResponse, con
 
 				return ctr
 			}, status(code) {
-				ctx.response.status = code ?? 200
+				ctx.response.status = code ?? Status.OK
 
 				return ctr
 			}, redirect(location, statusCode) {
-				ctr.status(statusCode ?? 302)
+				ctr.status(statusCode ?? Status.FOUND)
 
 				ctx.response.headers['location'] = location
 
@@ -436,22 +601,19 @@ export default function handleWSUpgrade(req: HttpRequest, res: HttpResponse, con
 			}
 		}
 
-		// Load Middleware
+		// Execute Middleware
 		if (ctg.middlewares.length > 0 && !ctx.error) {
-			let doContinue = true
-			for (let middlewareIndex = 0; middlewareIndex <= ctg.middlewares.length - 1; middlewareIndex++) {
+			for (let middlewareIndex = 0; middlewareIndex < ctg.middlewares.length; middlewareIndex++) {
 				const middleware = ctg.middlewares[middlewareIndex]
+				if (!('httpEvent' in middleware.data)) continue
 
 				try {
-					await Promise.resolve(middleware.code(ctr, ctx, ctg))
-					if (!String(ctx.response.status).startsWith('2')) ctx.executeCode = false
-					if (ctx.error) doContinue = false
+					await Promise.resolve(middleware.data.httpEvent!(middleware.localContext, () => ctx.executeCode = false, ctr, ctx, ctg))
+					if (ctx.error) throw ctx.error
 				} catch (err: any) {
-					doContinue = false
-					ctx.error = err
+					ctx.handleError(err)
+					break
 				}
-
-				if (!doContinue) ctx.handleError(ctx.error)
 			}
 		}
 
@@ -460,7 +622,7 @@ export default function handleWSUpgrade(req: HttpRequest, res: HttpResponse, con
 
 		// Execute Validations
 		if (ctx.execute.exists && ctx.execute.route!.data.validations.length > 0 && !ctx.error) {
-			for (let validateIndex = 0; validateIndex <= ctx.execute.route!.data.validations.length - 1; validateIndex++) {
+			for (let validateIndex = 0; validateIndex < ctx.execute.route!.data.validations.length; validateIndex++) {
 				const validate = ctx.execute.route!.data.validations[validateIndex]
 
 				try {
@@ -476,14 +638,14 @@ export default function handleWSUpgrade(req: HttpRequest, res: HttpResponse, con
 		// Execute Page Logic
 		const runPageLogic = (eventOnly?: boolean) => new Promise<void>(async(resolve) => {
 			// Execute Event
-			if (!ctx.execute.exists) ctx.execute.event = 'http404'
+			if (!ctx.execute.exists || !ctx.execute.route) ctx.execute.event = 'http404'
 			if (ctx.execute.event !== 'none') {
 				await handleEvent(ctx.execute.event, ctr, ctx, ctg)
 				return resolve()
 			}; if (eventOnly) return resolve()
 			if (!ctx.execute.route) return
 
-			// Execute Normal Route
+			// Execute WebSocket Route
 			if (ctx.execute.route.type === 'websocket' && ctx.executeCode) {
 				try {
 					ctx.continueSend = false
@@ -491,14 +653,33 @@ export default function handleWSUpgrade(req: HttpRequest, res: HttpResponse, con
 	        ctg.webSockets.opened[ctx.previousHours[4]]++
 
           return res.cork(() => {
-            if (!isAborted) res.upgrade(
+            if (!isAborted) resolve(res.upgrade(
               { ctx, params, custom: ctr["@"] } satisfies WebSocketContext,
               ctx.headers['sec-websocket-key'],
               ctx.headers['sec-websocket-protocol'],
               ctx.headers['sec-websocket-extensions'],
-              connection
-            )
+              socket!
+            ))
           })
+				} catch (err: any) {
+					ctx.error = err
+					ctx.execute.event = 'runtimeError'
+					await runPageLogic()
+				}
+
+				return resolve()
+			}
+
+			// Execute Static Route
+			if (ctx.execute.route.type === 'static') {
+				ctr.printFile(ctx.execute.file!)
+				return resolve()
+			}
+
+			// Execute Normal Route
+			if (ctx.execute.route.type === 'route' && ctx.executeCode) {
+				try {
+					await Promise.resolve(ctx.execute.route.code(ctr))
 				} catch (err: any) {
 					ctx.error = err
 					ctx.execute.event = 'runtimeError'
@@ -510,6 +691,7 @@ export default function handleWSUpgrade(req: HttpRequest, res: HttpResponse, con
 
 			return resolve()
 		}); await runPageLogic()
+		if (!ctx.continueSend) return
 
 		// Execute Queue
 		if (ctx.queue.length > 0) {
@@ -560,5 +742,7 @@ export default function handleWSUpgrade(req: HttpRequest, res: HttpResponse, con
 				else if (!isAborted) res.end(ctx.response.content)
 			}
 		})
-  }) ()}
+	})
+
+	if (requestType === 'upgrade') ctx.events.emit('startRequest')
 }

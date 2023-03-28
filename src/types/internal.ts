@@ -1,5 +1,6 @@
 import { Content } from "../functions/parseContent"
 import { HTTPRequestContext, WSRequestContext } from "./external"
+import Methods from "../misc/methodsEnum"
 
 export type DeepRequired<Type> = Type extends Content
 		? Type extends Map<any, any>
@@ -39,6 +40,7 @@ export type HTTPMethods =
 	| 'HEAD'
 	| 'PUT'
 	| 'GET'
+	| Methods
 
 export type ExternalRouter = {
 	method: string

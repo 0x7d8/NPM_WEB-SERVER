@@ -3,13 +3,13 @@ import { GlobalContext } from "../types/context"
 import ValueCollection from "./valueCollection"
 import ServerOptions, { Options } from "./serverOptions"
 import RouteList from "./router"
-import handleHTTPRequest, { getPreviousHours } from "../functions/web/handleHTTPRequest"
-import handleWSUpgrade from "../functions/web/handleWSUpgrade"
+import handleRequest, { getPreviousHours } from "../functions/web/handleRequest"
 import handleWSOpen from "../functions/web/handleWSOpen"
 import handleWSMessage from "../functions/web/handleWSMessage"
 import handleWSClose from "../functions/web/handleWSClose"
 import { RouteFile } from "../types/external"
 import { pathParser } from "./URLObject"
+import { currentVersion } from "./middlewareBuilder"
 import Route from "../types/route"
 import { getAllFilesFilter } from "../misc/getAllFiles"
 import { promises as fs } from "fs"
@@ -159,11 +159,28 @@ export default class Webserver extends RouteList {
 		return new Promise(async(resolve: (value: ServerEvents.StartSuccess) => void, reject: (reason: ServerEvents.StartError) => void) => {
 			let stopExecution = false
 			const loadedRoutes = await this.loadExternalPaths().catch((error) => {
-				reject({ success: false, error, message: 'WEBSERVER ERRORED' })
+				reject({ success: false, error, message: 'LOADING ROUTES ERRORED' })
 				stopExecution = true
 			})
 
 			if (stopExecution) return
+			for (let middlewareIndex = 0; middlewareIndex < this.middlewares.length; middlewareIndex++) {
+				const middleware = this.middlewares[middlewareIndex]
+				if (!('data' in middleware)) {
+					reject({ success: false, error: new Error(`Middleware ${(middleware as any).name} is outdated!`), message: 'INITIALIZING MIDDLEWARES ERRORED' })
+					stopExecution = true
+					break
+				}; if (!('initEvent' in middleware.data)) continue
+
+				try {
+					if (middleware.version > currentVersion) throw new Error('Middleware version cannot be higher than current supported version')
+					await Promise.resolve(middleware.data.initEvent!(middleware.localContext, middleware.config, this.globalContext))
+				} catch (error: any) {
+					reject({ success: false, error, message: 'INITIALIZING MIDDLEWARES ERRORED' })
+					stopExecution = true
+					break
+				}
+			}; if (stopExecution) return
 
 			if (this.globalContext.options.https.enabled) {
 				try {
@@ -180,12 +197,12 @@ export default class Webserver extends RouteList {
 			} else this.server = uWebsocket.App()
 
 			this.server
-				.any('/*', (res, req) => handleHTTPRequest(req, res, this.globalContext))
+				.any('/*', (res, req) => handleRequest(req, res, null, 'http', this.globalContext))
 				.ws('/*', {
 					maxBackpressure: 512 * 1024 * 1024,
 					sendPingsAutomatically: true,
 					maxPayloadLength: this.globalContext.options.body.maxSize * 1e6,
-					upgrade: (res, req, connection) => handleWSUpgrade(req, res, connection, this.globalContext),
+					upgrade: (res, req, connection) => handleRequest(req, res, connection, 'upgrade', this.globalContext),
 					open: (ws: any) => handleWSOpen(ws, this.globalContext),
 					message: (ws: any, message) => handleWSMessage(ws, message, this.globalContext),
 					close: (ws: any, code, message) => handleWSClose(ws, message, this.globalContext)
