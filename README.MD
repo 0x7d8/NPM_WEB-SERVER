@@ -135,7 +135,7 @@ export = {
 
     ctr.status(204).print(ctr.body.username)
   }
-} as CtrFile<Body>
+} satisfies CtrFile<Body>
 ```
 
 Middleware Intellisense

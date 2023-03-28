@@ -10,6 +10,7 @@ import { getPreviousHours } from "./handleRequest"
 export default function handleWSConnect(ws: WebSocket<WebSocketContext>, message: ArrayBuffer, ctg: GlobalContext) {
 	let custom = ws.getUserData().custom
   let ctx = ws.getUserData().ctx
+	ctx.response.content = Buffer.alloc(0)
 	ctx.previousHours = getPreviousHours()
 	ctx.body.raw = Buffer.from(message)
 	ctx.continueSend = true
@@ -220,15 +221,15 @@ export default function handleWSConnect(ws: WebSocket<WebSocketContext>, message
 
 
 		// Handle Reponse
-		if (ctx.continueSend) ws.cork(() => {
-			try {
-				if (ctx.response.content.byteLength > 0) {
+		try {
+			if (ctx.response.content.byteLength > 0 && ctx.continueSend) return ws.cork(() => {
+				try {
 					ctg.webSockets.messages.outgoing.total++
 					ctg.webSockets.messages.outgoing[ctx.previousHours[4]]++
 
 					ws.send(ctx.response.content)
-				}
-			} catch { }
-		})
+				} catch { }
+			})
+		} catch { }
   }) ()}
 }

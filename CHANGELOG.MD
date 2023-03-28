@@ -1,3 +1,12 @@
+## 5.7.4
+
+- Return Values Correctly
+- Add more isAborted Checks
+- Remove EventListener Leak
+- Add more JSDocs to Options
+- Fix Websocket related Crashes
+- Fix Websocket Messages Sending Twice
+
 ## 5.7.3
 
 - Add wsRequest Event

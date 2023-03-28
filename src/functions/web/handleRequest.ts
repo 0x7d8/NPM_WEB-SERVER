@@ -91,8 +91,10 @@ export default function handleHTTPRequest(req: HttpRequest, res: HttpResponse, s
 
 	// Handle Aborting Requests
 	let isAborted = false
-	res.onAborted(() => ctx.events.emit('requestAborted'))
-	ctx.events.once('requestAborted', () => isAborted = true)
+	res.onAborted(() => {
+		ctx.events.emit('requestAborted')
+		isAborted = true
+	})
 
 	// Handle CORS Requests
 	if (ctg.options.cors && requestType === 'http') {
@@ -116,7 +118,7 @@ export default function handleHTTPRequest(req: HttpRequest, res: HttpResponse, s
 
 	// Handle Incoming HTTP Data
 	const chunks: Buffer[] = []
-	if (requestType === 'http') res.onData(async(rawChunk, isLast) => {
+	if (requestType === 'http' && !isAborted) res.onData(async(rawChunk, isLast) => {
 		const chunk = Buffer.from(rawChunk)
 		chunks.push(chunk)
 
@@ -436,7 +438,7 @@ export default function handleHTTPRequest(req: HttpRequest, res: HttpResponse, s
 				ctx.scheduleQueue('execution', () => new Promise<void>((resolve) => {
 					if (!isAborted) res.cork(() => {
 						// Write Headers & Status
-						res.writeStatus(ctx.response.status.toString())
+						if (!isAborted) res.writeStatus(ctx.response.status.toString())
 						for (const header in ctx.response.headers) {
 							if (!isAborted) res.writeHeader(header, ctx.response.headers[header])
 						}
@@ -548,7 +550,7 @@ export default function handleHTTPRequest(req: HttpRequest, res: HttpResponse, s
 
 					if (!isAborted) res.cork(() => {
 						// Write Headers & Status
-						res.writeStatus(ctx.response.status.toString())
+						if (!isAborted) res.writeStatus(ctx.response.status.toString())
 						for (const header in ctx.response.headers) {
 							if (!isAborted) res.writeHeader(header, ctx.response.headers[header])
 						}
@@ -638,7 +640,7 @@ export default function handleHTTPRequest(req: HttpRequest, res: HttpResponse, s
 		}
 
 		// Execute Page Logic
-		const runPageLogic = (eventOnly?: boolean) => new Promise<void>(async(resolve) => {
+		const runPageLogic = (eventOnly?: boolean) => new Promise<void | boolean>(async(resolve) => {
 			// Execute Event
 			if (!ctx.execute.exists || !ctx.execute.route) ctx.execute.event = 'http404'
 			if (ctx.execute.event !== 'none') {
@@ -654,14 +656,16 @@ export default function handleHTTPRequest(req: HttpRequest, res: HttpResponse, s
           ctg.webSockets.opened.total++
 	        ctg.webSockets.opened[ctx.previousHours[4]]++
 
+					resolve(true)
+
           if (!isAborted) return res.cork(() => {
-            if (!isAborted) resolve(res.upgrade(
+            if (!isAborted) return res.upgrade(
               { ctx, params, custom: ctr["@"] } satisfies WebSocketContext,
               ctx.headers['sec-websocket-key'],
               ctx.headers['sec-websocket-protocol'],
               ctx.headers['sec-websocket-extensions'],
               socket!
-            ))
+            )
           })
 				} catch (err: any) {
 					ctx.error = err
@@ -692,8 +696,9 @@ export default function handleHTTPRequest(req: HttpRequest, res: HttpResponse, s
 			}
 
 			return resolve()
-		}); await runPageLogic()
-		if (!ctx.continueSend) return
+		})
+
+		if (await runPageLogic()) return
 
 		// Execute Queue
 		if (ctx.queue.length > 0) {
@@ -707,43 +712,45 @@ export default function handleHTTPRequest(req: HttpRequest, res: HttpResponse, s
 
 
 		// Handle Reponse
-		if (!isAborted && ctx.continueSend) res.cork(() => {
-			// Write Status
-			if (!isAborted) res.writeStatus(ctx.response.status.toString())
+		try {
+			if (!isAborted && ctx.continueSend) return res.cork(() => {
+				// Write Status
+				if (!isAborted) res.writeStatus(ctx.response.status.toString())
 
-			if (!ctx.response.isCompressed && String(ctr.headers.get('accept-encoding', '')).includes(CompressMapping[ctg.options.compression])) {
-				ctx.response.headers['content-encoding'] = CompressMapping[ctg.options.compression]
-				ctx.response.headers['vary'] = 'Accept-Encoding'
-	
-				// Write Headers
-				for (const header in ctx.response.headers) {
-					if (!isAborted) res.writeHeader(header, ctx.response.headers[header])
+				if (!ctx.response.isCompressed && String(ctr.headers.get('accept-encoding', '')).includes(CompressMapping[ctg.options.compression])) {
+					ctx.response.headers['content-encoding'] = CompressMapping[ctg.options.compression]
+					ctx.response.headers['vary'] = 'Accept-Encoding'
+		
+					// Write Headers
+					for (const header in ctx.response.headers) {
+						if (!isAborted) res.writeHeader(header, ctx.response.headers[header])
+					}
+		
+					const compression = handleCompressType(ctg.options.compression)
+					compression.on('data', (data: Buffer) => {
+						ctg.data.outgoing.total += data.byteLength
+						ctg.data.outgoing[ctx.previousHours[4]] += data.byteLength
+				
+						if (!isAborted) res.write(data)
+					}).once('close', () => {
+						if (!isAborted) res.end()
+					})
+		
+					compression.end(ctx.response.content)
+				} else {
+					ctg.data.outgoing.total += ctx.response.content.byteLength
+					ctg.data.outgoing[ctx.previousHours[4]] += ctx.response.content.byteLength
+		
+					// Write Headers
+					for (const header in ctx.response.headers) {
+						if (!isAborted) res.writeHeader(header, ctx.response.headers[header])
+					}
+		
+					if (!isAborted && ctx.response.isCompressed) res.end()
+					else if (!isAborted) res.end(ctx.response.content)
 				}
-	
-				const compression = handleCompressType(ctg.options.compression)
-				compression.on('data', (data: Buffer) => {
-					ctg.data.outgoing.total += data.byteLength
-					ctg.data.outgoing[ctx.previousHours[4]] += data.byteLength
-			
-					if (!isAborted) res.write(data)
-				}).once('close', () => {
-					if (!isAborted) res.end()
-				})
-	
-				compression.end(ctx.response.content)
-			} else {
-				ctg.data.outgoing.total += ctx.response.content.byteLength
-				ctg.data.outgoing[ctx.previousHours[4]] += ctx.response.content.byteLength
-	
-				// Write Headers
-				for (const header in ctx.response.headers) {
-					if (!isAborted) res.writeHeader(header, ctx.response.headers[header])
-				}
-	
-				if (!isAborted && ctx.response.isCompressed) res.end()
-				else if (!isAborted) res.end(ctx.response.content)
-			}
-		})
+			})
+		} catch { }
 	})
 
 	if (requestType === 'upgrade') ctx.events.emit('startRequest')

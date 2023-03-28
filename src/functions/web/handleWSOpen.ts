@@ -10,6 +10,7 @@ import handleEvent from "../handleEvent"
 export default function handleWSOpen(ws: WebSocket<WebSocketContext>, ctg: GlobalContext) {
 	let custom = ws.getUserData().custom
   let ctx = ws.getUserData().ctx
+	ctx.response.content = Buffer.alloc(0)
 	ctx.previousHours = getPreviousHours()
 	ctx.continueSend = true
 	ctx.queue = []
@@ -205,15 +206,15 @@ export default function handleWSOpen(ws: WebSocket<WebSocketContext>, ctg: Globa
 
 
 		// Handle Reponse
-		if (ctx.continueSend) ws.cork(() => {
-			try {
-				if (ctx.response.content.byteLength > 0) {
+		try {
+			if (ctx.response.content.byteLength > 0 && ctx.continueSend) return ws.cork(() => {
+				try {
 					ctg.webSockets.messages.outgoing.total++
 					ctg.webSockets.messages.outgoing[ctx.previousHours[4]]++
 
 					ws.send(ctx.response.content)
-				}
-			} catch { }
-		})
+				} catch { }
+			})
+		} catch { }
   }) ()}
 }
