@@ -1,3 +1,7 @@
+## 5.7.2
+
+- Add missing isAborted check
+
 ## 5.7.1
 
 - Fix Definition Files

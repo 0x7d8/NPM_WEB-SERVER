@@ -652,7 +652,7 @@ export default function handleHTTPRequest(req: HttpRequest, res: HttpResponse, s
           ctg.webSockets.opened.total++
 	        ctg.webSockets.opened[ctx.previousHours[4]]++
 
-          return res.cork(() => {
+          if (!isAborted) return res.cork(() => {
             if (!isAborted) resolve(res.upgrade(
               { ctx, params, custom: ctr["@"] } satisfies WebSocketContext,
               ctx.headers['sec-websocket-key'],
