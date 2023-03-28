@@ -1,11 +1,11 @@
-module.exports = () => /** @type {import('rjweb-server').Middleware} */ ({
-  name: 'my-middleware',
+const { MiddlewareBuilder } = require('rjweb-server')
 
-  code: (ctr, ctx, ctg) => {
+module.exports = new MiddlewareBuilder()
+  .http((lCtx, stop, ctr, ctx, ctg) => {
     ctr.printEmpty = () => {
-      ctx.content = ''
+      ctx.content = Buffer.alloc(0)
 
       return ctr
     }
-  }
-})
+  })
+  .build()

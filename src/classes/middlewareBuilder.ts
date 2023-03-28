@@ -1,4 +1,4 @@
-import { WebSocketClose, WebSocketConnect, WebSocketMessage } from "src/types/webSocket"
+import { WebSocketClose, WebSocketConnect, WebSocketMessage } from "../types/webSocket"
 import { InternalContext, GlobalContext } from "../types/context"
 import { HTTPRequestContext } from "../types/external"
 

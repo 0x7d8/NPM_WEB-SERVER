@@ -1,4 +1,9 @@
-### 5.7.0
+## 5.7.1
+
+- Fix Definition Files
+- Update Middleware Example
+
+## 5.7.0
 
 - Add an Enum based of RFC Docs for HTTP Statuses
 - Add an Enum based on HTTP Request Methods
