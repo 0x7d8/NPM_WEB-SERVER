@@ -5,7 +5,7 @@ import URLObject from "../../classes/URLObject"
 import { resolve as pathResolve } from "path"
 import parseContent, { Returns as ParseContentReturns } from "../parseContent"
 import { Task } from "../../types/internal"
-import statsRoute from "../../stats/routes"
+import statsRoute from "../../dashboard/routes"
 import { promises as fs, createReadStream } from "fs"
 import handleContentType from "../handleContentType"
 import handleCompressType, { CompressMapping } from "../handleCompressType"
@@ -199,7 +199,7 @@ export default function handleHTTPRequest(req: HttpRequest, res: HttpResponse, s
 				} else if (await fileExists(url.location + '/' + urlPath)) foundStatic(pathResolve(url.location + '/' + urlPath), url)
 			}
 
-			// Check Dashboard Paths
+			// Check Dashboard Path
 			if (ctg.options.dashboard.enabled && ctx.url.path === pathParser(ctg.options.dashboard.path)) {
 				ctx.execute.route = {
 					type: 'route',
@@ -273,6 +273,21 @@ export default function handleHTTPRequest(req: HttpRequest, res: HttpResponse, s
 				continue
 			}
 		} else {
+			// Check Dashboard Path
+			if (ctg.options.dashboard.enabled && ctx.url.path === pathParser(ctg.options.dashboard.path) + '/ws') {
+				ctx.execute.route = {
+					type: 'websocket',
+					path: ctx.url.path,
+					pathArray: ctx.url.path.split('/'),
+					onConnect: async(ctr) => await statsRoute(ctr, ctg, ctx, 'socket'),
+					data: {
+						validations: []
+					}
+				}
+
+				ctx.execute.exists = true
+			}
+
 			// Check Websocket Paths
 			if (!ctx.execute.exists) for (let urlNumber = 0; urlNumber < ctg.routes.websocket.length; urlNumber++) {
 				if (ctx.execute.exists) break

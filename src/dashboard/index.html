@@ -397,8 +397,8 @@
   }
 
 
-  const socket = new WebSocket(`wss://${window.location.hostname}/rjweb-dashboard/stats`)
-  socket.onmessage = (event) => {
+  const socket = new WebSocket(`wss://${window.location.hostname}/rjweb-dashboard/ws`)
+  socket.addEventListener('message', (event) => {
     const data = JSON.parse(event.data)
 
     document.querySelector('#stat-cpu').innerText = data.cpu.usage + '%'
@@ -458,6 +458,6 @@
       memoryChart.data.labels.shift()
       memoryChart.data.datasets[0].data.shift()
     }; memoryChart.update()
-  }
+  })
 </script>
 </html>

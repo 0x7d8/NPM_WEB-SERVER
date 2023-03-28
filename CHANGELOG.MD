@@ -1,3 +1,7 @@
+## 5.7.6
+
+- Fix Dashboard Websocket 404
+
 ## 5.7.5
 
 - Set ctx.executeCode every time a websocket runs anything

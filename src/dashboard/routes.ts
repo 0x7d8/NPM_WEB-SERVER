@@ -4,7 +4,7 @@ import { getAllFiles } from "../misc/getAllFiles"
 import { HTTPRequestContext } from "../types/external"
 import { WebSocketConnect } from "../types/webSocket"
 import { Readable } from "stream"
-import { Version } from ".."
+import { Version } from "../index"
 
 import fs from "fs/promises"
 import os from "os"
