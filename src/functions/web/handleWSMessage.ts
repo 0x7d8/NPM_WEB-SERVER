@@ -14,6 +14,7 @@ export default function handleWSConnect(ws: WebSocket<WebSocketContext>, message
 	ctx.previousHours = getPreviousHours()
 	ctx.body.raw = Buffer.from(message)
 	ctx.continueSend = true
+	ctx.executeCode = true
 	ctx.queue = []
 
 	ctg.data.incoming.total += message.byteLength

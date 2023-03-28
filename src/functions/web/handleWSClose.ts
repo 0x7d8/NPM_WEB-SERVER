@@ -11,6 +11,8 @@ export default function handleWSClose(ws: WebSocket<WebSocketContext>, message: 
   let ctx = ws.getUserData().ctx
 	ctx.previousHours = getPreviousHours()
 	ctx.body.raw = Buffer.from(message)
+	ctx.executeCode = true
+
 	ctx.events.emit('requestAborted')
 
 	ctg.data.incoming.total += message.byteLength

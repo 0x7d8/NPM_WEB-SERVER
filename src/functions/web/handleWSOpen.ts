@@ -13,6 +13,7 @@ export default function handleWSOpen(ws: WebSocket<WebSocketContext>, ctg: Globa
 	ctx.response.content = Buffer.alloc(0)
 	ctx.previousHours = getPreviousHours()
 	ctx.continueSend = true
+	ctx.executeCode = true
 	ctx.queue = []
 
 	ctx.handleError = (err) => {
