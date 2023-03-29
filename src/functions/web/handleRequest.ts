@@ -9,6 +9,7 @@ import statsRoute from "../../dashboard/routes"
 import { promises as fs, createReadStream } from "fs"
 import handleContentType from "../handleContentType"
 import handleCompressType, { CompressMapping } from "../handleCompressType"
+import handleDecompressType, { DecompressMapping } from "../handleDecompressType"
 import { parse as parseQuery } from "querystring"
 import { HTTPRequestContext } from "../../index"
 import ValueCollection from "../../classes/valueCollection"
@@ -86,7 +87,7 @@ export default function handleHTTPRequest(req: HttpRequest, res: HttpResponse, s
 
 	// Add Headers
 	Object.keys(ctg.defaultHeaders).forEach((key) => {
-		ctx.response.headers[key] = ctg.defaultHeaders[key]
+		ctx.response.headers[key.toLowerCase()] = ctg.defaultHeaders[key]
 	})
 
 	// Handle Aborting Requests
@@ -98,10 +99,10 @@ export default function handleHTTPRequest(req: HttpRequest, res: HttpResponse, s
 
 	// Handle CORS Requests
 	if (ctg.options.cors && requestType === 'http') {
-		ctx.response.headers['access-control-allow-headers'] = '*'
-		ctx.response.headers['access-control-allow-origin'] = '*'
-		ctx.response.headers['access-control-request-method'] = '*'
-		ctx.response.headers['access-control-allow-methods'] = '*'
+		ctx.response.headers['access-control-allow-headers'] = Buffer.from('*')
+		ctx.response.headers['access-control-allow-origin'] = Buffer.from('*')
+		ctx.response.headers['access-control-request-method'] = Buffer.from('*')
+		ctx.response.headers['access-control-allow-methods'] = Buffer.from('*')
 
 		if (ctx.url.method === 'OPTIONS') {
 			if (!isAborted) return res.cork(() => {
@@ -116,32 +117,64 @@ export default function handleHTTPRequest(req: HttpRequest, res: HttpResponse, s
 		}
 	}
 
-	// Handle Incoming HTTP Data
-	const chunks: Buffer[] = []
-	if (requestType === 'http' && !isAborted) res.onData(async(rawChunk, isLast) => {
-		const chunk = Buffer.from(rawChunk)
-		chunks.push(chunk)
+	/// Handle Incoming HTTP Data
+	if (requestType === 'http' && ctx.url.method !== 'GET') {
+		// Create Decompressor
+		const deCompression = handleDecompressType(DecompressMapping[ctx.headers['content-encoding']])
 
-		ctg.data.incoming.total += chunk.byteLength
-		ctg.data.incoming[ctx.previousHours[4]] += chunk.byteLength
+		let totalBytes = 0
+		const chunks: Buffer[] = []
+		deCompression.on('data', async(data: Buffer) => {
+			chunks.push(data)
 
-		if (isLast) {
-			ctx.body.raw = Buffer.concat(chunks)
-
-			if (ctx.body.raw.byteLength >= (ctg.options.body.maxSize * 1e6)) {
+			if (totalBytes >= (ctg.options.body.maxSize * 1e6)) {
 				const result = await parseContent(ctg.options.body.message)
+				deCompression.destroy()
 
 				if (!isAborted) return res.cork(() => {
-					if (!isAborted) res.writeStatus('413')
+					// Write Status
+					if (!isAborted) res.writeStatus(Status.PAYLOAD_TOO_LARGE.toString())
+
+					// Write Headers
+					for (const header in ctx.response.headers) {
+						if (!isAborted) res.writeHeader(header, ctx.response.headers[header])
+					}
 
 					if (!isAborted) res.end(result.content)
 				})
 				else return
 			}
+		}).once('error', () => {
+			deCompression.destroy()
+			if (!isAborted) return res.cork(() => {
+				// Write Status
+				if (!isAborted) res.writeStatus(Status.BAD_REQUEST.toString())
 
+				// Write Headers
+				for (const header in ctx.response.headers) {
+					if (!isAborted) res.writeHeader(header, ctx.response.headers[header])
+				}
+
+				if (!isAborted) res.end('Invalid Content-Type Header or Content')
+			})
+		}).once('close', () => {
+			ctx.body.raw = Buffer.concat(chunks)
 			ctx.events.emit('startRequest')
-		}
-	})
+		})
+
+		// Recieve Data
+		if (!isAborted) res.onData(async(rawChunk, isLast) => {
+			try {
+				totalBytes += rawChunk.byteLength
+				deCompression.write(Buffer.from(rawChunk))
+
+				ctg.data.incoming.total += rawChunk.byteLength
+				ctg.data.incoming[ctx.previousHours[4]] += rawChunk.byteLength
+
+				if (isLast) deCompression.end()
+			} catch { }
+		})
+	}
 
 
 	// Handle Response Data
@@ -393,7 +426,7 @@ export default function handleHTTPRequest(req: HttpRequest, res: HttpResponse, s
 
 			// Functions
 			setHeader(name, value) {
-				ctx.response.headers[name.toLowerCase()] = ''
+				ctx.response.headers[name.toLowerCase()] = Buffer.alloc(0)
 
 				ctx.scheduleQueue('context', async() => {
 					let result: ParseContentReturns
@@ -403,7 +436,7 @@ export default function handleHTTPRequest(req: HttpRequest, res: HttpResponse, s
 						return ctx.handleError(err)
 					}
 
-					ctx.response.headers[name.toLowerCase()] = result.content.toString()
+					ctx.response.headers[name.toLowerCase()] = result.content
 				})
 
 				return ctr
@@ -418,7 +451,7 @@ export default function handleHTTPRequest(req: HttpRequest, res: HttpResponse, s
 			}, redirect(location, statusCode) {
 				ctr.status(statusCode ?? Status.FOUND)
 
-				ctx.response.headers['location'] = location
+				ctx.response.headers['location'] = Buffer.from(location)
 
 				return ctr
 			}, print(content, options = {}) {
@@ -434,7 +467,7 @@ export default function handleHTTPRequest(req: HttpRequest, res: HttpResponse, s
 
 					for (const header in result.headers) {
 						ctx.response.headers[header.toLowerCase()] = result.headers[header]
-					}; if (contentType) ctx.response.headers['content-type'] = contentType
+					}; if (contentType) ctx.response.headers['content-type'] = Buffer.from(contentType)
 
 					ctx.response.content = result.content
 				}))
@@ -445,10 +478,10 @@ export default function handleHTTPRequest(req: HttpRequest, res: HttpResponse, s
 				const cache = options?.cache ?? false
 
 				// Add Headers
-				if (addTypes) ctx.response.headers['content-type'] = handleContentType(file, ctg)
-				if (ctr.headers.get('accept-encoding', '').includes(CompressMapping[ctg.options.compression])) {
+				if (addTypes) ctx.response.headers['content-type'] = Buffer.from(handleContentType(file, ctg))
+				if (ctr.headers.get('accept-encoding', '').includes(CompressMapping[ctg.options.compression].toString())) {
 					ctx.response.headers['content-encoding'] = CompressMapping[ctg.options.compression]
-					ctx.response.headers['vary'] = 'Accept-Encoding'
+					ctx.response.headers['vary'] = Buffer.from('Accept-Encoding')
 				}
 
 				ctx.scheduleQueue('execution', () => new Promise<void>((resolve) => {
@@ -478,7 +511,7 @@ export default function handleHTTPRequest(req: HttpRequest, res: HttpResponse, s
 						ctx.continueSend = false
 
 						// Get File Content
-						if (ctr.headers.get('accept-encoding', '').includes(CompressMapping[ctg.options.compression])) {
+						if (ctr.headers.get('accept-encoding', '').includes(CompressMapping[ctg.options.compression].toString())) {
 							const destroyStreams = () => {
 								stream.destroy()
 								compression.destroy()
@@ -581,9 +614,9 @@ export default function handleHTTPRequest(req: HttpRequest, res: HttpResponse, s
 							} catch (err: any) {
 								return ctx.handleError(err)
 							}
-		
+
 							if (!isAborted) res.write(data)
-		
+
 							ctg.data.outgoing.total += data.byteLength
 							ctg.data.outgoing[ctx.previousHours[4]] += data.byteLength
 						}, closeListener = () => {
@@ -603,7 +636,7 @@ export default function handleHTTPRequest(req: HttpRequest, res: HttpResponse, s
 						}
 
 						if (destroyAbort) ctx.events.once('requestAborted', destroyStream)
-		
+
 						stream
 							.on('data', dataListener)
 							.once('close', closeListener)
@@ -733,15 +766,15 @@ export default function handleHTTPRequest(req: HttpRequest, res: HttpResponse, s
 				// Write Status
 				if (!isAborted) res.writeStatus(ctx.response.status.toString())
 
-				if (!ctx.response.isCompressed && String(ctr.headers.get('accept-encoding', '')).includes(CompressMapping[ctg.options.compression])) {
+				if (!ctx.response.isCompressed && String(ctr.headers.get('accept-encoding', '')).includes(CompressMapping[ctg.options.compression].toString())) {
 					ctx.response.headers['content-encoding'] = CompressMapping[ctg.options.compression]
-					ctx.response.headers['vary'] = 'Accept-Encoding'
-		
+					ctx.response.headers['vary'] = Buffer.from('Accept-Encoding')
+
 					// Write Headers
 					for (const header in ctx.response.headers) {
 						if (!isAborted) res.writeHeader(header, ctx.response.headers[header])
 					}
-		
+
 					const compression = handleCompressType(ctg.options.compression)
 					compression.on('data', (data: Buffer) => {
 						ctg.data.outgoing.total += data.byteLength
@@ -751,17 +784,17 @@ export default function handleHTTPRequest(req: HttpRequest, res: HttpResponse, s
 					}).once('close', () => {
 						if (!isAborted) res.end()
 					})
-		
+
 					compression.end(ctx.response.content)
 				} else {
 					ctg.data.outgoing.total += ctx.response.content.byteLength
 					ctg.data.outgoing[ctx.previousHours[4]] += ctx.response.content.byteLength
-		
+
 					// Write Headers
 					for (const header in ctx.response.headers) {
 						if (!isAborted) res.writeHeader(header, ctx.response.headers[header])
 					}
-		
+
 					if (!isAborted && ctx.response.isCompressed) res.end()
 					else if (!isAborted) res.end(ctx.response.content)
 				}
@@ -769,5 +802,5 @@ export default function handleHTTPRequest(req: HttpRequest, res: HttpResponse, s
 		} catch { }
 	})
 
-	if (requestType === 'upgrade') ctx.events.emit('startRequest')
+	if (requestType === 'upgrade' || ctx.url.method === 'GET') ctx.events.emit('startRequest')
 }

@@ -50,7 +50,7 @@ export interface InternalContext {
 	}
 
 	/** The Response Object */ response: {
-		/** The Headers to Respond with */ headers: Record<string, string>
+		/** The Headers to Respond with */ headers: Record<string, Buffer>
 		/** The HTTP Status to Respond with */ status: number
 		/** Whether the Current Content is Compressed */ isCompressed: boolean
 		/** The Raw Content to Send */ content: Buffer
@@ -60,7 +60,7 @@ export interface InternalContext {
 export interface GlobalContext {
 	/** The Server Controller Class */ controller: ServerController
 	/** The File -> Content Type Mapping */ contentTypes: Record<string, string>
-	/** The Default HTTP Headers List */ defaultHeaders: Record<string, string>
+	/** The Default HTTP Headers List */ defaultHeaders: Record<string, Buffer>
 	/** The HTTP Server Options */ options: DeepRequired<Options>
 	/** The Request Count */ requests: Record<Hours | 'total', number>
 	/** The Middlewares to run */ middlewares: ReturnType<MiddlewareProduction['init']>[]

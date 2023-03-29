@@ -1,3 +1,8 @@
+## 5.7.8
+
+- Automatically Decompress HTTP Bodies
+- Use more Buffers Internally
+
 ## 5.7.7
 
 - Add more JSDocs

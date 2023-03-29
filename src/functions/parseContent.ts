@@ -14,7 +14,7 @@ export type Content =
 	| Content[]
 
 export interface Returns {
-	headers: Record<string, string>
+	headers: Record<string, Buffer>
 	content: Buffer
 }
 
@@ -26,7 +26,7 @@ export default async function parseContent(content: Content): Promise<Returns> {
 
 	switch (typeof content) {
 		case "object":
-			returnObject.headers['Content-Type'] = 'application/json'
+			returnObject.headers['Content-Type'] = Buffer.from('application/json')
 
 			try {
 				returnObject.content = Buffer.from(JSON.stringify(content))

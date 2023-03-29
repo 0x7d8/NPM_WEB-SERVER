@@ -36,13 +36,13 @@ export default class RouteContentTypes {
 	 * @since 5.3.0
 	*/
 	protected async getHeaders() {
-		const parsedHeaders: Record<string, string> = {}
+		const parsedHeaders: Record<string, Buffer> = {}
 
 		for (const header in this.defaultHeaders) {
 			try {
-				const value = (await parseContent(this.defaultHeaders[header as any])).content.toString()
+				const value = (await parseContent(this.defaultHeaders[header as any])).content
 				parsedHeaders[header] = value
-			} catch (err) { }
+			} catch { }
 		}
 
 		return {
