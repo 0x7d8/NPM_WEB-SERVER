@@ -80,6 +80,17 @@ export interface WebSocketConnect<Custom = {}> {
 	 * ```
 	 * @since 5.4.0
 	*/ readonly queries: ValueCollection<string, string>
+	/**
+	 * A Collection of all URL Hashes
+	 * @example
+	 * ```
+	 * if (ctr.hashes.has('user')) console.log('User Query is present')
+	 * 
+	 * console.log(ctr.hashes.get('user')) // Will print undefined if not present
+	 * console.log(ctr.hashes.get('user', 'default')) // Will print 'default' if not present
+	 * ```
+	 * @since 5.7.7
+	*/ readonly hashes: ValueCollection<string, string>
 
 	/** Client Infos */ readonly client: {
 		/**
@@ -208,6 +219,17 @@ export interface WebSocketMessage<Custom = {}, Body = unknown> {
 	 * ```
 	 * @since 5.4.0
 	*/ readonly queries: ValueCollection<string, string>
+	/**
+	 * A Collection of all URL Hashes
+	 * @example
+	 * ```
+	 * if (ctr.hashes.has('user')) console.log('User Query is present')
+	 * 
+	 * console.log(ctr.hashes.get('user')) // Will print undefined if not present
+	 * console.log(ctr.hashes.get('user', 'default')) // Will print 'default' if not present
+	 * ```
+	 * @since 5.7.7
+	*/ readonly hashes: ValueCollection<string, string>
 
 	/** Client Infos */ readonly client: {
 		/**
@@ -344,6 +366,17 @@ export interface WebSocketClose<Custom = {}, Body = unknown> {
 	 * ```
 	 * @since 5.4.0
 	*/ readonly queries: ValueCollection<string, string>
+	/**
+	 * A Collection of all URL Hashes
+	 * @example
+	 * ```
+	 * if (ctr.hashes.has('user')) console.log('User Query is present')
+	 * 
+	 * console.log(ctr.hashes.get('user')) // Will print undefined if not present
+	 * console.log(ctr.hashes.get('user', 'default')) // Will print 'default' if not present
+	 * ```
+	 * @since 5.7.7
+	*/ readonly hashes: ValueCollection<string, string>
 
 	/** Client Infos */ readonly client: {
 		/**

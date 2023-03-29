@@ -114,16 +114,17 @@ export default class RoutePath {
 	 * Add a Websocket Route
 	 * @example
 	 * ```
-	 * // The /devil route will be available on "path + /devil" so "/devil"
-	 * // Paths wont collide if the request methods are different
-	 * const controller = new Server({ })
-	 * let devilsMessage = 'Im the one who knocks'
-	 * 
 	 * controller.path('/', (path) => path
 	 *   .ws('/uptime', (ws) => ws
 	 *     .onConnect(async(ctr) => {
 	 *       console.log('Connected to ws!')
 	 *     })
+	 * 		.onMessage((ctr) => {
+	 *      console.log('Received message', ctr.message)
+	 *    })
+	 *    .onClose((ctr) => {
+	 *      console.log('Disconnected from ws!')
+	 *    })
 	 *   )
 	 * )
 	 * ```

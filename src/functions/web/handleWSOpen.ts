@@ -38,7 +38,8 @@ export default function handleWSOpen(ws: WebSocket<WebSocketContext>, ctg: Globa
 			headers: new ValueCollection(ctx.headers, decodeURIComponent) as any,
 			cookies: new ValueCollection(ctx.cookies, decodeURIComponent),
 			params: new ValueCollection(ws.getUserData().params, decodeURIComponent),
-			queries: new ValueCollection(parseQuery(ctx.url.query as any) as any, decodeURIComponent),
+			queries: new ValueCollection(parseQuery(ctx.url.query as any) as any),
+			hashes: new ValueCollection(parseQuery(ctx.url.hash as any) as any),
 
 			// Variables
 			client: {

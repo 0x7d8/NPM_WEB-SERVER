@@ -291,7 +291,7 @@ server.start().then((s) => {
 
 Authenticate Requests
 ```js
-const { Server } = require('rjweb-server')
+const { Server, Status } = require('rjweb-server')
 
 const server = new Server({
   bind: '0.0.0.0', // The IP thats bound to
@@ -302,10 +302,10 @@ const server = new Server({
 
 server.path('/account', (path) => path
   .validate(async(ctr) => { // Will Validate every request starting with the route block prefix (/account)
-    if (!ctr.queries.has('password')) return ctr.status(401).print('Unauthorized')
-    if (ctr.queries.get('password') !== '123456 or database request or sum') return ctr.status(401).print('Unauthorized')
+    if (!ctr.queries.has('password')) return ctr.status(Status.UNPROCESSABLE_ENTITY).print('Passwort Query Missing')
+    if (ctr.queries.get('password') !== '123456 or database request or sum') return ctr.status(Status.UNAUTHORIZED).print('Unauthorized')
 
-    return ctr.status(200) // <- Everything is OK
+    return ctr.status(Status.OK) // <- Everything is OK
   })
   .http('GET', '/', async(ctr) => {
     return ctr.print('Account Infos: idk')
@@ -368,11 +368,11 @@ const server = new Server({
   bind: '0.0.0.0', // The IP thats bound to
   cors: false, // If Cors Headers will be added
   port: 5000, // The Port which the Server runs on
-  proxy: true, // If enabled, alternate IPs will be shown
-  headers: { // List of Headers to add to every request
-    "im-a-header": 'im a value'
-  }
+  proxy: true // If enabled, alternate IPs will be shown
 })
+
+server.defaultHeaders()
+  .add('im-a-header', 'im the value')
 
 server.start().then((s) => {
   console.log(`server started on port ${s.port}`)
@@ -387,12 +387,12 @@ const server = new Server({
   bind: '0.0.0.0', // The IP thats bound to
   cors: false, // If Cors Headers will be added
   port: 5000, // The Port which the Server runs on
-  proxy: true, // If enabled, alternate IPs will be shown
-  contentTypes: { // List of File endings and content types to add
-    jsn: 'application/json',
-    jn: 'application/json',
-  }
+  proxy: true // If enabled, alternate IPs will be shown
 })
+
+server.contentTypes()
+  .add('jsn', 'application/json')
+  .add('jn', 'application/json')
 
 server.start().then((s) => {
   console.log(`server started on port ${s.port}`)
@@ -420,7 +420,7 @@ server.start().then((s) => {
 
 Custom Not Found / Server Error Page
 ```js
-const { Server } = require('rjweb-server')
+const { Server, Status } = require('rjweb-server')
 
 const server = new Server({
   bind: '0.0.0.0',
@@ -430,12 +430,12 @@ const server = new Server({
 })
 
 server.event('http404', async(ctr) => {
-  ctr.status(404)
+  ctr.status(Status.NOT_FOUND)
   return ctr.print(`page "${ctr.url.pathname}" not found`)
 })
 
 server.event('runtimeError', async(ctr, error) => {
-  ctr.status(500)
+  ctr.status(Status.INTERNAL_SERVER_ERROR)
   ctr.print(`ERROR!!! ${error.stack}`)
   return console.log(ctr.error)
 })
@@ -458,6 +458,9 @@ const server = new Server({
 
 server.event('httpRequest', async(ctr) => {
   return console.log(`request made to ${decodeURI(ctr.url.href)} by ${ctr.client.ip}`)
+  // DO NOT write any data or end the request
+}).event('wsRequest', async(ctr) => {
+  return console.log(`websocket request made to ${decodeURI(ctr.url.href)} by ${ctr.client.ip}`)
   // DO NOT write any data or end the request
 })
 

@@ -4,7 +4,6 @@ import { HTTPMethods } from "./internal"
 import ServerController from "../classes/webServer"
 import Event from "./event"
 import { Readable } from "stream"
-import { GlobalContext, InternalContext } from "./context"
 import { Content } from "../functions/parseContent"
 import URLObject from "../classes/URLObject"
 import Status from "../misc/statusEnum"
@@ -19,6 +18,7 @@ export interface PrintOptions {
 	/**
 	 * The Content Type to use
 	 * @default ""
+	 * @since 2.7.5
 	*/ contentType?: string
 }
 
@@ -26,10 +26,12 @@ export interface PrintFileOptions {
 	/**
 	 * Whether some Content Type Headers will be added automatically
 	 * @default true
+	 * @since 2.2.0
 	*/ addTypes?: boolean
 	/**
 	 * Whether to Cache the sent Files after accessed once (only renew after restart)
 	 * @default false
+	 * @since 2.2.0
 	*/ cache?: boolean
 }
 
@@ -39,10 +41,12 @@ export interface PrintStreamOptions {
 	/**
 	 * Whether to end the Request after the Stream finishes
 	 * @default true
+	 * @since 4.3.5
 	*/ endRequest?: boolean
 	/**
 	 * Whether to Destroy the Stream if the Request is aborted
 	 * @default true
+	 * @since 4.3.5
 	*/ destroyAbort?: boolean
 }
 
@@ -102,6 +106,17 @@ export interface HTTPRequestContext<Custom = {}, Body = unknown> {
 	 * ```
 	 * @since 2.0.0
 	*/ readonly queries: ValueCollection<string, string>
+	/**
+	 * A Collection of all URL Hashes
+	 * @example
+	 * ```
+	 * if (ctr.hashes.has('user')) console.log('User Query is present')
+	 * 
+	 * console.log(ctr.hashes.get('user')) // Will print undefined if not present
+	 * console.log(ctr.hashes.get('user', 'default')) // Will print 'default' if not present
+	 * ```
+	 * @since 5.7.7
+	*/ readonly hashes: ValueCollection<string, string>
 
 	/** Client Infos */ readonly client: {
 		/**

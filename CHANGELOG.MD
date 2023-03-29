@@ -1,3 +1,9 @@
+## 5.7.7
+
+- Add more JSDocs
+- Add URL Hashes Support
+- Parse URL Hashes correctly in URLObjects
+
 ## 5.7.6
 
 - Fix Dashboard Websocket 404

@@ -372,7 +372,8 @@ export default function handleHTTPRequest(req: HttpRequest, res: HttpResponse, s
 			headers: new ValueCollection(ctx.headers, decodeURIComponent) as any,
 			cookies: new ValueCollection(ctx.cookies, decodeURIComponent),
 			params: new ValueCollection(params, decodeURIComponent),
-			queries: new ValueCollection(parseQuery(ctx.url.query as any) as any, decodeURIComponent),
+			queries: new ValueCollection(parseQuery(ctx.url.query as any) as any),
+			hashes: new ValueCollection(parseQuery(ctx.url.hash as any) as any),
 
 			// Variables
 			client: {
@@ -392,7 +393,7 @@ export default function handleHTTPRequest(req: HttpRequest, res: HttpResponse, s
 
 			// Functions
 			setHeader(name, value) {
-				ctx.response.headers[name.toLowerCase()] = String(value)
+				ctx.response.headers[name.toLowerCase()] = ''
 
 				ctx.scheduleQueue('context', async() => {
 					let result: ParseContentReturns

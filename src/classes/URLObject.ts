@@ -81,7 +81,7 @@ export default class URLObject {
    * ```
    * // URL is https://example.com/lol/ok?ok=123&test=567
    * 
-   * url.query // "?ok=123&test=567"
+   * url.query // "ok=123&test=567"
    * ```
    * @since 5.6.0
   */
@@ -95,11 +95,11 @@ export default class URLObject {
    * ```
    * // URL is https://example.com/lol/ok#ok=123&test=567
    * 
-   * url.hash // "#ok=123&test=567"
+   * url.hash // "ok=123&test=567"
    * ```
    * @since 5.6.0
   */
   get hash(): string {
-    return this.url.hash ?? ''
+    return (this.url.hash ?? '').replace('#', '')
   }
 }
