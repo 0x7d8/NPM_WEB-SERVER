@@ -1,3 +1,7 @@
+## 5.8.1
+
+- Fix Dashboard Websocket not working on ports other than 80 / 443
+
 ## 5.8.0
 
 - Allow Dashboard to use ws:// and wss://

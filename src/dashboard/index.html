@@ -400,9 +400,9 @@
   let socket, password
   if (/* PWD */ true) password = prompt('Please enter the Dashboard Password')
   try {
-    socket = new WebSocket(`ws://${window.location.hostname}/rjweb-dashboard/ws?password=${password}`)
+    socket = new WebSocket(`ws://${window.location.hostname}:${window.location.port}/rjweb-dashboard/ws?password=${password}`)
   } catch {
-    socket = new WebSocket(`wss://${window.location.hostname}/rjweb-dashboard/ws?password=${password}`)
+    socket = new WebSocket(`wss://${window.location.hostname}:${window.location.port}/rjweb-dashboard/ws?password=${password}`)
   }
 
   socket.addEventListener('message', (event) => {
