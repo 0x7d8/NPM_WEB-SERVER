@@ -219,7 +219,7 @@ export default class Webserver extends RouteList {
 			this.globalContext.routes.normal.push(...loadedRoutes as Route[])
 
 			this.server.listen(this.globalContext.options.bind, this.globalContext.options.port, (listen) => {
-				if (!listen) reject({ success: false, error: listen as any, message: 'WEBSERVER ERRORED' })
+				if (!listen) return reject({ success: false, error: new Error(`Port ${this.globalContext.options.port} is already in use`), message: 'WEBSERVER ERRORED' })
 
 				this.socket = listen
 				resolve({ success: true, port: this.globalContext.options.port, message: 'WEBSERVER STARTED' })

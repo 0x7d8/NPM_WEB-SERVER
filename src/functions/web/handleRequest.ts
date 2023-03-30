@@ -79,8 +79,8 @@ export default function handleHTTPRequest(req: HttpRequest, res: HttpResponse, s
 		ctx.headers[header] = value
 	})
 
-	// Add X-Powered-By Header (if enabled)
-	if (ctg.options.poweredBy) ctx.response.headers['rjweb-server'] = Version
+	// Add Powered By Header (if enabled)
+	if (ctg.options.poweredBy) ctx.response.headers['rjweb-server'] = Buffer.from(Version)
 
 	ctg.requests.total++
 	ctg.requests[ctx.previousHours[4]]++

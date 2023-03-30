@@ -1,3 +1,9 @@
+## 5.9.0
+
+- Rework CLI with yargs
+- Export Router, pathParser & URLObject to allow for more options
+- Type exported Version const as string instead of any
+
 ## 5.8.1
 
 - Fix Dashboard Websocket not working on ports other than 80 / 443

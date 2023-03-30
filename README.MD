@@ -509,17 +509,15 @@ module.exports = {
 ### CLI
 Serve a Static Folder using CLI
 ```sh
-rjw-srv [path to folder] [arguments]
+rjweb serve [path to folder] [arguments]
+
+# Example
+rjweb serve ./static --port=4444 --hideHTML
 ```
 
 View Help
 ```sh
-rjw-srv -h
-```
-
-Example
-```sh
-rjw-srv ./static --port=4444 --hideHTML
+rjweb --help
 ```
 
 ## Official Middlewares
