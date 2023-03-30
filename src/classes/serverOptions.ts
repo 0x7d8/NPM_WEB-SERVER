@@ -64,6 +64,11 @@ export interface Options {
 		 * @default "/rjweb-dashboard"
 		 * @since 2.4.0
 		*/ path?: string
+		/**
+		 * The Password to access the Dashboard with
+		 * @default ""
+		 * @since 5.8.0
+		*/ password?: string
 	}
 
 	/**
@@ -120,7 +125,8 @@ export default class ServerOptions {
 				certFile: '/ssl/cert/path'
 			}, dashboard: {
 				enabled: false,
-				path: '/rjweb-dashboard'
+				path: '/rjweb-dashboard',
+				password: ''
 			}, bind: '0.0.0.0',
 			proxy: false,
 			compression: 'none',

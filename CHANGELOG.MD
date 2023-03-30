@@ -1,3 +1,8 @@
+## 5.8.0
+
+- Allow Dashboard to use ws:// and wss://
+- Add Optional Password to Dashboard
+
 ## 5.7.9
 
 - Remove License Year

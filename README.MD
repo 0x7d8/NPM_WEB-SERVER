@@ -408,7 +408,8 @@ const server = new Server({
   port: 5000,
   dashboard: {
     enabled: true,
-    path: '/dashboard' // The Dashboad is now accessible at /dashboard
+    path: '/dashboard', // The Dashboad is now accessible at /dashboard
+    password: '124' // The password to use, if not set will not ask to provide one
   }
 })
 

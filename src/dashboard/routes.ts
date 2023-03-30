@@ -14,14 +14,23 @@ const coreCount = os.cpus().length
 export default async function statsRoute(ctr: HTTPRequestContext | WebSocketConnect, ctg: GlobalContext, ctx: InternalContext, type: 'http' | 'socket') {
   switch (type) {
     case "http": {
+      if (ctr.type !== 'http') return
+
       const dashboard = (await fs.readFile(`${__dirname}/index.html`, 'utf8'))
         .replaceAll('/rjweb-dashboard', pathParser(ctg.options.dashboard.path))
+        .replace('/* PWD */ true', String(!!ctg.options.dashboard.password))
         .replace('1.1.1', Version)
 
       return ctr.print(dashboard)
     }
 
     case "socket": {
+      if (ctr.type !== 'connect') return
+
+      if (ctg.options.dashboard.password && ctr.queries.get('password') !== ctg.options.dashboard.password) return ctr.close({
+        error: 'password'
+      })
+
       let interval: NodeJS.Timer
       ctr.printStream((() => {
         const readable = new Readable({

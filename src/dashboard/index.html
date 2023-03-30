@@ -397,7 +397,14 @@
   }
 
 
-  const socket = new WebSocket(`wss://${window.location.hostname}/rjweb-dashboard/ws`)
+  let socket, password
+  if (/* PWD */ true) password = prompt('Please enter the Dashboard Password')
+  try {
+    socket = new WebSocket(`ws://${window.location.hostname}/rjweb-dashboard/ws?password=${password}`)
+  } catch {
+    socket = new WebSocket(`wss://${window.location.hostname}/rjweb-dashboard/ws?password=${password}`)
+  }
+
   socket.addEventListener('message', (event) => {
     const data = JSON.parse(event.data)
 
@@ -458,6 +465,10 @@
       memoryChart.data.labels.shift()
       memoryChart.data.datasets[0].data.shift()
     }; memoryChart.update()
+  })
+
+  socket.addEventListener('close', () => {
+    window.location.reload()
   })
 </script>
 </html>
