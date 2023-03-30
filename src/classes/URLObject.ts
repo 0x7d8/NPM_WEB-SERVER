@@ -5,19 +5,26 @@ export const pathParser = (path: string | string[], removeSingleSlash?: boolean)
   if (!path) return '/'
 
 	const paths = Array.isArray(path) ? path : [path]
-	let output = ''
+  const callParse = (paths: string[]) => {
+    let output = ''
 
-	for (let pathIndex = 0; pathIndex < paths?.length; pathIndex++) {
-		path = paths[pathIndex].replace(/\/{2,}/g, '/')
+    for (let pathIndex = 0; pathIndex < paths?.length; pathIndex++) {
+      path = paths[pathIndex]
+        .replace(/\/{2,}/g, '/')
+        .replaceAll('/?', '?')
+        .replaceAll('/#', '#')
 
-		if (path.endsWith('?')) path = path.slice(0, -1)
-		if (path.endsWith('/') && path !== '/') path = path.slice(0, -1)
-		if (!path.startsWith('/') && path !== '/') path = `/${path}`
+      if (path.endsWith('?')) path = path.slice(0, -1)
+      if (path.endsWith('/') && path !== '/') path = path.slice(0, -1)
+      if (!path.startsWith('/') && path !== '/') path = `/${path}`
 
-		output += (removeSingleSlash && path === '/') ? '' : path || '/'
-	}
+      output += (removeSingleSlash && path === '/') ? '' : path || '/'
+    }
 
-	return output.replace(/\/{2,}/g, '/')
+    return output
+  }
+
+	return callParse([ callParse(paths) ]).replace(/\/{2,}/g, '/')
 }
 
 export default class URLObject {

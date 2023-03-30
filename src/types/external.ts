@@ -110,7 +110,7 @@ export interface HTTPRequestContext<Custom = {}, Body = unknown> {
 	 * A Collection of all URL Hashes
 	 * @example
 	 * ```
-	 * if (ctr.hashes.has('user')) console.log('User Query is present')
+	 * if (ctr.hashes.has('user')) console.log('User Hash is present')
 	 * 
 	 * console.log(ctr.hashes.get('user')) // Will print undefined if not present
 	 * console.log(ctr.hashes.get('user', 'default')) // Will print 'default' if not present

@@ -9,30 +9,29 @@
   <a href="https://github.com/rotvproHD/NPM_WEB-SERVER/graphs/commit-activity" target="_blank">
     <img alt="Maintenance" src="https://img.shields.io/badge/Maintained%3F-yes-green.svg" />
   </a>
-  <a href="https://socket.dev/npm/package/rjweb-server" target="_blank">
-    <img alt="Socket Badge" src="https://socket.dev/api/badge/npm/package/rjweb-server" />
-  </a>
 
-  Easy and Lightweight Way to create a Web Server in Node.js
+  Easy and Robust Way to create a Web Server in Node.js with the help of native C++ from uWebsockets
 </div>
+
+# INFO: Since we are using native C++ the full bundle is ~90MB
+It allows insane performance though ;)
+
+
+<br>
+<br>
 
 ### 🏠 [Homepage](https://github.com/rotvproHD/NPM_WEB-SERVER#readme)
 
 ## Install
 
 ```sh
+# NPM
 npm i rjweb-server
-```
 
-or
-
-```sh
+# Yarn
 yarn add rjweb-server
-```
 
-or
-
-```sh
+# pNPM
 pnpm add rjweb-server
 ```
 
@@ -67,7 +66,7 @@ server.path('/', (path) => path
 Custom Properties in Ctr Object
 (This also works in JavaScript, just remove the interface logic)
 ```ts
-import { Server, HTTPRequestContext, RouteFile } from "rjweb-server"
+import { Server, HTTPRequestContext, RouteFile, Status } from "rjweb-server"
 interface Custom {
   count: number
 }
@@ -102,7 +101,7 @@ server.event('httpRequest', async(ctr: Ctr) => {
   console.log(`error on path ${decodeURI(ctr.url.pathname)}!!!`)
   console.error(error)
 
-  ctr.status(500)
+  ctr.status(Status.INTERNAL_SERVER_ERROR)
   ctr.print('server error')
 })
 
@@ -113,7 +112,7 @@ server.start().then((s) => {
 
 Function File
 ```ts
-import { HTTPRequestContext, RouteFile } from "rjweb-server"
+import { HTTPRequestContext, RouteFile, Status } from "rjweb-server"
 
 interface Custom {
   count: number
@@ -133,7 +132,7 @@ export = {
   async code(ctr) {
     if (!('username' in ctr.body)) return ctr.print('no username in body!!')
 
-    ctr.status(204).print(ctr.body.username)
+    ctr.status(Status.NO_CONTENT).print(ctr.body.username)
   }
 } satisfies CtrFile<Body>
 ```
@@ -204,10 +203,10 @@ server.path('/', (path) => path // The / is the Path Prefix for all children pat
   .redirect('/googleplz', 'https://www.google.com')
   .path('/api', (path) => path
     .http('GET', '/', (ctr) => ctr.print('welcome to api!'))
-    .prefix('/v1', (path) => path
+    .path('/v1', (path) => path
       .http('GET', '/', (ctr) => ctr.print('welcome to v1 api!'))
     )
-    .prefix('/v2', (path) => path
+    .path('/v2', (path) => path
       .http('GET', '/', (ctr) => ctr.print('welcome to v2 api!'))
     )
   )
@@ -391,8 +390,8 @@ const server = new Server({
 })
 
 server.contentTypes()
-  .add('jsn', 'application/json')
-  .add('jn', 'application/json')
+  .add('.jsn', 'application/json')
+  .add('.jn', 'application/json')
 
 server.start().then((s) => {
   console.log(`server started on port ${s.port}`)
@@ -527,12 +526,8 @@ rjw-srv ./static --port=4444 --hideHTML
 - rjweb-server-ratelimit (To add rate limiting easily)
 
 ## Full Example
-
-### Javascript
-https://replit.com/@RobertJansen/aous
-
-### Typescript
-https://replit.com/@RobertJansen/aous-ts
+- Javascript: https://replit.com/@RobertJansen/aous
+- Typescript: https://replit.com/@RobertJansen/aous-ts
 
 ## Author
 
@@ -540,7 +535,8 @@ https://replit.com/@RobertJansen/aous-ts
 
 ## 🤝 Contributing
 
-Contributions, issues and feature requests are welcome!<br />Feel free to check [issues page](https://github.com/rotvproHD/NPM_WEB-SERVER/issues). 
+Contributions, issues and feature requests are welcome!<br>
+Feel free to check [issues page](https://github.com/rotvproHD/NPM_WEB-SERVER/issues). 
 
 ## Show your support
 
@@ -548,5 +544,5 @@ Give a Star if this project helped you!
 
 ## 📝 License
 
-Copyright © 2023 [0x4096](https://github.com/rotvproHD).<br />
+Copyright © [0x4096](https://github.com/rotvproHD).<br>
 This project is MIT licensed.

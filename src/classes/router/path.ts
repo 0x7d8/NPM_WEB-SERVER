@@ -99,8 +99,8 @@ export default class RoutePath {
 		this.routes.push({
 			type: 'route',
 			method: method,
-			path: pathParser([this.httpPath, path]),
-			pathArray: pathParser([this.httpPath, path]).split('/'),
+			path: pathParser([ this.httpPath, path ]),
+			pathArray: pathParser([ this.httpPath, path ]).split('/'),
 			code: code,
 			data: {
 				validations: this.validations
@@ -136,7 +136,7 @@ export default class RoutePath {
 	) {
 		if (this.webSockets.some((obj) => (obj.path === pathParser(path)))) return this
 
-		const routeWS = new RouteWS(pathParser([this.httpPath, path]), [...this.validations])
+		const routeWS = new RouteWS(pathParser([ this.httpPath, path ]), [...this.validations])
 		this.externals.push({ method: 'getWebSocket', object: routeWS })
 		code(routeWS)
 

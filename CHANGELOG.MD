@@ -1,3 +1,10 @@
+## 5.7.9
+
+- Remove License Year
+- Update examples in Readme
+- Add C++ Info to Readme
+- Fix Pathparser breaking on index routes
+
 ## 5.7.8
 
 - Automatically Decompress HTTP Bodies
