@@ -1,3 +1,8 @@
+## 5.9.1
+
+- Export parseContent & Content Type
+- Fix .npmignore
+
 ## 5.9.0
 
 - Rework CLI with yargs
@@ -186,11 +191,10 @@
 - Added a Global Parsing Function
 - Automatically parse Maps to JSON
 - Removed Rate Limiting (will be implemented in an external package)
-- Improved Event Names (
-    error -> runtimeError
-    request -> httpRequest
-    notfound -> http404
-  )
+- Improved Event Names
+  - error -> runtimeError
+  - request -> httpRequest
+  - notfound -> http404
 - Renamed .add to .http in the Router
 - Renamed .prefix to .path in the Router
 - Fixed Validations merging to the top

@@ -21,17 +21,16 @@ export interface Returns {
 export default async function parseContent(content: Content): Promise<Returns> {
 	let returnObject: Returns = { headers: {}, content: Buffer.alloc(0) }
 	if (Buffer.isBuffer(content)) return { headers: {}, content }
-	if (isMap(content)) content = Object.fromEntries(content)
+	if (isMap(content)) content = Object.fromEntries(content.entries())
 	if (isSet(content)) content = Object.fromEntries(content.entries())
 
 	switch (typeof content) {
 		case "object":
-			returnObject.headers['Content-Type'] = Buffer.from('application/json')
-
 			try {
 				returnObject.content = Buffer.from(JSON.stringify(content))
+				returnObject.headers['Content-Type'] = Buffer.from('application/json')
 			} catch {
-				returnObject.content = Buffer.from('Failed to parse JSON Data')
+				returnObject.content = Buffer.from('Failed to parse provided Object')
 			}
 
 			break
