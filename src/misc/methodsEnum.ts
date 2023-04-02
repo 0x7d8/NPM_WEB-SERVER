@@ -1,4 +1,6 @@
 enum Methods {
+  CONNECT = 'CONNECT',
+  TRACE = 'TRACE',
   OPTIONS = 'OPTIONS',
   DELETE = 'DELETE',
   PATCH = 'PATCH',

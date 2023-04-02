@@ -397,8 +397,8 @@
   }
 
 
-  let socket, password
-  if (/* PWD */ true) password = prompt('Please enter the Dashboard Password')
+  let socket, password = ''
+  if (/* PWD */ true) password = encodeURIComponent(prompt('Please enter the Dashboard Password'))
   try {
     socket = new WebSocket(`ws://${window.location.hostname}:${window.location.port}/rjweb-dashboard/ws?password=${password}`)
   } catch {

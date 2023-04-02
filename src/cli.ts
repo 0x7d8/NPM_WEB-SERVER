@@ -89,13 +89,13 @@ yargs
 				type: 'boolean',
 				description: 'Whether to remove html file endings',
 				alias: ['html', 'h', 'hH'],
-				default: true,
+				default: false,
 			})
 			.option('compress', {
 				type: 'boolean',
 				description: 'Whether to compress outgoing data with gzip',
 				alias: ['C'],
-				default: true,
+				default: false,
 			})
 			.option('cors', {
 				type: 'boolean',

@@ -1,3 +1,10 @@
+## 5.9.2
+
+- Add CONNECT & TRACE HTTP Methods
+- Dont activate anything by default in the CLI
+- Make handleEvent slightly more Typesafe
+- Encode URI Password for Dashboard
+
 ## 5.9.1
 
 - Export parseContent & Content Type

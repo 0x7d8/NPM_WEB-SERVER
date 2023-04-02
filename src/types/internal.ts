@@ -33,6 +33,8 @@ export type LoadPath = {
 }
 
 export type HTTPMethods =
+	| 'CONNECT'
+	| 'TRACE'
 	| 'OPTIONS'
 	| 'DELETE'
 	| 'PATCH'

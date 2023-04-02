@@ -1,7 +1,8 @@
+import { HTTPRequestContext, WSRequestContext } from ".."
 import { GlobalContext, InternalContext } from "../types/context"
 import { Events } from "../types/event"
 
-export default async function handleEvent(eventParam: Events, ctr: any, ctx: InternalContext, ctg: GlobalContext) {
+export default async function handleEvent(eventParam: Events, ctr: HTTPRequestContext | WSRequestContext, ctx: InternalContext, ctg: GlobalContext) {
 	switch (eventParam) {
 		case "runtimeError": {
 			const event = ctg.routes.event.find((event) => event.name === 'runtimeError')
@@ -16,7 +17,7 @@ export default async function handleEvent(eventParam: Events, ctr: any, ctx: Int
 				// Custom RuntimeError
 				try {
 					if (event.name !== 'runtimeError') return
-					await Promise.resolve(event.code(ctr, ctx.error!))
+					await Promise.resolve(event.code(ctr as any, ctx.error!))
 					ctx.execute.event = 'none'
 				} catch (err: any) {
 					console.error(err)
@@ -42,7 +43,7 @@ export default async function handleEvent(eventParam: Events, ctr: any, ctx: Int
 			} else {
 				// Custom WsError
 				try {
-					await Promise.resolve(event.code(ctr, ctx.error!))
+					await Promise.resolve(event.code(ctr as any, ctx.error!))
 					ctx.execute.event = 'none'
 				} catch (err: any) {
 					console.error(err)
@@ -61,7 +62,7 @@ export default async function handleEvent(eventParam: Events, ctr: any, ctx: Int
 				// Custom HttpRequest
 				try {
 					if (event.name !== 'wsRequest') return
-					await Promise.resolve(event.code(ctr))
+					await Promise.resolve(event.code(ctr as any))
 					ctx.execute.event = 'none'
 				} catch (err: any) {
 					ctx.error = err
@@ -80,7 +81,7 @@ export default async function handleEvent(eventParam: Events, ctr: any, ctx: Int
 				// Custom HttpRequest
 				try {
 					if (event.name !== 'httpRequest') return
-					await Promise.resolve(event.code(ctr))
+					await Promise.resolve(event.code(ctr as any))
 					ctx.execute.event = 'none'
 				} catch (err: any) {
 					ctx.error = err
@@ -104,7 +105,7 @@ export default async function handleEvent(eventParam: Events, ctr: any, ctx: Int
 				// Custom Http404
 				try {
 					if (event.name !== 'http404') return
-					await Promise.resolve(event.code(ctr))
+					await Promise.resolve(event.code(ctr as any))
 					ctx.execute.event = 'none'
 				} catch (err: any) {
 					ctx.error = err
