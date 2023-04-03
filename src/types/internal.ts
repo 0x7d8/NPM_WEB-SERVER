@@ -47,6 +47,7 @@ export type HTTPMethods =
 export type ExternalRouter = {
 	method: string
 	object: unknown
+	addPrefix?: string
 }
 
 export type Routed = (ctr: HTTPRequestContext) => Promise<any> | any

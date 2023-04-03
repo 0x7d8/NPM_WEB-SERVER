@@ -3,6 +3,7 @@ import { MiddlewareProduction } from "../../types/external"
 import Event, { EventHandlerMap, Events } from "../../types/event"
 
 import RoutePath from "./path"
+import RouteExternal from "./external"
 import RouteContentTypes from "./contentTypes"
 import RouteDefaultHeaders from "./defaultHeaders"
 
@@ -85,11 +86,15 @@ export default class RouteList {
 	*/
 	path(
 		/** The Path Prefix */ prefix: string,
-		/** The Code to handle the Prefix */ code: (path: RoutePath) => RoutePath
+		/** The Code to handle the Prefix */ router: (path: RoutePath) => RoutePath | RoutePath | RouteExternal
 	) {
-		const routePath = new RoutePath(prefix)
-		this.externals.push({ method: 'getRoutes', object: routePath })
-		code(routePath)
+		if ('getRoutes' in router) {
+			this.externals.push({ method: 'getRoutes', object: router, addPrefix: prefix })
+		} else {
+			const routePath = new RoutePath(prefix)
+			this.externals.push({ method: 'getRoutes', object: routePath })
+			router(routePath)
+		}
 
 		return this
 	}

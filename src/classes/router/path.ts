@@ -9,6 +9,7 @@ import path from "path"
 import fs from "fs"
 
 import RouteWS from "./ws"
+import RouteExternal from "./external"
 
 export default class RoutePath {
 	protected externals: ExternalRouter[]
@@ -301,11 +302,15 @@ export default class RoutePath {
 	*/
 	path(
 		/** The Path Prefix */ prefix: string,
-		/** The Code to handle the Prefix */ code: (path: RoutePath) => RoutePath
+		/** The Code to handle the Prefix */ router: (path: RoutePath) => RoutePath | RoutePath | RouteExternal
 	) {
-		const routePath = new RoutePath(pathParser([this.httpPath, prefix]), [...this.validations])
-		this.externals.push({ method: 'getRoutes', object: routePath })
-		code(routePath)
+		if ('getRoutes' in router) {
+			this.externals.push({ method: 'getRoutes', object: router, addPrefix: pathParser([ this.httpPath, prefix ]) })
+		} else {
+			const routePath = new RoutePath(pathParser([ this.httpPath, prefix ]), [...this.validations])
+			this.externals.push({ method: 'getRoutes', object: routePath })
+			router(routePath)
+		}
 
 		return this
 	}
@@ -319,12 +324,12 @@ export default class RoutePath {
 		const routes = [...this.routes], webSockets = [...this.webSockets],
 			statics = [...this.statics], loadPaths = [...this.loadPaths]
 		for (const external of this.externals) {
-			const result = await (external.object as any)[external.method]()
+			const result = await (external.object as any)[external.method](external.addPrefix ?? '/')
 
-			if ('routes' in result) routes.push(...result.routes)
-			if ('webSockets' in result) webSockets.push(...result.webSockets)
-			if ('statics' in result) statics.push(...result.statics)
-			if ('loadPaths' in result) loadPaths.push(...result.loadPaths)
+			if ('routes' in result && result.routes.length > 0) routes.push(...result.routes)
+			if ('webSockets' in result && result.webSockets.length > 0) webSockets.push(...result.webSockets)
+			if ('statics' in result && result.statics.length > 0) statics.push(...result.statics)
+			if ('loadPaths' in result && result.loadPaths.length > 0) loadPaths.push(...result.loadPaths)
 		}
 
 		return {

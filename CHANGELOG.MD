@@ -1,3 +1,9 @@
+## 5.9.3
+
+- Improve External Routers
+- Skip spreading results when their length is 0
+- Add Link to new Documentation in Readme
+
 ## 5.9.2
 
 - Add CONNECT & TRACE HTTP Methods
