@@ -38,6 +38,7 @@ export interface InternalContext {
 	/** Run all current Functions contained in the Queue */ runQueue(): Promise<Error | null>
 
 	/** The Current Request Body */ body: {
+		/** The Body as Chunks */ chunks: Buffer[]
 		/** The Body as a raw Buffer */ raw: Buffer
 		/** The Body as a parsed Object */ parsed: any
 	}

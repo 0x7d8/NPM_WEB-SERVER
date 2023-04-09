@@ -1,3 +1,14 @@
+## 5.9.5
+
+- Only Search for Static Files on GET requests
+- Fix Detached ArrayBuffer Errors when POSTing large files
+- Add Version Deprecation Infos to README
+- Make Bodies & Messages getters to safe memory
+- Use allocUnsafe for creating empty Buffers
+- Make sure Content-Length exists because uWebsockets v20.20.0 doesnt support chunked encoding
+- Error when Content-Length doesnt match the actual length of the Content
+- Upgrade npm Dependencies
+
 ## 5.9.4
 
 - Change ca to key for SSL

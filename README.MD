@@ -36,6 +36,15 @@ yarn add rjweb-server
 pnpm add rjweb-server
 ```
 
+## Update Infos
+
+- 0.X | Deprecated
+- 1.X | Deprecated
+- 2.X | Deprecated
+- 3.X | Deprecated
+- 4.X | Deprecated
+- 5.X | Patches & Features
+
 ## Typescript
 
 Importing
