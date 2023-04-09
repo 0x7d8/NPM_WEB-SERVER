@@ -186,13 +186,13 @@ export default class Webserver extends RouteList {
 				try {
 					await fs.readFile(path.resolve(this.globalContext.options.https.keyFile))
 					await fs.readFile(path.resolve(this.globalContext.options.https.certFile))
-				} catch (e) {
+				} catch {
 					throw new Error(`Cant access your HTTPS Key or Cert file! (${this.globalContext.options.https.keyFile} / ${this.globalContext.options.https.certFile})`)
 				}
 
 				this.server = uWebsocket.SSLApp({
-					ca_file_name: path.resolve(this.globalContext.options.https.keyFile),
-					cert_file_name: path.resolve(this.globalContext.options.https.certFile)
+					key_file_name: path.resolve(this.globalContext.options.https.keyFile),
+					cert_file_name: path.resolve(this.globalContext.options.https.certFile),
 				})
 			} else this.server = uWebsocket.App()
 

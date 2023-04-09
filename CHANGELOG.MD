@@ -1,3 +1,9 @@
+## 5.9.4
+
+- Change ca to key for SSL
+- Add another Space to CLI Prefix
+- Bump uWebsockets
+
 ## 5.9.3
 
 - Improve External Routers

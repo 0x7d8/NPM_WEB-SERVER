@@ -40,7 +40,7 @@ const colors = {
 	}
 }
 
-const prefix = `⚡ ${colors.fg.white}[RJWEB ${Version.split('.')[0]}]${colors.fg.gray}:${colors.reset}`
+const prefix = `⚡  ${colors.fg.white}[RJWEB ${Version.split('.')[0]}]${colors.fg.gray}:${colors.reset}`
 
 const coloredPath = (path: string) => {
 	let output: string[] = []
