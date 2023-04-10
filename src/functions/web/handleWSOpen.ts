@@ -9,7 +9,8 @@ import handleEvent from "../handleEvent"
 
 export default function handleWSOpen(ws: WebSocket<WebSocketContext>, ctg: GlobalContext) {
 	let { custom, ctx } = ws.getUserData()
-	ctx.response.content = Buffer.alloc(0)
+
+	ctx.response.content = Buffer.allocUnsafe(0)
 	ctx.previousHours = getPreviousHours()
 	ctx.continueSend = true
 	ctx.executeCode = true
@@ -121,7 +122,9 @@ export default function handleWSOpen(ws: WebSocket<WebSocketContext>, ctg: Globa
 									ctg.webSockets.messages.outgoing[ctx.previousHours[4]]++
 
 									ws.send(data)
-								} catch { ctx.events.emit('requestAborted') }
+								} catch {
+									ctx.events.emit('requestAborted')
+								}
 
 								ctg.data.outgoing.total += data.byteLength
 								ctg.data.outgoing[ctx.previousHours[4]] += data.byteLength

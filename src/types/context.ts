@@ -52,8 +52,9 @@ export interface InternalContext {
 	}
 
 	/** The Response Object */ response: {
-		/** The Headers to Respond with */ headers: Record<string, Buffer>
+		/** The Headers to Respond with */ headers: Record<string, Buffer | string>
 		/** The HTTP Status to Respond with */ status: number
+		/** The HTTP Status Message to concat to the Code */ statusMessage: string | undefined
 		/** Whether the Current Content is Compressed */ isCompressed: boolean
 		/** The Raw Content to Send */ content: Buffer
 	}

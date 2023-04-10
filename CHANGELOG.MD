@@ -1,3 +1,10 @@
+## 5.9.8
+
+- Add Custom Status Messages to HTTP
+- Dont call .toString() on the raw body minimum 2 times every parse
+- Allow strings & Buffers for Headers since sometimes Strings are more performant
+- If available, directly check the content-length header to decide early if the request should be cancelled
+
 ## 5.9.7
 
 - Correctly handle parsed Body Cache

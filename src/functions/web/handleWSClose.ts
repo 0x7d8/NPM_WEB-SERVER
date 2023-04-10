@@ -8,6 +8,7 @@ import { getPreviousHours } from "./handleRequest"
 
 export default function handleWSClose(ws: WebSocket<WebSocketContext>, message: ArrayBuffer, ctg: GlobalContext) {
 	let { custom, ctx } = ws.getUserData()
+
 	ctx.previousHours = getPreviousHours()
 	ctx.body.raw = Buffer.from(message)
 	ctx.body.parsed = ''
@@ -15,8 +16,8 @@ export default function handleWSClose(ws: WebSocket<WebSocketContext>, message: 
 
 	ctx.events.emit('requestAborted')
 
-	ctg.data.incoming.total += message.byteLength
-	ctg.data.incoming[ctx.previousHours[4]] += message.byteLength
+	ctg.data.incoming.total += ctx.body.raw.byteLength
+	ctg.data.incoming[ctx.previousHours[4]] += ctx.body.raw.byteLength
 
 	ctx.handleError = (err) => {
 		if (!err) return
@@ -49,10 +50,13 @@ export default function handleWSClose(ws: WebSocket<WebSocketContext>, message: 
 				port: Number(ctx.remoteAddress.split(':')[1]),
 				ip: hostIp
 			}, get message() {
-				if (!ctx.body.parsed) if (ctg.options.body.parse) {
-					try { ctx.body.parsed = JSON.parse(ctx.body.raw.toString()) }
-					catch (err) { ctx.body.parsed = ctx.body.raw.toString() }
-				} else ctx.body.parsed = ctx.body.raw.toString()
+				if (!ctx.body.parsed) {
+					const stringified = ctx.body.raw.toString()
+					if (ctg.options.body.parse) {
+						try { ctx.body.parsed = JSON.parse(stringified) }
+						catch { ctx.body.parsed = stringified }
+					} else ctx.body.parsed = stringified
+				}
 
 				return ctx.body.parsed
 			}, get rawMessage() {

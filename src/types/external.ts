@@ -183,9 +183,12 @@ export interface HTTPRequestContext<Custom = {}, Body = unknown> {
 	 * @example
 	 * ```
 	 * ctr.status(401).print('Unauthorized')
+	 * 
+	 * // or
+	 * ctr.status(666, 'The Devil').print('The Devil')
 	 * ```
 	 * @since 0.0.2
-	*/ status(code: Status): this
+	*/ status(code: Status, message?: string): this
 	/**
 	 * Redirect a Client to another URL
 	 * @example

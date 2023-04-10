@@ -9,7 +9,8 @@ import { getPreviousHours } from "./handleRequest"
 
 export default function handleWSConnect(ws: WebSocket<WebSocketContext>, message: ArrayBuffer, ctg: GlobalContext) {
 	let { custom, ctx } = ws.getUserData()
-	ctx.response.content = Buffer.alloc(0)
+
+	ctx.response.content = Buffer.allocUnsafe(0)
 	ctx.previousHours = getPreviousHours()
 	ctx.body.raw = Buffer.from(message)
 	ctx.body.parsed = ''
@@ -17,8 +18,8 @@ export default function handleWSConnect(ws: WebSocket<WebSocketContext>, message
 	ctx.executeCode = true
 	ctx.queue = []
 
-	ctg.data.incoming.total += message.byteLength
-	ctg.data.incoming[ctx.previousHours[4]] += message.byteLength
+	ctg.data.incoming.total += ctx.body.raw.byteLength
+	ctg.data.incoming[ctx.previousHours[4]] += ctx.body.raw.byteLength
 
 	ctg.webSockets.messages.incoming.total++
 	ctg.webSockets.messages.incoming[ctx.previousHours[4]]++
@@ -54,10 +55,13 @@ export default function handleWSConnect(ws: WebSocket<WebSocketContext>, message
 				port: Number(ctx.remoteAddress.split(':')[1]),
 				ip: hostIp
 			}, get message() {
-				if (!ctx.body.parsed) if (ctg.options.body.parse) {
-					try { ctx.body.parsed = JSON.parse(ctx.body.raw.toString()) }
-					catch { ctx.body.parsed = ctx.body.raw.toString() }
-				} else ctx.body.parsed = ctx.body.raw.toString()
+				if (!ctx.body.parsed) {
+					const stringified = ctx.body.raw.toString()
+					if (ctg.options.body.parse && ctx.headers['content-type'] === 'application/json') {
+						try { ctx.body.parsed = JSON.parse(stringified) }
+						catch { ctx.body.parsed = stringified }
+					} else ctx.body.parsed = stringified
+				}
 
 				return ctx.body.parsed
 			}, get rawMessage() {
@@ -138,7 +142,9 @@ export default function handleWSConnect(ws: WebSocket<WebSocketContext>, message
 									ctg.webSockets.messages.outgoing[ctx.previousHours[4]]++
 
 									ws.send(data)
-								} catch { ctx.events.emit('requestAborted') }
+								} catch {
+									ctx.events.emit('requestAborted')
+								}
 
 								ctg.data.outgoing.total += data.byteLength
 								ctg.data.outgoing[ctx.previousHours[4]] += data.byteLength
