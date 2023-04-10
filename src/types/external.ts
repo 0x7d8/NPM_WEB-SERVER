@@ -141,10 +141,15 @@ export interface HTTPRequestContext<Custom = {}, Body = unknown> {
 	 * The Raw Request Body
 	 * @since 5.5.2
 	*/ readonly rawBody: string
+
 	/**
 	 * The Requested URL
 	 * @since 0.0.2
 	*/ readonly url: URLObject
+	/**
+	 * The Domain this Request was made on
+	 * @since 5.9.6
+	*/ readonly domain: string
 
 	/**
 	 * The Raw HTTP Server Req Variable

@@ -59,6 +59,7 @@ export default function handleHTTPRequest(req: HttpRequest, res: HttpResponse, s
 		headers: {},
 		cookies: {},
 		events: new EventEmitter() as any,
+		isAborted: false,
 		previousHours: getPreviousHours(),
 		body: {
 			chunks: [],
@@ -93,10 +94,9 @@ export default function handleHTTPRequest(req: HttpRequest, res: HttpResponse, s
 	})
 
 	// Handle Aborting Requests
-	let isAborted = false
 	res.onAborted(() => {
 		ctx.events.emit('requestAborted')
-		isAborted = true
+		ctx.isAborted = true
 	})
 
 	// Handle CORS Requests
@@ -107,13 +107,13 @@ export default function handleHTTPRequest(req: HttpRequest, res: HttpResponse, s
 		ctx.response.headers['access-control-allow-methods'] = Buffer.from('*')
 
 		if (ctx.url.method === 'OPTIONS') {
-			if (!isAborted) return res.cork(() => {
+			if (!ctx.isAborted) return res.cork(() => {
 				// Write Headers
 				for (const header in ctx.response.headers) {
-					if (!isAborted) res.writeHeader(header, ctx.response.headers[header])
+					if (!ctx.isAborted) res.writeHeader(header, ctx.response.headers[header])
 				}
 
-				if (!isAborted) res.end('')
+				if (!ctx.isAborted) res.end('')
 			})
 			else return
 		}
@@ -125,14 +125,14 @@ export default function handleHTTPRequest(req: HttpRequest, res: HttpResponse, s
 		// Check for Content-Length Header
 		if (!ctx.headers['content-length'] || parseInt(ctx.headers['content-length']).toString() === 'NaN') return res.cork(() => {
 			// Write Status
-			if (!isAborted) res.writeStatus(parseStatus(Status.LENGTH_REQUIRED))
+			if (!ctx.isAborted) res.writeStatus(parseStatus(Status.LENGTH_REQUIRED))
 		
 			// Write Headers
 			for (const header in ctx.response.headers) {
-				if (!isAborted) res.writeHeader(header, ctx.response.headers[header])
+				if (!ctx.isAborted) res.writeHeader(header, ctx.response.headers[header])
 			}
 
-			if (!isAborted) res.end()
+			if (!ctx.isAborted) res.end()
 		})
 
 		// Create Decompressor
@@ -143,23 +143,23 @@ export default function handleHTTPRequest(req: HttpRequest, res: HttpResponse, s
 			ctx.body.chunks.push(data)
 		}).once('error', () => {
 			deCompression.destroy()
-			if (!isAborted) return res.cork(() => {
+			if (!ctx.isAborted) return res.cork(() => {
 				// Write Status
-				if (!isAborted) res.writeStatus(parseStatus(Status.BAD_REQUEST))
+				if (!ctx.isAborted) res.writeStatus(parseStatus(Status.BAD_REQUEST))
 
 				// Write Headers
 				for (const header in ctx.response.headers) {
-					if (!isAborted) res.writeHeader(header, ctx.response.headers[header])
+					if (!ctx.isAborted) res.writeHeader(header, ctx.response.headers[header])
 				}
 
-				if (!isAborted) res.end('Invalid Content-Type Header or Content')
+				if (!ctx.isAborted) res.end('Invalid Content-Type Header or Content')
 			})
 		}).once('close', () => {
 			ctx.events.emit('startRequest')
 		})
 
 		// Recieve Data
-		if (!isAborted) res.onData(async(rawChunk, isLast) => {
+		if (!ctx.isAborted) res.onData(async(rawChunk, isLast) => {
 			try {
 				const buffer = Buffer.from(rawChunk), sendBuffer = Buffer.allocUnsafe(buffer.byteLength)
 				buffer.copy(sendBuffer)
@@ -174,27 +174,27 @@ export default function handleHTTPRequest(req: HttpRequest, res: HttpResponse, s
 					const result = await parseContent(ctg.options.body.message)
 					deCompression.destroy()
 	
-					if (!isAborted) return res.cork(() => {
+					if (!ctx.isAborted) return res.cork(() => {
 						// Write Headers & Status
-						if (!isAborted) res.writeStatus(parseStatus(Status.PAYLOAD_TOO_LARGE))
+						if (!ctx.isAborted) res.writeStatus(parseStatus(Status.PAYLOAD_TOO_LARGE))
 						for (const header in ctx.response.headers) {
-							if (!isAborted) res.writeHeader(header, ctx.response.headers[header])
+							if (!ctx.isAborted) res.writeHeader(header, ctx.response.headers[header])
 						}
 	
-						if (!isAborted) res.end(result.content)
+						if (!ctx.isAborted) res.end(result.content)
 					})
 					else return
 				} else if (totalBytes > Number(ctx.headers['content-length'])) {
 					deCompression.destroy()
 
-					if (!isAborted) return res.cork(() => {
+					if (!ctx.isAborted) return res.cork(() => {
 						// Write Headers & Status
-						if (!isAborted) res.writeStatus(parseStatus(Status.BAD_REQUEST))
+						if (!ctx.isAborted) res.writeStatus(parseStatus(Status.BAD_REQUEST))
 						for (const header in ctx.response.headers) {
-							if (!isAborted) res.writeHeader(header, ctx.response.headers[header])
+							if (!ctx.isAborted) res.writeHeader(header, ctx.response.headers[header])
 						}
 	
-						if (!isAborted) res.end('Invalid Content-Length Header')
+						if (!ctx.isAborted) res.end('Invalid Content-Length Header')
 					})
 				}
 
@@ -408,12 +408,14 @@ export default function handleHTTPRequest(req: HttpRequest, res: HttpResponse, s
 
 		// Get Correct Host IP
 		let hostIp: string
-		if (ctg.options.proxy && ctx.headers['x-forwarded-for']) hostIp = ctx.headers['x-forwarded-for']
+		if (ctg.options.proxy && ctx.headers['x-forwarded-for']) hostIp = ctx.headers['x-forwarded-for'].split(',')[0].trim()
 		else hostIp = ctx.remoteAddress.split(':')[0]
 
 		// Turn Cookies into Object
 		if (ctx.headers['cookie']) ctx.headers['cookie'].split(';').forEach((cookie) => {
 			const parts = cookie.split('=')
+			if (parts.length < 2) return
+
 			ctx.cookies[parts.shift()!.trim()] = parts.join('=')
 		})
 
@@ -459,7 +461,10 @@ export default function handleHTTPRequest(req: HttpRequest, res: HttpResponse, s
 				}
 
 				return ctx.body.raw.toString()
-			}, url: ctx.url,
+			},
+
+			url: ctx.url,
+			domain: ctx.headers['host'],
 
 			// Raw Values
 			rawReq: req,
@@ -529,11 +534,11 @@ export default function handleHTTPRequest(req: HttpRequest, res: HttpResponse, s
 				}
 
 				ctx.scheduleQueue('execution', () => new Promise<void>((resolve) => {
-					if (!isAborted) res.cork(() => {
+					if (!ctx.isAborted) res.cork(() => {
 						// Write Headers & Status
-						if (!isAborted) res.writeStatus(parseStatus(ctx.response.status))
+						if (!ctx.isAborted) res.writeStatus(parseStatus(ctx.response.status))
 						for (const header in ctx.response.headers) {
-							if (!isAborted) res.writeHeader(header, ctx.response.headers[header])
+							if (!ctx.isAborted) res.writeHeader(header, ctx.response.headers[header])
 						}
 
 						// Check Cache
@@ -568,7 +573,7 @@ export default function handleHTTPRequest(req: HttpRequest, res: HttpResponse, s
 								ctg.data.outgoing.total += content.byteLength
 								ctg.data.outgoing[ctx.previousHours[4]] += content.byteLength
 
-								if (!isAborted) res.write(content)
+								if (!ctx.isAborted) res.write(content)
 
 								// Write to Cache Store
 								if (cache) {
@@ -579,7 +584,7 @@ export default function handleHTTPRequest(req: HttpRequest, res: HttpResponse, s
 								ctx.response.content = Buffer.allocUnsafe(0)
 								ctx.events.removeListener('requestAborted', destroyStreams)
 								resolve()
-								if (!isAborted) res.end()
+								if (!ctx.isAborted) res.end()
 							})
 
 							const stream = createReadStream(file)
@@ -613,7 +618,7 @@ export default function handleHTTPRequest(req: HttpRequest, res: HttpResponse, s
 								ctg.data.outgoing.total += content.byteLength
 								ctg.data.outgoing[ctx.previousHours[4]] += content.byteLength
 
-								if (!isAborted) res.write(content)
+								if (!ctx.isAborted) res.write(content)
 
 								// Write to Cache Store
 								if (cache) {
@@ -624,7 +629,7 @@ export default function handleHTTPRequest(req: HttpRequest, res: HttpResponse, s
 								ctx.response.content = Buffer.allocUnsafe(0)
 								ctx.events.removeListener('requestAborted', destroyStream)
 								resolve()
-								if (!isAborted) res.end()
+								if (!ctx.isAborted) res.end()
 							})
 
 							// Destroy if required
@@ -641,11 +646,11 @@ export default function handleHTTPRequest(req: HttpRequest, res: HttpResponse, s
 				ctx.scheduleQueue('execution', () => new Promise<void>((resolve) => {
 					ctx.continueSend = false
 
-					if (!isAborted) res.cork(() => {
+					if (!ctx.isAborted) res.cork(() => {
 						// Write Headers & Status
-						if (!isAborted) res.writeStatus(parseStatus(ctx.response.status))
+						if (!ctx.isAborted) res.writeStatus(parseStatus(ctx.response.status))
 						for (const header in ctx.response.headers) {
-							if (!isAborted) res.writeHeader(header, ctx.response.headers[header])
+							if (!ctx.isAborted) res.writeHeader(header, ctx.response.headers[header])
 						}
 
 						const destroyStream = () => {
@@ -659,7 +664,7 @@ export default function handleHTTPRequest(req: HttpRequest, res: HttpResponse, s
 								return ctx.handleError(err)
 							}
 
-							if (!isAborted) res.write(data)
+							if (!ctx.isAborted) res.write(data)
 
 							ctg.data.outgoing.total += data.byteLength
 							ctg.data.outgoing[ctx.previousHours[4]] += data.byteLength
@@ -667,7 +672,7 @@ export default function handleHTTPRequest(req: HttpRequest, res: HttpResponse, s
 							if (destroyAbort) ctx.events.removeListener('requestAborted', destroyStream)
 							if (endRequest) {
 								resolve()
-								if (!isAborted) res.end()
+								if (!ctx.isAborted) res.end()
 							}
 						}, errorListener = (error: Error) => {
 							ctx.handleError(error)
@@ -751,8 +756,8 @@ export default function handleHTTPRequest(req: HttpRequest, res: HttpResponse, s
 
 					resolve(true)
 
-          if (!isAborted) return res.cork(() => {
-            if (!isAborted) return res.upgrade(
+          if (!ctx.isAborted) return res.cork(() => {
+            if (!ctx.isAborted) return res.upgrade(
               { ctx, params, custom: ctr["@"] } satisfies WebSocketContext,
               ctx.headers['sec-websocket-key'],
               ctx.headers['sec-websocket-protocol'],
@@ -806,9 +811,9 @@ export default function handleHTTPRequest(req: HttpRequest, res: HttpResponse, s
 
 		// Handle Reponse
 		try {
-			if (!isAborted && ctx.continueSend) return res.cork(() => {
+			if (!ctx.isAborted && ctx.continueSend) return res.cork(() => {
 				// Write Status
-				if (!isAborted) res.writeStatus(parseStatus(ctx.response.status))
+				if (!ctx.isAborted) res.writeStatus(parseStatus(ctx.response.status))
 
 				if (!ctx.response.isCompressed && String(ctr.headers.get('accept-encoding', '')).includes(CompressMapping[ctg.options.compression].toString())) {
 					ctx.response.headers['content-encoding'] = CompressMapping[ctg.options.compression]
@@ -816,7 +821,7 @@ export default function handleHTTPRequest(req: HttpRequest, res: HttpResponse, s
 
 					// Write Headers
 					for (const header in ctx.response.headers) {
-						if (!isAborted) res.writeHeader(header, ctx.response.headers[header])
+						if (!ctx.isAborted) res.writeHeader(header, ctx.response.headers[header])
 					}
 
 					const compression = handleCompressType(ctg.options.compression)
@@ -824,9 +829,9 @@ export default function handleHTTPRequest(req: HttpRequest, res: HttpResponse, s
 						ctg.data.outgoing.total += data.byteLength
 						ctg.data.outgoing[ctx.previousHours[4]] += data.byteLength
 				
-						if (!isAborted) res.write(data)
+						if (!ctx.isAborted) res.write(data)
 					}).once('close', () => {
-						if (!isAborted) res.end()
+						if (!ctx.isAborted) res.end()
 					})
 
 					compression.end(ctx.response.content)
@@ -836,11 +841,11 @@ export default function handleHTTPRequest(req: HttpRequest, res: HttpResponse, s
 
 					// Write Headers
 					for (const header in ctx.response.headers) {
-						if (!isAborted) res.writeHeader(header, ctx.response.headers[header])
+						if (!ctx.isAborted) res.writeHeader(header, ctx.response.headers[header])
 					}
 
-					if (!isAborted && ctx.response.isCompressed) res.end()
-					else if (!isAborted) res.end(ctx.response.content)
+					if (!ctx.isAborted && ctx.response.isCompressed) res.end()
+					else if (!ctx.isAborted) res.end(ctx.response.content)
 				}
 			})
 		} catch { }

@@ -31,12 +31,6 @@ export default function handleWSClose(ws: WebSocket<WebSocketContext>, message: 
 		if (ctg.options.proxy && ctx.headers['x-forwarded-for']) hostIp = ctx.headers['x-forwarded-for']
 		else hostIp = ctx.remoteAddress.split(':')[0]
 
-		// Parse Socket Message
-		if (ctg.options.body.parse) {
-			try { ctx.body.parsed = JSON.parse(ctx.body.raw.toString()) }
-			catch (err) { ctx.body.parsed = ctx.body.raw.toString() }
-		} else ctx.body.parsed = ctx.body.raw.toString()
-
 		// Create Context Response Object
 		let ctr: WebSocketClose = {
 			type: 'close',
@@ -54,9 +48,19 @@ export default function handleWSClose(ws: WebSocket<WebSocketContext>, message: 
 				userAgent: ctx.headers['user-agent'],
 				port: Number(ctx.remoteAddress.split(':')[1]),
 				ip: hostIp
-			}, message: ctx.body.parsed,
-			rawMessage: ctx.body.raw.toString(),
+			}, get message() {
+				if (!ctx.body.parsed) if (ctg.options.body.parse) {
+					try { ctx.body.parsed = JSON.parse(ctx.body.raw.toString()) }
+					catch (err) { ctx.body.parsed = ctx.body.raw.toString() }
+				} else ctx.body.parsed = ctx.body.raw.toString()
+
+				return ctx.body.parsed
+			}, get rawMessage() {
+				return ctx.body.raw.toString()
+			},
+
 			url: ctx.url,
+			domain: ctx.headers['host'],
 
 			// Custom Variables
 			'@': custom,

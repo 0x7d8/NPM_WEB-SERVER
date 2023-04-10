@@ -111,6 +111,10 @@ export interface WebSocketConnect<Custom = {}> {
 	 * The Requested URL
 	 * @since 5.4.0
 	*/ readonly url: URLObject
+	/**
+	 * The Domain this Request was made on
+	 * @since 5.9.6
+	*/ readonly domain: string
 
 	/**
 	 * Set a Custom Variable
@@ -254,10 +258,15 @@ export interface WebSocketMessage<Custom = {}, Body = unknown> {
 	 * The Raw Socket Message
 	 * @since 5.5.2
 	*/ readonly rawMessage: string
+
 	/**
 	 * The Requested URL
 	 * @since 5.4.0
 	*/ readonly url: URLObject
+	/**
+	 * The Domain this Request was made on
+	 * @since 5.9.6
+	*/ readonly domain: string
 
 	/**
 	 * Set a Custom Variable
@@ -401,10 +410,15 @@ export interface WebSocketClose<Custom = {}, Body = unknown> {
 	 * The Raw Socket Message
 	 * @since 5.5.2
 	*/ readonly rawMessage: string
+
 	/**
 	 * The Requested URL
 	 * @since 5.4.0
 	*/ readonly url: URLObject
+	/**
+	 * The Domain this Request was made on
+	 * @since 5.9.6
+	*/ readonly domain: string
 
 	/**
 	 * Set a Custom Variable

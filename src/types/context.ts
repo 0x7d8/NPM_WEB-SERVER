@@ -33,6 +33,7 @@ export interface InternalContext {
 	/** The List of Headers that the Client sent */ headers: Record<string, string>
 	/** The List of Cookies that the Client sent */ cookies: Record<string, string>
 	/** An Event Emitter Responsible for all Events */ events: TypedEventEmitter<InternalEvents>
+	/** A Boolean that keeps track whether the Request is Aborted */ isAborted: boolean
 	/** The Function to handle an Error in an Async Scenario */ handleError(err: Error | null): void
 	/** Schedule an Async Task for Execution */ scheduleQueue(type: Task['type'], callback: Task['function']): void
 	/** Run all current Functions contained in the Queue */ runQueue(): Promise<Error | null>

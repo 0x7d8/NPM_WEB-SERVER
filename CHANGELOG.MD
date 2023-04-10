@@ -1,3 +1,9 @@
+## 5.9.6
+
+- Add domain property to ctr
+- Add ctx.isAborted for easy aborted check for middleware
+- Dont instantly parse messages in wsClose Events
+
 ## 5.9.5
 
 - Only Search for Static Files on GET requests

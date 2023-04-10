@@ -62,7 +62,10 @@ export default function handleWSConnect(ws: WebSocket<WebSocketContext>, message
 				return ctx.body.parsed
 			}, get rawMessage() {
 				return ctx.body.raw.toString()
-			}, url: ctx.url,
+			},
+
+			url: ctx.url,
+			domain: ctx.headers['host'],
 
 			// Custom Variables
 			'@': custom,

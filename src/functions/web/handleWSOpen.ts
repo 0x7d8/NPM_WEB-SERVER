@@ -46,7 +46,10 @@ export default function handleWSOpen(ws: WebSocket<WebSocketContext>, ctg: Globa
 				userAgent: ctx.headers['user-agent'],
 				port: Number(ctx.remoteAddress.split(':')[1]),
 				ip: hostIp
-			}, url: ctx.url,
+			},
+
+			url: ctx.url,
+			domain: ctx.headers['host'],
 
 			// Custom Variables
 			'@': custom,
