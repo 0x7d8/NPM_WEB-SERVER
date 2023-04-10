@@ -1,3 +1,8 @@
+## 5.9.7
+
+- Correctly handle parsed Body Cache
+- Clean up some Code
+
 ## 5.9.6
 
 - Add domain property to ctr

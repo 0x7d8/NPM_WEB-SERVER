@@ -7,10 +7,10 @@ import handleEvent from "../handleEvent"
 import { getPreviousHours } from "./handleRequest"
 
 export default function handleWSClose(ws: WebSocket<WebSocketContext>, message: ArrayBuffer, ctg: GlobalContext) {
-	let custom = ws.getUserData().custom
-  let ctx = ws.getUserData().ctx
+	let { custom, ctx } = ws.getUserData()
 	ctx.previousHours = getPreviousHours()
 	ctx.body.raw = Buffer.from(message)
+	ctx.body.parsed = ''
 	ctx.executeCode = true
 
 	ctx.events.emit('requestAborted')

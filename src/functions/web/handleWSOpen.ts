@@ -8,8 +8,7 @@ import { getPreviousHours } from "./handleRequest"
 import handleEvent from "../handleEvent"
 
 export default function handleWSOpen(ws: WebSocket<WebSocketContext>, ctg: GlobalContext) {
-	let custom = ws.getUserData().custom
-  let ctx = ws.getUserData().ctx
+	let { custom, ctx } = ws.getUserData()
 	ctx.response.content = Buffer.alloc(0)
 	ctx.previousHours = getPreviousHours()
 	ctx.continueSend = true
