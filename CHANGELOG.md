@@ -1,3 +1,7 @@
+## 5.10.2
+
+- Dont Check for Content-Type header when parsing websocket messages
+
 ## 5.10.1
 
 - Use Lowercase File Extensions for Readmes

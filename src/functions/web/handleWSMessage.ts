@@ -57,7 +57,7 @@ export default function handleWSConnect(ws: WebSocket<WebSocketContext>, message
 			}, get message() {
 				if (!ctx.body.parsed) {
 					const stringified = ctx.body.raw.toString()
-					if (ctg.options.body.parse && ctx.headers['content-type'] === 'application/json') {
+					if (ctg.options.body.parse) {
 						try { ctx.body.parsed = JSON.parse(stringified) }
 						catch { ctx.body.parsed = stringified }
 					} else ctx.body.parsed = stringified
