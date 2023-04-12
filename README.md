@@ -21,6 +21,7 @@ It allows insane performance though ;)
 <br>
 
 ### 🏠 [Homepage](https://github.com/rotvproHD/NPM_WEB-SERVER#readme)
+### 🛠️ [Changelog](https://github.com/rotvproHD/NPM_WEB-SERVER/blob/main/CHANGELOG.md)
 ### 🌐 [Wiki](https://rjweb-server.rjansen.de)
 
 ## Install
