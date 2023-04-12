@@ -728,6 +728,15 @@ export default async function handleHTTPRequest(req: HttpRequest, res: HttpRespo
 			}
 		}
 
+		// Handle Websocket onUpgrade
+		if (ctx.executeCode && requestType === 'upgrade' && ctx.execute.exists && ctx.execute.route!.type === 'websocket' && 'onUpgrade' in ctx.execute.route!) {
+			try {
+				await Promise.resolve(ctx.execute.route.onUpgrade!(ctr, () => ctx.executeCode = false))
+			} catch (err: any) {
+				ctx.handleError(err)
+			}
+		}
+
 		// Execute Custom Run Function
 		if (requestType === 'http') await handleEvent('httpRequest', ctr, ctx, ctg)
 		else await handleEvent('wsRequest', ctr, ctx, ctg)

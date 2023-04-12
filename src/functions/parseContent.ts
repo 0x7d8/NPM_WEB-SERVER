@@ -11,7 +11,12 @@ export type Content =
 	| Record<any, any>
 	| symbol
 	| Function
-	| Content[]
+	| (
+			| Record<any, any>
+			| string
+			| number
+			| boolean
+		)[]
 
 export interface Returns {
 	headers: Record<string, Buffer>

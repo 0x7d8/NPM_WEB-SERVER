@@ -89,6 +89,7 @@ export interface GlobalContext {
 
   /** The Cache Stores */ cache: {
     /** The File Caches */ files: ValueCollection<string, Buffer>
+		/** The Middleware Cache (tip: save keys as "middleware:key" or similar to avoid duplicates from other middlewares) */ middlewares: ValueCollection<string, any>
     /** The Route Caches */ routes: ValueCollection<string, { route: Route | Static | WebSocket, params?: Record<string, string>, file?: string }>
   }
 }

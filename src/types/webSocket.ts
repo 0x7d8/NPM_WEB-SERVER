@@ -1,5 +1,5 @@
 import ValueCollection from "../classes/valueCollection"
-import { PrintStreamOptions } from "./external"
+import { HTTPRequestContext, PrintStreamOptions } from "./external"
 import { Routed } from "./internal"
 import { Content } from "../functions/parseContent"
 import ServerController from "../classes/webServer"
@@ -12,6 +12,7 @@ export default interface Websocket {
 
 	/** The URL as normal String */ path: string
 	/** An Array of the URL split by Slashes */ pathArray: string[]
+	/** The Async Code to run when the Socket gets an Upgrade HTTP Request */ onUpgrade?(ctr: HTTPRequestContext, end: (...args: any[]) => void): Promise<any> |any
 	/** The Async Code to run when the Socket Connects */ onConnect?(ctr: WebSocketConnect): Promise<any> | any
 	/** The Async Code to run when the Socket recieves a Message */ onMessage?(ctr: WebSocketMessage): Promise<any> | any
 	/** The Async Code to run when the Socket Closes */ onClose?(ctr: WebSocketClose): Promise<any> | any

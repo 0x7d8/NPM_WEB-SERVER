@@ -21,7 +21,31 @@ export default class RouteWS {
 	}
 
 	/**
-	 * Add an Event when someone Connects to the Socket
+	 * Add an Event when someone wants to Connect to the Socket
+	 * @example
+	 * ```
+	 * const controller = new Server({ })
+	 * 
+	 * controller.path('/', (path) => path
+	 *   .ws('/ws', (ws) => ws
+	 *     .onUpgrade((ctr, end) => {
+	 *       if (!ctr.queries.has('confirm')) return end(ctr.status(Status.BAD_REQUEST).print('Forgor the Confirm query'))
+	 *     })
+	 *   )
+	 * )
+	 * ```
+	 * @since 5.10.0
+	*/
+	onUpgrade(
+		/** The Async Code to run when the Socket gets an Upgrade HTTP Request */ code: WebSocket['onUpgrade']
+	) {
+		this.data.onUpgrade = code
+
+		return this
+	}
+
+	/**
+	 * Add an Event when someone Establishes a connection to the Socket
 	 * @example
 	 * ```
 	 * const controller = new Server({ })
@@ -37,7 +61,7 @@ export default class RouteWS {
 	 * @since 5.4.0
 	*/
 	onConnect(
-		/** The Async Code to run on a Request */ code: WebSocket['onConnect']
+		/** The Async Code to run when the Socket is Established */ code: WebSocket['onConnect']
 	) {
 		this.data.onConnect = code
 
@@ -61,7 +85,7 @@ export default class RouteWS {
 	 * @since 5.4.0
 	*/
 	onMessage(
-		/** The Async Code to run on a Request */ code: WebSocket['onMessage']
+		/** The Async Code to run on a Message */ code: WebSocket['onMessage']
 	) {
 		this.data.onMessage = code
 
@@ -85,7 +109,7 @@ export default class RouteWS {
 	 * @since 5.4.0
 	*/
 	onClose(
-		/** The Async Code to run on a Request */ code: WebSocket['onClose']
+		/** The Async Code to run when the Socket Closes */ code: WebSocket['onClose']
 	) {
 		this.data.onClose = code
 

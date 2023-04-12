@@ -4,5 +4,6 @@ examples/
 .github/
 .editorconfig
 yarn.lock
+yarn-error.log
 tsconfig.json
 CHANGELOG.MD

@@ -164,7 +164,7 @@ declare module "rjweb-server" {
 
 Initialize Server
 ```js
-const { Server } = require('rjweb-server')
+const { Server, Status } = require('rjweb-server')
 
 const server = new Server({
   bind: '0.0.0.0', // The IP thats bound to
@@ -206,6 +206,9 @@ server.path('/', (path) => path // The / is the Path Prefix for all children pat
     }
   })
   .ws('/echo', (ws) => ws
+    .onUpgrade((ctr, end) => {
+      if (!ctr.queries.has('confirm')) return end(ctr.status(Status.BAD_REQUEST).print('Please dont forget the confirm query!'))
+    })
     .onMessage((ctr) => {
       ctr.print(ctr.message)
     })

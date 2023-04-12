@@ -105,6 +105,7 @@ export default class Webserver extends RouteList {
 				event: [],
 			}, cache: {
 				files: new ValueCollection(undefined, undefined, fullOptions.cache),
+				middlewares: new ValueCollection(undefined, undefined, fullOptions.cache),
 				routes: new ValueCollection(undefined, undefined, fullOptions.cache)
 			}
 		}

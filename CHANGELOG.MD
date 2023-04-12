@@ -1,3 +1,9 @@
+## 5.10.0
+
+- Add Middleware Cache (ctg.cache.middlewares)
+- Add Ability to control the upgrade event of a WebSocket (.onUpgrade)
+- Show a minimum of 10 in the requests and all websocket boxes in the dashboard
+
 ## 5.9.8
 
 - Add Custom Status Messages to HTTP

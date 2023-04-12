@@ -116,6 +116,7 @@ export default async function statsRoute(ctr: HTTPRequestContext | WebSocketConn
             static_files: staticFiles,
             routes: ctg.routes.normal.length + ctg.routes.websocket.length,
             cached: ctg.cache.files.objectCount
+              + ctg.cache.middlewares.objectCount
               + ctg.cache.routes.objectCount
           })
         }, 1500)
