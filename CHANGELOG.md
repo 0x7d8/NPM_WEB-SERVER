@@ -1,3 +1,7 @@
+## 5.10.3
+
+- Always use POSIX Paths for route loading, even on Windows
+
 ## 5.10.2
 
 - Dont Check for Content-Type header when parsing websocket messages

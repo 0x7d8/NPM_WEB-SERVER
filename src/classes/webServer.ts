@@ -15,7 +15,7 @@ import { getAllFilesFilter } from "../misc/getAllFiles"
 import { promises as fs } from "fs"
 
 import uWebsocket from "uWebSockets.js"
-import path from "path"
+import path from "path/posix"
 
 export default class Webserver extends RouteList {
 	private globalContext: GlobalContext
