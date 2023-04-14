@@ -15,7 +15,8 @@ import { getAllFilesFilter } from "../misc/getAllFiles"
 import { promises as fs } from "fs"
 
 import uWebsocket from "uWebSockets.js"
-import path from "path/posix"
+import path from "path"
+import os from "os"
 
 export default class Webserver extends RouteList {
 	private globalContext: GlobalContext
@@ -401,7 +402,11 @@ export default class Webserver extends RouteList {
 				}
 			} else {
 				for (const file of await getAllFilesFilter(loadPath.path, 'js')) {
-					const route: RouteFile = (await import(path.relative(__dirname, file))).default
+					const path = os.platform() === 'win32'
+						? `file:///${file}`
+						: file
+
+					const route: RouteFile = (await import(path)).default
 
 					if (
 						!('method' in route) ||

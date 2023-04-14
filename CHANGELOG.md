@@ -1,3 +1,7 @@
+## 5.10.6
+
+- Add file:/// on win32 systems for dynamic imports
+
 ## 5.10.5
 
 - Use Relative Paths instead of Absolute ones for ESM Loading to work correctly on Windows
