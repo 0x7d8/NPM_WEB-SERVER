@@ -380,7 +380,7 @@ export default class Webserver extends RouteList {
 		for (const loadPath of (await this.getRoutes()).loadPaths) {
 			if (loadPath.type === 'cjs') {
 				for (const file of await getAllFilesFilter(loadPath.path, 'js')) {
-					const route: RouteFile = require(path.resolve(file))
+					const route: RouteFile = require(file)
 
 					if (
 						!('method' in route) ||
@@ -401,7 +401,7 @@ export default class Webserver extends RouteList {
 				}
 			} else {
 				for (const file of await getAllFilesFilter(loadPath.path, 'js')) {
-					const route: RouteFile = (await import(path.resolve(file))).default
+					const route: RouteFile = (await import(path.relative(__dirname, file))).default
 
 					if (
 						!('method' in route) ||

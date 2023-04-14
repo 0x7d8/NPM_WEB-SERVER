@@ -1,3 +1,7 @@
+## 5.10.5
+
+- Use Relative Paths instead of Absolute ones for ESM Loading to work correctly on Windows
+
 ## 5.10.4
 
 - Make sure to actually reresolve win32 paths to posix

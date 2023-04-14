@@ -272,7 +272,7 @@ export default class RoutePath {
 		if (!fs.existsSync(path.resolve(folder))) throw Error('The ESM Function folder wasnt found!')
 
 		this.loadPaths.push({
-			path: path.resolve(folder),
+			path: folder,
 			prefix: this.httpPath,
 			type: 'esm',
 			validations: this.validations
