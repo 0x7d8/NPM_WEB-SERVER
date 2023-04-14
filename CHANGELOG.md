@@ -1,3 +1,7 @@
+## 5.10.4
+
+- Make sure to actually reresolve win32 paths to posix
+
 ## 5.10.3
 
 - Always use POSIX Paths for route loading, even on Windows
