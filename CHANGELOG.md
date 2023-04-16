@@ -1,3 +1,7 @@
+## 6.0.1
+
+- Fix Router not applying Prefixes to HTTP Routes
+
 ## 6.0.0
 
 - Made Internal Router Logic Typesafe

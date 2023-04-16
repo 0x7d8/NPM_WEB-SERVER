@@ -7,20 +7,44 @@ import { pathParser } from "./URLObject"
 
 import RouteWS from "./router/ws"
 import RouteHTTP from "./router/http"
+import RouteDefaultHeaders from "./router/defaultHeaders"
 
 export default class RouteFileBuilder<Custom extends Record<any, any> = {}, Body = unknown> {
 	private routes: Route[] = []
 	private webSockets: WebSocket[] = []
-	protected headers: Record<string, Content> = {}
-	protected parsedHeaders: Record<string, Buffer> = {}
+	private headers: Record<string, Content> = {}
+	private parsedHeaders: Record<string, Buffer> = {}
 	private validations: Routed[] = []
 	private externals: ExternalRouter[] = []
-	protected hasCalledGet = false
+	private hasCalledGet = false
 
 	constructor(
 		/** The Code to handle the File */ code: (file: RouteFileBuilder) => RouteFileBuilder
 	) {
 		code(this)
+	}
+
+	/**
+	 * Add Default Headers
+	 * @example
+	 * ```
+	 * module.exports = new RouteFile((file) => file
+	 *   .defaultHeaders((dH) => dH
+	 *     .add('X-Api-Version', '1.0.0')
+	 *   )
+	 * )
+	 * ```
+	 * @since 6.0.1
+	*/ defaultHeaders(
+		/** The Code to handle the Headers */ code: (path: RouteDefaultHeaders) => RouteDefaultHeaders
+	) {
+		const routeDefaultHeaders = new RouteDefaultHeaders()
+		this.externals.push({ object: routeDefaultHeaders })
+
+		code(routeDefaultHeaders)
+		this.headers = { ...this.headers, ...(routeDefaultHeaders as any).defaultHeaders }
+
+		return this
 	}
 
 	/**

@@ -100,7 +100,7 @@ export default class RoutePath {
 		) {
 			if (this.webSockets.some((obj) => (obj.path === pathParser(path)))) return this
 	
-			const routeHTTP = new RouteHTTP(pathParser(path), method, this.validations, this.parsedHeaders)
+			const routeHTTP = new RouteHTTP(pathParser([ this.httpPath, path ]), method, this.validations, this.parsedHeaders)
 			this.externals.push({ object: routeHTTP })
 			code(routeHTTP)
 	
