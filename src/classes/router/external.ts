@@ -7,7 +7,7 @@ import { ExternalRouter, LoadPath } from "../../types/internal"
 import RoutePath from "./path"
 
 export default class RouteExternal {
-  protected external: ExternalRouter
+  private external: ExternalRouter
 
   /**
 	 * Create a new External Router

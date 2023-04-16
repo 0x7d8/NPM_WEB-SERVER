@@ -1,6 +1,6 @@
 import WebSocket from "../types/webSocket"
 import Route from "../types/route"
-import { ExternalRouter, HTTPMethods, Routed } from "../types/internal"
+import { ExternalRouter, HTTPMethods, RoutedValidation } from "../types/internal"
 import addPrefixes from "../functions/addPrefixes"
 import { Content } from "../functions/parseContent"
 import { pathParser } from "./URLObject"
@@ -14,14 +14,62 @@ export default class RouteFileBuilder<Custom extends Record<any, any> = {}, Body
 	private webSockets: WebSocket[] = []
 	private headers: Record<string, Content> = {}
 	private parsedHeaders: Record<string, Buffer> = {}
-	private validations: Routed[] = []
+	private validations: RoutedValidation[] = []
 	private externals: ExternalRouter[] = []
 	private hasCalledGet = false
 
-	constructor(
+	/**
+	 * Create a new Route File
+	 * @example
+	 * ```
+   * // routes/say.js
+	 * module.exports = new RouteFile((file) => file
+	 *   .http('GET', '/say/<text>', (http) => http
+	 *     .onRequest((ctr) => {
+	 *       ctr.print(ctr.params.get('text'))
+	 *     })
+	 *   )
+	 * )
+	 * ```
+   * 
+   * ```
+   * // index.js
+   * const controller = new Server({ })
+   * 
+   * controller.path('/', (path) => path
+	 *   .loadCJS('./routes')
+	 * )
+   * ```
+	 * @since 6.0.0
+	*/ constructor(
 		/** The Code to handle the File */ code: (file: RouteFileBuilder) => RouteFileBuilder
 	) {
 		code(this)
+	}
+
+	/**
+	 * Add a Validation
+	 * @example
+	 * ```
+	 * // The /api route will automatically check for correct credentials
+	 * // Obviously still putting the prefix (in this case / from the RoutePath in front)
+	 * const controller = new Server({ })
+	 * 
+	 * module.exports = new RouteFile((file) => file
+	 *   .validate(async(ctr) => {
+	 *     if (!ctr.headers.has('Authorization')) return end(ctr.status(401).print('Unauthorized'))
+	 *     if (ctr.headers.get('Authorization') !== 'key123 or db request ig') return end(ctr.status(401).print('Unauthorized'))
+	 *   })
+	 *   .redirect('/pics', 'https://google.com/search?q=devil')
+	 * )
+	 * ```
+	 * @since 6.0.2
+	*/ validate(
+		/** The Function to Validate the Request */ code: RoutedValidation
+	) {
+		this.validations.push(code)
+
+		return this
 	}
 
 	/**

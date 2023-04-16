@@ -1,7 +1,7 @@
 import parseContent, { Content } from "../../functions/parseContent"
 
 export default class RouteContentTypes {
-	protected defaultHeaders: Record<string, Content>
+	private defaultHeaders: Record<string, Content>
 
 	/** Generate Content Type Block */
 	constructor(

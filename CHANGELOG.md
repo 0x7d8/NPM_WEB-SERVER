@@ -1,3 +1,8 @@
+## 6.0.2
+
+- Fix some outdated JSDocs
+- Add Validations to RouteFiles
+
 ## 6.0.1
 
 - Fix Router not applying Prefixes to HTTP Routes

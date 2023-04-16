@@ -17,7 +17,7 @@ import { promises as fs } from "fs"
 import uWebsocket from "uWebSockets.js"
 import path from "path"
 import os from "os"
-import RouteFileBuilder from "./routeFileBuilder"
+import RouteFileBuilder from "./routeFile"
 
 export default class Webserver extends RouteList {
 	private globalContext: GlobalContext

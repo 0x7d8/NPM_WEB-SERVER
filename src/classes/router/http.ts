@@ -2,7 +2,7 @@ import { HTTPMethods, RoutedValidation } from "../../types/internal"
 import Route from "../../types/route"
 
 export default class RouteHTTP<Custom extends Record<any, any> = {}, Body = unknown> {
-	protected data: Route
+	private data: Route
 
 	/** Generate HTTP Endpoint */
 	constructor(

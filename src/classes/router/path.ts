@@ -14,16 +14,16 @@ import RouteExternal from "./external"
 import RouteDefaultHeaders from "./defaultHeaders"
 
 export default class RoutePath {
-	protected externals: ExternalRouter[]
-	protected validations: RoutedValidation[]
-	protected headers: Record<string, Content>
-	protected parsedHeaders: Record<string, Buffer>
-	protected loadPaths: LoadPath[]
-	protected statics: Static[]
-	protected routes: Route[]
-	protected webSockets: WebSocket[]
-	protected httpPath: string
-	protected hasCalledGet = false
+	private externals: ExternalRouter[]
+	private validations: RoutedValidation[]
+	private headers: Record<string, Content>
+	private parsedHeaders: Record<string, Buffer>
+	private loadPaths: LoadPath[]
+	private statics: Static[]
+	private routes: Route[]
+	private webSockets: WebSocket[]
+	private httpPath: string
+	private hasCalledGet = false
 
 	/** Generate Route Block */
 	constructor(
@@ -53,20 +53,17 @@ export default class RoutePath {
 	}
 
 	/**
-	 * Add Validation
+	 * Add a Validation
 	 * @example
 	 * ```
 	 * // The /api route will automatically check for correct credentials
 	 * // Obviously still putting the prefix (in this case / from the RoutePath in front)
-	 * // Please note that in order to respond unautorized the status cant be 2xx
 	 * const controller = new Server({ })
 	 * 
 	 * controller.path('/api', (path) => path
-	 *   .validate(async(ctr) => {
-	 *     if (!ctr.headers.has('Authorization')) return ctr.status(401).print('Unauthorized')
-	 *     if (ctr.headers.get('Authorization') !== 'key123 or db request ig') return ctr.status(401).print('Unauthorized')
-	 * 
-	 *     return ctr.status(200)
+	 *   .validate(async(ctr, end) => {
+	 *     if (!ctr.headers.has('Authorization')) return end(ctr.status(401).print('Unauthorized'))
+	 *     if (ctr.headers.get('Authorization') !== 'key123 or db request ig') return end(ctr.status(401).print('Unauthorized'))
 	 *   })
 	 *   .redirect('/pics', 'https://google.com/search?q=devil')
 	 * )

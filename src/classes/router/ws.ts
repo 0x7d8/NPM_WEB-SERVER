@@ -2,7 +2,7 @@ import { RoutedValidation } from "../../types/internal"
 import WebSocket from "../../types/webSocket"
 
 export default class RouteWS<Custom extends Record<any, any> = {}, Body = unknown> {
-	protected data: WebSocket
+	private data: WebSocket
 
 	/** Generate WS Endpoint */
 	constructor(

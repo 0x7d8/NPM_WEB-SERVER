@@ -1,5 +1,5 @@
 export default class RouteContentTypes {
-	protected contentTypes: Record<string, string>
+	private contentTypes: Record<string, string>
 
 	/** Generate Content Type Block */
 	constructor(

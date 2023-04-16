@@ -5,7 +5,7 @@ export { default as URLObject, pathParser } from "./classes/URLObject"
 export { default as parseContent, Content } from "./functions/parseContent"
 export { default as parseStatus } from "./functions/parseStatus"
 export { default as ExternalRouter } from "./classes/router/external"
-export { default as RouteFile } from "./classes/routeFileBuilder"
+export { default as RouteFile } from "./classes/routeFile"
 
 /** @ts-ignore */
 import { version } from "./pckg.json"
