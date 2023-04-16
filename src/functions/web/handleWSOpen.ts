@@ -8,7 +8,7 @@ import { getPreviousHours } from "./handleRequest"
 import handleEvent from "../handleEvent"
 
 export default function handleWSOpen(ws: WebSocket<WebSocketContext>, ctg: GlobalContext) {
-	let { custom, ctx } = ws.getUserData()
+	const { custom, ctx } = ws.getUserData()
 
 	ctx.response.content = Buffer.allocUnsafe(0)
 	ctx.previousHours = getPreviousHours()
@@ -30,7 +30,7 @@ export default function handleWSOpen(ws: WebSocket<WebSocketContext>, ctg: Globa
 		else hostIp = ctx.remoteAddress.split(':')[0]
 
 		// Create Context Response Object
-		let ctr: WebSocketConnect = {
+		const ctr: WebSocketConnect = {
 			type: 'connect',
 
 			// Properties
@@ -38,8 +38,8 @@ export default function handleWSOpen(ws: WebSocket<WebSocketContext>, ctg: Globa
 			headers: new ValueCollection(ctx.headers, decodeURIComponent) as any,
 			cookies: new ValueCollection(ctx.cookies, decodeURIComponent),
 			params: new ValueCollection(ws.getUserData().params, decodeURIComponent),
-			queries: new ValueCollection(parseQuery(ctx.url.query as any) as any),
-			hashes: new ValueCollection(parseQuery(ctx.url.hash as any) as any),
+			queries: new ValueCollection(parseQuery(ctx.url.query) as any),
+			hashes: new ValueCollection(parseQuery(ctx.url.hash) as any),
 
 			// Variables
 			client: {
@@ -68,7 +68,7 @@ export default function handleWSOpen(ws: WebSocket<WebSocketContext>, ctg: Globa
 					let result: ParseContentReturns
 					try {
 						result = await parseContent(message)
-					} catch (err: any) {
+					} catch (err) {
 						return ctx.handleError(err)
 					}
 
@@ -85,7 +85,7 @@ export default function handleWSOpen(ws: WebSocket<WebSocketContext>, ctg: Globa
 					let result: ParseContentReturns
 					try {
 						result = await parseContent(content)
-					} catch (err: any) {
+					} catch (err) {
 						return ctx.handleError(err)
 					}
 
@@ -113,7 +113,7 @@ export default function handleWSOpen(ws: WebSocket<WebSocketContext>, ctg: Globa
 							const dataListener = async(data: Buffer) => {
 								try {
 									data = (await parseContent(data)).content
-								} catch (err: any) {
+								} catch (err) {
 									return ctx.handleError(err)
 								}
 
@@ -169,7 +169,7 @@ export default function handleWSOpen(ws: WebSocket<WebSocketContext>, ctg: Globa
 				try {
 					await Promise.resolve(middleware.data.wsConnectEvent!(middleware.localContext, () => ctx.executeCode = false, ctr, ctx, ctg))
 					if (ctx.error) throw ctx.error
-				} catch (err: any) {
+				} catch (err) {
 					ctx.handleError(err)
 					break
 				}
@@ -189,7 +189,7 @@ export default function handleWSOpen(ws: WebSocket<WebSocketContext>, ctg: Globa
 			if ('onConnect' in ctx.execute.route && ctx.execute.route.type === 'websocket' && ctx.executeCode) {
 				try {
 					await Promise.resolve(ctx.execute.route.onConnect!(ctr))
-				} catch (err: any) {
+				} catch (err) {
 					ctx.error = err
 					ctx.execute.event = 'wsConnectError'
 					await runPageLogic()

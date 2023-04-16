@@ -1,23 +1,23 @@
 import ValueCollection from "../classes/valueCollection"
-import { HTTPRequestContext, PrintStreamOptions } from "./external"
-import { Routed } from "./internal"
+import { HTTPRequestContext } from "./external"
+import { RealAny, RoutedValidation } from "./internal"
 import { Content } from "../functions/parseContent"
 import ServerController from "../classes/webServer"
 import { Readable } from "stream"
 import { InternalContext } from "./context"
 import URLObject from "../classes/URLObject"
 
-export default interface Websocket {
+export default interface Websocket<Custom extends Record<any, any> = {}, Body = unknown> {
 	/** The Type of this Object */ type: 'websocket'
 
 	/** The URL as normal String */ path: string
 	/** An Array of the URL split by Slashes */ pathArray: string[]
-	/** The Async Code to run when the Socket gets an Upgrade HTTP Request */ onUpgrade?(ctr: HTTPRequestContext, end: (...args: any[]) => void): Promise<any> |any
-	/** The Async Code to run when the Socket Connects */ onConnect?(ctr: WebSocketConnect): Promise<any> | any
-	/** The Async Code to run when the Socket recieves a Message */ onMessage?(ctr: WebSocketMessage): Promise<any> | any
-	/** The Async Code to run when the Socket Closes */ onClose?(ctr: WebSocketClose): Promise<any> | any
+	/** The Async Code to run when the Socket gets an Upgrade HTTP Request */ onUpgrade?(ctr: HTTPRequestContext<Custom, unknown>, end: (...args: any[]) => void): Promise<any> |any
+	/** The Async Code to run when the Socket Connects */ onConnect?(ctr: WebSocketConnect<Custom>): RealAny
+	/** The Async Code to run when the Socket recieves a Message */ onMessage?(ctr: WebSocketMessage<Custom, Body>): RealAny
+	/** The Async Code to run when the Socket Closes */ onClose?(ctr: WebSocketClose<Custom, Body>): RealAny
 	/** Additional Route Data */ data: {
-		/** The Validations to run on this route */ validations: Routed[]
+		/** The Validations to run on this route */ validations: RoutedValidation[]
 	}
 }
 
@@ -163,7 +163,18 @@ export interface WebSocketConnect<Custom = {}> {
 	 * ctr.printStream(fileStream)
 	 * ```
 	 * @since 5.4.0
-	*/ printStream(stream: Readable, options?: PrintStreamOptions): this
+	*/ printStream(stream: Readable, options?: {
+		/**
+		 * Whether to end the Request after the Stream finishes
+		 * @default true
+		 * @since 4.3.5
+		*/ endRequest?: boolean
+		/**
+		 * Whether to Destroy the Stream if the Request is aborted
+		 * @default true
+		 * @since 4.3.5
+		*/ destroyAbort?: boolean
+	}): this
 
 	/**
 	 * Custom Variables that are available in the WebSockets Context
@@ -315,7 +326,18 @@ export interface WebSocketMessage<Custom = {}, Body = unknown> {
 	 * ctr.printStream(fileStream)
 	 * ```
 	 * @since 5.4.0
-	*/ printStream(stream: Readable, options?: PrintStreamOptions): this
+	*/ printStream(stream: Readable, options?: {
+		/**
+		 * Whether to end the Request after the Stream finishes
+		 * @default true
+		 * @since 4.3.5
+		*/ endRequest?: boolean
+		/**
+		 * Whether to Destroy the Stream if the Request is aborted
+		 * @default true
+		 * @since 4.3.5
+		*/ destroyAbort?: boolean
+	}): this
 
 	/**
 	 * Custom Variables that are available in the WebSockets Context

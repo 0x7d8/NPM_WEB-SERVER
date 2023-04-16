@@ -1,11 +1,11 @@
 {
   "name": "rjweb-server",
-  "version": "5.10.6",
+  "version": "6.0.0",
   "description": "Easy and Robust Way to create a Web Server with Many Easy-to-use Features in NodeJS",
   "main": "./lib/cjs/index.js",
   "module": "./lib/esm/index.js",
   "scripts": {
-    "build": "rm -rf lib && tsc && esbuild `find src \\( -name '*.ts' -o -name '*.tsx' \\)` --platform='node' --ignore-annotations --format='cjs' --outdir='lib/cjs' && esbuild `find src \\( -name '*.ts' -o -name '*.tsx' \\)` --platform='node' --ignore-annotations --format='esm' --outdir='lib/esm' && cp -r lib/typings/* lib/cjs && cp -r lib/typings/* lib/esm && rm -rf lib/typings && cp -r src/dashboard/index.html lib/cjs/dashboard/index.html && cp -r src/dashboard/index.html lib/esm/dashboard/index.html && cp package.json lib/cjs/pckg.json && cp package.json lib/esm/pckg.json",
+    "build": "rm -rf lib && tsc && typia generate --input=src --output=lib/transformed && esbuild `find lib/transformed \\( -name '*.ts' -o -name '*.tsx' \\)` --platform='node' --ignore-annotations --format='cjs' --outdir='lib/cjs' && esbuild `find src \\( -name '*.ts' -o -name '*.tsx' \\)` --platform='node' --ignore-annotations --format='esm' --outdir='lib/esm' && cp -r lib/typings/* lib/cjs && cp -r lib/typings/* lib/esm && rm -rf lib/typings && cp -r src/dashboard/index.html lib/cjs/dashboard/index.html && cp -r src/dashboard/index.html lib/esm/dashboard/index.html && cp package.json lib/cjs/pckg.json && cp package.json lib/esm/pckg.json && rm -rf lib/transformed",
     "install:dev": "npm install -g --install-links .",
     "test": "yarn build && node test"
   },
@@ -44,6 +44,7 @@
     "typescript": "^4.9.4"
   },
   "dependencies": {
+    "typia": "^3.7.5",
     "uWebSockets.js": "uNetworking/uWebSockets.js#v20.20.0",
     "yargs": "^17.7.1"
   }

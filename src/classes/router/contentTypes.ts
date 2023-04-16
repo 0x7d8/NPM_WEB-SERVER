@@ -18,8 +18,7 @@ export default class RouteContentTypes {
 	 *   .add('.png', 'image/png')
 	 * ```
 	 * @since 5.3.0
-	*/
-	add(
+	*/ add(
 		/** The File ending to apply this to */ ending: string,
 		/** The Content Type to add to it */ contentType: string
 	) {
@@ -32,8 +31,7 @@ export default class RouteContentTypes {
 	/**
 	 * Internal Method for Generating Content Types Object
 	 * @since 5.3.0
-	*/
-	protected getTypes() {
+	*/ getData() {
 		return {
 			contentTypes: this.contentTypes
 		}

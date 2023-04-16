@@ -1,48 +1,25 @@
-import { ExternalRouter } from "../../types/internal"
+import { ExternalRouter, LoadPath } from "../../types/internal"
 import { MiddlewareProduction } from "../../types/external"
-import Event, { EventHandlerMap, Events } from "../../types/event"
+import SafeServerEventEmitter from "../safeEventEmitter"
+import Route from "../../types/route"
+import Websocket from "../../types/webSocket"
+import Static from "../../types/static"
 
 import RoutePath from "./path"
 import RouteExternal from "./external"
 import RouteContentTypes from "./contentTypes"
 import RouteDefaultHeaders from "./defaultHeaders"
 
-export default class RouteList {
+export default class RouteList extends SafeServerEventEmitter {
 	protected middlewares: ReturnType<MiddlewareProduction['init']>[]
 	private externals: ExternalRouter[]
-	private events: Event[]
 
 	/** List of Routes */
 	constructor() {
-		this.events = []
+		super()
+
 		this.externals = []
 		this.middlewares = []
-	}
-
-	/**
-	 * Add a new Event Response
-	 * @example
-	 * ```
-	 * // We will log every time a request is made
-	 * const controller = new Server({ })
-	 * 
-	 * controller.event('httpRequest', (ctr) => {
-	 *   console.log(`${ctr.url.method} Request made to ${ctr.url.path}`)
-	 * })
-	 * ```
-	 * @since 4.0.0
-	*/
-	event<EventName extends Events>(
-		/** The Event Name */ event: EventName,
-		/** The Async Code to run on a Request */ code: EventHandlerMap[EventName]
-	) {
-		if (this.events.some((obj) => (obj.name === event))) return this
-
-		this.events.push({
-			name: event, code
-		} as any)
-
-		return this
 	}
 
 	/**
@@ -56,8 +33,7 @@ export default class RouteList {
 	 * controller.middleware(middleware())
 	 * ```
 	 * @since 4.4.0
-	*/
-	middleware(
+	*/ middleware(
 		/** The Middleware to run on a Request */ middleware: ReturnType<MiddlewareProduction['init']>
 	) {
 		this.middlewares.push(middleware)
@@ -83,16 +59,15 @@ export default class RouteList {
 	 * )
 	 * ```
 	 * @since 5.0.0
-	*/
-	path(
+	*/ path(
 		/** The Path Prefix */ prefix: string,
-		/** The Code to handle the Prefix */ router: (path: RoutePath) => RoutePath | RoutePath | RouteExternal
+		/** The Code to handle the Prefix */ router: ((path: RoutePath) => RoutePath) | RoutePath | RouteExternal
 	) {
-		if ('getRoutes' in router) {
-			this.externals.push({ method: 'getRoutes', object: router, addPrefix: prefix })
+		if ('getData' in router) {
+			this.externals.push({ object: router, addPrefix: prefix })
 		} else {
 			const routePath = new RoutePath(prefix)
-			this.externals.push({ method: 'getRoutes', object: routePath })
+			this.externals.push({ object: routePath })
 			router(routePath)
 		}
 
@@ -100,55 +75,57 @@ export default class RouteList {
 	}
 
 	/**
-	 * Add a new Block of File -> Content Types Mapping
+	 * Add Content Type Mapping
 	 * @example
 	 * ```
-	 * const controller = new Server({ })
-	 * 
-	 * controller.contentTypes()
-	 *   .add('.png', 'image/png')
+	 * controller.contentTypes((cT) => cT
+	 *   .add('.jayson', 'application/json')
+	 * )
 	 * ```
 	 * @since 5.3.0
-	*/
-	contentTypes(
-		/** The Content Types to import from a JSON */ contentTypes: Record<string, string> = {}
+	*/ contentTypes(
+		/** The Code to handle the Headers */ code: (path: RouteContentTypes) => RouteContentTypes
 	) {
-		const routeContentTypes = new RouteContentTypes(contentTypes)
-		this.externals.push({ method: 'getTypes', object: routeContentTypes })
-
-		return routeContentTypes
+		const routeContentTypes = new RouteContentTypes()
+		this.externals.push({ object: routeContentTypes })
+	
+		code(routeContentTypes)
+	
+		return this
 	}
 
 	/**
-	 * Add a new Block of Default Headers
+	 * Add Default Headers
 	 * @example
 	 * ```
-	 * const controller = new Server({ })
-	 * 
-	 * controller.defaultHeaders()
-	 *   .add('Copyright', 2023)
+	 * controller.defaultHeaders((dH) => dH
+	 *   .add('X-Api-Version', '1.0.0')
+	 * )
 	 * ```
 	 * @since 5.3.0
-	*/
-	defaultHeaders(
-		/** The Headers to import from a JSON */ defaultHeaders: Record<Lowercase<string>, string> = {}
+	*/ defaultHeaders(
+		/** The Code to handle the Headers */ code: (path: RouteDefaultHeaders) => RouteDefaultHeaders
 	) {
-		const routeDefaultHeaders = new RouteDefaultHeaders(defaultHeaders)
-		this.externals.push({ method: 'getHeaders', object: routeDefaultHeaders })
+		const routeDefaultHeaders = new RouteDefaultHeaders()
+		this.externals.push({ object: routeDefaultHeaders })
 
-		return routeDefaultHeaders
+		code(routeDefaultHeaders)
+
+		return this
 	}
 
 
 	/**
 	 * Internal Method for Generating Routes Object
-	 * @since 3.1.0
-	*/
-	protected async getRoutes() {
-		const routes = [], webSockets = [], statics = [], loadPaths = []
+	 * @since 6.0.0
+	*/ async getData() {
+		const routes: Route[] = [], webSockets: Websocket[] = [],
+			statics: Static[] = [], loadPaths: LoadPath[] = []
+
 		let contentTypes = {}, defaultHeaders = {}
+
 		for (const external of this.externals) {
-			const result = await (external.object as any)[external.method]()
+			const result = await external.object.getData(external.addPrefix || '/')
 
 			if ('routes' in result) routes.push(...result.routes)
 			if ('webSockets' in result) webSockets.push(...result.webSockets)
@@ -159,7 +136,7 @@ export default class RouteList {
 		}
 
 		return {
-			events: this.events, routes, webSockets, statics,
+			routes, webSockets, statics,
 			loadPaths, contentTypes, defaultHeaders
 		}
 	}

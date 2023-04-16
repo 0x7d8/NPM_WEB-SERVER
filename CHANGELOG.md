@@ -1,3 +1,21 @@
+## 6.0.0
+
+- Made Internal Router Logic Typesafe
+- Turn Router into a Typed EventEmitter
+- Add end() functions to all events that would benefit from it
+- Upgrade Dependencies
+- Make sure all Files use Tabs for identation
+- Add defaultHeaders() to the router so it can be applied to specific routes
+- Make contentTypes() and defaultHeaders() use callbacks
+- Added Last-Modified header to every request that has to do with the file system for better caching
+- Added ETag Header to every request using SHA1 to allow better caching (can be disabled using options.cache)
+- Improved Event Names
+  - runtimeError -> httpError
+  - http404 -> route404
+- Add dhparams and ca file to ssl options
+- Add Extra Class for Route Files to clean up the process of making ones
+- Make HTTP Definitions work similar to websockets
+
 ## 5.10.6
 
 - Add file:/// on win32 systems for dynamic imports

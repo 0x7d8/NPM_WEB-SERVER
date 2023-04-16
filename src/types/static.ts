@@ -1,4 +1,4 @@
-import { Routed } from "./internal"
+import { RoutedValidation } from "./internal"
 
 export default interface Static {
 	/** The Type of this Object */ type: 'static'
@@ -8,6 +8,7 @@ export default interface Static {
 	/** Additional Route Data */ data: {
 		/** Whether then some Content Types will be added automatically */ addTypes: boolean
 		/** Whether to automatically remove .html endings from files */ hideHTML: boolean
-		/** The Validations to run on this route */ validations: Routed[]
+		/** The Validations to run on this route */ validations: RoutedValidation[]
+		/** The Headers to add to this route */ headers: Record<string, Buffer>
 	}
 }

@@ -1,4 +1,5 @@
 import { isMap, isSet } from "util/types"
+import typia from "typia"
 
 export type Content =
 	| string
@@ -33,7 +34,7 @@ export default async function parseContent(content: Content): Promise<Returns> {
 		case "object":
 			try {
 				returnObject.content = Buffer.from(JSON.stringify(content))
-				returnObject.headers['Content-Type'] = Buffer.from('application/json')
+				returnObject.headers['content-type'] = Buffer.from('application/json')
 			} catch {
 				returnObject.content = Buffer.from('Failed to parse provided Object')
 			}

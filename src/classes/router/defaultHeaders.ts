@@ -1,7 +1,7 @@
 import parseContent, { Content } from "../../functions/parseContent"
 
 export default class RouteContentTypes {
-	protected defaultHeaders: Record<Lowercase<string>, Content>
+	protected defaultHeaders: Record<string, Content>
 
 	/** Generate Content Type Block */
 	constructor(
@@ -20,8 +20,7 @@ export default class RouteContentTypes {
 	 *   .add('Copyright', 2023)
 	 * ```
 	 * @since 5.3.0
-	*/
-	add(
+	*/ add(
 		/** The Name of the Header */ name: Lowercase<string>,
 		/** The Value of the Header */ contentType: Content
 	) {
@@ -33,14 +32,13 @@ export default class RouteContentTypes {
 
 	/**
 	 * Internal Method for Generating Headers Object
-	 * @since 5.3.0
-	*/
-	protected async getHeaders() {
+	 * @since 6.0.0
+	*/ async getData() {
 		const parsedHeaders: Record<string, Buffer> = {}
 
 		for (const header in this.defaultHeaders) {
 			try {
-				const value = (await parseContent(this.defaultHeaders[header as any])).content
+				const value = (await parseContent(this.defaultHeaders[header])).content
 				parsedHeaders[header] = value
 			} catch { }
 		}

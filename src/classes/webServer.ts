@@ -7,7 +7,7 @@ import handleRequest, { getPreviousHours } from "../functions/web/handleRequest"
 import handleWSOpen from "../functions/web/handleWSOpen"
 import handleWSMessage from "../functions/web/handleWSMessage"
 import handleWSClose from "../functions/web/handleWSClose"
-import { RouteFile } from "../types/external"
+import WebSocket from "src/types/webSocket"
 import { pathParser } from "./URLObject"
 import { currentVersion } from "./middlewareBuilder"
 import Route from "../types/route"
@@ -17,6 +17,7 @@ import { promises as fs } from "fs"
 import uWebsocket from "uWebSockets.js"
 import path from "path"
 import os from "os"
+import RouteFileBuilder from "./routeFileBuilder"
 
 export default class Webserver extends RouteList {
 	private globalContext: GlobalContext
@@ -32,8 +33,7 @@ export default class Webserver extends RouteList {
 	 * })
 	 * ```
 	 * @since 3.0.0
-	*/
-	constructor(
+	*/ constructor(
 		/** The Server Options */ options: Options = {}
 	) {
 		super()
@@ -103,7 +103,6 @@ export default class Webserver extends RouteList {
 				normal: [],
 				websocket: [],
 				static: [],
-				event: [],
 			}, cache: {
 				files: new ValueCollection(undefined, undefined, fullOptions.cache),
 				middlewares: new ValueCollection(undefined, undefined, fullOptions.cache),
@@ -132,8 +131,7 @@ export default class Webserver extends RouteList {
 	 * })
 	 * ```
 	 * @since 3.0.0
-	*/
-	setOptions(
+	*/ setOptions(
 		/** The Options */ options: Options
 	) {
 		this.globalContext.options = new ServerOptions(options).getOptions()
@@ -156,21 +154,17 @@ export default class Webserver extends RouteList {
 	 *   })
 	 * ```
 	 * @since 3.0.0
-	*/
-	start() {
+	*/ start() {
 		return new Promise(async(resolve: (value: ServerEvents.StartSuccess) => void, reject: (reason: ServerEvents.StartError) => void) => {
 			let stopExecution = false
-			const loadedRoutes = await this.loadExternalPaths().catch((error) => {
-				reject({ success: false, error, message: 'LOADING ROUTES ERRORED' })
-				stopExecution = true
-			})
+			const externalPaths = await this.loadExternalPaths()
 
-			if (stopExecution) return
 			for (let middlewareIndex = 0; middlewareIndex < this.middlewares.length; middlewareIndex++) {
 				const middleware = this.middlewares[middlewareIndex]
 				if (!('data' in middleware)) {
-					reject({ success: false, error: new Error(`Middleware ${(middleware as any).name} is outdated!`), message: 'INITIALIZING MIDDLEWARES ERRORED' })
+					reject(new Error(`Middleware ${(middleware as any).name} is outdated!`))
 					stopExecution = true
+
 					break
 				}; if (!('initEvent' in middleware.data)) continue
 
@@ -178,23 +172,33 @@ export default class Webserver extends RouteList {
 					if (middleware.version > currentVersion) throw new Error('Middleware version cannot be higher than current supported version')
 					await Promise.resolve(middleware.data.initEvent!(middleware.localContext, middleware.config, this.globalContext))
 				} catch (error: any) {
-					reject({ success: false, error, message: 'INITIALIZING MIDDLEWARES ERRORED' })
+					reject(error)
 					stopExecution = true
+
 					break
 				}
 			}; if (stopExecution) return
 
-			if (this.globalContext.options.https.enabled) {
+			if (this.globalContext.options.ssl.enabled) {
 				try {
-					await fs.readFile(path.resolve(this.globalContext.options.https.keyFile))
-					await fs.readFile(path.resolve(this.globalContext.options.https.certFile))
+					await fs.readFile(path.resolve(this.globalContext.options.ssl.keyFile))
+					await fs.readFile(path.resolve(this.globalContext.options.ssl.certFile))
 				} catch {
-					throw new Error(`Cant access your HTTPS Key or Cert file! (${this.globalContext.options.https.keyFile} / ${this.globalContext.options.https.certFile})`)
+					throw new Error(`Cant access your SSL Key or Cert file! (${this.globalContext.options.ssl.keyFile} / ${this.globalContext.options.ssl.certFile})`)
+				}
+
+				try {
+					if (this.globalContext.options.ssl.caFile) await fs.readFile(path.resolve(this.globalContext.options.ssl.caFile))
+					if (this.globalContext.options.ssl.dhParamFile) await fs.readFile(path.resolve(this.globalContext.options.ssl.dhParamFile))
+				} catch {
+					throw new Error(`Cant access your SSL Ca or Dhparam file! (${this.globalContext.options.ssl.caFile} / ${this.globalContext.options.ssl.dhParamFile})`)
 				}
 
 				this.server = uWebsocket.SSLApp({
-					key_file_name: path.resolve(this.globalContext.options.https.keyFile),
-					cert_file_name: path.resolve(this.globalContext.options.https.certFile),
+					key_file_name: path.resolve(this.globalContext.options.ssl.keyFile),
+					cert_file_name: path.resolve(this.globalContext.options.ssl.certFile),
+					ca_file_name: this.globalContext.options.ssl.caFile ? path.resolve(this.globalContext.options.ssl.caFile) : undefined,
+          dh_params_file_name: this.globalContext.options.ssl.dhParamFile ? path.resolve(this.globalContext.options.ssl.dhParamFile) : undefined,
 				})
 			} else this.server = uWebsocket.App()
 
@@ -210,21 +214,21 @@ export default class Webserver extends RouteList {
 					close: (ws: any, code, message) => handleWSClose(ws, message, this.globalContext)
 				})
 
-			const routes = await this.getRoutes()
+			const routes = await this.getData()
 			this.globalContext.routes.normal = routes.routes
 			this.globalContext.routes.websocket = routes.webSockets
-			this.globalContext.routes.event = routes.events
 			this.globalContext.routes.static = routes.statics
 			this.globalContext.contentTypes = routes.contentTypes
 			this.globalContext.defaultHeaders = routes.defaultHeaders
 
-			this.globalContext.routes.normal.push(...loadedRoutes as Route[])
+			this.globalContext.routes.normal.push(...externalPaths.routes)
+			this.globalContext.routes.websocket.push(...externalPaths.webSockets)
 
 			this.server.listen(this.globalContext.options.bind, this.globalContext.options.port, (listen) => {
-				if (!listen) return reject({ success: false, error: new Error(`Port ${this.globalContext.options.port} is already in use`), message: 'WEBSERVER ERRORED' })
+				if (!listen) return reject(new Error(`Port ${this.globalContext.options.port} is already in use`))
 
 				this.socket = listen
-				resolve({ success: true, port: this.globalContext.options.port, message: 'WEBSERVER STARTED' })
+				return resolve({ success: true, port: this.globalContext.options.port, message: 'WEBSERVER STARTED' })
 			})
 		})
 	}
@@ -244,20 +248,20 @@ export default class Webserver extends RouteList {
 	 *   })
 	 * ```
 	 * @since 3.0.0
-	*/
-	async reload() {
+	*/ async reload() {
 		this.globalContext.cache.files.clear()
 		this.globalContext.cache.routes.clear()
 
-		const routes = await this.getRoutes()
+		const routes = await this.getData()
 		this.globalContext.routes.normal = routes.routes
 		this.globalContext.routes.websocket = routes.webSockets
-		this.globalContext.routes.event = routes.events
 		this.globalContext.routes.static = routes.statics
 		this.globalContext.contentTypes = routes.contentTypes
 		this.globalContext.defaultHeaders = routes.defaultHeaders
 
-		this.globalContext.routes.normal.push(...await this.loadExternalPaths())
+		const externalPaths = await this.loadExternalPaths()
+		this.globalContext.routes.normal.push(...externalPaths.routes)
+		this.globalContext.routes.websocket.push(...externalPaths.webSockets)
 
 		this.globalContext.webSockets = {
 			opened: {
@@ -336,8 +340,7 @@ export default class Webserver extends RouteList {
 	 *   })
 	 * ```
 	 * @since 3.0.0
-	*/
-	async stop() {
+	*/ async stop() {
 		this.globalContext.cache.files.clear()
 		this.globalContext.cache.routes.clear()
 		uWebsocket.us_listen_socket_close(this.socket)
@@ -376,29 +379,36 @@ export default class Webserver extends RouteList {
 
 	/** Load all External Paths */
 	private async loadExternalPaths() {
-		const loadedRoutes: Route[] = []
+		const loadedRoutes: {
+			routes: Route[]
+			webSockets: WebSocket[]
+		} = {
+			routes: [],
+			webSockets: []
+		}
 
-		for (const loadPath of (await this.getRoutes()).loadPaths) {
+		for (const loadPath of (await this.getData()).loadPaths) {
 			if (loadPath.type === 'cjs') {
 				for (const file of await getAllFilesFilter(loadPath.path, 'js')) {
-					const route: RouteFile = require(file)
+					const route: unknown = require(file)
 
 					if (
-						!('method' in route) ||
-						!('path' in route) ||
-						!('code' in route)
-					) throw new Error(`Invalid Route at ${file}`)
+						!route ||
+						!(route instanceof RouteFileBuilder)
+					) throw new Error(`Invalid Route @ ${file}`)
 
-					loadedRoutes.push({
-						type: 'route',
-						method: route.method,
-						path: pathParser([ loadPath.prefix, route.path ]),
-						pathArray: pathParser([ loadPath.prefix, route.path ]).split('/'),
-						code: route.code,
-						data: {
-							validations: loadPath.validations
-						}
-					})
+					const routeInfos = await route.getData(loadPath.prefix)
+					for (const routeInfo of routeInfos.routes) {
+						routeInfo.data.validations.push(...loadPath.validations)
+						routeInfo.data.headers = Object.assign(routeInfo.data.headers, loadPath.headers)
+					}
+
+					for (const routeInfo of routeInfos.webSockets) {
+						routeInfo.data.validations.push(...loadPath.validations)
+					}
+
+					loadedRoutes.routes.push(...routeInfos.routes)
+					loadedRoutes.webSockets.push(...routeInfos.webSockets)
 				}
 			} else {
 				for (const file of await getAllFilesFilter(loadPath.path, 'js')) {
@@ -406,24 +416,25 @@ export default class Webserver extends RouteList {
 						? `file:///${file}`
 						: file
 
-					const route: RouteFile = (await import(path)).default
+					const route: unknown = (await import(path)).default
 
 					if (
-						!('method' in route) ||
-						!('path' in route) ||
-						!('code' in route)
-					) throw new Error(`Invalid Route at ${file}`)
+						!route ||
+						!(route instanceof RouteFileBuilder)
+					) throw new Error(`Invalid Route @ ${file}`)
 
-					loadedRoutes.push({
-						type: 'route',
-						method: route.method,
-						path: pathParser([ loadPath.prefix, route.path ]),
-						pathArray: pathParser([ loadPath.prefix, route.path ]).split('/'),
-						code: route.code,
-						data: {
-							validations: loadPath.validations
-						}
-					})
+					const routeInfos = await route.getData(loadPath.prefix)
+					for (const routeInfo of routeInfos.routes) {
+						routeInfo.data.validations.push(...loadPath.validations)
+						routeInfo.data.headers = Object.assign(routeInfo.data.headers, loadPath.headers)
+					}
+
+					for (const routeInfo of routeInfos.webSockets) {
+						routeInfo.data.validations.push(...loadPath.validations)
+					}
+
+					loadedRoutes.routes.push(...routeInfos.routes)
+					loadedRoutes.webSockets.push(...routeInfos.webSockets)
 				}
 			}
 		}

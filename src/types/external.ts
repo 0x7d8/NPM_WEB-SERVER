@@ -2,7 +2,6 @@ import { HttpRequest, HttpResponse } from "uWebSockets.js"
 import ValueCollection from "../classes/valueCollection"
 import { HTTPMethods } from "./internal"
 import ServerController from "../classes/webServer"
-import Event from "./event"
 import { Readable } from "stream"
 import { Content } from "../functions/parseContent"
 import URLObject from "../classes/URLObject"
@@ -14,41 +13,7 @@ type UnionToIntersection<U>
 export type MiddlewareToProps<T extends object[]>
 	= T extends (infer U)[] ? Record<keyof U, UnionToIntersection<U[keyof U]>> : never
 
-export interface PrintOptions {
-	/**
-	 * The Content Type to use
-	 * @default ""
-	 * @since 2.7.5
-	*/ contentType?: string
-}
-
-export interface PrintFileOptions {
-	/**
-	 * Whether some Content Type Headers will be added automatically
-	 * @default true
-	 * @since 2.2.0
-	*/ addTypes?: boolean
-	/**
-	 * Whether to Cache the sent Files after accessed once (only renew after restart)
-	 * @default false
-	 * @since 2.2.0
-	*/ cache?: boolean
-}
-
 export { WSRequestContext } from "./webSocket"
-
-export interface PrintStreamOptions {
-	/**
-	 * Whether to end the Request after the Stream finishes
-	 * @default true
-	 * @since 4.3.5
-	*/ endRequest?: boolean
-	/**
-	 * Whether to Destroy the Stream if the Request is aborted
-	 * @default true
-	 * @since 4.3.5
-	*/ destroyAbort?: boolean
-}
 
 export interface HTTPRequestContext<Custom = {}, Body = unknown> {
 	/**
@@ -210,7 +175,13 @@ export interface HTTPRequestContext<Custom = {}, Body = unknown> {
 	 * ctr.print('this is text!')
 	 * ```
 	 * @since 0.0.2
-	*/ print(content: Content, options?: PrintOptions): this
+	*/ print(content: Content, options?: {
+		/**
+		 * The Content Type to use
+		 * @default ""
+		 * @since 2.7.5
+		*/ contentType?: string
+	}): this
 	/**
 	 * Print the Content of a File to the Client
 	 * @example
@@ -220,7 +191,18 @@ export interface HTTPRequestContext<Custom = {}, Body = unknown> {
 	 * })
 	 * ```
 	 * @since 0.6.3
-	*/ printFile(path: string, options?: PrintFileOptions): this
+	*/ printFile(path: string, options?: {
+		/**
+		 * Whether some Content Type Headers will be added automatically
+		 * @default true
+		 * @since 2.2.0
+		*/ addTypes?: boolean
+		/**
+		 * Whether to Cache the sent Files after accessed once (only renew after restart)
+		 * @default false
+		 * @since 2.2.0
+		*/ cache?: boolean
+	}): this
 	/**
 	 * Print the data event of a Stream to the Client
 	 * @example
@@ -231,7 +213,18 @@ export interface HTTPRequestContext<Custom = {}, Body = unknown> {
 	 * // in this case though just use ctr.printFile since it does exactly this
 	 * ```
 	 * @since 4.3.0
-	*/ printStream(stream: Readable, options?: PrintStreamOptions): this
+	*/ printStream(stream: Readable, options?: {
+		/**
+		 * Whether to end the Request after the Stream finishes
+		 * @default true
+		 * @since 4.3.5
+		*/ endRequest?: boolean
+		/**
+		 * Whether to Destroy the Stream if the Request is aborted
+		 * @default true
+		 * @since 4.3.5
+		*/ destroyAbort?: boolean
+	}): this
 
 	/**
 	 * Custom Variables that are available everywhere

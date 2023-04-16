@@ -1,53 +1,29 @@
 import { HTTPRequestContext } from "./external"
 import { WebSocketConnect, WebSocketMessage, WebSocketClose } from "./webSocket"
+import { RealAny, EndFn } from "./internal"
 
-interface RuntimeError {
-	/** The Name of the Event */ name: 'runtimeError'
-	/** The Code to run when the Event occurs */ code(ctr: HTTPRequestContext, err: Error): Promise<any> | any
+type HTTPRequest = (ctr: HTTPRequestContext, end: EndFn) => RealAny
+type HTTPError = (ctr: HTTPRequestContext, error: unknown) => RealAny
+
+type WSConnect = (ctr: WebSocketConnect, end: EndFn) => RealAny
+type WSMessage = (ctr: WebSocketMessage, end: EndFn) => RealAny
+type WSClose = (ctr: WebSocketClose, end: EndFn) => RealAny
+type WSConnectError = (ctr: WebSocketConnect, error: unknown) => RealAny
+type WSMessageError = (ctr: WebSocketMessage, error: unknown) => RealAny
+type WSCloseError = (ctr: WebSocketClose, error: unknown) => RealAny
+
+type Route404 = (ctr: HTTPRequestContext) => RealAny
+
+export type EventHandlerMap = {
+	httpRequest: HTTPRequest
+	httpError: HTTPError
+
+	wsConnect: WSConnect
+	wsMessage: WSMessage
+	wSClose: WSClose
+	wsConnectError: WSConnectError
+	wsMessageError: WSMessageError
+	wsCloseError: WSCloseError
+
+	route404: Route404
 }
-
-interface WsConnectError {
-	/** The Name of the Event */ name: 'wsConnectError'
-	/** The Code to run when the Event occurs */ code(ctr: WebSocketConnect, err: Error): Promise<any> | any
-}
-
-interface WsMessageError {
-	/** The Name of the Event */ name: 'wsMessageError'
-	/** The Code to run when the Event occurs */ code(ctr: WebSocketMessage, err: Error): Promise<any> | any
-}
-
-interface WsCloseError {
-	/** The Name of the Event */ name: 'wsCloseError'
-	/** The Code to run when the Event occurs */ code(ctr: WebSocketClose, err: Error): Promise<any> | any
-}
-
-interface WsRequest {
-	/** The Name of the Event */ name: 'wsRequest'
-	/** The Code to run when the Event occurs */ code(ctr: HTTPRequestContext): Promise<any> | any
-}
-
-interface HttpRequest {
-	/** The Name of the Event */ name: 'httpRequest'
-	/** The Code to run when the Event occurs */ code(ctr: HTTPRequestContext): Promise<any> | any
-}
-
-interface Http404 {
-	/** The Name of the Event */ name: 'http404'
-	/** The Code to run when the Event occurs */ code(ctr: HTTPRequestContext): Promise<any> | any
-}
-
-type EventHandlerMap = {
-	runtimeError: RuntimeError['code']
-	wsConnectError: WsConnectError['code']
-	wsMessageError: WsMessageError['code']
-	wsCloseError: WsCloseError['code']
-	wsRequest: WsRequest['code']
-	httpRequest: HttpRequest['code']
-	http404: Http404['code']
-}
-
-type Event = RuntimeError | WsConnectError | WsMessageError | WsCloseError | WsRequest | HttpRequest | Http404
-type Events = Event['name']
-
-export { EventHandlerMap, Events }
-export default Event

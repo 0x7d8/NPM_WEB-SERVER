@@ -1,117 +1,78 @@
 import { HTTPRequestContext, WSRequestContext } from ".."
 import { GlobalContext, InternalContext } from "../types/context"
-import { Events } from "../types/event"
+import { EventHandlerMap } from "../types/event"
 
-export default async function handleEvent(eventParam: Events, ctr: HTTPRequestContext | WSRequestContext, ctx: InternalContext, ctg: GlobalContext) {
-	switch (eventParam) {
-		case "runtimeError": {
-			const event = ctg.routes.event.find((event) => event.name === 'runtimeError')
+export default async function handleEvent(event: keyof EventHandlerMap, ctr: HTTPRequestContext | WSRequestContext, ctx: InternalContext, ctg: GlobalContext) {
+	ctx.execute.event = 'none'
 
-			if (!event) {
-				// Default RuntimeError
-				console.error(ctx.error)
-				ctx.response.status = 500
-				ctx.response.content = Buffer.from(`An Error occured\n${ctx.error!.stack}`)
-				ctx.execute.event = 'none'
-			} else {
-				// Custom RuntimeError
-				try {
-					if (event.name !== 'runtimeError') return
-					await Promise.resolve(event.code(ctr as any, ctx.error!))
-					ctx.execute.event = 'none'
-				} catch (err: any) {
-					console.error(err)
-					ctx.response.status = 500
-					ctx.response.content = Buffer.from(`An Error occured in your Error Event (what the hell?)\n${err.stack}`)
-					ctx.execute.event = 'none'
-				}
-			}
-
-			break
-		}
-
+	switch (event) {
+		case "httpError":
 		case "wsConnectError":
 		case "wsMessageError":
 		case "wsCloseError": {
-			const event = ctg.routes.event.find((event) => event.name === eventParam)
+			ctx.executeCode = false
 
-			if (!event) {
-				// Default WsError
-				console.error(ctx.error)
-				ctx.response.content = Buffer.from(`An Error occured\n${ctx.error!.stack}`)
-				ctx.execute.event = 'none'
-			} else {
-				// Custom WsError
-				try {
-					await Promise.resolve(event.code(ctr as any, ctx.error!))
-					ctx.execute.event = 'none'
-				} catch (err: any) {
-					console.error(err)
-					ctx.response.content = Buffer.from(`An Error occured in your WsError Event (what the hell?)\n${err.stack}`)
-					ctx.execute.event = 'none'
+			try {
+				if (!await ctg.controller.emitSafe(event, ctr as any, ctx.error)) {
+					if (ctr.type === 'http' || ctr.type === 'upgrade' || ctr.type === 'close') {
+						ctx.response.status = 500
+						ctx.response.statusMessage = undefined
+						ctx.response.content = Buffer.from(`An Error occured:\n${ctx.error}`)
+						console.error(`An Error occured:\n`, ctx.error)
+					} else {
+						ctr.print(Buffer.from(`An Error occured:\n${ctx.error}`))
+						console.error(`An Error occured:\n`, ctx.error)
+					}
+				}
+			} catch (err) {
+				if (ctr.type === 'http' || ctr.type === 'upgrade' || ctr.type === 'close') {
+					ctx.response.status = 500
+					ctx.response.statusMessage = undefined
+					ctx.response.content = Buffer.from(`An Error occured in the ${event} event:\n${err}`)
+					console.error(`An Error occured in the ${event} event:\n`, err)
+				} else {
+					ctr.print(Buffer.from(`An Error occured in the ${event} event:\n${err}`))
+					console.error(`An Error occured in the ${event} event:\n`, err)
 				}
 			}
 
 			break
 		}
 
-		case "wsRequest": {
-			const event = ctg.routes.event.find((event) => (event.name === 'wsRequest'))
+		case "route404": {
+			try {
+				ctx.response.status = 404
+				ctx.response.statusMessage = undefined
+				ctx.response.content = Buffer.from(`Cannot ${ctr.url.method} ${ctr.url.path}`)
 
-			if (event) {
-				// Custom HttpRequest
-				try {
-					if (event.name !== 'wsRequest') return
-					await Promise.resolve(event.code(ctr as any))
-					ctx.execute.event = 'none'
-				} catch (err: any) {
-					ctx.error = err
-					await handleEvent('runtimeError', ctr, ctx, ctg)
-					ctx.execute.event = 'none'
-				}
+				await ctg.controller.emitSafe(event, ctr as any)
+			} catch (err) {
+				ctx.error = err
+				await handleEvent('httpError', ctr, ctx, ctg)
 			}
 
 			break
 		}
 
 		case "httpRequest": {
-			const event = ctg.routes.event.find((event) => (event.name === 'httpRequest'))
-
-			if (event) {
-				// Custom HttpRequest
-				try {
-					if (event.name !== 'httpRequest') return
-					await Promise.resolve(event.code(ctr as any))
-					ctx.execute.event = 'none'
-				} catch (err: any) {
-					ctx.error = err
-					await handleEvent('runtimeError', ctr, ctx, ctg)
-					ctx.execute.event = 'none'
-				}
+			try {
+				await ctg.controller.emitSafe(event, ctr as any, () => ctx.executeCode = false)
+			} catch (err) {
+				ctx.error = err
+				await handleEvent('httpError', ctr, ctx, ctg)
 			}
 
 			break
 		}
 
-		case "http404": {
-			const event = ctg.routes.event.find((event) => (event.name === 'http404'))
-
-			if (!event) {
-				// Default Http404
-				ctx.response.status = 404
-				ctx.response.headers['content-type'] = Buffer.from('text/plain')
-				ctx.response.content = Buffer.from(`Couldnt find [${ctr.url.method}] ${ctr.url.path}`)
-			} else {
-				// Custom Http404
-				try {
-					if (event.name !== 'http404') return
-					await Promise.resolve(event.code(ctr as any))
-					ctx.execute.event = 'none'
-				} catch (err: any) {
-					ctx.error = err
-					await handleEvent('runtimeError', ctr, ctx, ctg)
-					ctx.execute.event = 'none'
-				}
+		case "wsConnect":
+		case "wsMessage":
+		case "wSClose": {
+			try {
+				await ctg.controller.emitSafe(event, ctr as any, () => ctx.executeCode = false)
+			} catch (err) {
+				ctx.error = err
+				await handleEvent(event + 'Error' as any, ctr, ctx, ctg)
 			}
 
 			break

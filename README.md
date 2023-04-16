@@ -16,6 +16,9 @@
 # INFO: Since we are using native C++ the full bundle is ~90MB
 It allows insane performance though ;)
 
+<br>
+
+### 🍔 [v5 Migration Guide](https://rjweb-server.rjansen.de/v6/migrating-from-v5)
 
 <br>
 <br>
@@ -23,6 +26,8 @@ It allows insane performance though ;)
 ### 🏠 [Homepage](https://github.com/rotvproHD/NPM_WEB-SERVER#readme)
 ### 🛠️ [Changelog](https://github.com/rotvproHD/NPM_WEB-SERVER/blob/main/CHANGELOG.md)
 ### 🌐 [Wiki](https://rjweb-server.rjansen.de)
+
+<br>
 
 ## Install
 
@@ -44,18 +49,10 @@ pnpm add rjweb-server
 - 2.X | Deprecated
 - 3.X | Deprecated
 - 4.X | Deprecated
-- 5.X | Patches & Features
+- 5.X | Basic Patches
+- 6.X | Patches & Features
 
 ## Typescript
-
-Importing
-```ts
-// CJS
-import * as webserver from "rjweb-server"
-
-// ESM
-import webserver from "rjweb-server"
-```
 
 Interface for ctr Object
 ```ts
@@ -64,11 +61,13 @@ import { Server, HTTPRequestContext } from "rjweb-server"
 const server = new Server({ })
 
 server.path('/', (path) => path
-  .http('GET', '/hello', async(ctr: HTTPRequestContext) => {
-    if (!ctr.queries.has("name")) return ctr.print('please supply the name query!!')
+  .http('GET', '/hello', (http) => http
+    .onRequest(async(ctr: HTTPRequestContext) => {
+      if (!ctr.queries.has("name")) return ctr.print('please supply the name query!!')
 
-    return ctr.print(`Hello, ${ctr.queries.get("name")}! How are you doing?`)
-  })
+      return ctr.print(`Hello, ${ctr.queries.get("name")}! How are you doing?`)
+    })
+  )
 )
 
 // ...
@@ -77,13 +76,12 @@ server.path('/', (path) => path
 Custom Properties in Ctr Object
 (This also works in JavaScript, just remove the interface logic)
 ```ts
-import { Server, HTTPRequestContext, RouteFile, Status } from "rjweb-server"
+import { Server, HTTPRequestContext, Status } from "rjweb-server"
 interface Custom {
   count: number
 }
 
 type Ctr<Body = any> = HTTPRequestContext<Custom, Body>
-type CtrFile<Body = any> = RouteFile<Custom, Body>
 
 const server = new Server({
   bind: '0.0.0.0', // The IP thats bound to
@@ -91,24 +89,28 @@ const server = new Server({
 })
 
 server.path('/', (path) => path
-  .http('GET', '/hello', async(ctr: Ctr) => {
-    if (!ctr.queries.has("name")) return ctr.print('please supply the name queries!!')
+  .http('GET', '/hello', (http) => http
+    .onRequest(async(ctr: Ctr) => {
+      if (!ctr.queries.has("name")) return ctr.print('please supply the name queries!!')
 
-    return ctr.print(`Hello, ${ctr.queries.get("name")}! You are Visit nr.${ctr['@'].count}`)
-  })
-  .http('POST', '/hello', async(ctr: Ctr<{ name?: string }>) => {
-    if (!('name' in ctr.body)) return ctr.print('please supply the name property!!')
+      return ctr.print(`Hello, ${ctr.queries.get("name")}! You are Visit nr.${ctr['@'].count}`)
+    })
+  )
+  .http('POST', '/hello', (http) => http
+    .onRequest(async(ctr: Ctr<{ name?: string }>) => {
+      if (!('name' in ctr.body)) return ctr.print('please supply the name property!!')
 
-    return ctr.print(`Hello, ${ctr.body.name}! You are Visit nr.${ctr['@'].count}`)
-  })
+      return ctr.print(`Hello, ${ctr.body.name}! You are Visit nr.${ctr['@'].count}`)
+    })
+  )
 )
 
 let count = 0
-server.event('httpRequest', async(ctr: Ctr) => {
+server.on('httpRequest', async(ctr: Ctr) => {
   ctr.setCustom('count', ++count) 
 
   console.log(`request made to ${decodeURI(ctr.url.pathname)} by ${ctr.client.ip}`)
-}).event('runtimeError', async(ctr: Ctr, error) => {
+}).on('httpError', async(ctr: Ctr, error) => {
   console.log(`error on path ${decodeURI(ctr.url.pathname)}!!!`)
   console.error(error)
 
@@ -116,9 +118,13 @@ server.event('httpRequest', async(ctr: Ctr) => {
   ctr.print('server error')
 })
 
-server.start().then((s) => {
-  console.log(`server started on port ${s.port}`)
-})
+server.start()
+  .then((s) => {
+    console.log(`server started on port ${s.port}`)
+  })
+  .catch((e) => {
+    console.error('An Error occured while starting the Server!\n', e)
+  })
 ```
 
 Function File
@@ -133,19 +139,15 @@ interface Body {
   username?: string
 }
 
-type Ctr<Body = any> = HTTPRequestContext<Custom, Body>
-type CtrFile<Body = any> = RouteFile<Custom, Body>
+export = new RouteFile<Custom, Body>((file) => file
+  .http('POST', '/v2/account', (http) => http
+    .onRequest((ctr) => {
+      if (!('username' in ctr.body)) return ctr.print('no username in body!!')
 
-export = {
-  method: 'POST',
-  path: '/v2/account',
-
-  async code(ctr) {
-    if (!('username' in ctr.body)) return ctr.print('no username in body!!')
-
-    ctr.status(Status.NO_CONTENT).print(ctr.body.username)
-  }
-} satisfies CtrFile<Body>
+      ctr.status(Status.NO_CONTENT).print(ctr.body.username)
+    })
+  )
+)
 ```
 
 Middleware Intellisense
@@ -181,31 +183,39 @@ const server = new Server({
 
 // ctr.params.get... is :name:, example /hello/0x4096
 server.path('/', (path) => path // The / is the Path Prefix for all children paths
-  .http('POST', '/post', async(ctr) => {
-    return ctr.print(`Hello, ${ctr.body}! How are you doing?`)
-  })
-  .http('GET', '/profile/<user>', async(ctr) => {
-    return ctr.printFile(`../images/profile/${ctr.params.get('user')}.png`, { addTypes: true })
-  })
-  .http('GET', '/reloadserver', async(ctr) => {
-    if (!ctr.queries.has('password')) return ctr.print('provide the password to do this!!')
-    if (ctr.queries.get('password') !== 'imApassword123!') return ctr.print('the password is incorrect!!')
+  .http('POST', '/post', (http) => http
+    .onRequest(async(ctr) => {
+      return ctr.print(`Hello, ${ctr.body}! How are you doing?`)
+    })
+  )
+  .http('GET', '/profile/<user>', (http) => http
+    .onRequest(async(ctr) => {
+      return ctr.printFile(`../images/profile/${ctr.params.get('user')}.png`, { addTypes: true })
+    })
+  )
+  .http('GET', '/reloadserver', (http) => http
+    .onRequest(async(ctr) => {
+      if (!ctr.queries.has('password')) return ctr.print('provide the password to do this!!')
+      if (ctr.queries.get('password') !== 'imApassword123!') return ctr.print('the password is incorrect!!')
 
-    setTimeout(() => ctr.controller.reload(), 1000)
-    return ctr.print('server reloaded')
-  })
-  .http('GET', '/redirect/<website>', async(ctr) => {
-    switch (ctr.params.get('website')) {
-      case "google":
-        return ctr.redirect('https://www.google.com')
+      setTimeout(() => ctr.controller.reload(), 1000)
+      return ctr.print('server reloaded')
+    })
+  )
+  .http('GET', '/redirect/<website>', (http) => http
+    .onRequest(async(ctr) => {
+      switch (ctr.params.get('website')) {
+        case "google":
+          return ctr.redirect('https://www.google.com')
 
-      case "youtube":
-        return ctr.redirect('https://www.youtube.com')
+        case "youtube":
+          return ctr.redirect('https://www.youtube.com')
 
-      default:
-        return ctr.print('Im only smart enough to redirect to google and youtube :P')
-    }
-  })
+        default:
+          return ctr.print('Im only smart enough to redirect to google and youtube :P')
+      }
+    })
+  )
   .ws('/echo', (ws) => ws
     .onUpgrade((ctr, end) => {
       if (!ctr.queries.has('confirm')) return end(ctr.status(Status.BAD_REQUEST).print('Please dont forget the confirm query!'))
@@ -216,19 +226,29 @@ server.path('/', (path) => path // The / is the Path Prefix for all children pat
   )
   .redirect('/googleplz', 'https://www.google.com')
   .path('/api', (path) => path
-    .http('GET', '/', (ctr) => ctr.print('welcome to api!'))
+    .http('GET', '/', (http) => http
+      .onRequest((ctr) => ctr.print('welcome to api!'))
+    )
     .path('/v1', (path) => path
-      .http('GET', '/', (ctr) => ctr.print('welcome to v1 api!'))
+      .http('GET', '/', (http) => http
+        .onRequest((ctr) => ctr.print('welcome to v1 api!'))
+      )
     )
     .path('/v2', (path) => path
-      .http('GET', '/', (ctr) => ctr.print('welcome to v2 api!'))
+      .http('GET', '/', (http) => http
+        .onRequest((ctr) => ctr.print('welcome to v2 api!'))
+      )
     )
   )
 )
 
-server.start().then((s) => {
-  console.log(`server started on port ${s.port}`)
-})
+server.start()
+  .then((s) => {
+    console.log(`server started on port ${s.port}`)
+  })
+  .catch((e) => {
+    console.error('An Error occured while starting the Server!\n', e)
+  })
 ```
 
 Print to multiple Websockets Periodically
@@ -288,18 +308,26 @@ const handleHello = async() => {
 
 server.path('/wait5sec', (path) => path
   // this request will load for 5 seconds
-  .http('GET', '/func', (ctr) => {
-    return ctr.print(handleHello)
-  }) // this request will also load for 5 seconds
-  .http('GET', '/promise', async(ctr) => {
-    await wait(5000)
-    return ctr.print('You just waited 5 seconds !!')
-  })
+  .http('GET', '/func', (http) => http
+    .onRequest((ctr) => {
+      return ctr.print(handleHello)
+    })
+  ) // this request will also load for 5 seconds
+  .http('GET', '/promise', (http) => http
+    .onRequest(async(ctr) => {
+      await wait(5000)
+      return ctr.print('You just waited 5 seconds !!')
+    })
+  )
 )
 
-server.start().then((s) => {
-  console.log(`server started on port ${s.port}`)
-})
+server.start()
+  .then((s) => {
+    console.log(`server started on port ${s.port}`)
+  })
+  .catch((e) => {
+    console.error('An Error occured while starting the Server!\n', e)
+  })
 ```
 
 Authenticate Requests
@@ -314,18 +342,22 @@ const server = new Server({
 })
 
 server.path('/account', (path) => path
-  .validate(async(ctr) => { // Will Validate every request starting with the route block prefix (/account)
-    if (!ctr.queries.has('password')) return ctr.status(Status.UNPROCESSABLE_ENTITY).print('Passwort Query Missing')
-    if (ctr.queries.get('password') !== '123456 or database request or sum') return ctr.status(Status.UNAUTHORIZED).print('Unauthorized')
+  .validate(async(ctr, end) => { // Will Validate every request starting with the route block prefix (/account)
+    if (!ctr.queries.has('password')) return end(ctr.status(Status.UNPROCESSABLE_ENTITY).print('Passwort Query Missing'))
+    if (ctr.queries.get('password') !== '123456 or database request or sum') return end(ctr.status(Status.UNAUTHORIZED).print('Unauthorized'))
 
-    return ctr.status(Status.OK) // <- Everything is OK
+    // else everything is OK, the request will only end if the end() function is called
   })
-  .http('GET', '/', async(ctr) => {
-    return ctr.print('Account Infos: idk')
-  })
-  .http('POST', '/edit', async(ctr) => {
-    return ctr.print('Edited Account Infos!')
-  })
+  .http('GET', '/', (http) => http
+    .onRequest(async(ctr) => {
+      return ctr.print('Account Infos: idk')
+    })
+  )
+  .http('POST', '/edit', (http) => http
+    .onRequest(async(ctr) => {
+      return ctr.print(`Edited Account Infos to ${ctr.rawBody}!`)
+    })
+  )
 )
 ```
 
@@ -346,9 +378,13 @@ server.middleware(someMiddleware.init())
 server.middleware(someOtherMiddleware.init())
 // For Intellisense of the Middlewares look at the Typescript Section at the top of this file
 
-server.start().then((s) => {
-  console.log(`server started on port ${s.port}`)
-})
+server.start()
+  .then((s) => {
+    console.log(`server started on port ${s.port}`)
+  })
+  .catch((e) => {
+    console.error('An Error occured while starting the Server!\n', e)
+  })
 ```
 
 Serve Static Files
@@ -368,9 +404,13 @@ server.path('/', (path) => path
   }) // The html folder is in the root directory, NOTE: Static files will be prioritized over the defined routes
 )
 
-server.start().then((s) => {
-  console.log(`server started on port ${s.port}`)
-})
+server.start()
+  .then((s) => {
+    console.log(`server started on port ${s.port}`)
+  })
+  .catch((e) => {
+    console.error('An Error occured while starting the Server!\n', e)
+  })
 ```
 
 Add Headers on EVERY Request
@@ -384,12 +424,17 @@ const server = new Server({
   proxy: true // If enabled, alternate IPs will be shown
 })
 
-server.defaultHeaders()
+server.defaultHeaders((dH) => dH
   .add('im-a-header', 'im the value')
+)
 
-server.start().then((s) => {
-  console.log(`server started on port ${s.port}`)
-})
+server.start()
+  .then((s) => {
+    console.log(`server started on port ${s.port}`)
+  })
+  .catch((e) => {
+    console.error('An Error occured while starting the Server!\n', e)
+  })
 ```
 
 Override Content-Types
@@ -403,13 +448,18 @@ const server = new Server({
   proxy: true // If enabled, alternate IPs will be shown
 })
 
-server.contentTypes()
+server.contentTypes((ct) => cT
   .add('.jsn', 'application/json')
   .add('.jn', 'application/json')
+)
 
-server.start().then((s) => {
-  console.log(`server started on port ${s.port}`)
-})
+server.start()
+  .then((s) => {
+    console.log(`server started on port ${s.port}`)
+  })
+  .catch((e) => {
+    console.error('An Error occured while starting the Server!\n', e)
+  })
 ```
 
 Enable Dashboard
@@ -427,9 +477,13 @@ const server = new Server({
   }
 })
 
-server.start().then((s) => {
-  console.log(`server started on port ${s.port}`)
-})
+server.start()
+  .then((s) => {
+    console.log(`server started on port ${s.port}`)
+  })
+  .catch((e) => {
+    console.error('An Error occured while starting the Server!\n', e)
+  })
 ```
 
 Custom Not Found / Server Error Page
@@ -443,20 +497,24 @@ const server = new Server({
   proxy: true
 })
 
-server.event('http404', async(ctr) => {
+server.on('route404', async(ctr) => {
   ctr.status(Status.NOT_FOUND)
   return ctr.print(`page "${ctr.url.pathname}" not found`)
 })
 
-server.event('runtimeError', async(ctr, error) => {
+server.on('httpError', async(ctr, error) => {
   ctr.status(Status.INTERNAL_SERVER_ERROR)
   ctr.print(`ERROR!!! ${error.stack}`)
   return console.log(ctr.error)
 })
 
-server.start().then((s) => {
-  console.log(`server started on port ${s.port}`)
-})
+server.start()
+  .then((s) => {
+    console.log(`server started on port ${s.port}`)
+  })
+  .catch((e) => {
+    console.error('An Error occured while starting the Server!\n', e)
+  })
 ```
 
 Custom Function on every request
@@ -470,21 +528,22 @@ const server = new Server({
   proxy: true
 })
 
-server.event('httpRequest', async(ctr) => {
+server.on('httpRequest', async(ctr, end) => {
   return console.log(`request made to ${decodeURI(ctr.url.href)} by ${ctr.client.ip}`)
-  // DO NOT write any data or end the request
-}).event('wsRequest', async(ctr) => {
-  return console.log(`websocket request made to ${decodeURI(ctr.url.href)} by ${ctr.client.ip}`)
-  // DO NOT write any data or end the request
+  // you can also end the request here like in validations
 })
 
-server.start().then((s) => {
-  console.log(`server started on port ${s.port}`)
-})
+server.start()
+  .then((s) => {
+    console.log(`server started on port ${s.port}`)
+  })
+  .catch((e) => {
+    console.error('An Error occured while starting the Server!\n', e)
+  })
 ```
 
 ### Cleaning Up Functions
-Load Functions from Directory
+Load routes from Directory
 ```js
 const { Server } = require('rjweb-server')
 
@@ -500,24 +559,28 @@ server.path('/', (path) => path
   .loadESM('./functions') // This loads ESM files (export default)
 )
 
-server.start().then((s) => {
-  console.log(`server started on port ${s.port}`)
-})
+server.start()
+  .then((s) => {
+    console.log(`server started on port ${s.port}`)
+  })
+  .catch((e) => {
+    console.error('An Error occured while starting the Server!\n', e)
+  })
 ```
 
-Making a function File
+Making a route File
 ```js
-/** @type {import('rjweb-server').RouteFile} */
-module.exports = {
-  method: 'GET',
-  path: '/say/<word>',
+const { RouteFile } = require('rjweb-server')
 
-  async code(ctr) {
-    const word = ctr.params.get('word')
+module.exports = new RouteFile((file) => file
+  .http('GET', '/say/<word>', (http) => http
+    .onRequest((ctr) => {
+      const word = ctr.params.get('word')
 
-    return ctr.print(`I will say it!!!\n${word}`)
-  }
-}
+      ctr.print(`I will say it!!!!!!!!!\n${word}`)
+    })
+  )
+)
 ```
 
 ### CLI

@@ -1,38 +1,55 @@
-import { ExternalRouter, LoadPath, Routed, HTTPMethods } from "../../types/internal"
+import { ExternalRouter, LoadPath, Routed, HTTPMethods, RoutedValidation } from "../../types/internal"
 import Static from "../../types/static"
 import Route from "../../types/route"
 import WebSocket from "../../types/webSocket"
 import { pathParser } from "../URLObject"
-import types from "../../misc/methods"
+import { Content } from "../.."
 
 import path from "path"
 import fs from "fs"
 
 import RouteWS from "./ws"
+import RouteHTTP from "./http"
 import RouteExternal from "./external"
+import RouteDefaultHeaders from "./defaultHeaders"
 
 export default class RoutePath {
 	protected externals: ExternalRouter[]
-	protected validations: Routed[]
+	protected validations: RoutedValidation[]
+	protected headers: Record<string, Content>
+	protected parsedHeaders: Record<string, Buffer>
 	protected loadPaths: LoadPath[]
 	protected statics: Static[]
 	protected routes: Route[]
 	protected webSockets: WebSocket[]
 	protected httpPath: string
+	protected hasCalledGet = false
 
 	/** Generate Route Block */
 	constructor(
 		/** The Path of the Routes */ path: string,
-		/** The Validations to add */ validations?: Routed[]
+		/** The Validations to add */ validations?: RoutedValidation[],
+		/** The Headers to add */ headers?: Record<string, Content>
 	) {
 		this.httpPath = pathParser(path)
 		this.routes = []
 		this.statics = []
 		this.webSockets = []
 		this.loadPaths = []
+		this.parsedHeaders = {}
 
 		this.validations = validations || []
+		this.headers = headers || {}
 		this.externals = []
+
+		if (Object.keys(this.headers).length > 0) {
+			const routeDefaultHeaders = new RouteDefaultHeaders()
+			this.externals.push({ object: routeDefaultHeaders })
+
+			for (const [ key, value ] of Object.entries(this.headers)) {
+				routeDefaultHeaders.add(key as any, value)
+			}
+		}
 	}
 
 	/**
@@ -55,9 +72,8 @@ export default class RoutePath {
 	 * )
 	 * ```
 	 * @since 3.2.1
-	*/
-	validate(
-		/** The Function to Validate the Request */ code: Routed
+	*/ validate(
+		/** The Function to Validate the Request */ code: RoutedValidation
 	) {
 		this.validations.push(code)
 
@@ -68,48 +84,28 @@ export default class RoutePath {
 	 * Add a HTTP Route
 	 * @example
 	 * ```
-	 * // The /devil route will be available on "path + /devil" so "/devil"
-	 * // Paths wont collide if the request methods are different
-	 * const controller = new Server({ })
-	 * let devilsMessage = 'Im the one who knocks'
-	 * 
 	 * controller.path('/', (path) => path
-	 *   .http('GET', '/devil', async(ctr) => {
-	 *     return ctr
-	 *       .status(666)
-	 *       .print(devilsMessage)
-	 *   })
-	 *   .http('POST', '/devil', async(ctr) => {
-	 *     devilsMessage = ctr.body
-	 *     return ctr
-	 *       .status(999)
-	 *       .print('The Devils message was set')
-	 *   })
+	 *   .http('GET', '/hello', (ws) => ws
+	 *     .onRequest(async(ctr) => {
+	 *       ctr.print('Hello bro!')
+	 *     })
+	 *   )
 	 * )
 	 * ```
-	 * @since 5.0.0
-	*/
-	http(
-		/** The Request Method */ method: HTTPMethods,
+	 * @since 6.0.0
+	*/ http(
+    /** The Request Method */ method: HTTPMethods,
 		/** The Path on which this will be available */ path: string,
-		/** The Async Code to run on a Request */ code: Routed
-	) {
-		if (!types.includes(method)) throw TypeError(`No Valid Request Type: ${method}, Possible Values: ${types.join(', ')}`)
-		if (this.routes.some((obj) => (obj.method === method && obj.path === pathParser(path)))) return this
-
-		this.routes.push({
-			type: 'route',
-			method: method,
-			path: pathParser([ this.httpPath, path ]),
-			pathArray: pathParser([ this.httpPath, path ]).split('/'),
-			code: code,
-			data: {
-				validations: this.validations
-			}
-		})
-
-		return this
-	}
+		/** The Code to handle the Socket */ code: (path: RouteHTTP) => RouteHTTP
+		) {
+			if (this.webSockets.some((obj) => (obj.path === pathParser(path)))) return this
+	
+			const routeHTTP = new RouteHTTP(pathParser(path), method, this.validations, this.parsedHeaders)
+			this.externals.push({ object: routeHTTP })
+			code(routeHTTP)
+	
+			return this
+		}
 
 	/**
 	 * Add a Websocket Route
@@ -130,16 +126,38 @@ export default class RoutePath {
 	 * )
 	 * ```
 	 * @since 5.4.0
-	*/
-	ws(
+	*/ ws(
 		/** The Path on which this will be available */ path: string,
 		/** The Code to handle the Socket */ code: (path: RouteWS) => RouteWS
 	) {
 		if (this.webSockets.some((obj) => (obj.path === pathParser(path)))) return this
 
-		const routeWS = new RouteWS(pathParser([ this.httpPath, path ]), [...this.validations])
-		this.externals.push({ method: 'getWebSocket', object: routeWS })
+		const routeWS = new RouteWS(pathParser([ this.httpPath, path ]), this.validations)
+		this.externals.push({ object: routeWS })
 		code(routeWS)
+
+		return this
+	}
+
+	/**
+	 * Add Default Headers
+	 * @example
+	 * ```
+	 * controller.path('/', (path) => path
+	 *   .defaultHeaders((dH) => dH
+	 *     .add('X-Api-Version', '1.0.0')
+	 *   )
+	 * )
+	 * ```
+	 * @since 6.0.0
+	*/ defaultHeaders(
+		/** The Code to handle the Headers */ code: (path: RouteDefaultHeaders) => RouteDefaultHeaders
+	) {
+		const routeDefaultHeaders = new RouteDefaultHeaders()
+		this.externals.push({ object: routeDefaultHeaders })
+
+		code(routeDefaultHeaders)
+		this.headers = { ...this.headers, ...(routeDefaultHeaders as any).defaultHeaders }
 
 		return this
 	}
@@ -158,8 +176,7 @@ export default class RoutePath {
 	 * )
 	 * ```
 	 * @since 3.1.0
-	*/
-	redirect(
+	*/ redirect(
 		/** The Request Path to Trigger the Redirect on */ request: string,
 		/** The Redirect Path to Redirect to */ redirect: string
 	) {
@@ -168,9 +185,10 @@ export default class RoutePath {
 			method: 'GET',
 			path: pathParser(this.httpPath + request),
 			pathArray: pathParser(this.httpPath + request).split('/'),
-			code: (ctr) => ctr.redirect(redirect),
+			onRequest: (ctr) => ctr.redirect(redirect),
 			data: {
-				validations: this.validations
+				validations: this.validations,
+				headers: this.parsedHeaders
 			}
 		})
 
@@ -193,8 +211,7 @@ export default class RoutePath {
 	 * )
 	 * ```
 	 * @since 3.1.0
-	*/
-	static(
+	*/ static(
 		/** The Folder which will be used */ folder: string,
 		/** Additional Configuration for Serving */ options: {
 			/**
@@ -218,7 +235,8 @@ export default class RoutePath {
 			location: folder,
 			data: {
 				addTypes, hideHTML,
-				validations: this.validations
+				validations: this.validations,
+				headers: this.parsedHeaders
 			}
 		})
 
@@ -237,8 +255,7 @@ export default class RoutePath {
 	 * )
 	 * ```
 	 * @since 3.1.0
-	*/
-	loadCJS(
+	*/ loadCJS(
 		/** The Folder which will be used */ folder: string,
 	) {
 		if (!fs.existsSync(path.resolve(folder))) throw Error('The CJS Function folder wasnt found!')
@@ -247,7 +264,8 @@ export default class RoutePath {
 			path: path.resolve(folder),
 			prefix: this.httpPath,
 			type: 'cjs',
-			validations: this.validations
+			validations: this.validations,
+			headers: this.parsedHeaders
 		})
 
 		return this
@@ -265,8 +283,7 @@ export default class RoutePath {
 	 * )
 	 * ```
 	 * @since 4.0.0
-	*/
-	loadESM(
+	*/ loadESM(
 		/** The Folder which will be used */ folder: string,
 	) {
 		if (!fs.existsSync(path.resolve(folder))) throw Error('The ESM Function folder wasnt found!')
@@ -275,7 +292,8 @@ export default class RoutePath {
 			path: path.resolve(folder),
 			prefix: this.httpPath,
 			type: 'esm',
-			validations: this.validations
+			validations: this.validations,
+			headers: this.parsedHeaders
 		})
 
 		return this
@@ -299,16 +317,15 @@ export default class RoutePath {
 	 * )
 	 * ```
 	 * @since 5.0.0
-	*/
-	path(
+	*/ path(
 		/** The Path Prefix */ prefix: string,
-		/** The Code to handle the Prefix */ router: (path: RoutePath) => RoutePath | RoutePath | RouteExternal
+		/** The Code to handle the Prefix */ router: ((path: RoutePath) => RoutePath) | RoutePath | RouteExternal
 	) {
-		if ('getRoutes' in router) {
-			this.externals.push({ method: 'getRoutes', object: router, addPrefix: pathParser([ this.httpPath, prefix ]) })
+		if ('getData' in router) {
+			this.externals.push({ object: router, addPrefix: pathParser([ this.httpPath, prefix ]) })
 		} else {
-			const routePath = new RoutePath(pathParser([ this.httpPath, prefix ]), [...this.validations])
-			this.externals.push({ method: 'getRoutes', object: routePath })
+			const routePath = new RoutePath(pathParser([ this.httpPath, prefix ]), [...this.validations], Object.assign({}, this.headers))
+			this.externals.push({ object: routePath })
 			router(routePath)
 		}
 
@@ -318,23 +335,23 @@ export default class RoutePath {
 
 	/**
 	 * Internal Method for Generating Routes Object
-	 * @since 3.1.0
-	*/
-	protected async getRoutes() {
-		const routes = [...this.routes], webSockets = [...this.webSockets],
-			statics = [...this.statics], loadPaths = [...this.loadPaths]
-		for (const external of this.externals) {
-			const result = await (external.object as any)[external.method](external.addPrefix ?? '/')
+	 * @since 6.0.0
+	*/ async getData() {
+		if (!this.hasCalledGet) for (const external of this.externals) {
+			const result = await external.object.getData(external.addPrefix ?? '/')
 
-			if ('routes' in result && result.routes.length > 0) routes.push(...result.routes)
-			if ('webSockets' in result && result.webSockets.length > 0) webSockets.push(...result.webSockets)
-			if ('statics' in result && result.statics.length > 0) statics.push(...result.statics)
-			if ('loadPaths' in result && result.loadPaths.length > 0) loadPaths.push(...result.loadPaths)
+			if ('routes' in result && result.routes.length > 0) this.routes.push(...result.routes)
+			if ('webSockets' in result && result.webSockets.length > 0) this.webSockets.push(...result.webSockets)
+			if ('statics' in result && result.statics.length > 0) this.statics.push(...result.statics)
+			if ('loadPaths' in result && result.loadPaths.length > 0) this.loadPaths.push(...result.loadPaths)
+			if ('defaultHeaders' in result) this.parsedHeaders = Object.assign(this.parsedHeaders, result.defaultHeaders)
 		}
 
+		this.hasCalledGet = true
+
 		return {
-			routes, webSockets,
-			statics, loadPaths
+			routes: this.routes, webSockets: this.webSockets,
+			statics: this.statics, loadPaths: this.loadPaths
 		}
 	}
 }

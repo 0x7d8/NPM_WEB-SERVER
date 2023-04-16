@@ -2,7 +2,7 @@ import { GlobalContext, Hours, InternalContext } from "../../types/context"
 import { HttpRequest, HttpResponse, us_socket_context_t } from "uWebSockets.js"
 import { pathParser } from "../../classes/URLObject"
 import URLObject from "../../classes/URLObject"
-import { resolve as pathResolve } from "path"
+import { resolve as pathResolve, resolve } from "path"
 import parseContent, { Returns as ParseContentReturns } from "../parseContent"
 import { Task } from "../../types/internal"
 import statsRoute from "../../dashboard/routes"
@@ -19,6 +19,7 @@ import EventEmitter from "events"
 import Status from "../../misc/statusEnum"
 import Static from "../../types/static"
 import { WebSocketContext } from "src/types/webSocket"
+import toETag from "../toETag"
 import parseStatus from "../parseStatus"
 
 export const getPreviousHours = (): Hours[] => {
@@ -26,7 +27,7 @@ export const getPreviousHours = (): Hours[] => {
 }
 
 export default async function handleHTTPRequest(req: HttpRequest, res: HttpResponse, socket: us_socket_context_t | null, requestType: 'http' | 'upgrade', ctg: GlobalContext) {
-	let ctx: InternalContext = {
+	const ctx: InternalContext = {
 		queue: [],
 		scheduleQueue(type, callback) {
 			ctx.queue.push({ type, function: callback })
@@ -35,11 +36,11 @@ export default async function handleHTTPRequest(req: HttpRequest, res: HttpRespo
 				.filter((task) => task.type === 'context')
 				.concat(ctx.queue.filter((task) => task.type === 'execution'))
 
-			let result = null
+			let result: any = null
 			for (let queueIndex = 0; !!sortedQueue[queueIndex]; queueIndex++) {
 				try {
 					await Promise.resolve(sortedQueue[queueIndex].function())
-				} catch (err: any) {
+				} catch (err) {
 					result = err
 					break
 				}
@@ -50,7 +51,7 @@ export default async function handleHTTPRequest(req: HttpRequest, res: HttpRespo
 			if (!err) return
 
 			ctx.error = err
-			ctx.execute.event = 'runtimeError'
+			ctx.execute.event = 'httpError'
 		}, url: new URLObject(req.getUrl() + '?' + req.getQuery(), req.getMethod()),
 		continueSend: true,
 		executeCode: true,
@@ -85,6 +86,7 @@ export default async function handleHTTPRequest(req: HttpRequest, res: HttpRespo
 
 	// Add Powered By Header (if enabled)
 	if (ctg.options.poweredBy) ctx.response.headers['rjweb-server'] = Version
+	ctx.response.headers['accept-ranges'] = 'bytes'
 
 	ctg.requests.total++
 	ctg.requests[ctx.previousHours[4]]++
@@ -124,7 +126,7 @@ export default async function handleHTTPRequest(req: HttpRequest, res: HttpRespo
 	// Handle Data
 	if (requestType === 'http' && ctx.url.method !== 'GET') {
 		// Check for Content-Length Header
-		if (!ctx.headers['content-length'] || parseInt(ctx.headers['content-length']).toString() === 'NaN') return res.cork(() => {
+		if (!ctx.headers['content-length'] || isNaN(parseInt(ctx.headers['content-length']))) return res.cork(() => {
 			// Write Status
 			if (!ctx.isAborted) res.writeStatus(parseStatus(Status.LENGTH_REQUIRED))
 		
@@ -135,7 +137,7 @@ export default async function handleHTTPRequest(req: HttpRequest, res: HttpRespo
 
 			if (!ctx.isAborted) res.end()
 		})
-		else if (Number(ctx.headers['content-length']) > (ctg.options.body.maxSize * 1e6)) {
+		else if (parseInt(ctx.headers['content-length']) > (ctg.options.body.maxSize * 1e6)) {
 			const result = await parseContent(ctg.options.body.message)
 
 			if (!ctx.isAborted) return res.cork(() => {
@@ -238,7 +240,7 @@ export default async function handleHTTPRequest(req: HttpRequest, res: HttpRespo
 
 				// Get From Cache
 				if (ctg.cache.routes.has(`route::static::${ctx.url.path}`)) {
-					const url = ctg.cache.routes.get(`route::static::${ctx.url.path}`)
+					const url = ctg.cache.routes.get(`route::static::${ctx.url.path}`, {} as any)
 
 					ctx.execute.file = url.file!
 					ctx.execute.route = url.route!
@@ -278,9 +280,10 @@ export default async function handleHTTPRequest(req: HttpRequest, res: HttpRespo
 					method: 'GET',
 					path: ctx.url.path,
 					pathArray: ctx.url.path.split('/'),
-					code: async(ctr) => await statsRoute(ctr, ctg, ctx, 'http'),
+					onRequest: async(ctr) => await statsRoute(ctr, ctg, ctx, 'http'),
 					data: {
-						validations: []
+						validations: [],
+						headers: {}
 					}
 				}
 
@@ -295,7 +298,7 @@ export default async function handleHTTPRequest(req: HttpRequest, res: HttpRespo
 
 				// Get From Cache
 				if (ctg.cache.routes.has(`route::normal::${ctx.url.path}::${ctx.url.method}`)) {
-					const url = ctg.cache.routes.get(`route::normal::${ctx.url.path}::${ctx.url.method}`)
+					const url = ctg.cache.routes.get(`route::normal::${ctx.url.path}::${ctx.url.method}`, {} as any)
 
 					params = url.params!
 					ctx.execute.route = url.route
@@ -368,7 +371,7 @@ export default async function handleHTTPRequest(req: HttpRequest, res: HttpRespo
 
 				// Get From Cache
 				if (ctg.cache.routes.has(`route::ws::${ctx.url.path}`)) {
-					const url = ctg.cache.routes.get(`route::ws::${ctx.url.path}`)
+					const url = ctg.cache.routes.get(`route::ws::${ctx.url.path}`, {} as any)
 
 					params = url.params!
 					ctx.execute.route = url.route
@@ -418,6 +421,13 @@ export default async function handleHTTPRequest(req: HttpRequest, res: HttpRespo
 			}
 		}
 
+		// Add Headers
+		if (ctx.execute.exists && ctx.execute.route?.type !== 'websocket') {
+			for (const [ key, value ] of Object.entries(ctx.execute.route?.data.headers!)) {
+				ctx.response.headers[key] = value
+			}
+		}
+
 		// Get Correct Host IP
 		let hostIp: string
 		if (ctg.options.proxy && ctx.headers['x-forwarded-for']) hostIp = ctx.headers['x-forwarded-for'].split(',')[0].trim()
@@ -432,7 +442,7 @@ export default async function handleHTTPRequest(req: HttpRequest, res: HttpRespo
 		})
 
 		// Create Context Response Object
-		let ctr: HTTPRequestContext = {
+		const ctr: HTTPRequestContext = {
 			type: requestType,
 
 			// Properties
@@ -440,8 +450,8 @@ export default async function handleHTTPRequest(req: HttpRequest, res: HttpRespo
 			headers: new ValueCollection(ctx.headers, decodeURIComponent) as any,
 			cookies: new ValueCollection(ctx.cookies, decodeURIComponent),
 			params: new ValueCollection(params, decodeURIComponent),
-			queries: new ValueCollection(parseQuery(ctx.url.query as any) as any),
-			hashes: new ValueCollection(parseQuery(ctx.url.hash as any) as any),
+			queries: new ValueCollection(parseQuery(ctx.url.query) as any),
+			hashes: new ValueCollection(parseQuery(ctx.url.hash) as any),
 
 			// Variables
 			client: {
@@ -490,7 +500,7 @@ export default async function handleHTTPRequest(req: HttpRequest, res: HttpRespo
 					let result: ParseContentReturns
 					try {
 						result = await parseContent(value)
-					} catch (err: any) {
+					} catch (err) {
 						return ctx.handleError(err)
 					}
 
@@ -520,7 +530,7 @@ export default async function handleHTTPRequest(req: HttpRequest, res: HttpRespo
 					let result: ParseContentReturns
 					try {
 						result = await parseContent(content)
-					} catch (err: any) {
+					} catch (err) {
 						return ctx.handleError(err)
 					}
 
@@ -543,12 +553,32 @@ export default async function handleHTTPRequest(req: HttpRequest, res: HttpRespo
 					ctx.response.headers['vary'] = Buffer.from('Accept-Encoding')
 				}
 
-				ctx.scheduleQueue('execution', () => new Promise<void>((resolve) => {
+				ctx.scheduleQueue('execution', () => new Promise<void>(async(resolve) => {
+					try {
+						const fileStat = await fs.stat(pathResolve(file))
+						ctx.response.headers['last-modified'] = fileStat.mtime.toUTCString()
+					} catch (err) {
+						ctx.handleError(err)
+						return resolve()
+					}
+
 					if (!ctx.isAborted) res.cork(() => {
+						let endEarly = false
+						if (ctx.headers['if-modified-since'] === ctx.response.headers['last-modified']) {
+							ctx.response.status = Status.NOT_MODIFIED
+							ctx.response.statusMessage = undefined
+							endEarly = true
+						}
+
 						// Write Headers & Status
 						if (!ctx.isAborted) res.writeStatus(parseStatus(ctx.response.status))
 						for (const header in ctx.response.headers) {
 							if (!ctx.isAborted) res.writeHeader(header, ctx.response.headers[header])
+						}
+
+						if (endEarly) {
+							if (!ctx.isAborted) res.end('')
+							return resolve()
 						}
 
 						// Check Cache
@@ -597,11 +627,11 @@ export default async function handleHTTPRequest(req: HttpRequest, res: HttpRespo
 								if (!ctx.isAborted) res.end()
 							})
 
-							const stream = createReadStream(file)
+							const stream = createReadStream(pathResolve(file))
 
 							// Handle Errors
-							stream.once('error', (error) => {
-								ctx.handleError(error)
+							stream.once('error', (err) => {
+								ctx.handleError(err)
 								return resolve()
 							})
 
@@ -615,11 +645,11 @@ export default async function handleHTTPRequest(req: HttpRequest, res: HttpRespo
 								stream.destroy()
 							}
 
-							const stream = createReadStream(file)
+							const stream = createReadStream(pathResolve(file))
 
 							// Handle Errors
-							stream.once('error', (error) => {
-								ctx.handleError(error)
+							stream.once('error', (err) => {
+								ctx.handleError(err)
 								return resolve()
 							})
 
@@ -646,6 +676,7 @@ export default async function handleHTTPRequest(req: HttpRequest, res: HttpRespo
 							ctx.events.once('requestAborted', destroyStream)
 						}
 					})
+					else resolve()
 				}))
 
 				return ctr
@@ -670,7 +701,7 @@ export default async function handleHTTPRequest(req: HttpRequest, res: HttpRespo
 						const dataListener = async(data: Buffer) => {
 							try {
 								data = (await parseContent(data)).content
-							} catch (err: any) {
+							} catch (err) {
 								return ctx.handleError(err)
 							}
 
@@ -721,7 +752,7 @@ export default async function handleHTTPRequest(req: HttpRequest, res: HttpRespo
 				try {
 					await Promise.resolve(middleware.data.httpEvent!(middleware.localContext, () => ctx.executeCode = false, ctr, ctx, ctg))
 					if (ctx.error) throw ctx.error
-				} catch (err: any) {
+				} catch (err) {
 					ctx.handleError(err)
 					break
 				}
@@ -732,14 +763,13 @@ export default async function handleHTTPRequest(req: HttpRequest, res: HttpRespo
 		if (ctx.executeCode && requestType === 'upgrade' && ctx.execute.exists && ctx.execute.route!.type === 'websocket' && 'onUpgrade' in ctx.execute.route!) {
 			try {
 				await Promise.resolve(ctx.execute.route.onUpgrade!(ctr, () => ctx.executeCode = false))
-			} catch (err: any) {
+			} catch (err) {
 				ctx.handleError(err)
 			}
 		}
 
 		// Execute Custom Run Function
-		if (requestType === 'http') await handleEvent('httpRequest', ctr, ctx, ctg)
-		else await handleEvent('wsRequest', ctr, ctx, ctg)
+		await handleEvent('httpRequest', ctr, ctx, ctg)
 
 		// Execute Validations
 		if (ctx.execute.exists && ctx.execute.route!.data.validations.length > 0 && !ctx.error) {
@@ -747,19 +777,23 @@ export default async function handleHTTPRequest(req: HttpRequest, res: HttpRespo
 				const validate = ctx.execute.route!.data.validations[validateIndex]
 
 				try {
-					await Promise.resolve(validate(ctr))
-					if (!String(ctx.response.status).startsWith('2')) ctx.executeCode = false
-				} catch (err: any) {
-					ctx.error = err
-					ctx.execute.event = 'runtimeError'
+					await Promise.resolve(validate(ctr, () => ctx.executeCode = false))
+				} catch (err) {
+					ctx.handleError(err)
+					break
 				}
 			}
 		}
 
 		// Execute Page Logic
+		let didExecute404 = false
 		const runPageLogic = (eventOnly?: boolean) => new Promise<void | boolean>(async(resolve) => {
 			// Execute Event
-			if (!ctx.execute.exists || !ctx.execute.route) ctx.execute.event = 'http404'
+			if (!ctx.execute.exists && !didExecute404) {
+				ctx.execute.event = 'route404'
+				didExecute404 = true
+			}
+
 			if (ctx.execute.event !== 'none') {
 				await handleEvent(ctx.execute.event, ctr, ctx, ctg)
 				return resolve()
@@ -784,17 +818,17 @@ export default async function handleHTTPRequest(req: HttpRequest, res: HttpRespo
               socket!
             )
           })
-				} catch (err: any) {
+				} catch (err) {
 					ctx.error = err
-					ctx.execute.event = 'runtimeError'
-					await runPageLogic()
+					ctx.execute.event = 'httpError'
+					await runPageLogic(true)
 				}
 
 				return resolve()
 			}
 
 			// Execute Static Route
-			if (ctx.execute.route.type === 'static') {
+			if (ctx.execute.route.type === 'static' && ctx.executeCode) {
 				ctr.printFile(ctx.execute.file!)
 				return resolve()
 			}
@@ -802,11 +836,11 @@ export default async function handleHTTPRequest(req: HttpRequest, res: HttpRespo
 			// Execute Normal Route
 			if (ctx.execute.route.type === 'route' && ctx.executeCode) {
 				try {
-					await Promise.resolve(ctx.execute.route.code(ctr))
-				} catch (err: any) {
+					await Promise.resolve(ctx.execute.route.onRequest(ctr))
+				} catch (err) {
 					ctx.error = err
-					ctx.execute.event = 'runtimeError'
-					await runPageLogic()
+					ctx.execute.event = 'httpError'
+					await runPageLogic(true)
 				}
 
 				return resolve()
@@ -823,16 +857,31 @@ export default async function handleHTTPRequest(req: HttpRequest, res: HttpRespo
 
 			if (err) {
 				ctx.error = err
-				ctx.execute.event = 'runtimeError'
+				ctx.execute.event = 'httpError'
 			}
 		}; await runPageLogic(true)
 
 
 		// Handle Reponse
 		try {
+			const eTag = toETag(ctx.response.content, ctx.response.headers, ctx.response.status)
+			if (ctg.options.cache && eTag) ctx.response.headers['etag'] = `W/"${eTag}"`
+
 			if (!ctx.isAborted && ctx.continueSend) return res.cork(() => {
+				let endEarly = false
+				if (ctg.options.cache && eTag && ctx.headers['if-none-match'] === ctx.response.headers['etag']) {
+					ctx.response.status = Status.NOT_MODIFIED
+					ctx.response.statusMessage = undefined
+					endEarly = true
+				}
+
 				// Write Status
 				if (!ctx.isAborted) res.writeStatus(parseStatus(ctx.response.status, ctx.response.statusMessage))
+
+				if (endEarly) {
+					if (!ctx.isAborted) res.end()
+					return
+				}
 
 				if (!ctx.response.isCompressed && ctr.headers.get('accept-encoding', '').includes(CompressMapping[ctg.options.compression].toString())) {
 					ctx.response.headers['content-encoding'] = CompressMapping[ctg.options.compression]
@@ -868,6 +917,11 @@ export default async function handleHTTPRequest(req: HttpRequest, res: HttpRespo
 				}
 			})
 		} catch { }
+
+		ctx.response.content = null as any
+		ctx.body.chunks.length = 0
+		ctx.body.parsed = ''
+		ctx.body.raw = null as any
 	})
 
 	if (requestType === 'upgrade' || ctx.url.method === 'GET') ctx.events.emit('startRequest')

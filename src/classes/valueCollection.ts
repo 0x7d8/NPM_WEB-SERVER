@@ -1,6 +1,8 @@
+import { RealAny } from "../types/internal"
+
 export default class ValueCollection<Key extends string | number | symbol = string | number | symbol, Value = any> {
-	private data: Record<Key, Value> = {} as any
-	private allowModify: boolean
+	public data: Record<Key, Value> = {} as any
+	public allowModify: boolean
 
 	/** Create a New Collection */
 	constructor(
@@ -25,10 +27,10 @@ export default class ValueCollection<Key extends string | number | symbol = stri
 	}
 
 	/** Get a Key */
-	get(
-		/** The Key to get */ key: Key,
-		/** The Fallback Value */ fallback?: Value | undefined
-	): Value {
+	get<T extends Key, Fallback extends Value | undefined = undefined>(
+		/** The Key to get */ key: T,
+		/** The Fallback Value */ fallback?: Fallback
+	): this['data'][T] | Fallback {
 		return this.data[key] ?? (fallback as any)
 	}
 
@@ -78,7 +80,7 @@ export default class ValueCollection<Key extends string | number | symbol = stri
 	toArray(
 		/** Excluded Keys */ excluded: Key[] = []
 	): Value[] {
-		let keys = [] as any
+		const keys = []
 		for (const key in this.data) {
 			if (excluded.includes(key)) continue
 			keys.push(this.data[key])
@@ -89,7 +91,7 @@ export default class ValueCollection<Key extends string | number | symbol = stri
 
 	/** Loop over all Keys */
 	forEach(
-		/** Callback Function */ callback: (key: Key, value: Value, index: number) => Promise<any> | any,
+		/** Callback Function */ callback: (key: Key, value: Value, index: number) => RealAny,
 		/** Excluded Keys */ excluded: Key[] = []
 	) {
 		callback = callback ?? (() => undefined)
@@ -108,7 +110,7 @@ export default class ValueCollection<Key extends string | number | symbol = stri
 	): any[] {
 		callback = callback ?? ((value) => value)
 
-		let sortedData = Object.assign({}, this.data)
+		const sortedData = Object.assign({}, this.data)
 		for (const key in sortedData) {
 			if (excluded.includes(key)) delete sortedData[key]
 		}

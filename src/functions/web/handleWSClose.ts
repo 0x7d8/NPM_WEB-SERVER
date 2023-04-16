@@ -7,7 +7,7 @@ import handleEvent from "../handleEvent"
 import { getPreviousHours } from "./handleRequest"
 
 export default function handleWSClose(ws: WebSocket<WebSocketContext>, message: ArrayBuffer, ctg: GlobalContext) {
-	let { custom, ctx } = ws.getUserData()
+	const { custom, ctx } = ws.getUserData()
 
 	ctx.previousHours = getPreviousHours()
 	ctx.body.raw = Buffer.from(message)
@@ -33,7 +33,7 @@ export default function handleWSClose(ws: WebSocket<WebSocketContext>, message: 
 		else hostIp = ctx.remoteAddress.split(':')[0]
 
 		// Create Context Response Object
-		let ctr: WebSocketClose = {
+		const ctr: WebSocketClose = {
 			type: 'close',
 
 			// Properties
@@ -41,8 +41,8 @@ export default function handleWSClose(ws: WebSocket<WebSocketContext>, message: 
 			headers: new ValueCollection(ctx.headers, decodeURIComponent) as any,
 			cookies: new ValueCollection(ctx.cookies, decodeURIComponent),
 			params: new ValueCollection(ws.getUserData().params, decodeURIComponent),
-			queries: new ValueCollection(parseQuery(ctx.url.query as any) as any),
-			hashes: new ValueCollection(parseQuery(ctx.url.hash as any) as any),
+			queries: new ValueCollection(parseQuery(ctx.url.query) as any),
+			hashes: new ValueCollection(parseQuery(ctx.url.hash) as any),
 
 			// Variables
 			client: {
@@ -86,7 +86,7 @@ export default function handleWSClose(ws: WebSocket<WebSocketContext>, message: 
 				try {
 					await Promise.resolve(middleware.data.wsCloseEvent!(middleware.localContext, () => ctx.executeCode = false, ctr, ctx, ctg))
 					if (ctx.error) throw ctx.error
-				} catch (err: any) {
+				} catch (err) {
 					ctx.handleError(err)
 					break
 				}
@@ -106,7 +106,7 @@ export default function handleWSClose(ws: WebSocket<WebSocketContext>, message: 
 			if ('onClose' in ctx.execute.route && ctx.execute.route.type === 'websocket' && ctx.executeCode) {
 				try {
 					await Promise.resolve(ctx.execute.route.onClose!(ctr))
-				} catch (err: any) {
+				} catch (err) {
 					ctx.error = err
 					ctx.execute.event = 'wsCloseError'
 					await runPageLogic()

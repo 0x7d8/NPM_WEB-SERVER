@@ -1,8 +1,8 @@
 import { GlobalContext } from "../types/context"
 
 export default function handleContentType(name: string, ctg: GlobalContext) {
-	for (const contentType of Object.keys(ctg.contentTypes)) {
-		if (name.endsWith(contentType)) return ctg.contentTypes[contentType]  
+	for (const [ key, value ] of Object.entries(ctg.contentTypes)) {
+		if (name.endsWith(key)) return value
 	}
 
 	if (name.endsWith('.pdf')) return 'application/pdf'

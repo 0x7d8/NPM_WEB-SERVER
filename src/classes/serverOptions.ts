@@ -30,24 +30,39 @@ export interface Options {
 	}
 
 	/**
-	 * HTTPS Settings
-	 * @since 2.7.0
-	*/ https?: {
+	 * SSL Settings
+	 * @since 6.0.0
+	*/ ssl?: {
 		/**
-		 * Whether HTTPS is enabled
+		 * Whether SSL is enabled
 		 * @default false
-		 * @since 2.7.0
+		 * @since 6.0.0
 		*/ enabled?: boolean
+		/**
+		 * The Ciphers to use
+		 * @default "ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256:ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-ECDSA-CHACHA20-POLY1305:ECDHE-RSA-CHACHA20-POLY1305:DHE-RSA-AES128-GCM-SHA256:DHE-RSA-AES256-GCM-SHA384"
+		 * @since 6.0.0
+		*/ ciphers?: string
 		/**
 		 * The Key File Path
 		 * @default "/ssl/key/path"
-		 * @since 2.7.0
+		 * @since 6.0.0
 		*/ keyFile?: string
 		/**
 		 * The Cert File Path
 		 * @default "/ssl/cert/path"
-		 * @since 2.7.0
+		 * @since 6.0.0
 		*/ certFile?: string
+		/**
+		 * The Ca File Path
+		 * @default ""
+		 * @since 6.0.0
+		*/ caFile?: string
+		/**
+		 * The Dhparam File Path
+		 * @default ""
+		 * @since 6.0.0
+		*/ dhParamFile?: string
 	}
 
 	/**
@@ -119,10 +134,13 @@ export default class ServerOptions {
 				parse: true,
 				maxSize: 5,
 				message: 'Payload too large'
-			}, https: {
+			}, ssl: {
 				enabled: false,
+				ciphers: 'ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256:ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-ECDSA-CHACHA20-POLY1305:ECDHE-RSA-CHACHA20-POLY1305:DHE-RSA-AES128-GCM-SHA256:DHE-RSA-AES256-GCM-SHA384',
 				keyFile: '/ssl/key/path',
-				certFile: '/ssl/cert/path'
+				certFile: '/ssl/cert/path',
+				caFile: '',
+				dhParamFile: ''
 			}, dashboard: {
 				enabled: false,
 				path: '/rjweb-dashboard',

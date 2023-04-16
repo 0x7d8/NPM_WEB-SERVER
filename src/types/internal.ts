@@ -2,6 +2,17 @@ import { Content } from "../functions/parseContent"
 import { HTTPRequestContext, WSRequestContext } from "./external"
 import Methods from "../misc/methodsEnum"
 
+import RouteIndex from "../classes/router"
+import RouteExternal from "../classes/router/external"
+import RoutePath from "../classes/router/path"
+import RouteContentTypes from "../classes/router/contentTypes"
+import RouteDefaultHeaders from "../classes/router/defaultHeaders"
+import RouteWS from "../classes/router/ws"
+import RouteHTTP from "src/classes/router/http"
+
+export type EndFn = (...args: any[]) => void
+export type RealAny = PromiseLike<any> | Promise<any> | any
+
 export type DeepRequired<Type> = Type extends Content
 		? Type extends Map<any, any>
 			? Required<Type>
@@ -29,7 +40,8 @@ export type LoadPath = {
 	path: string
 	prefix: string
 	type: 'cjs' | 'esm'
-	validations: Routed[]
+	validations: RoutedValidation[]
+	headers: Record<string, Buffer>
 }
 
 export type HTTPMethods =
@@ -45,10 +57,12 @@ export type HTTPMethods =
 	| Methods
 
 export type ExternalRouter = {
-	method: string
-	object: unknown
+	object: AnyRouter
 	addPrefix?: string
 }
 
-export type Routed = (ctr: HTTPRequestContext) => Promise<any> | any
-export type RoutedWS<Type extends WSRequestContext['type']> = (ctr: WSRequestContext) => Promise<any> | any
+export type AnyRouter = RouteWS | RouteHTTP | RouteExternal | RoutePath | RouteIndex | RouteContentTypes | RouteDefaultHeaders
+
+export type Routed = (ctr: HTTPRequestContext) => RealAny
+export type RoutedValidation = (ctr: HTTPRequestContext, end: EndFn) => RealAny
+export type RoutedWS<Type extends WSRequestContext['type']> = (ctr: WSRequestContext) => RealAny

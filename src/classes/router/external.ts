@@ -1,5 +1,8 @@
+import Route from "../../types/route"
+import Static from "../../types/static"
+import Websocket from "../../types/webSocket"
 import addPrefixes from "../../functions/addPrefixes"
-import { ExternalRouter } from "../../types/internal"
+import { ExternalRouter, LoadPath } from "../../types/internal"
 
 import RoutePath from "./path"
 
@@ -30,33 +33,31 @@ export default class RouteExternal {
    * controller.path('/', require('./router.js'))
    * ```
 	 * @since 5.9.3
-	*/
-  constructor(
-    /** The Code to handle the Prefix */ router: (path: RoutePath) => RoutePath | RoutePath
+	*/ constructor(
+    /** The Code to handle the Prefix */ router: ((path: RoutePath) => RoutePath) | RoutePath
 	) {
-		if ('getRoutes' in router) {
-			this.external = { method: 'getRoutes', object: router }
+		if ('getData' in router) {
+			this.external = { object: router }
 		} else {
 			const routePath = new RoutePath('/')
-			this.external = { method: 'getRoutes', object: routePath }
+			this.external = { object: routePath }
 			router(routePath)
 		}
 	}
 
   /**
 	 * Internal Method for Generating Routes Object
-	 * @since 5.9.3
-	*/
-	protected async getRoutes(prefix: string) {
-		const routes = [], webSockets = [],
-			statics = [], loadPaths = []
+	 * @since 6.0.0
+	*/ async getData(prefix: string) {
+		const routes: Route[] = [], webSockets: Websocket[] = [],
+			statics: Static[] = [], loadPaths: LoadPath[] = []
 
-		const result = await (this.external.object as any)[this.external.method]()
+		const result = await this.external.object.getData(this.external.addPrefix || '/')
 
 		if ('routes' in result && result.routes.length > 0) routes.push(...addPrefixes(result.routes, 'path', 'pathArray', prefix))
 		if ('webSockets' in result && result.webSockets.length > 0) webSockets.push(...addPrefixes(result.webSockets, 'path', 'pathArray', prefix))
 		if ('statics' in result && result.statics.length > 0) statics.push(...addPrefixes(result.statics, 'path', null, prefix))
-		if ('loadPaths' in result && result.loadPaths.length > 0) loadPaths.push(...addPrefixes(result.routes, 'prefix', null, prefix))
+		if ('loadPaths' in result && result.loadPaths.length > 0) loadPaths.push(...addPrefixes(result.loadPaths, 'prefix', null, prefix))
 
 		return {
 			routes, webSockets,

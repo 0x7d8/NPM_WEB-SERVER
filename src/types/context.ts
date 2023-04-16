@@ -2,13 +2,14 @@ import ValueCollection from "../classes/valueCollection"
 import ServerController from "../classes/webServer"
 import { Task } from "./internal"
 import Route from "./route"
-import { Event, MiddlewareProduction } from "./external"
+import { MiddlewareProduction } from "./external"
 import URLObject from "../classes/URLObject"
 import { Options } from "../classes/serverOptions"
 import Static from "./static"
 import { DeepRequired } from "./internal"
 import TypedEventEmitter from "./typedEventEmitter"
 import WebSocket from "./webSocket"
+import { EventHandlerMap } from "./event"
 
 export type Hours =
 	| '0' | '1' | '2' | '3' | '4'
@@ -29,12 +30,12 @@ export interface InternalContext {
 	/** Whether to Continue ending the Request */ continueSend: boolean
 	/** Whether to Execute Route Code */ executeCode: boolean
 	/** The Clients Remote IP Address */ remoteAddress: string
-	/** The Error that occured while executing HTTP Logic */ error: Error | null
+	/** The Error that occured while executing HTTP Logic */ error: unknown
 	/** The List of Headers that the Client sent */ headers: Record<string, string>
 	/** The List of Cookies that the Client sent */ cookies: Record<string, string>
 	/** An Event Emitter Responsible for all Events */ events: TypedEventEmitter<InternalEvents>
 	/** A Boolean that keeps track whether the Request is Aborted */ isAborted: boolean
-	/** The Function to handle an Error in an Async Scenario */ handleError(err: Error | null): void
+	/** The Function to handle an Error in an Async Scenario */ handleError(err: unknown): void
 	/** Schedule an Async Task for Execution */ scheduleQueue(type: Task['type'], callback: Task['function']): void
 	/** Run all current Functions contained in the Queue */ runQueue(): Promise<Error | null>
 
@@ -48,7 +49,7 @@ export interface InternalContext {
 		/** The Route Object that was found */ route: Route | Static | WebSocket | null
 		/** The File to Read when Route is Static */ file: string | null
 		/** Whether the Route exists */ exists: boolean
-		/** The Event to execute instead of the Route */ event: 'none' | Event['name']
+		/** The Event to execute instead of the Route */ event: 'none' | keyof EventHandlerMap
 	}
 
 	/** The Response Object */ response: {
@@ -84,7 +85,6 @@ export interface GlobalContext {
     /** Normal Routes */ normal: Route[]
 		/** Websocket Routes */ websocket: WebSocket[]
 		/** Static Routes */ static: Static[]
-    /** Event Routes */ event: Event[]
   }
 
   /** The Cache Stores */ cache: {

@@ -65,7 +65,7 @@ const isX = (type: 'dir' | 'file', path: string) => {
 
 	if (type === 'dir') return infos.isDirectory()
 	else return infos.isFile()
-} 
+}
 
 yargs
 	.scriptName('rjweb')
@@ -155,11 +155,11 @@ yargs
 				})
 			)
 
-			server.event('httpRequest', (ctr) => {
+			server.on('httpRequest', (ctr) => {
 				console.log(`${prefix} ${colors.fg.gray}${ctr.client.ip} ${colors.fg.green}HTTP ${ctr.url.method} ${colors.fg.cyan}${coloredPath(ctr.url.path)}`)
 			})
 
-			if (args["404File"]) server.event('http404', (ctr) => {
+			if (args["404File"]) server.on('route404', (ctr) => {
 				ctr.status(Status.NOT_FOUND).printFile(pR(args["404File"]))
 			})
 
@@ -169,7 +169,7 @@ yargs
 				})
 				.catch((err: StartError) => {
 					console.error(`${prefix} ${colors.fg.red}An Error occured while starting the Server:`)
-					console.error(`${colors.fg.cyan}${err.error.stack}`)
+					console.error(`${colors.fg.cyan}${err.stack}`)
 					process.exit(1)
 				})
 		})

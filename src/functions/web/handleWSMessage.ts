@@ -8,7 +8,7 @@ import handleEvent from "../handleEvent"
 import { getPreviousHours } from "./handleRequest"
 
 export default function handleWSConnect(ws: WebSocket<WebSocketContext>, message: ArrayBuffer, ctg: GlobalContext) {
-	let { custom, ctx } = ws.getUserData()
+	const { custom, ctx } = ws.getUserData()
 
 	ctx.response.content = Buffer.allocUnsafe(0)
 	ctx.previousHours = getPreviousHours()
@@ -38,7 +38,7 @@ export default function handleWSConnect(ws: WebSocket<WebSocketContext>, message
 		else hostIp = ctx.remoteAddress.split(':')[0]
 
 		// Create Context Response Object
-		let ctr: WebSocketMessage = {
+		const ctr: WebSocketMessage = {
 			type: 'message',
 
 			// Properties
@@ -46,8 +46,8 @@ export default function handleWSConnect(ws: WebSocket<WebSocketContext>, message
 			headers: new ValueCollection(ctx.headers, decodeURIComponent) as any,
 			cookies: new ValueCollection(ctx.cookies, decodeURIComponent),
 			params: new ValueCollection(ws.getUserData().params, decodeURIComponent),
-			queries: new ValueCollection(parseQuery(ctx.url.query as any) as any),
-			hashes: new ValueCollection(parseQuery(ctx.url.hash as any) as any),
+			queries: new ValueCollection(parseQuery(ctx.url.query) as any),
+			hashes: new ValueCollection(parseQuery(ctx.url.hash) as any),
 
 			// Variables
 			client: {
@@ -88,7 +88,7 @@ export default function handleWSConnect(ws: WebSocket<WebSocketContext>, message
 					let result: ParseContentReturns
 					try {
 						result = await parseContent(message)
-					} catch (err: any) {
+					} catch (err) {
 						return ctx.handleError(err)
 					}
 
@@ -105,7 +105,7 @@ export default function handleWSConnect(ws: WebSocket<WebSocketContext>, message
 					let result: ParseContentReturns
 					try {
 						result = await parseContent(content)
-					} catch (err: any) {
+					} catch (err) {
 						return ctx.handleError(err)
 					}
 
@@ -133,7 +133,7 @@ export default function handleWSConnect(ws: WebSocket<WebSocketContext>, message
 							const dataListener = async(data: Buffer) => {
 								try {
 									data = (await parseContent(data)).content
-								} catch (err: any) {
+								} catch (err) {
 									return ctx.handleError(err)
 								}
 			
@@ -189,7 +189,7 @@ export default function handleWSConnect(ws: WebSocket<WebSocketContext>, message
 				try {
 					await Promise.resolve(middleware.data.wsMessageEvent!(middleware.localContext, () => ctx.executeCode = false, ctr, ctx, ctg))
 					if (ctx.error) throw ctx.error
-				} catch (err: any) {
+				} catch (err) {
 					ctx.handleError(err)
 					break
 				}
@@ -209,7 +209,7 @@ export default function handleWSConnect(ws: WebSocket<WebSocketContext>, message
 			if ('onMessage' in ctx.execute.route && ctx.execute.route.type === 'websocket' && ctx.executeCode) {
 				try {
 					await Promise.resolve(ctx.execute.route.onMessage!(ctr))
-				} catch (err: any) {
+				} catch (err) {
 					ctx.error = err
 					ctx.execute.event = 'wsMessageError'
 					await runPageLogic()

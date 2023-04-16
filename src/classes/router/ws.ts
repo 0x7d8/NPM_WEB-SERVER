@@ -1,13 +1,13 @@
-import { Routed } from "../../types/internal"
+import { RoutedValidation } from "../../types/internal"
 import WebSocket from "../../types/webSocket"
 
-export default class RouteWS {
+export default class RouteWS<Custom extends Record<any, any> = {}, Body = unknown> {
 	protected data: WebSocket
 
-	/** Generate Content Type Block */
+	/** Generate WS Endpoint */
 	constructor(
 		/** The Path of the Routes */ path: string,
-		/** The Validations to add */ validations: Routed[] = []
+		/** The Validations to add */ validations: RoutedValidation[] = []
 	) {
 		this.data = {
 			type: 'websocket',
@@ -35,9 +35,8 @@ export default class RouteWS {
 	 * )
 	 * ```
 	 * @since 5.10.0
-	*/
-	onUpgrade(
-		/** The Async Code to run when the Socket gets an Upgrade HTTP Request */ code: WebSocket['onUpgrade']
+	*/ onUpgrade(
+		/** The Async Code to run when the Socket gets an Upgrade HTTP Request */ code: WebSocket<Custom>['onUpgrade']
 	) {
 		this.data.onUpgrade = code
 
@@ -59,9 +58,8 @@ export default class RouteWS {
 	 * )
 	 * ```
 	 * @since 5.4.0
-	*/
-	onConnect(
-		/** The Async Code to run when the Socket is Established */ code: WebSocket['onConnect']
+	*/ onConnect(
+		/** The Async Code to run when the Socket is Established */ code: WebSocket<Custom>['onConnect']
 	) {
 		this.data.onConnect = code
 
@@ -83,9 +81,8 @@ export default class RouteWS {
 	 * )
 	 * ```
 	 * @since 5.4.0
-	*/
-	onMessage(
-		/** The Async Code to run on a Message */ code: WebSocket['onMessage']
+	*/ onMessage(
+		/** The Async Code to run on a Message */ code: WebSocket<Custom, Body>['onMessage']
 	) {
 		this.data.onMessage = code
 
@@ -107,9 +104,8 @@ export default class RouteWS {
 	 * )
 	 * ```
 	 * @since 5.4.0
-	*/
-	onClose(
-		/** The Async Code to run when the Socket Closes */ code: WebSocket['onClose']
+	*/ onClose(
+		/** The Async Code to run when the Socket Closes */ code: WebSocket<Custom, Body>['onClose']
 	) {
 		this.data.onClose = code
 
@@ -119,9 +115,8 @@ export default class RouteWS {
 
 	/**
 	 * Internal Method for Generating WebSocket Object
-	 * @since 5.4.0
-	*/
-	protected getWebSocket() {
+	 * @since 6.0.0
+	*/ getData() {
 		return {
 			webSockets: [this.data]
 		}
