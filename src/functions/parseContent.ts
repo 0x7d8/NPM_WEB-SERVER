@@ -25,7 +25,8 @@ export interface Returns {
 }
 
 export default async function parseContent(content: Content): Promise<Returns> {
-	let returnObject: Returns = { headers: {}, content: Buffer.alloc(0) }
+	const returnObject: Returns = { headers: {}, content: Buffer.allocUnsafe(0) }
+
 	if (Buffer.isBuffer(content)) return { headers: {}, content }
 	if (isMap(content)) content = Object.fromEntries(content.entries())
 	if (isSet(content)) content = Object.fromEntries(content.entries())
@@ -33,7 +34,7 @@ export default async function parseContent(content: Content): Promise<Returns> {
 	switch (typeof content) {
 		case "object":
 			try {
-				returnObject.content = Buffer.from(JSON.stringify(content))
+				returnObject.content = Buffer.from(typia.stringify(content))
 				returnObject.headers['content-type'] = Buffer.from('application/json')
 			} catch {
 				returnObject.content = Buffer.from('Failed to parse provided Object')
@@ -62,7 +63,7 @@ export default async function parseContent(content: Content): Promise<Returns> {
 			break
 
 		case "undefined":
-			returnObject.content = Buffer.alloc(0)
+			returnObject.content = Buffer.allocUnsafe(0)
 			break
 	}
 

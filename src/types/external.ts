@@ -232,13 +232,6 @@ export interface HTTPRequestContext<Custom = {}, Body = unknown> {
 	*/ '@': Custom
 }
 
-export interface RouteFile<Custom = {}, Body = any> {
-  /** The Request Method of the Route */ method: HTTPMethods
-  /** The Request Path of the Route */ path: string
-
-  /** The Code to run on the Request */ code: (ctr: HTTPRequestContext<Custom, Body>) => Promise<any> | any
-}
-
 export { HTTPMethods, Event }
 
 export { default as Status } from "../misc/statusEnum"

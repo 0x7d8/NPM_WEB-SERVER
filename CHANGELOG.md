@@ -1,3 +1,8 @@
+## 6.0.3
+
+- Add more JSDocs to Value Collections
+- Add .entries() to Value Collections
+
 ## 6.0.2
 
 - Fix some outdated JSDocs

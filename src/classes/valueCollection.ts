@@ -4,8 +4,10 @@ export default class ValueCollection<Key extends string | number | symbol = stri
 	public data: Record<Key, Value> = {} as any
 	public allowModify: boolean
 
-	/** Create a New Collection */
-	constructor(
+	/**
+	 * Create a New Value Collection
+	 * @since 2.5.0
+	*/ constructor(
 		/** JSON Data to Import */ data?: Record<Key, Value>,
 		/** Function to Parse Values with */ parse?: (value: any) => Value,
 		/** Whether to allow modifying the Values */ allowModify: boolean = true
@@ -19,23 +21,29 @@ export default class ValueCollection<Key extends string | number | symbol = stri
 		}
 	}
 
-	/** Check if a Key exists */
-	has(
+	/**
+	 * Check if a Key exists
+	 * @since 2.5.0
+	*/ has(
 		/** The Key to check */ key: Key
 	): boolean {
 		return (key in this.data)
 	}
 
-	/** Get a Key */
-	get<T extends Key, Fallback extends Value | undefined = undefined>(
+	/**
+	 * Get a Key
+	 * @since 2.5.0
+	*/ get<T extends Key, Fallback extends Value | undefined = undefined>(
 		/** The Key to get */ key: T,
 		/** The Fallback Value */ fallback?: Fallback
 	): this['data'][T] | Fallback {
 		return this.data[key] ?? (fallback as any)
 	}
 
-	/** Set a Key */
-	set(
+	/**
+	 * Set a Key
+	 * @since 2.5.0
+	*/ set(
 		/** The Key to set */ key: Key,
 		/** The new Value */ value: Value
 	): boolean {
@@ -47,8 +55,10 @@ export default class ValueCollection<Key extends string | number | symbol = stri
 		return existed
 	}
 
-	/** Clear the Stored Objects */
-	clear(
+	/**
+	 * Clear the Stored Objects
+	 * @since 3.0.0
+	*/ clear(
 		/** Excluded Keys */ excluded: Key[] = []
 	): number {
 		if (!this.allowModify) return 0
@@ -63,8 +73,10 @@ export default class ValueCollection<Key extends string | number | symbol = stri
 		return keys
 	}
 
-	/** Get all Objects as JSON */
-	toJSON(
+	/**
+	 * Get all Objects as JSON
+	 * @since 2.5.0
+	*/ toJSON(
 		/** Excluded Keys */ excluded: Key[] = []
 	): Record<Key, Value> {
 		let keys = {} as any
@@ -76,8 +88,10 @@ export default class ValueCollection<Key extends string | number | symbol = stri
 		return keys
 	}
 
-	/** Get all Values as Array */
-	toArray(
+	/**
+	 * Get all Values as Array
+	 * @since 2.5.0
+	*/ toArray(
 		/** Excluded Keys */ excluded: Key[] = []
 	): Value[] {
 		const keys = []
@@ -89,8 +103,10 @@ export default class ValueCollection<Key extends string | number | symbol = stri
 		return keys
 	}
 
-	/** Loop over all Keys */
-	forEach(
+	/**
+	 * Loop over all Keys
+	 * @since 2.5.0
+	*/ forEach(
 		/** Callback Function */ callback: (key: Key, value: Value, index: number) => RealAny,
 		/** Excluded Keys */ excluded: Key[] = []
 	) {
@@ -103,8 +119,24 @@ export default class ValueCollection<Key extends string | number | symbol = stri
 		return this
 	}
 
-	/** Map the Keys to a new Array */
-	map(
+	/**
+	 * Get the Entries of this Value Collection
+	 * @since 6.0.3
+	*/ entries(
+		/** Excluded Keys */ excluded: Key[] = []
+	) {
+		const sortedData: Record<Key, Value> = Object.assign({}, this.data)
+		for (const key in sortedData) {
+			if (excluded.includes(key)) delete sortedData[key]
+		}
+
+		return (Object.keys(sortedData) as Key[]).map((key) => [ key, sortedData[key] ])
+	}
+
+	/**
+	 * Map the Keys to a new Array
+	 * @since 5.3.1
+	*/ map(
 		/** Callback Function */ callback: (key: Key, value: Value, index: number, data: Record<Key, Value>) => any,
 		/** Excluded Keys */ excluded: Key[] = []
 	): any[] {
@@ -120,8 +152,10 @@ export default class ValueCollection<Key extends string | number | symbol = stri
 			.map((key, index) => callback(key, this.data[key], index, sortedData))
 	}
 
-	/** Get The Amount of Stored Objects */
-	get objectCount(): number {
+	/**
+	 * The Amount of Stored Objects
+	 * @since 2.7.2
+	*/ get objectCount(): number {
 		return Object.keys(this.data).length
 	}
 }
