@@ -1,5 +1,5 @@
 import ValueCollection from "../classes/valueCollection"
-import { HTTPRequestContext } from "./external"
+import { HTTPRequestContext } from "./http"
 import { RealAny, RoutedValidation } from "./internal"
 import { Content } from "../functions/parseContent"
 import ServerController from "../classes/webServer"
@@ -7,15 +7,15 @@ import { Readable } from "stream"
 import { InternalContext } from "./context"
 import URLObject from "../classes/URLObject"
 
-export default interface Websocket<Custom extends Record<any, any> = {}, Body = unknown> {
+export default interface Websocket<Custom extends Record<any, any> = {}, Message = unknown> {
 	/** The Type of this Object */ type: 'websocket'
 
 	/** The URL as normal String */ path: string
 	/** An Array of the URL split by Slashes */ pathArray: string[]
-	/** The Async Code to run when the Socket gets an Upgrade HTTP Request */ onUpgrade?(ctr: HTTPRequestContext<Custom, unknown>, end: (...args: any[]) => void): Promise<any> |any
+	/** The Async Code to run when the Socket gets an Upgrade HTTP Request */ onUpgrade?(ctr: HTTPRequestContext<Custom, Message>, end: (...args: any[]) => void): Promise<any> |any
 	/** The Async Code to run when the Socket Connects */ onConnect?(ctr: WebSocketConnect<Custom>): RealAny
-	/** The Async Code to run when the Socket recieves a Message */ onMessage?(ctr: WebSocketMessage<Custom, Body>): RealAny
-	/** The Async Code to run when the Socket Closes */ onClose?(ctr: WebSocketClose<Custom, Body>): RealAny
+	/** The Async Code to run when the Socket recieves a Message */ onMessage?(ctr: WebSocketMessage<Custom, Message>): RealAny
+	/** The Async Code to run when the Socket Closes */ onClose?(ctr: WebSocketClose<Custom, Message>): RealAny
 	/** Additional Route Data */ data: {
 		/** The Validations to run on this route */ validations: RoutedValidation[]
 	}

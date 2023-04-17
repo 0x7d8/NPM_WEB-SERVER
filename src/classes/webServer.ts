@@ -8,9 +8,8 @@ import handleWSOpen from "../functions/web/handleWSOpen"
 import handleWSMessage from "../functions/web/handleWSMessage"
 import handleWSClose from "../functions/web/handleWSClose"
 import WebSocket from "src/types/webSocket"
-import { pathParser } from "./URLObject"
 import { currentVersion } from "./middlewareBuilder"
-import Route from "../types/route"
+import HTTP from "../types/http"
 import { getAllFilesFilter } from "../misc/getAllFiles"
 import { promises as fs } from "fs"
 
@@ -380,7 +379,7 @@ export default class Webserver extends RouteList {
 	/** Load all External Paths */
 	private async loadExternalPaths() {
 		const loadedRoutes: {
-			routes: Route[]
+			routes: HTTP[]
 			webSockets: WebSocket[]
 		} = {
 			routes: [],

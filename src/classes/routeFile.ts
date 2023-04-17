@@ -1,5 +1,5 @@
 import WebSocket from "../types/webSocket"
-import Route from "../types/route"
+import HTTP from "../types/http"
 import { ExternalRouter, HTTPMethods, RoutedValidation } from "../types/internal"
 import addPrefixes from "../functions/addPrefixes"
 import { Content } from "../functions/parseContent"
@@ -9,8 +9,8 @@ import RouteWS from "./router/ws"
 import RouteHTTP from "./router/http"
 import RouteDefaultHeaders from "./router/defaultHeaders"
 
-export default class RouteFileBuilder<Custom extends Record<any, any> = {}, Body = unknown> {
-	private routes: Route[] = []
+export default class RouteFileBuilder {
+	private routes: HTTP[] = []
 	private webSockets: WebSocket[] = []
 	private headers: Record<string, Content> = {}
 	private parsedHeaders: Record<string, Buffer> = {}
@@ -108,14 +108,14 @@ export default class RouteFileBuilder<Custom extends Record<any, any> = {}, Body
 	 * )
 	 * ```
 	 * @since 6.0.0
-	*/ http(
+	*/ http<Context extends Record<any, any> = {}, Body = unknown>(
 		/** The Request Method */ method: HTTPMethods,
 		/** The Path on which this will be available */ path: string,
-		/** The Code to handle the HTTP Endpoint */ code: (path: RouteHTTP<Custom, Body>) => RouteHTTP<Custom, Body>
+		/** The Code to handle the HTTP Endpoint */ code: (path: RouteHTTP<Context, Body>) => RouteHTTP<Context, Body>
 	) {
 		if (this.webSockets.some((obj) => (obj.path === pathParser(path)))) return this
 
-		const routeHTTP = new RouteHTTP<Custom, Body>(pathParser(path), method, this.validations, this.parsedHeaders)
+		const routeHTTP = new RouteHTTP<Context, Body>(pathParser(path), method, this.validations, this.parsedHeaders)
 		this.externals.push({ object: routeHTTP })
 		code(routeHTTP)
 
@@ -141,13 +141,13 @@ export default class RouteFileBuilder<Custom extends Record<any, any> = {}, Body
 	 * )
 	 * ```
 	 * @since 6.0.0
-	*/ ws(
+	*/ ws<Context extends Record<any, any> = {}, Message = unknown>(
 		/** The Path on which this will be available */ path: string,
-		/** The Code to handle the Socket */ code: (path: RouteWS<Custom, Body>) => RouteWS<Custom, Body>
+		/** The Code to handle the Socket */ code: (path: RouteWS<Context, Message>) => RouteWS<Context, Message>
 	) {
 		if (this.webSockets.some((obj) => (obj.path === pathParser(path)))) return this
 
-		const routeWS = new RouteWS<Custom, Body>(pathParser(path), this.validations)
+		const routeWS = new RouteWS<Context, Message>(pathParser(path), this.validations)
 		this.externals.push({ object: routeWS })
 		code(routeWS)
 

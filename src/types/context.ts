@@ -1,7 +1,7 @@
 import ValueCollection from "../classes/valueCollection"
 import ServerController from "../classes/webServer"
 import { Task } from "./internal"
-import Route from "./route"
+import HTTP from "./http"
 import { MiddlewareProduction } from "./external"
 import URLObject from "../classes/URLObject"
 import { Options } from "../classes/serverOptions"
@@ -46,7 +46,7 @@ export interface InternalContext {
 	}
 
 	/** The Execute Object */ execute: {
-		/** The Route Object that was found */ route: Route | Static | WebSocket | null
+		/** The Route Object that was found */ route: HTTP | Static | WebSocket | null
 		/** The File to Read when Route is Static */ file: string | null
 		/** Whether the Route exists */ exists: boolean
 		/** The Event to execute instead of the Route */ event: 'none' | keyof EventHandlerMap
@@ -82,7 +82,7 @@ export interface GlobalContext {
 	}
 
   /** The Routes */ routes: {
-    /** Normal Routes */ normal: Route[]
+    /** Normal Routes */ normal: HTTP[]
 		/** Websocket Routes */ websocket: WebSocket[]
 		/** Static Routes */ static: Static[]
   }
@@ -90,6 +90,6 @@ export interface GlobalContext {
   /** The Cache Stores */ cache: {
     /** The File Caches */ files: ValueCollection<string, Buffer>
 		/** The Middleware Cache (tip: save keys as "middleware:key" or similar to avoid duplicates from other middlewares) */ middlewares: ValueCollection<string, any>
-    /** The Route Caches */ routes: ValueCollection<string, { route: Route | Static | WebSocket, params?: Record<string, string>, file?: string }>
+    /** The Route Caches */ routes: ValueCollection<string, { route: HTTP | Static | WebSocket, params?: Record<string, string>, file?: string }>
   }
 }

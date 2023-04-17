@@ -1,6 +1,6 @@
 import { ExternalRouter, LoadPath, Routed, HTTPMethods, RoutedValidation } from "../../types/internal"
 import Static from "../../types/static"
-import Route from "../../types/route"
+import HTTP from "../../types/http"
 import WebSocket from "../../types/webSocket"
 import { pathParser } from "../URLObject"
 import { Content } from "../.."
@@ -20,7 +20,7 @@ export default class RoutePath {
 	private parsedHeaders: Record<string, Buffer>
 	private loadPaths: LoadPath[]
 	private statics: Static[]
-	private routes: Route[]
+	private routes: HTTP[]
 	private webSockets: WebSocket[]
 	private httpPath: string
 	private hasCalledGet = false
@@ -90,19 +90,19 @@ export default class RoutePath {
 	 * )
 	 * ```
 	 * @since 6.0.0
-	*/ http(
+	*/ http<Context extends Record<any, any> = {}, Body = unknown>(
     /** The Request Method */ method: HTTPMethods,
 		/** The Path on which this will be available */ path: string,
-		/** The Code to handle the Socket */ code: (path: RouteHTTP) => RouteHTTP
-		) {
-			if (this.webSockets.some((obj) => (obj.path === pathParser(path)))) return this
+		/** The Code to handle the Socket */ code: (path: RouteHTTP<Context, Body>) => RouteHTTP<Context, Body>
+	) {
+		if (this.webSockets.some((obj) => (obj.path === pathParser(path)))) return this
 	
-			const routeHTTP = new RouteHTTP(pathParser([ this.httpPath, path ]), method, this.validations, this.parsedHeaders)
-			this.externals.push({ object: routeHTTP })
-			code(routeHTTP)
+		const routeHTTP = new RouteHTTP<Context, Body>(pathParser([ this.httpPath, path ]), method, this.validations, this.parsedHeaders)
+		this.externals.push({ object: routeHTTP })
+		code(routeHTTP)
 	
-			return this
-		}
+		return this
+	}
 
 	/**
 	 * Add a Websocket Route
@@ -123,13 +123,13 @@ export default class RoutePath {
 	 * )
 	 * ```
 	 * @since 5.4.0
-	*/ ws(
+	*/ ws<Context extends Record<any, any> = {}, Message = unknown>(
 		/** The Path on which this will be available */ path: string,
-		/** The Code to handle the Socket */ code: (path: RouteWS) => RouteWS
+		/** The Code to handle the Socket */ code: (path: RouteWS<Context, Message>) => RouteWS<Context, Message>
 	) {
 		if (this.webSockets.some((obj) => (obj.path === pathParser(path)))) return this
 
-		const routeWS = new RouteWS(pathParser([ this.httpPath, path ]), this.validations)
+		const routeWS = new RouteWS<Context, Message>(pathParser([ this.httpPath, path ]), this.validations)
 		this.externals.push({ object: routeWS })
 		code(routeWS)
 
@@ -253,7 +253,7 @@ export default class RoutePath {
 	 * ```
 	 * @since 3.1.0
 	*/ loadCJS(
-		/** The Folder which will be used */ folder: string,
+		/** The Folder which will be used */ folder: string
 	) {
 		if (!fs.existsSync(path.resolve(folder))) throw Error('The CJS Function folder wasnt found!')
 
@@ -281,7 +281,7 @@ export default class RoutePath {
 	 * ```
 	 * @since 4.0.0
 	*/ loadESM(
-		/** The Folder which will be used */ folder: string,
+		/** The Folder which will be used */ folder: string
 	) {
 		if (!fs.existsSync(path.resolve(folder))) throw Error('The ESM Function folder wasnt found!')
 

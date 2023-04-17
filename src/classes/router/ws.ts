@@ -1,7 +1,7 @@
 import { RoutedValidation } from "../../types/internal"
 import WebSocket from "../../types/webSocket"
 
-export default class RouteWS<Custom extends Record<any, any> = {}, Body = unknown> {
+export default class RouteWS<Context extends Record<any, any> = {}, Message = unknown> {
 	private data: WebSocket
 
 	/** Generate WS Endpoint */
@@ -36,7 +36,7 @@ export default class RouteWS<Custom extends Record<any, any> = {}, Body = unknow
 	 * ```
 	 * @since 5.10.0
 	*/ onUpgrade(
-		/** The Async Code to run when the Socket gets an Upgrade HTTP Request */ code: WebSocket<Custom>['onUpgrade']
+		/** The Async Code to run when the Socket gets an Upgrade HTTP Request */ code: WebSocket<Context>['onUpgrade']
 	) {
 		this.data.onUpgrade = code
 
@@ -59,7 +59,7 @@ export default class RouteWS<Custom extends Record<any, any> = {}, Body = unknow
 	 * ```
 	 * @since 5.4.0
 	*/ onConnect(
-		/** The Async Code to run when the Socket is Established */ code: WebSocket<Custom>['onConnect']
+		/** The Async Code to run when the Socket is Established */ code: WebSocket<Context>['onConnect']
 	) {
 		this.data.onConnect = code
 
@@ -82,7 +82,7 @@ export default class RouteWS<Custom extends Record<any, any> = {}, Body = unknow
 	 * ```
 	 * @since 5.4.0
 	*/ onMessage(
-		/** The Async Code to run on a Message */ code: WebSocket<Custom, Body>['onMessage']
+		/** The Async Code to run on a Message */ code: WebSocket<Context, Message>['onMessage']
 	) {
 		this.data.onMessage = code
 
@@ -105,7 +105,7 @@ export default class RouteWS<Custom extends Record<any, any> = {}, Body = unknow
 	 * ```
 	 * @since 5.4.0
 	*/ onClose(
-		/** The Async Code to run when the Socket Closes */ code: WebSocket<Custom, Body>['onClose']
+		/** The Async Code to run when the Socket Closes */ code: WebSocket<Context, Message>['onClose']
 	) {
 		this.data.onClose = code
 

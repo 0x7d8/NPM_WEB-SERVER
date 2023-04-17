@@ -1,4 +1,4 @@
-import Route from "../../types/route"
+import HTTP from "../../types/http"
 import Static from "../../types/static"
 import Websocket from "../../types/webSocket"
 import addPrefixes from "../../functions/addPrefixes"
@@ -49,7 +49,7 @@ export default class RouteExternal {
 	 * Internal Method for Generating Routes Object
 	 * @since 6.0.0
 	*/ async getData(prefix: string) {
-		const routes: Route[] = [], webSockets: Websocket[] = [],
+		const routes: HTTP[] = [], webSockets: Websocket[] = [],
 			statics: Static[] = [], loadPaths: LoadPath[] = []
 
 		const result = await this.external.object.getData(this.external.addPrefix || '/')

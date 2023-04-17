@@ -1,3 +1,9 @@
+## 6.1.0
+
+- Allow Passing Types into .http() and .ws() functions for context and body / message properties
+- Improve Returntype of .map() on valuecollections to match the returnType of the callback function
+- Clean up some code and remove unnecessary imports
+
 ## 6.0.3
 
 - Add more JSDocs to Value Collections

@@ -1,8 +1,8 @@
 import { HTTPMethods, RoutedValidation } from "../../types/internal"
-import Route from "../../types/route"
+import HTTP from "../../types/http"
 
-export default class RouteHTTP<Custom extends Record<any, any> = {}, Body = unknown> {
-	private data: Route
+export default class RouteHTTP<Context extends Record<any, any> = {}, Body = unknown> {
+	private data: HTTP
 
 	/** Generate HTTP Endpoint */
 	constructor(
@@ -26,7 +26,7 @@ export default class RouteHTTP<Custom extends Record<any, any> = {}, Body = unkn
 	}
 
 	/**
-	 * Add a Custom Handler for recieving HTTP Bodies
+	 * Add a Context Handler for recieving HTTP Bodies
 	 * @warning when using this, ctr.rawBody & ctr.body will always be empty
 	 * @ignore This has not been implemented fully yet
 	 * @example
@@ -47,7 +47,7 @@ export default class RouteHTTP<Custom extends Record<any, any> = {}, Body = unkn
 	 * ```
 	 * @since 6.0.0
 	*/ onRawBody(
-		/** The Async Code to run when the Socket gets an Upgrade HTTP Request */ code: Route<Custom>['onRawBody']
+		/** The Async Code to run when the Socket gets an Upgrade HTTP Request */ code: HTTP<Context>['onRawBody']
 	) {
 		this.data.onRawBody = code
 
@@ -70,7 +70,7 @@ export default class RouteHTTP<Custom extends Record<any, any> = {}, Body = unkn
 	 * ```
 	 * @since 6.0.0
 	*/ onRequest(
-		/** The Async Code to run when the Socket is Established */ code: Route<Custom, Body>['onRequest']
+		/** The Async Code to run when the Socket is Established */ code: HTTP<Context, Body>['onRequest']
 	) {
 		this.data.onRequest = code
 

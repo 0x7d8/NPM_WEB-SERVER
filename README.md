@@ -54,26 +54,7 @@ pnpm add rjweb-server
 
 ## Typescript
 
-Interface for ctr Object
-```ts
-import { Server, HTTPRequestContext } from "rjweb-server"
-
-const server = new Server({ })
-
-server.path('/', (path) => path
-  .http('GET', '/hello', (http) => http
-    .onRequest(async(ctr: HTTPRequestContext) => {
-      if (!ctr.queries.has("name")) return ctr.print('please supply the name query!!')
-
-      return ctr.print(`Hello, ${ctr.queries.get("name")}! How are you doing?`)
-    })
-  )
-)
-
-// ...
-```
-
-Custom Properties in Ctr Object
+Custom Properties in HTTP Object
 (This also works in JavaScript, just remove the interface logic)
 ```ts
 import { Server, HTTPRequestContext, Status } from "rjweb-server"
@@ -81,23 +62,21 @@ interface Custom {
   count: number
 }
 
-type Ctr<Body = any> = HTTPRequestContext<Custom, Body>
-
 const server = new Server({
   bind: '0.0.0.0', // The IP thats bound to
   port: 5000, // The Port which the Server runs on
 })
 
 server.path('/', (path) => path
-  .http('GET', '/hello', (http) => http
-    .onRequest(async(ctr: Ctr) => {
+  .http<Custom>('GET', '/hello', (http) => http
+    .onRequest(async(ctr) => {
       if (!ctr.queries.has("name")) return ctr.print('please supply the name queries!!')
 
       return ctr.print(`Hello, ${ctr.queries.get("name")}! You are Visit nr.${ctr['@'].count}`)
     })
   )
-  .http('POST', '/hello', (http) => http
-    .onRequest(async(ctr: Ctr<{ name?: string }>) => {
+  .http<Custom, { name: string }>('POST', '/hello', (http) => http
+    .onRequest(async(ctr) => {
       if (!('name' in ctr.body)) return ctr.print('please supply the name property!!')
 
       return ctr.print(`Hello, ${ctr.body.name}! You are Visit nr.${ctr['@'].count}`)
@@ -129,7 +108,7 @@ server.start()
 
 Function File
 ```ts
-import { HTTPRequestContext, RouteFile, Status } from "rjweb-server"
+import { RouteFile, Status } from "rjweb-server"
 
 interface Custom {
   count: number
@@ -139,8 +118,8 @@ interface Body {
   username?: string
 }
 
-export = new RouteFile<Custom, Body>((file) => file
-  .http('POST', '/v2/account', (http) => http
+export = new RouteFile((file) => file
+  .http<Custom, Body>('POST', '/v2/account', (http) => http
     .onRequest((ctr) => {
       if (!('username' in ctr.body)) return ctr.print('no username in body!!')
 
@@ -152,6 +131,11 @@ export = new RouteFile<Custom, Body>((file) => file
 
 Middleware Intellisense
 ```ts
+/**
+ * This Feature has not been finished and may change in the future
+*/
+
+
 // webserver.d.ts
 
 import { MiddlewareToProps } from "rjweb-server"

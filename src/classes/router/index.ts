@@ -1,7 +1,7 @@
 import { ExternalRouter, LoadPath } from "../../types/internal"
 import { MiddlewareProduction } from "../../types/external"
 import SafeServerEventEmitter from "../safeEventEmitter"
-import Route from "../../types/route"
+import HTTP from "../../types/http"
 import Websocket from "../../types/webSocket"
 import Static from "../../types/static"
 
@@ -119,7 +119,7 @@ export default class RouteList extends SafeServerEventEmitter {
 	 * Internal Method for Generating Routes Object
 	 * @since 6.0.0
 	*/ async getData() {
-		const routes: Route[] = [], webSockets: Websocket[] = [],
+		const routes: HTTP[] = [], webSockets: Websocket[] = [],
 			statics: Static[] = [], loadPaths: LoadPath[] = []
 
 		let contentTypes = {}, defaultHeaders = {}

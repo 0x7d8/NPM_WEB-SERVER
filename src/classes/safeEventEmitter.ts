@@ -2,7 +2,7 @@ import TypedEventEmitter from "../types/typedEventEmitter"
 import { EventHandlerMap } from "../types/event"
 import { EventEmitter } from "events"
 
-export default class SafeServerEventEmitter extends (EventEmitter as unknown as new() => TypedEventEmitter<EventHandlerMap>) {
+export default class SafeServerEventEmitter extends (EventEmitter as any as new() => TypedEventEmitter<EventHandlerMap>) {
 	emitSafe<E extends keyof EventHandlerMap>(event: E, ...args: Parameters<EventHandlerMap[E]>): Promise<boolean> {
 		return new Promise<boolean>(async(resolve, reject) => {
 			const callback: undefined | Function | Function[] = (this as any)._events[event]

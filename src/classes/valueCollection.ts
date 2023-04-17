@@ -136,10 +136,10 @@ export default class ValueCollection<Key extends string | number | symbol = stri
 	/**
 	 * Map the Keys to a new Array
 	 * @since 5.3.1
-	*/ map(
-		/** Callback Function */ callback: (key: Key, value: Value, index: number, data: Record<Key, Value>) => any,
+	*/ map<Callback extends (key: Key, value: Value, index: number, data: Record<Key, Value>) => any>(
+		/** Callback Function */ callback: Callback,
 		/** Excluded Keys */ excluded: Key[] = []
-	): any[] {
+	): ReturnType<Callback>[] {
 		callback = callback ?? ((value) => value)
 
 		const sortedData = Object.assign({}, this.data)
