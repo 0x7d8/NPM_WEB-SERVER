@@ -1,4 +1,4 @@
-<h1 align="center">Welcome to rjweb-server v5 👋</h1>
+<h1 align="center">Welcome to rjweb-server v6 👋</h1>
 <div align="center">
   <a href="https://www.npmjs.com/package/rjweb-server" target="_blank">
     <img alt="Version" src="https://img.shields.io/npm/v/rjweb-server.svg">
@@ -18,7 +18,7 @@ It allows insane performance though ;)
 
 <br>
 
-### 🍔 [v5 Migration Guide](https://rjweb-server.rjansen.de/v6/migrating-from-v5)
+### 🍔 [v5 to v6 Migration Guide](https://rjweb-server.rjansen.de/v6/migrating-from-v5)
 
 <br>
 <br>

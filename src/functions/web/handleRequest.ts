@@ -126,7 +126,7 @@ export default async function handleHTTPRequest(req: HttpRequest, res: HttpRespo
 	// Handle Data
 	if (requestType === 'http' && ctx.url.method !== 'GET') {
 		// Check for Content-Length Header
-		if (!ctx.headers['content-length'] || isNaN(parseInt(ctx.headers['content-length']))) return res.cork(() => {
+		if (ctx.headers['content-length'] && isNaN(parseInt(ctx.headers['content-length']))) return res.cork(() => {
 			// Write Status
 			if (!ctx.isAborted) res.writeStatus(parseStatus(Status.LENGTH_REQUIRED))
 		
@@ -137,7 +137,7 @@ export default async function handleHTTPRequest(req: HttpRequest, res: HttpRespo
 
 			if (!ctx.isAborted) res.end()
 		})
-		else if (parseInt(ctx.headers['content-length']) > (ctg.options.body.maxSize * 1e6)) {
+		else if (ctx.headers['content-length'] && parseInt(ctx.headers['content-length']) > (ctg.options.body.maxSize * 1e6)) {
 			const result = await parseContent(ctg.options.body.message)
 
 			if (!ctx.isAborted) return res.cork(() => {
@@ -198,7 +198,7 @@ export default async function handleHTTPRequest(req: HttpRequest, res: HttpRespo
 						if (!ctx.isAborted) res.end(result.content)
 					})
 					else return
-				} else if (totalBytes > Number(ctx.headers['content-length'])) {
+				} else if (ctx.headers['content-length'] && totalBytes > parseInt(ctx.headers['content-length'])) {
 					deCompression.destroy()
 
 					if (!ctx.isAborted) return res.cork(() => {

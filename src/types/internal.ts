@@ -64,5 +64,5 @@ export type ExternalRouter = {
 export type AnyRouter = RouteWS | RouteHTTP | RouteExternal | RoutePath | RouteIndex | RouteContentTypes | RouteDefaultHeaders
 
 export type Routed = (ctr: HTTPRequestContext) => RealAny
-export type RoutedValidation = (ctr: HTTPRequestContext, end: EndFn) => RealAny
-export type RoutedWS<Type extends WSRequestContext['type']> = (ctr: WSRequestContext) => RealAny
+export type RoutedValidation<Context extends Record<any, any> = {}, Body = unknown> = (ctr: HTTPRequestContext<Context, Body>, end: EndFn) => RealAny
+export type RoutedWS = (ctr: WSRequestContext) => RealAny

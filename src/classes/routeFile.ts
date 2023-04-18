@@ -64,10 +64,10 @@ export default class RouteFileBuilder {
 	 * )
 	 * ```
 	 * @since 6.0.2
-	*/ validate(
-		/** The Function to Validate the Request */ code: RoutedValidation
+	*/ validate<Context extends Record<any, any> = {}, Body = unknown>(
+		/** The Function to Validate the Request */ code: RoutedValidation<Context, Body>
 	) {
-		this.validations.push(code)
+		this.validations.push(code as any)
 
 		return this
 	}

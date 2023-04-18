@@ -1,3 +1,9 @@
+## 6.1.1
+
+- Make .validate() method generic like .http() and .ws()
+- Upgrade Dependencies
+- Fix Typos in README
+
 ## 6.1.0
 
 - Allow Passing Types into .http() and .ws() functions for context and body / message properties
