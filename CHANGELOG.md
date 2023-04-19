@@ -1,3 +1,11 @@
+## 6.3.0
+
+- Added Performance Options
+  - eTag
+  - lastModified
+  - decompressBodies
+- Added Custom Dashboard Update Interval
+
 ## 6.2.2
 
 - Use getFilesRecursively from rjutils-collection instead of own method

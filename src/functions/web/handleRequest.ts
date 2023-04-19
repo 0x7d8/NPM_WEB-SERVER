@@ -151,7 +151,7 @@ export default async function handleHTTPRequest(req: HttpRequest, res: HttpRespo
 		}
 
 		// Create Decompressor
-		const deCompression = handleDecompressType(DecompressMapping[ctx.headers['content-encoding']])
+		const deCompression = handleDecompressType(ctg.options.performance.decompressBodies ? DecompressMapping[ctx.headers['content-encoding']] : 'none')
 
 		let totalBytes = 0
 		deCompression.on('data', async(data: Buffer) => {
@@ -554,7 +554,7 @@ export default async function handleHTTPRequest(req: HttpRequest, res: HttpRespo
 				}
 
 				ctx.scheduleQueue('execution', () => new Promise<void>(async(resolve) => {
-					try {
+					if (ctg.options.performance.lastModified) try {
 						const fileStat = await fs.stat(pathResolve(file))
 						ctx.response.headers['last-modified'] = fileStat.mtime.toUTCString()
 					} catch (err) {
@@ -564,7 +564,7 @@ export default async function handleHTTPRequest(req: HttpRequest, res: HttpRespo
 
 					if (!ctx.isAborted) res.cork(() => {
 						let endEarly = false
-						if (ctx.headers['if-modified-since'] === ctx.response.headers['last-modified']) {
+						if (ctg.options.performance.lastModified && ctx.headers['if-modified-since'] === ctx.response.headers['last-modified']) {
 							ctx.response.status = Status.NOT_MODIFIED
 							ctx.response.statusMessage = undefined
 							endEarly = true
@@ -864,12 +864,15 @@ export default async function handleHTTPRequest(req: HttpRequest, res: HttpRespo
 
 		// Handle Reponse
 		try {
-			const eTag = toETag(ctx.response.content, ctx.response.headers, ctx.response.status)
-			if (ctg.options.cache && eTag) ctx.response.headers['etag'] = `W/"${eTag}"`
+			let eTag: string | null
+			if (ctg.options.performance.eTag) {
+				eTag = toETag(ctx.response.content, ctx.response.headers, ctx.response.status)
+				if (eTag) ctx.response.headers['etag'] = `W/"${eTag}"`
+			}
 
 			if (!ctx.isAborted && ctx.continueSend) return res.cork(() => {
 				let endEarly = false
-				if (ctg.options.cache && eTag && ctx.headers['if-none-match'] === ctx.response.headers['etag']) {
+				if (ctg.options.performance.eTag && eTag && ctx.headers['if-none-match'] === ctx.response.headers['etag']) {
 					ctx.response.status = Status.NOT_MODIFIED
 					ctx.response.statusMessage = undefined
 					endEarly = true

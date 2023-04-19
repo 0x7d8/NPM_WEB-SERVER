@@ -119,7 +119,7 @@ export default async function statsRoute(ctr: HTTPRequestContext | WebSocketConn
               + ctg.cache.middlewares.objectCount
               + ctg.cache.routes.objectCount
           })
-        }, 1500)
+        }, ctg.options.dashboard.updateInterval)
 
         return readable
       }) ())

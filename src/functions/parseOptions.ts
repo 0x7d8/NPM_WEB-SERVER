@@ -85,6 +85,32 @@ export type Options = {
 		 * @default ""
 		 * @since 5.8.0
 		*/ password?: string
+		/**
+		 * The Interval in which to update Data in the Dashboard (in milliseconds)
+		 * @default 1500
+		 * @since 6.3.0
+		*/ updateInterval?: number
+	}
+
+	/**
+	 * General Performance Settings
+	 * @since 6.3.0
+	*/ performance?: {
+		/**
+		 * Whether to include ETag Headers on every request with a direct Body
+		 * @default true
+		 * @since 6.3.0
+		*/ eTag?: boolean
+		/**
+		 * Whether to include Last-Modified Headers on every request that serves a file
+		 * @default true
+		 * @since 6.3.0
+		*/ lastModified?: boolean
+		/**
+		 * Whether to decompress http bodies
+		 * @default true
+		 * @since 6.3.0
+		*/ decompressBodies?: boolean
 	}
 
 	/**
@@ -141,7 +167,12 @@ export default function parseOptions(provided: Options): DeepRequired<Options> {
 		}, dashboard: {
 			enabled: false,
 			path: '/rjweb-dashboard',
-			password: ''
+			password: '',
+			updateInterval: 1500
+		}, performance: {
+			eTag: true,
+      lastModified: true,
+      decompressBodies: true
 		}, bind: '0.0.0.0',
 		proxy: false,
 		compression: 'none',
