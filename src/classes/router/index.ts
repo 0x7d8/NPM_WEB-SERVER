@@ -131,8 +131,8 @@ export default class RouteList extends SafeServerEventEmitter {
 			if ('webSockets' in result) webSockets.push(...result.webSockets)
 			if ('statics' in result) statics.push(...result.statics)
 			if ('loadPaths' in result) loadPaths.push(...result.loadPaths)
-			if ('contentTypes' in result) contentTypes = { ...contentTypes, ...result.contentTypes }
-			if ('defaultHeaders' in result) defaultHeaders = { ...defaultHeaders, ...result.defaultHeaders }
+			if ('contentTypes' in result) contentTypes = Object.assign(contentTypes, result.contentTypes)
+			if ('defaultHeaders' in result) defaultHeaders = Object.assign(defaultHeaders, result.defaultHeaders)
 		}
 
 		return {

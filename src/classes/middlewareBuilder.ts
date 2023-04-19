@@ -6,7 +6,9 @@ import { HTTPRequestContext } from "../types/external"
 export const currentVersion = 1
 
 export interface MiddlewareProduction<Config extends object = {}, Context extends object = {}> {
-	/** Inititalize the Middleware */ init: (config?: Config) => {
+	/**
+	 * Inititalize the Middleware
+	*/ init(config?: Config): {
 		/** The Internal Data of the Middleware */ data: MiddlewareData<Config, Context>
 		/** The Provided Config to the Middleware */ config: Config | undefined
 		/** The Version of the Middleware Builder */ version: number
@@ -15,11 +17,11 @@ export interface MiddlewareProduction<Config extends object = {}, Context extend
 }
 
 export interface MiddlewareData<Config extends object = {}, Context extends object = {}> {
-	/** The Code to run when the Middleware gets loaded */ initEvent?: (localContext: Context, config: Config | undefined, ctg: GlobalContext) => RealAny
-	/** The Code to run when an HTTP Request Triggers */ httpEvent?: (localContext: Context, end: EndFn, ctr: HTTPRequestContext, ctx: InternalContext, ctg: GlobalContext) => RealAny
-	/** The Code to run when a WebSocket Connects */ wsConnectEvent?: (localContext: Context, end: EndFn, ctr: WebSocketConnect, ctx: InternalContext, ctg: GlobalContext) => RealAny
-	/** The Code to run when a WebSocket Recieves a Message */ wsMessageEvent?: (localContext: Context, end: EndFn, ctr: WebSocketMessage, ctx: InternalContext, ctg: GlobalContext) => RealAny
-	/** The Code to run when a WebSocket Closes */ wsCloseEvent?: (localContext: Context, end: EndFn, ctr: WebSocketClose, ctx: InternalContext, ctg: GlobalContext) => RealAny
+	/** The Code to run when the Middleware gets loaded */ initEvent?(localContext: Context, config: Config | undefined, ctg: GlobalContext): RealAny
+	/** The Code to run when an HTTP Request Triggers */ httpEvent?(localContext: Context, end: EndFn, ctr: HTTPRequestContext, ctx: InternalContext, ctg: GlobalContext): RealAny
+	/** The Code to run when a WebSocket Connects */ wsConnectEvent?(localContext: Context, end: EndFn, ctr: WebSocketConnect, ctx: InternalContext, ctg: GlobalContext): RealAny
+	/** The Code to run when a WebSocket Recieves a Message */ wsMessageEvent?(localContext: Context, end: EndFn, ctr: WebSocketMessage, ctx: InternalContext, ctg: GlobalContext): RealAny
+	/** The Code to run when a WebSocket Closes */ wsCloseEvent?(localContext: Context, end: EndFn, ctr: WebSocketClose, ctx: InternalContext, ctg: GlobalContext): RealAny
 }
 
 export default class MiddlewareBuilder<Config extends object = {}, Context extends object = {}>{

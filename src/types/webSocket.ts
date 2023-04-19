@@ -154,7 +154,13 @@ export interface WebSocketConnect<Custom = {}> {
 	 * ctr.print('this is text!')
 	 * ```
 	 * @since 5.4.0
-	*/ print(content: Content): this
+	*/ print(content: Content, options?: {
+		/**
+		 * Whether to prettify output (mostly just JSONs)
+		 * @default false
+		 * @since 6.2.0
+		*/ prettify?: boolean
+	}): this
 	/**
 	 * Print the data event of a Stream to the Client
 	 * @example
@@ -317,7 +323,13 @@ export interface WebSocketMessage<Custom = {}, Body = unknown> {
 	 * ctr.print('this is text!')
 	 * ```
 	 * @since 5.4.0
-	*/ print(content: Content): this
+	*/ print(content: Content, options?: {
+		/**
+		 * Whether to prettify output (mostly just JSONs)
+		 * @default false
+		 * @since 6.2.0
+		*/ prettify?: boolean
+	}): this
 	/**
 	 * Print the data event of a Stream to the Client
 	 * @example

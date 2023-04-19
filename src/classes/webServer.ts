@@ -1,7 +1,7 @@
 import * as ServerEvents from "../types/serverEvents"
 import { GlobalContext } from "../types/context"
 import ValueCollection from "./valueCollection"
-import ServerOptions, { Options } from "./serverOptions"
+import parseOptions, { Options } from "../functions/parseOptions"
 import RouteList from "./router"
 import handleRequest, { getPreviousHours } from "../functions/web/handleRequest"
 import handleWSOpen from "../functions/web/handleWSOpen"
@@ -37,7 +37,7 @@ export default class Webserver extends RouteList {
 	) {
 		super()
 
-		const fullOptions = new ServerOptions(options).getOptions()
+		const fullOptions = parseOptions(options)
 		this.globalContext = {
 			controller: this,
 			contentTypes: {},
@@ -133,7 +133,7 @@ export default class Webserver extends RouteList {
 	*/ setOptions(
 		/** The Options */ options: Options
 	) {
-		this.globalContext.options = new ServerOptions(options).getOptions()
+		this.globalContext.options = parseOptions(options)
 
 		return this
 	}
@@ -227,7 +227,7 @@ export default class Webserver extends RouteList {
 				if (!listen) return reject(new Error(`Port ${this.globalContext.options.port} is already in use`))
 
 				this.socket = listen
-				return resolve({ success: true, port: this.globalContext.options.port, message: 'WEBSERVER STARTED' })
+				return resolve({ success: true, port: uWebsocket.us_socket_local_port(listen), message: 'WEBSERVER STARTED' })
 			})
 		})
 	}
@@ -319,9 +319,7 @@ export default class Webserver extends RouteList {
 		}
 
 		this.stop()
-		await this.start()
-
-		return this
+		return this.start()
 	}
 
 	/**

@@ -1,3 +1,16 @@
+## 6.2.0
+
+- Require NodeJS 16, 18 or 19
+- Require specific npm, yarn and pnpm versions
+- Use rjutils-collection for deep option parsing
+- Update Typescript to v5
+- Move Typings to seperate folder
+- Add ability to prettify parsed jsons
+- Serve correct port to start & reload callback
+- Improve some general Syntax
+- Improve some for-loops
+- Export Options Type
+
 ## 6.1.1
 
 - Make .validate() method generic like .http() and .ws()

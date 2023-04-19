@@ -136,7 +136,7 @@ export default class ValueCollection<Key extends string | number | symbol = stri
 	/**
 	 * Map the Keys to a new Array
 	 * @since 5.3.1
-	*/ map<Callback extends (key: Key, value: Value, index: number, data: Record<Key, Value>) => any>(
+	*/ map<Callback extends (key: Key, value: Value, index: number, data: Record<Key, Value>) => RealAny>(
 		/** Callback Function */ callback: Callback,
 		/** Excluded Keys */ excluded: Key[] = []
 	): ReturnType<Callback>[] {

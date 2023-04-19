@@ -2,7 +2,7 @@ import Server from "../classes/webServer"
 import { HttpRequest, HttpResponse } from "uWebSockets.js"
 import ValueCollection from "../classes/valueCollection"
 import URLObject from "../classes/URLObject"
-import { HTTPMethods, Status } from "./external"
+import { HTTPMethods } from "./external"
 import { Readable } from "stream"
 import { Content } from "../functions/parseContent"
 import { EndFn, RealAny, RoutedValidation } from "./internal"
@@ -159,7 +159,7 @@ export interface HTTPRequestContext<Context extends Record<any, any> = {}, Body 
 	 * ctr.status(666, 'The Devil').print('The Devil')
 	 * ```
 	 * @since 0.0.2
-	*/ status(code: Status, message?: string): this
+	*/ status(code: number, message?: string): this
 	/**
 	 * Redirect a Client to another URL
 	 * @example
@@ -187,6 +187,11 @@ export interface HTTPRequestContext<Context extends Record<any, any> = {}, Body 
 		 * @default ""
 		 * @since 2.7.5
 		*/ contentType?: string
+		/**
+		 * Whether to prettify output (mostly just JSONs)
+		 * @default false
+		 * @since 6.2.0
+		*/ prettify?: boolean
 	}): this
 	/**
 	 * Print the Content of a File to the Client

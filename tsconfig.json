@@ -4,7 +4,7 @@
     "baseUrl": ".",
     "module": "CommonJS",
     "lib": ["ES2021"],
-    "pretty": false,
+    "pretty": true,
     "resolveJsonModule": true,
     "emitDeclarationOnly": true,
     "declaration": true,

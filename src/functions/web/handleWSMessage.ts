@@ -100,11 +100,13 @@ export default function handleWSConnect(ws: WebSocket<WebSocketContext>, message
 				}))
 
 				return ctr
-			}, print(content) {
+			}, print(content, options = {}) {
+				const prettify = options?.prettify ?? false
+
 				ctx.scheduleQueue('execution', (async() => {
 					let result: ParseContentReturns
 					try {
-						result = await parseContent(content)
+						result = await parseContent(content, prettify)
 					} catch (err) {
 						return ctx.handleError(err)
 					}

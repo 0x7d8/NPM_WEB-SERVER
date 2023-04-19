@@ -48,7 +48,7 @@ export default async function statsRoute(ctr: HTTPRequestContext | WebSocketConn
   
           const staticFiles = await new Promise<number>(async(resolve) => {
             let staticFiles = 0
-            for (let staticNumber = 0; staticNumber <= ctg.routes.static.length - 1; staticNumber++) {
+            for (let staticNumber = 0; staticNumber < ctg.routes.static.length; staticNumber++) {
               staticFiles += (await getAllFiles(ctg.routes.static[staticNumber].location)).length
             }
   

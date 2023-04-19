@@ -86,7 +86,6 @@ export default async function handleHTTPRequest(req: HttpRequest, res: HttpRespo
 
 	// Add Powered By Header (if enabled)
 	if (ctg.options.poweredBy) ctx.response.headers['rjweb-server'] = Version
-	ctx.response.headers['accept-ranges'] = 'bytes'
 
 	ctg.requests.total++
 	ctg.requests[ctx.previousHours[4]]++
@@ -240,7 +239,7 @@ export default async function handleHTTPRequest(req: HttpRequest, res: HttpRespo
 
 				// Get From Cache
 				if (ctg.cache.routes.has(`route::static::${ctx.url.path}`)) {
-					const url = ctg.cache.routes.get(`route::static::${ctx.url.path}`, {} as any)
+					const url = ctg.cache.routes.get(`route::static::${ctx.url.path}`)!
 
 					ctx.execute.file = url.file!
 					ctx.execute.route = url.route!
@@ -298,7 +297,7 @@ export default async function handleHTTPRequest(req: HttpRequest, res: HttpRespo
 
 				// Get From Cache
 				if (ctg.cache.routes.has(`route::normal::${ctx.url.path}::${ctx.url.method}`)) {
-					const url = ctg.cache.routes.get(`route::normal::${ctx.url.path}::${ctx.url.method}`, {} as any)
+					const url = ctg.cache.routes.get(`route::normal::${ctx.url.path}::${ctx.url.method}`)!
 
 					params = url.params!
 					ctx.execute.route = url.route
@@ -371,7 +370,7 @@ export default async function handleHTTPRequest(req: HttpRequest, res: HttpRespo
 
 				// Get From Cache
 				if (ctg.cache.routes.has(`route::ws::${ctx.url.path}`)) {
-					const url = ctg.cache.routes.get(`route::ws::${ctx.url.path}`, {} as any)
+					const url = ctg.cache.routes.get(`route::ws::${ctx.url.path}`)!
 
 					params = url.params!
 					ctx.execute.route = url.route
@@ -525,11 +524,12 @@ export default async function handleHTTPRequest(req: HttpRequest, res: HttpRespo
 				return ctr
 			}, print(content, options = {}) {
 				const contentType = options?.contentType ?? ''
+				const prettify = options?.prettify ?? false
 
 				ctx.scheduleQueue('execution', (async() => {
 					let result: ParseContentReturns
 					try {
-						result = await parseContent(content)
+						result = await parseContent(content, prettify)
 					} catch (err) {
 						return ctx.handleError(err)
 					}
@@ -583,16 +583,16 @@ export default async function handleHTTPRequest(req: HttpRequest, res: HttpRespo
 
 						// Check Cache
 						if (ctg.cache.files.has(`file::${file}`)) {
-							ctg.data.outgoing.total += (ctg.cache.files.get(`file::${file}`) as Buffer).byteLength
-							ctg.data.outgoing[ctx.previousHours[4]] += (ctg.cache.files.get(`file::${file}`) as Buffer).byteLength
-							ctx.response.content = (ctg.cache.files.get(`file::${file}`) as Buffer)
+							ctg.data.outgoing.total += (ctg.cache.files.get(`file::${file}`)!).byteLength
+							ctg.data.outgoing[ctx.previousHours[4]] += (ctg.cache.files.get(`file::${file}`)!).byteLength
+							ctx.response.content = (ctg.cache.files.get(`file::${file}`)!)
 
 							return resolve()
 						} else if (ctg.cache.files.has(`file::${ctg.options.compression}::${file}`)) {
 							ctx.response.isCompressed = true
-							ctg.data.outgoing.total += (ctg.cache.files.get(`file::${ctg.options.compression}::${file}`) as Buffer).byteLength
-							ctg.data.outgoing[ctx.previousHours[4]] += (ctg.cache.files.get(`file::${ctg.options.compression}::${file}`) as Buffer).byteLength
-							ctx.response.content = (ctg.cache.files.get(`file::${ctg.options.compression}::${file}`) as Buffer)
+							ctg.data.outgoing.total += (ctg.cache.files.get(`file::${ctg.options.compression}::${file}`)!).byteLength
+							ctg.data.outgoing[ctx.previousHours[4]] += (ctg.cache.files.get(`file::${ctg.options.compression}::${file}`)!).byteLength
+							ctx.response.content = (ctg.cache.files.get(`file::${ctg.options.compression}::${file}`)!)
 
 							return resolve()
 						}
@@ -617,8 +617,8 @@ export default async function handleHTTPRequest(req: HttpRequest, res: HttpRespo
 
 								// Write to Cache Store
 								if (cache) {
-									const oldData = ctg.cache.files.get(`file::${ctg.options.compression}::${file}`) ?? Buffer.allocUnsafe(0)
-									ctg.cache.files.set(`file::${ctg.options.compression}::${file}`, Buffer.concat([ oldData as Buffer, content ]))
+									const oldData = ctg.cache.files.get(`file::${ctg.options.compression}::${file}`, Buffer.allocUnsafe(0))
+									ctg.cache.files.set(`file::${ctg.options.compression}::${file}`, Buffer.concat([ oldData, content ]))
 								}
 							}).once('close', () => {
 								ctx.response.content = Buffer.allocUnsafe(0)
@@ -662,8 +662,8 @@ export default async function handleHTTPRequest(req: HttpRequest, res: HttpRespo
 
 								// Write to Cache Store
 								if (cache) {
-									const oldData = ctg.cache.files.get(`file::${file}`) ?? Buffer.allocUnsafe(0)
-									ctg.cache.files.set(`file::${file}`, Buffer.concat([ oldData as Buffer, content ]))
+									const oldData = ctg.cache.files.get(`file::${file}`, Buffer.allocUnsafe(0))
+									ctg.cache.files.set(`file::${file}`, Buffer.concat([ oldData, content ]))
 								}
 							}).once('close', () => {
 								ctx.response.content = Buffer.allocUnsafe(0)

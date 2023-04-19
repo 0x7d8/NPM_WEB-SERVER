@@ -1,4 +1,5 @@
 import { HTTPMethods } from "./internal"
+export { Options } from "../functions/parseOptions"
 
 type UnionToIntersection<U>
 	= (U extends any ? (k: U) => void : never) extends ((k: infer I) => void) ? I : never
@@ -9,7 +10,7 @@ export type MiddlewareToProps<T extends object[]>
 export { WSRequestContext } from "./webSocket"
 export { HTTPRequestContext } from "./http"
 
-export { HTTPMethods, Event }
+export { HTTPMethods }
 
 export { default as Status } from "../misc/statusEnum"
 export { default as Methods } from "../misc/methodsEnum"

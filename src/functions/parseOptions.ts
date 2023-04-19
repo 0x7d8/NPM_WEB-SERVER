@@ -1,8 +1,9 @@
-import { Content } from "../functions/parseContent"
-import { CompressTypes } from "../functions/handleCompressType"
+import { Content } from "./parseContent"
+import { CompressTypes } from "./handleCompressType"
 import { DeepRequired } from "../types/internal"
+import { deepParseOptions } from "rjutils-collection"
 
-export interface Options {
+export type Options = {
 	/**
 	 * HTTP Body Settings
 	 * @since 2.6.0
@@ -107,8 +108,8 @@ export interface Options {
 	 * @since 0.1.0
 	*/ cors?: boolean
 	/**
-	 * Where the Server should start at
-	 * @default 2023
+	 * Where the Server should start at (Port 0 causes automatic selection)
+	 * @default 0
 	 * @since 0.0.1
 	*/ port?: number
 	/**
@@ -123,56 +124,30 @@ export interface Options {
 	*/ poweredBy?: boolean
 }
 
-export default class ServerOptions {
-	private data: DeepRequired<Options>
-
-	/** Server Options Helper */
-	constructor(options: Options) {
-		this.data = this.mergeOptions({
-			body: {
-				enabled: true,
-				parse: true,
-				maxSize: 5,
-				message: 'Payload too large'
-			}, ssl: {
-				enabled: false,
-				ciphers: 'ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256:ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-ECDSA-CHACHA20-POLY1305:ECDHE-RSA-CHACHA20-POLY1305:DHE-RSA-AES128-GCM-SHA256:DHE-RSA-AES256-GCM-SHA384',
-				keyFile: '/ssl/key/path',
-				certFile: '/ssl/cert/path',
-				caFile: '',
-				dhParamFile: ''
-			}, dashboard: {
-				enabled: false,
-				path: '/rjweb-dashboard',
-				password: ''
-			}, bind: '0.0.0.0',
-			proxy: false,
-			compression: 'none',
-			cors: false,
-			port: 2023,
-			cache: true,
-			poweredBy: true
-		}, options)
-	}
-
-	private mergeOptions(original: Options, user: Options): DeepRequired<Options> {
-		const handleObject = (original: Record<string, any>, user: Record<string, any>) => {
-			let output: Record<string, any> = {}
-			Object.keys(original).forEach((key) => {
-				if (typeof original[key] === 'object' && key in user) output[key] = handleObject(original[key], user[key])
-				else if (typeof original[key] === 'object') output[key] = original[key]
-				else if (key in user) output[key] = user[key]
-				else output[key] = original[key]
-			})
-
-			return output
-		}
-
-		return handleObject(original, user) as any
-	}
-
-	/** Get the Resulting Options */
-	getOptions() {
-		return this.data
-	}
+export default function parseOptions(provided: Options): DeepRequired<Options> {
+	return deepParseOptions({
+		body: {
+			enabled: true,
+			parse: true,
+			maxSize: 5,
+			message: 'Payload too large'
+		}, ssl: {
+			enabled: false,
+			ciphers: 'ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256:ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-ECDSA-CHACHA20-POLY1305:ECDHE-RSA-CHACHA20-POLY1305:DHE-RSA-AES128-GCM-SHA256:DHE-RSA-AES256-GCM-SHA384',
+			keyFile: '/ssl/key/path',
+			certFile: '/ssl/cert/path',
+			caFile: '',
+			dhParamFile: ''
+		}, dashboard: {
+			enabled: false,
+			path: '/rjweb-dashboard',
+			password: ''
+		}, bind: '0.0.0.0',
+		proxy: false,
+		compression: 'none',
+		cors: false,
+		port: 2023,
+		cache: true,
+		poweredBy: true
+	}, provided)
 }
