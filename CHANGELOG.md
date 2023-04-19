@@ -1,3 +1,7 @@
+## 6.2.1
+
+- Use predefined Paths for internal Dashboard Routes
+
 ## 6.2.0
 
 - Require NodeJS 16, 18 or 19

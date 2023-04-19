@@ -277,8 +277,8 @@ export default async function handleHTTPRequest(req: HttpRequest, res: HttpRespo
 				ctx.execute.route = {
 					type: 'route',
 					method: 'GET',
-					path: ctx.url.path,
-					pathArray: ctx.url.path.split('/'),
+					path: '/',
+					pathArray: ['', ''],
 					onRequest: async(ctr) => await statsRoute(ctr, ctg, ctx, 'http'),
 					data: {
 						validations: [],
@@ -351,8 +351,8 @@ export default async function handleHTTPRequest(req: HttpRequest, res: HttpRespo
 			if (ctg.options.dashboard.enabled && ctx.url.path === pathParser(ctg.options.dashboard.path) + '/ws') {
 				ctx.execute.route = {
 					type: 'websocket',
-					path: ctx.url.path,
-					pathArray: ctx.url.path.split('/'),
+					path: '/',
+					pathArray: ['', ''],
 					onConnect: async(ctr) => await statsRoute(ctr, ctg, ctx, 'socket'),
 					data: {
 						validations: []
