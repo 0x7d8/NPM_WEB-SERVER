@@ -41,7 +41,7 @@ export default async function statsRoute(ctr: HTTPRequestContext | WebSocketConn
           }
         })
 
-        interval = setInterval(async() => {
+        const runStats = async() => {
           const date = new Date()
           const startTime = date.getTime()
           const startUsage = process.cpuUsage()
@@ -119,7 +119,10 @@ export default async function statsRoute(ctr: HTTPRequestContext | WebSocketConn
               + ctg.cache.middlewares.objectCount
               + ctg.cache.routes.objectCount
           })
-        }, ctg.options.dashboard.updateInterval)
+        }
+
+        interval = setInterval(runStats, ctg.options.dashboard.updateInterval)
+        runStats()
 
         return readable
       }) ())

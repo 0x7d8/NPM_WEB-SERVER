@@ -1,3 +1,7 @@
+## 6.3.1
+
+- Instantly show Stats after Websocket connection is established
+
 ## 6.3.0
 
 - Added Performance Options
