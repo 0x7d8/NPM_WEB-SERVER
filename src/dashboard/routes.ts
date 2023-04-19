@@ -1,6 +1,6 @@
 import { GlobalContext, InternalContext } from "../types/context"
 import { pathParser } from "../classes/URLObject"
-import { getAllFiles } from "../misc/getAllFiles"
+import { getFilesRecursively } from "rjutils-collection"
 import { HTTPRequestContext } from "../types/external"
 import { WebSocketConnect } from "../types/webSocket"
 import { Readable } from "stream"
@@ -49,7 +49,7 @@ export default async function statsRoute(ctr: HTTPRequestContext | WebSocketConn
           const staticFiles = await new Promise<number>(async(resolve) => {
             let staticFiles = 0
             for (let staticNumber = 0; staticNumber < ctg.routes.static.length; staticNumber++) {
-              staticFiles += (await getAllFiles(ctg.routes.static[staticNumber].location)).length
+              staticFiles += (await getFilesRecursively(ctg.routes.static[staticNumber].location, true)).length
             }
   
             resolve(staticFiles)

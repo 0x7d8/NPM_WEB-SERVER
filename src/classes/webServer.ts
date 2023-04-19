@@ -10,13 +10,13 @@ import handleWSClose from "../functions/web/handleWSClose"
 import WebSocket from "src/types/webSocket"
 import { currentVersion } from "./middlewareBuilder"
 import HTTP from "../types/http"
-import { getAllFilesFilter } from "../misc/getAllFiles"
+import RouteFile from "./routeFile"
+import { getFilesRecursively } from "rjutils-collection"
 import { promises as fs } from "fs"
 
 import uWebsocket from "uWebSockets.js"
 import path from "path"
 import os from "os"
-import RouteFileBuilder from "./routeFile"
 
 export default class Webserver extends RouteList {
 	private globalContext: GlobalContext
@@ -386,12 +386,12 @@ export default class Webserver extends RouteList {
 
 		for (const loadPath of (await this.getData()).loadPaths) {
 			if (loadPath.type === 'cjs') {
-				for (const file of await getAllFilesFilter(loadPath.path, 'js')) {
+				for (const file of (await getFilesRecursively(loadPath.path, true)).filter((f) => f.endsWith('js'))) {
 					const route: unknown = require(file)
 
 					if (
 						!route ||
-						!(route instanceof RouteFileBuilder)
+						!(route instanceof RouteFile)
 					) throw new Error(`Invalid Route @ ${file}`)
 
 					const routeInfos = await route.getData(loadPath.prefix)
@@ -408,7 +408,7 @@ export default class Webserver extends RouteList {
 					loadedRoutes.webSockets.push(...routeInfos.webSockets)
 				}
 			} else {
-				for (const file of await getAllFilesFilter(loadPath.path, 'js')) {
+				for (const file of (await getFilesRecursively(loadPath.path, true)).filter((f) => f.endsWith('js'))) {
 					const path = os.platform() === 'win32'
 						? `file:///${file}`
 						: file
@@ -417,7 +417,7 @@ export default class Webserver extends RouteList {
 
 					if (
 						!route ||
-						!(route instanceof RouteFileBuilder)
+						!(route instanceof RouteFile)
 					) throw new Error(`Invalid Route @ ${file}`)
 
 					const routeInfos = await route.getData(loadPath.prefix)

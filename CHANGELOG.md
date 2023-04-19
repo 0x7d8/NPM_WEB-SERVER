@@ -1,3 +1,7 @@
+## 6.2.2
+
+- Use getFilesRecursively from rjutils-collection instead of own method
+
 ## 6.2.1
 
 - Use predefined Paths for internal Dashboard Routes
