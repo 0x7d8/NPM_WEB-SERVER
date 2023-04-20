@@ -24,7 +24,7 @@ server.on('httpRequest', (ctr) => {
 })
 
 server.start()
-  .then((s) => {
-    console.log(`Server started on port ${s.port}`)
-  })
-  .catch(console.error)
+	.then((s) => {
+		console.log(`server started on port ${s.port}`)
+	})
+	.catch(console.error)

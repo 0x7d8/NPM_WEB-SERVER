@@ -1,7 +1,7 @@
 import { GlobalContext } from "../../types/context"
 import { WebSocket } from "uWebSockets.js"
 import { parse as parseQuery } from "querystring"
-import parseContent, { Returns as ParseContentReturns } from "../parseContent"
+import parseContent, { ParseContentReturns } from "../parseContent"
 import ValueCollection from "../../classes/valueCollection"
 import { WebSocketConnect, WebSocketContext } from "../../types/webSocket"
 import { getPreviousHours } from "./handleRequest"
@@ -43,7 +43,7 @@ export default function handleWSOpen(ws: WebSocket<WebSocketContext>, ctg: Globa
 
 			// Variables
 			client: {
-				userAgent: ctx.headers['user-agent'],
+				userAgent: ctx.headers['user-agent'] ?? null,
 				port: Number(ctx.remoteAddress.split(':')[1]),
 				ip: hostIp
 			},

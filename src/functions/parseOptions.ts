@@ -177,7 +177,7 @@ export default function parseOptions(provided: Options): DeepRequired<Options> {
 		proxy: false,
 		compression: 'none',
 		cors: false,
-		port: 2023,
+		port: 0,
 		cache: true,
 		poweredBy: true
 	}, provided)

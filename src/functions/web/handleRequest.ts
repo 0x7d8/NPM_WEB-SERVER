@@ -2,8 +2,8 @@ import { GlobalContext, Hours, InternalContext } from "../../types/context"
 import { HttpRequest, HttpResponse, us_socket_context_t } from "uWebSockets.js"
 import { pathParser } from "../../classes/URLObject"
 import URLObject from "../../classes/URLObject"
-import { resolve as pathResolve, resolve } from "path"
-import parseContent, { Returns as ParseContentReturns } from "../parseContent"
+import { resolve as pathResolve } from "path"
+import parseContent, { ParseContentReturns } from "../parseContent"
 import { Task } from "../../types/internal"
 import statsRoute from "../../dashboard/routes"
 import { promises as fs, createReadStream } from "fs"
@@ -454,7 +454,7 @@ export default async function handleHTTPRequest(req: HttpRequest, res: HttpRespo
 
 			// Variables
 			client: {
-				userAgent: ctx.headers['user-agent'],
+				userAgent: ctx.headers['user-agent'] ?? null,
 				port: Number(ctx.remoteAddress.split(':')[1]),
 				ip: hostIp
 			}, get body() {

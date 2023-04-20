@@ -34,6 +34,8 @@ server.on('httpRequest', (ctr) => {
   console.log(`Request made to ${ctr.url.href}`)
 })
 
-server.start().then((res) => {
-	console.log(`website started on port ${res.port}`)
-})
+server.start()
+	.then((s) => {
+		console.log(`server started on port ${s.port}`)
+	})
+	.catch(console.error)

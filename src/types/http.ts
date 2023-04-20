@@ -93,7 +93,7 @@ export interface HTTPRequestContext<Context extends Record<any, any> = {}, Body 
 		/**
 		 * The User Agent of the Client
 		 * @since 3.0.0
-		*/ readonly userAgent: string
+		*/ readonly userAgent: string | null
 		/**
 		 * The Port that the Client is using
 		 * @since 3.0.0

@@ -14,18 +14,19 @@
 </div>
 
 # INFO: Since we are using native C++ the full bundle is ~90MB
-It allows insane performance though ;)
+It allows insane performance though
 
 <br>
 
-### 🍔 [v5 to v6 Migration Guide](https://rjweb-server.rjansen.de/v6/migrating-from-v5)
+### 🍔 [v5 to v6 Migration Guide](https://docs.rjweb.rjansen.de/v6/migrating-from-v5)
 
 <br>
 <br>
 
 ### 🏠 [Homepage](https://github.com/rotvproHD/NPM_WEB-SERVER#readme)
 ### 🛠️ [Changelog](https://github.com/rotvproHD/NPM_WEB-SERVER/blob/main/CHANGELOG.md)
-### 🌐 [Wiki](https://rjweb-server.rjansen.de)
+### 🌐 [Documentation](https://docs.rjweb.rjansen.de)
+### 🈸 [TypeDocs](https://typedocs.rjweb.rjansen.de)
 
 <br>
 

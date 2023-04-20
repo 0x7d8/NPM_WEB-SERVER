@@ -1,3 +1,13 @@
+## 6.5.0
+
+- Fix some @default tags being incorrect
+- Ignore yarn.lock in cli
+- Automatically detect package managers in cli
+- Automatically Install dependencies in cli
+- Add NodeJS 20 Support and remove NodeJS 19 support
+- Upgrade uWebsockets to v20.22.0
+- Add Typedocs
+
 ## 6.4.2
 
 - Fix Invalid Path in Downloaded File Message

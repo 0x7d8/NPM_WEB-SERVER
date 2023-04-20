@@ -46,7 +46,7 @@ export default function handleWSClose(ws: WebSocket<WebSocketContext>, message: 
 
 			// Variables
 			client: {
-				userAgent: ctx.headers['user-agent'],
+				userAgent: ctx.headers['user-agent'] ?? null,
 				port: Number(ctx.remoteAddress.split(':')[1]),
 				ip: hostIp
 			}, get message() {

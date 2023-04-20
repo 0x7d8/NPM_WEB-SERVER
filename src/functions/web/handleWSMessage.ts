@@ -1,7 +1,7 @@
 import { GlobalContext } from "../../types/context"
 import { WebSocket } from "uWebSockets.js"
 import { parse as parseQuery } from "querystring"
-import parseContent, { Returns as ParseContentReturns } from "../parseContent"
+import parseContent, { ParseContentReturns } from "../parseContent"
 import ValueCollection from "../../classes/valueCollection"
 import { WebSocketContext, WebSocketMessage } from "../../types/webSocket"
 import handleEvent from "../handleEvent"
@@ -51,7 +51,7 @@ export default function handleWSConnect(ws: WebSocket<WebSocketContext>, message
 
 			// Variables
 			client: {
-				userAgent: ctx.headers['user-agent'],
+				userAgent: ctx.headers['user-agent'] ?? null,
 				port: Number(ctx.remoteAddress.split(':')[1]),
 				ip: hostIp
 			}, get message() {

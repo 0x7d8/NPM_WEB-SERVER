@@ -7,7 +7,7 @@ type UnionToIntersection<U>
 export type MiddlewareToProps<T extends object[]>
 	= T extends (infer U)[] ? Record<keyof U, UnionToIntersection<U[keyof U]>> : never
 
-export { WSRequestContext } from "./webSocket"
+export * from "./webSocket"
 export { HTTPRequestContext } from "./http"
 
 export { HTTPMethods }

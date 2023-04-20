@@ -97,7 +97,7 @@ export interface WebSocketConnect<Custom = {}> {
 		/**
 		 * The User Agent of the Client
 		 * @since 5.4.0
-		*/ readonly userAgent: string
+		*/ readonly userAgent: string | null
 		/**
 		 * The Port that the Client is using
 		 * @since 5.4.0
@@ -257,7 +257,7 @@ export interface WebSocketMessage<Custom = {}, Body = unknown> {
 		/**
 		 * The User Agent of the Client
 		 * @since 5.4.0
-		*/ readonly userAgent: string
+		*/ readonly userAgent: string | null
 		/**
 		 * The Port that the Client is using
 		 * @since 5.4.0
@@ -426,7 +426,7 @@ export interface WebSocketClose<Custom = {}, Body = unknown> {
 		/**
 		 * The User Agent of the Client
 		 * @since 5.4.0
-		*/ readonly userAgent: string
+		*/ readonly userAgent: string | null
 		/**
 		 * The Port that the Client is using
 		 * @since 5.4.0

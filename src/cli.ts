@@ -2,8 +2,10 @@
 
 import { StartError } from "./types/serverEvents"
 import { Version, Status } from "."
+import { Spinner } from "rjutils-collection"
 import Server from "./classes/webServer"
 
+import { exec, execSync } from "child_process"
 import https from "https"
 import yargs from "yargs"
 import pPath from "path/posix"
@@ -62,6 +64,8 @@ type Template = {
 		git: GitFile
 	}[]
 }
+
+type PackageManager = 'npm' | 'yarn' | 'pnpm'
 
 const prefix = `⚡  ${colors.fg.white}[RJWEB ${Version.split('.')[0]}]${colors.fg.gray}:${colors.reset}`
 
@@ -342,6 +346,7 @@ yargs
 					}
 				} else {
 					const file = files
+					if (file.name === 'yarn.lock') return
 
 					console.log(`${prefix} ${colors.fg.green}Downloaded ${colors.fg.cyan}${path.join(args.folder, file.path.replace(`templates/[${variant}] ${template}`, ''))}`)
 					await fs.promises.writeFile(path.join(process.cwd(), args.folder, file.path.replace(`templates/[${variant}] ${template}`, '')), Buffer.from(file.content!, 'base64').toString())
@@ -351,7 +356,60 @@ yargs
 			await handleDirectory(templates.find((t) => t.name === template)!.variants.find((v) => v.name === variant)!.git.url)
 
 			console.log('')
-			console.log(`${prefix} ${colors.fg.green}Template Project Generated!${colors.reset}`)
+			console.log(`${prefix} ${colors.fg.green}Template Project Generated!`)
+			console.log('')
+
+			// Test for Package Managers
+			let availablePackageManagers: PackageManager[] = []
+			try {
+				execSync('npm --version', {
+					stdio: 'ignore'
+				})
+
+				availablePackageManagers.push('npm')
+			} catch { }
+			try {
+				execSync('yarn --version', {
+					stdio: 'ignore'
+				})
+
+				availablePackageManagers.push('yarn')
+			} catch { }
+			try {
+				execSync('pnpm --version', {
+					stdio: 'ignore'
+				})
+
+				availablePackageManagers.push('pnpm')
+			} catch { }
+
+			let continueWith: PackageManager = 'npm'
+			await inquirer.prompt([
+				{
+					name: 'Continue with',
+					type: 'list',
+					prefix,
+					choices: availablePackageManagers,
+					askAnswered: true
+				}
+			]).then((answers) => {
+				continueWith = answers['Continue with']
+			})
+
+			const spinner = new Spinner()
+			const runInterval = () => {
+				process.stdout.write(`\r${prefix} ${colors.fg.yellow}${spinner.get()} ${colors.fg.gray}Installing Dependencies with ${colors.fg.cyan}${continueWith}${colors.fg.gray}...`)
+			}
+
+			const interval = setInterval(runInterval, 175)
+			runInterval()
+
+			process.chdir(path.join(process.cwd(), args.folder))
+			exec(`${continueWith} install`, () => {
+				clearInterval(interval)
+				process.stdout.write('\n')
+				console.log(`${prefix} ${colors.fg.green}Installed Dependencies!${colors.reset}`)
+			})
 		})
 	)
 	.help()

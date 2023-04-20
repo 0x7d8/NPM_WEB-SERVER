@@ -19,13 +19,13 @@ export type Content =
 			| boolean
 		)[]
 
-export interface Returns {
+export type ParseContentReturns = Awaited<ReturnType<typeof parseContent>>
+
+export default async function parseContent(content: Content, prettify: boolean = false): Promise<{
 	headers: Record<string, Buffer>
 	content: Buffer
-}
-
-export default async function parseContent(content: Content, prettify: boolean = false): Promise<Returns> {
-	const returnObject: Returns = { headers: {}, content: Buffer.allocUnsafe(0) }
+}> {
+	const returnObject: ParseContentReturns = { headers: {}, content: Buffer.allocUnsafe(0) }
 
 	if (Buffer.isBuffer(content)) return { headers: {}, content }
 	if (isMap(content)) content = Object.fromEntries(content.entries())
