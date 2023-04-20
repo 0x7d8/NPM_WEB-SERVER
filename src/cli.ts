@@ -333,7 +333,7 @@ yargs
 				if (Array.isArray(files)) {
 					for (const file of files) {
 						if (file.type === 'dir') {
-							await fs.promises.mkdir(pPath.join(process.cwd(), args.folder, file.path.replace(`templates/${template}`, '')))
+							await fs.promises.mkdir(pPath.join(process.cwd(), args.folder, file.path.replace(`templates/[${variant}] ${template}`, '')))
 						}
 
 						await handleDirectory(file.url)
@@ -342,14 +342,14 @@ yargs
 					const file = files
 
 					console.log(`${prefix} ${colors.fg.green}Downloaded ${colors.fg.cyan}${pPath.join(args.folder, file.name)}`)
-					await fs.promises.writeFile(path.join(process.cwd(), args.folder, file.path.replace(`templates/${template}`, '')), Buffer.from(file.content!, 'base64').toString())
+					await fs.promises.writeFile(path.join(process.cwd(), args.folder, file.path.replace(`templates/[${variant}] ${template}`, '')), Buffer.from(file.content!, 'base64').toString())
 				}
 			}
 
 			await handleDirectory(templates.find((t) => t.name === template)!.variants.find((v) => v.name === variant)!.git.url)
 
 			console.log('')
-			console.log(`${prefix} ${colors.fg.green}Template Project Generated!`)
+			console.log(`${prefix} ${colors.fg.green}Template Project Generated!${colors.reset}`)
 		})
 	)
 	.help()

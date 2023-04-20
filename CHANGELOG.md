@@ -1,3 +1,7 @@
+## 6.4.1
+
+- Add [ Variant ] to cli replace path
+
 ## 6.4.0
 
 - Renamed Examples to Templates
