@@ -1,3 +1,8 @@
+## 6.4.2
+
+- Fix Invalid Path in Downloaded File Message
+- Fixed some Typos
+
 ## 6.4.1
 
 - Add [ Variant ] to cli replace path

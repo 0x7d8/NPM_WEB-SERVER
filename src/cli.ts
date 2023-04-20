@@ -223,7 +223,7 @@ yargs
 		(async(args) => {
 			const { default: inquirer } = await import('inquirer')
 
-			console.log(`${prefix} ${colors.fg.gray}Fetching Examples from GitHub...`)
+			console.log(`${prefix} ${colors.fg.gray}Fetching Templates from GitHub...`)
 			const templates: Template[] = []
 			;(JSON.parse((await new Promise<Buffer>((resolve, reject) => {
 				const chunks: Buffer[] = []
@@ -333,7 +333,9 @@ yargs
 				if (Array.isArray(files)) {
 					for (const file of files) {
 						if (file.type === 'dir') {
-							await fs.promises.mkdir(pPath.join(process.cwd(), args.folder, file.path.replace(`templates/[${variant}] ${template}`, '')))
+							if (!fs.existsSync(pPath.join(process.cwd(), args.folder, file.path.replace(`templates/[${variant}] ${template}`, '')))) {
+								await fs.promises.mkdir(pPath.join(process.cwd(), args.folder, file.path.replace(`templates/[${variant}] ${template}`, '')))
+							}
 						}
 
 						await handleDirectory(file.url)
@@ -341,7 +343,7 @@ yargs
 				} else {
 					const file = files
 
-					console.log(`${prefix} ${colors.fg.green}Downloaded ${colors.fg.cyan}${pPath.join(args.folder, file.name)}`)
+					console.log(`${prefix} ${colors.fg.green}Downloaded ${colors.fg.cyan}${path.join(args.folder, file.path.replace(`templates/[${variant}] ${template}`, ''))}`)
 					await fs.promises.writeFile(path.join(process.cwd(), args.folder, file.path.replace(`templates/[${variant}] ${template}`, '')), Buffer.from(file.content!, 'base64').toString())
 				}
 			}
