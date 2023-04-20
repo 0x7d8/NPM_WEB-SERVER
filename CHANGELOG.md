@@ -1,3 +1,9 @@
+## 6.4.0
+
+- Renamed Examples to Templates
+- Rework Template System with CLI Support
+- Addded more Templates
+
 ## 6.3.1
 
 - Instantly show Stats after Websocket connection is established

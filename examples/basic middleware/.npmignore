@@ -1,6 +1,0 @@
-test/
-src/
-examples/
-.github/
-pnpm-lock.yaml
-tsconfig.json

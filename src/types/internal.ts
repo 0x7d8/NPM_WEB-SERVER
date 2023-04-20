@@ -8,7 +8,7 @@ import RoutePath from "../classes/router/path"
 import RouteContentTypes from "../classes/router/contentTypes"
 import RouteDefaultHeaders from "../classes/router/defaultHeaders"
 import RouteWS from "../classes/router/ws"
-import RouteHTTP from "src/classes/router/http"
+import RouteHTTP from "../classes/router/http"
 
 export type EndFn = (...args: any[]) => void
 export type RealAny = PromiseLike<any> | Promise<any> | any

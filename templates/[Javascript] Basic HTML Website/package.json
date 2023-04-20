@@ -1,0 +1,11 @@
+{
+  "version": "1.0.0",
+  "type": "module",
+  "license": "MIT",
+  "scripts": {
+    "start": "cd src && node index && cd .."
+  },
+  "dependencies": {
+    "rjweb-server": "^6.3.1"
+  }
+}

@@ -4,7 +4,9 @@ import { StartError } from "./types/serverEvents"
 import { Version, Status } from "."
 import Server from "./classes/webServer"
 
+import https from "https"
 import yargs from "yargs"
+import pPath from "path/posix"
 import path from "path"
 import fs from "fs"
 
@@ -38,6 +40,27 @@ const colors = {
 		gray: '\x1b[100m',
 		crimson: '\x1b[48m'
 	}
+}
+
+type GitFile = {
+	name: string
+	path: string
+	sha: string
+	content?: string
+	size: number
+	url: string
+	html_url: string
+	git_url: string
+	download_url: string | null
+	type: 'file' | 'dir' | 'submodule'
+}
+
+type Template = {
+	name: string
+	variants: {
+		name: string
+		git: GitFile
+	}[]
 }
 
 const prefix = `⚡  ${colors.fg.white}[RJWEB ${Version.split('.')[0]}]${colors.fg.gray}:${colors.reset}`
@@ -78,6 +101,7 @@ yargs
 			.positional('folder', {
 				type: 'string',
 				description: 'The Folder to serve',
+				demandOption: true
 			})
 			.option('port', {
 				type: 'number',
@@ -172,6 +196,160 @@ yargs
 					console.error(`${colors.fg.cyan}${err.stack}`)
 					process.exit(1)
 				})
+		})
+	)
+	.command(
+		'generate <folder>',
+		'Generate a template Project',
+		((cmd) => cmd
+			.positional('folder', {
+				type: 'string',
+				description: 'The Folder to generate the template in',
+				demandOption: true
+			})
+			.option('template', {
+				type: 'string',
+				description: 'Which template to use',
+				alias: ['E'],
+				default: 'choose',
+			})
+			.option('variant', {
+				type: 'string',
+				description: 'The Variant of the template to use',
+				alias: ['V'],
+				default: 'choose',
+			})
+		),
+		(async(args) => {
+			const { default: inquirer } = await import('inquirer')
+
+			console.log(`${prefix} ${colors.fg.gray}Fetching Examples from GitHub...`)
+			const templates: Template[] = []
+			;(JSON.parse((await new Promise<Buffer>((resolve, reject) => {
+				const chunks: Buffer[] = []
+				https.get({
+					path: '/repos/rotvproHD/NPM_WEB-SERVER/contents/templates',
+					host: 'api.github.com',
+					port: 443,
+					headers: {
+						"User-Agent": 'NPM_WEB-SERVER',
+						"Accept": 'application/vnd.github.v3+json',
+					}
+				}, (res) => {
+					res.on('data', (data) => {
+						chunks.push(data)
+					}).once('error', reject)
+					.once('end', () => {
+						resolve(Buffer.concat(chunks))
+					})
+				})
+			})).toString()) as GitFile[]).filter((t) => t.type === 'dir').forEach((template) => {
+				const variant = template.name.match(/\[.*\] /)![0].replace(/\[|\]/g, '').trim()
+				const name = template.name.replace(/\[.*\] /, '')
+
+				if (templates.some((t) => t.name === name)) {
+					const index = templates.findIndex((t) => t.name === name)
+
+					templates[index].variants.push({
+            name: variant,
+            git: template
+          })
+				} else {
+					templates.push({
+            name,
+            variants: [
+							{
+              	name: variant,
+              	git: template
+            	}
+						]
+          })
+				}
+			})
+
+			let template = '', variant = ''
+			if (args.template !== 'choose' && templates.some((t) => t.name === args.template)) {
+				template = args.template
+				console.log(`${prefix} ${colors.fg.gray}Using ${colors.fg.cyan}${template}`)
+			} else {
+				if (args.template !== 'choose') console.log(`${prefix} ${colors.fg.cyan}${args.template} ${colors.fg.red}is not a valid template!`)
+				await inquirer.prompt([
+					{
+						name: 'Template',
+						type: 'list',
+						prefix,
+						choices: templates.map((t) => t.name),
+						askAnswered: true
+					}
+				]).then((answers) => {
+					template = answers.Template
+				})
+			}
+
+			if (args.variant !== 'choose' && templates.some((t) => t.name === args.variant)) {
+				variant = args.variant
+				console.log(`${prefix} ${colors.fg.gray}Using Variant ${colors.fg.cyan}${variant}`)
+			} else {
+				if (args.variant !== 'choose') console.log(`${prefix} ${colors.fg.cyan}${args.template} ${colors.fg.red}is not a valid template!`)
+				await inquirer.prompt([
+					{
+						name: 'Variant',
+						type: 'list',
+						prefix,
+						choices: templates.find((t) => t.name === template)!.variants.map((v) => v.name),
+						askAnswered: true
+					}
+				]).then((answers) => {
+					variant = answers.Variant
+				})
+			}
+
+			if (!fs.existsSync(path.join(process.cwd(), args.folder))) {
+				await fs.promises.mkdir(path.join(process.cwd(), args.folder))
+			}
+
+			console.log(`${prefix} ${colors.fg.gray}Generating Template Project...`)
+			const handleDirectory = async(directory: string) => {
+				const files: GitFile | GitFile[] = JSON.parse((await new Promise<Buffer>((resolve, reject) => {
+					const chunks: Buffer[] = []
+					https.get({
+						path: new URL(directory).pathname,
+						host: 'api.github.com',
+						port: 443,
+						headers: {
+							"User-Agent": 'NPM_WEB-SERVER',
+							"Accept": 'application/vnd.github.v3+json',
+						}
+					}, (res) => {
+						res.on('data', (data) => {
+							chunks.push(data)
+						}).once('error', reject)
+						.once('end', () => {
+							resolve(Buffer.concat(chunks))
+						})
+					})
+				})).toString())
+
+				if (Array.isArray(files)) {
+					for (const file of files) {
+						if (file.type === 'dir') {
+							await fs.promises.mkdir(pPath.join(process.cwd(), args.folder, file.path.replace(`templates/${template}`, '')))
+						}
+
+						await handleDirectory(file.url)
+					}
+				} else {
+					const file = files
+
+					console.log(`${prefix} ${colors.fg.green}Downloaded ${colors.fg.cyan}${pPath.join(args.folder, file.name)}`)
+					await fs.promises.writeFile(path.join(process.cwd(), args.folder, file.path.replace(`templates/${template}`, '')), Buffer.from(file.content!, 'base64').toString())
+				}
+			}
+
+			await handleDirectory(templates.find((t) => t.name === template)!.variants.find((v) => v.name === variant)!.git.url)
+
+			console.log('')
+			console.log(`${prefix} ${colors.fg.green}Template Project Generated!`)
 		})
 	)
 	.help()

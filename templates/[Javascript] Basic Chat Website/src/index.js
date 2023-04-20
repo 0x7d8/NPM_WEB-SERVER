@@ -8,9 +8,7 @@ const chat = new Readable({
 }).on('data', (data) => chatHistory.push(data.toString()))
 
 const server = new Server({
-	bind: '0.0.0.0',
-	cors: false,
-	port: 5000
+	port: 8000
 })
 
 server.path('/', (p) => p
@@ -31,6 +29,10 @@ server.path('/', (p) => p
 		})
 	)
 )
+
+server.on('httpRequest', (ctr) => {
+  console.log(`Request made to ${ctr.url.href}`)
+})
 
 server.start().then((res) => {
 	console.log(`website started on port ${res.port}`)
