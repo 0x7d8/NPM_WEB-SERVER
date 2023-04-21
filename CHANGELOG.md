@@ -1,3 +1,7 @@
+## 6.5.1
+
+- Upgrade uWebsockets to v20.23.0
+
 ## 6.5.0
 
 - Fix some @default tags being incorrect
