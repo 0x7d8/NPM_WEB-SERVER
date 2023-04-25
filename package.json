@@ -1,6 +1,6 @@
 {
   "name": "rjweb-server",
-  "version": "6.5.1",
+  "version": "6.6.0",
   "description": "Easy and Robust Way to create a Web Server with Many Easy-to-use Features in NodeJS",
   "main": "./lib/cjs/index.js",
   "module": "./lib/esm/index.js",
@@ -13,7 +13,7 @@
   },
   "scripts": {
     "build": "rm -rf lib && tsc && typia generate --input=src --output=lib/transformed && esbuild `find lib/transformed -type f -name \"*.ts\"` --platform='node' --ignore-annotations --format='cjs' --outdir='lib/cjs' && esbuild `find lib/transformed -type f -name \"*.ts\"` --platform='node' --ignore-annotations --format='esm' --outdir='lib/esm' && cp -r src/dashboard/index.html lib/cjs/dashboard/index.html && cp -r src/dashboard/index.html lib/esm/dashboard/index.html && cp package.json lib/cjs/pckg.json && cp package.json lib/esm/pckg.json && rm -rf lib/transformed",
-    "docs": "typedoc --out docs src/index.ts",
+    "docs": "typedoc --out docs src/index.ts && chmod -R a+rw docs",
     "install:dev": "npm install -g --install-links .",
     "test": "yarn build && node test"
   },

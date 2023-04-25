@@ -1,3 +1,7 @@
+## 6.6.0
+
+- Added built-in HTML Builder
+
 ## 6.5.1
 
 - Upgrade uWebsockets to v20.23.0

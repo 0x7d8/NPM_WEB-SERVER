@@ -102,6 +102,8 @@ export default class Webserver extends RouteList {
 				normal: [],
 				websocket: [],
 				static: [],
+
+				htmlBuilder: []
 			}, cache: {
 				files: new ValueCollection(undefined, undefined, fullOptions.cache),
 				middlewares: new ValueCollection(undefined, undefined, fullOptions.cache),

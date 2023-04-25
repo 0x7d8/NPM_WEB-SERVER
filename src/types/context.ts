@@ -85,6 +85,8 @@ export interface GlobalContext {
     /** Normal Routes */ normal: HTTP[]
 		/** Websocket Routes */ websocket: WebSocket[]
 		/** Static Routes */ static: Static[]
+
+		/** HTML Builder Registered Routes */ htmlBuilder: HTTP[]
   }
 
   /** The Cache Stores */ cache: {

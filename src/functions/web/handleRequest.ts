@@ -21,6 +21,8 @@ import Static from "../../types/static"
 import { WebSocketContext } from "src/types/webSocket"
 import toETag from "../toETag"
 import parseStatus from "../parseStatus"
+import HTMLBuilder, { parseAttributes } from "../../classes/HTMLBuilder"
+import Route from "../../types/http"
 
 export const getPreviousHours = (): Hours[] => {
 	return Array.from({ length: 7 }, (_, i) => (new Date().getHours() - (4 - i) + 24) % 24) as any
@@ -289,6 +291,14 @@ export default async function handleHTTPRequest(req: HttpRequest, res: HttpRespo
 				ctx.execute.exists = true
 			}
 
+			// Check HTMLBuilder Paths
+			const htmlBuilderRoute = ctg.routes.htmlBuilder.find((h) => h.path === ctx.url.path)
+			if (htmlBuilderRoute) {
+				ctx.execute.route = htmlBuilderRoute
+
+				ctx.execute.exists = true
+			}
+
 			// Check Other Paths
 			if (!ctx.execute.exists) for (let urlNumber = 0; urlNumber < ctg.routes.normal.length; urlNumber++) {
 				if (ctx.execute.exists) break
@@ -540,6 +550,43 @@ export default async function handleHTTPRequest(req: HttpRequest, res: HttpRespo
 
 					ctx.response.content = result.content
 				}))
+
+				return ctr
+			}, printHTML(callback, options = {}) {
+				const htmlLanguage = options?.htmlLanguage ?? 'en'
+
+				const builder = new HTMLBuilder(ctx.execute.route as Route)
+				callback(builder)
+
+				ctx.response.headers['content-type'] = 'text/html'
+				ctx.response.content = Buffer.from(`<!DOCTYPE html><html ${parseAttributes({ lang: htmlLanguage }, [])}>${(builder as any).html}</html>`)
+
+				if (!ctg.routes.htmlBuilder.some((h) => h.path === ctx.url.path)) {
+					for (const getEvery of (builder as any).getEveries) {
+						const route: Route = {
+							method: 'GET',
+							path: `/___rjweb-html-auto/${getEvery.id}`,
+							pathArray: `/___rjweb-html-auto/${getEvery.id}`.split('/'),
+							async onRequest(ctr) {
+								const res = await Promise.resolve(getEvery.getter(ctr))
+
+								getEvery.fnArguments[getEvery.fnArguments.length - 1].value = res
+
+								const builder = new HTMLBuilder(ctx.execute.route as Route, getEvery.fnArguments)
+								getEvery.callback(builder, res)
+
+								ctr.print((builder as any).html)
+							}, type: 'route',
+							data: {
+								headers: (ctx.execute.route as any)?.data.headers!,
+								validations: ctx.execute.route?.data.validations!
+							}
+						}
+
+						ctg.routes.htmlBuilder.push(route)
+						ctg.cache.routes.set(`/___rjweb-html-auto/${getEvery.id}`, undefined as any)
+					}
+				}
 
 				return ctr
 			}, printFile(file, options = {}) {

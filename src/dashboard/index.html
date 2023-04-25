@@ -162,10 +162,24 @@
 
       <div class="w-96 mx-4 mb-8 text-center">
         <div class="p-1 bg-slate-600 rounded">
-          <h1 class="text-white">Routes</h1>
+          <h1 class="text-white">User Routes</h1>
         </div>
         <div class="mt-2 p-2 bg-slate-600 rounded">
-          <h1 id="stat-routes" class="flex justify-center text-white">
+          <h1 id="stat-userRoutes" class="flex justify-center text-white">
+            <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-loader-2 animate-spin" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+              <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
+              <path d="M12 3a9 9 0 1 0 9 9"></path>
+            </svg>
+          </h1>
+        </div>
+      </div>
+
+      <div class="w-96 mx-4 mb-8 text-center">
+        <div class="p-1 bg-slate-600 rounded">
+          <h1 class="text-white">Automatic Routes</h1>
+        </div>
+        <div class="mt-2 p-2 bg-slate-600 rounded">
+          <h1 id="stat-automaticRoutes" class="flex justify-center text-white">
             <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-loader-2 animate-spin" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
               <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
               <path d="M12 3a9 9 0 1 0 9 9"></path>
@@ -413,7 +427,8 @@
 
     document.querySelector('#stat-cpu').innerText = data.cpu.usage + '%'
     document.querySelector('#stat-memory').innerText = data.memory.usage + 'MB'
-    document.querySelector('#stat-routes').innerText = data.routes
+    document.querySelector('#stat-userRoutes').innerText = data.user_routes
+    document.querySelector('#stat-automaticRoutes').innerText = data.automatic_routes
     document.querySelector('#stat-staticFiles').innerText = data.static_files
     document.querySelector('#stat-cached').innerText = data.cached
 

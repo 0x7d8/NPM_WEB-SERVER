@@ -6,6 +6,7 @@ import { HTTPMethods } from "./external"
 import { Readable } from "stream"
 import { Content } from "../functions/parseContent"
 import { EndFn, RealAny, RoutedValidation } from "./internal"
+import HTMLBuilder from "../classes/HTMLBuilder"
 
 export default interface Route<Custom extends Record<any, any> = {}, Body = unknown> {
 	/** The Type of this Object */ type: 'route'
@@ -192,6 +193,34 @@ export interface HTTPRequestContext<Context extends Record<any, any> = {}, Body 
 		 * @default false
 		 * @since 6.2.0
 		*/ prettify?: boolean
+	}): this
+	/**
+	 * Print a Message to the Client (automatically Formatted)
+	 * @example
+	 * ```
+	 * ctr.printHTML((html) => html
+	 *   .t('head', {}, (t) => t
+	 *     .t('title', {}, (t) => t
+	 *       .raw('Hello world!')
+	 *     )
+	 *   )
+	 *   .t('body', {}, (t) => t
+	 *     .t(
+	 *       'h1',
+	 *       { style: { color: 'red' } },
+	 *       (t) => t
+	 *         .raw('Hello world matey!')
+	 *     )
+	 *   )
+	 * )
+	 * ```
+	 * @since 6.6.0
+	*/ printHTML(callback: (html: HTMLBuilder) => HTMLBuilder, options?: {
+		/**
+		 * The HTML Language to show at the html tag
+		 * @default 'en'
+		 * @since 6.6.0
+		*/ htmlLanguage?: string
 	}): this
 	/**
 	 * Print the Content of a File to the Client
