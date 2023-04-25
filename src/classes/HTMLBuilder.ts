@@ -38,6 +38,23 @@ const f = (attribute: string): string => {
 		.replace(/\n/g, '&#xa;')
 }
 
+const fF = (fn: Function): string => {
+	let fnString = fn.toString()
+	let addStart = '', addEnd = ''
+
+	fnString = fnString
+		.replace('async', () => {
+			addStart += 'async'
+			return ''
+		})
+		.replace('=>', () => {
+			addStart += ' function'
+			return ''
+		})
+	
+	return addStart + fnString + addEnd
+}
+
 export const getFunctionArguments = (fn: Function) => {  
 	return (fn.toString())
 		.replace(/[/][/].*$/mg,'')
@@ -75,7 +92,7 @@ export const parseAttributes = (attributes: Record<string, HTMLAttribute>, fnArg
 			}
 
 			case "function": {
-				value = f(`${fnArguments.map((arg) => `let ${arg.name}=${f(JSON.stringify(arg.value))};`).join('')}(${attribute.toString()})(this)`)
+				value = f(`${fnArguments.map((arg) => `let ${arg.name}=${f(JSON.stringify(arg.value))};`).join('')}(${fF(attribute)})(this)`)
 
 				break
 			}
@@ -191,13 +208,49 @@ export default class HTMLBuilder {
 	}
 
 	/**
+	 * Register Variables that will be added to every context
+	 * @warning This is required for native functions because they are being replicated 1:1
+	 * @example
+	 * ```
+	 * const version = '1.0.0'
+	 * const showVersion = true
+	 * 
+	 * ctr.printHTML((html) => html
+	 *   .var({ version })
+	 *   .if(showVersion, (html) => html
+	 *     .t('button', { onclick: () => { alert(version) } }, (t) => t
+	 *       .raw('click me for version!')
+	 *     )
+	 *   )
+	 * )
+	 * ```
+	 * @since 6.6.1
+	*/ if(
+		/** The Boolean to check */ state: boolean,
+		/** The Callback for when the Boolean is truthy */ callback: ((tag: HTMLBuilder) => HTMLBuilder) | HTMLContent
+	) {
+		if (state) {
+			if (typeof callback === 'function') {
+				const builder = new HTMLBuilder(this.route, [ ...this.fnArguments ], this.getEveries, this.everyId)
+
+				callback(builder)
+				this.html += builder.html
+			} else {
+				this.html += callback
+			}
+		}
+
+		return this
+	}
+
+	/**
 	 * Fetch a custom function every x ms
 	 * @example
 	 * ```
 	 * const getNumbers = () => Array.from({ length: 5 }).map(() => Math.random())
 	 * 
 	 * ctr.printHTML((html) => html
-	 *   .getEvery(getNumbers, (t, numbers) => t
+	 *   .getEvery(getNumbers, 1000, (t, numbers) => t
 	 *     .forEach(numbers, (t, name) => t
 	 *       .t('p', {}, (t) => t
 	 *         .raw(`I love ${name}`)
@@ -207,15 +260,15 @@ export default class HTMLBuilder {
 	 * )
 	 * ```
 	 * @since 6.6.0
-	*/ getEvery<T extends ((ctr: HTTPRequestContext) => RealAny)>(
+	*/ getEvery<T extends (ctr: HTTPRequestContext) => RealAny>(
 		/** The Function to get Data */ getter: T,
 		/** The Interval for Iterations (ms) */ interval: number,
 		/** The Callback for each Iteration */ callback: (tag: HTMLBuilder, item: Awaited<ReturnType<T>>) => HTMLBuilder
 	) {
 		const id = `${this.route.path.replace('/', '-')}___rId___${this.everyId.n++}___${hashStr({ text: callback.toString(), algorithm: 'sha1' })}`
 
-		this.html += `<div id="${id}"></div>`
-		this.html += `<script type="text/javascript">setInterval(function(){var e=new XMLHttpRequest;e.onreadystatechange=function(){e.readyState===XMLHttpRequest.DONE&&200===e.status&&(document.getElementById("${id}").innerHTML=e.responseText)},e.open("GET","/___rjweb-html-auto/${id}",!0),e.send()},${interval})</script>`
+		this.html += `<div id="${id}" style="display: contents;"></div>`
+		this.html += `<script type="text/javascript">setInterval(function(){var e=new XMLHttpRequest;e.onreadystatechange=function(){e.readyState===XMLHttpRequest.DONE&&e.status>199&&e.status<300&&(document.getElementById("${id}").innerHTML=e.responseText)},e.open("GET","/___rjweb-html-auto/${id}",!0),e.send()},${interval})</script>`
 
 		this.getEveries.push({
 			getter,

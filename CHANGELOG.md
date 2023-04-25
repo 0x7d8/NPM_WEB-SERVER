@@ -1,3 +1,9 @@
+## 6.6.1
+
+- Fix some JSDocs
+- Automatically turn native arrow functions into normal functions for HTML
+- Add .if() method to html builder for easy conditional html
+
 ## 6.6.0
 
 - Added built-in HTML Builder
