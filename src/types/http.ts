@@ -195,13 +195,15 @@ export interface HTTPRequestContext<Context extends Record<any, any> = {}, Body 
 		*/ prettify?: boolean
 	}): this
 	/**
-	 * Print a Message to the Client (automatically Formatted)
+	 * Print a Message made using the HTML Builder & Formatter
 	 * @example
 	 * ```
+	 * const userInput = '<script>alert("xss!!!!")</script>'
+	 * 
 	 * ctr.printHTML((html) => html
 	 *   .t('head', {}, (t) => t
 	 *     .t('title', {}, (t) => t
-	 *       .raw('Hello world!')
+	 *       .escaped(userInput) // no xss attack because of .escaped()
 	 *     )
 	 *   )
 	 *   .t('body', {}, (t) => t
@@ -217,7 +219,7 @@ export interface HTTPRequestContext<Context extends Record<any, any> = {}, Body 
 	 * @since 6.6.0
 	*/ printHTML(callback: (html: HTMLBuilder) => HTMLBuilder, options?: {
 		/**
-		 * The HTML Language to show at the html tag
+		 * The HTML Language to show at the top html tag
 		 * @default 'en'
 		 * @since 6.6.0
 		*/ htmlLanguage?: string

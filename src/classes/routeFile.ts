@@ -30,9 +30,7 @@ export default class RouteFileBuilder {
 	 *     })
 	 *   )
 	 * )
-	 * ```
-   * 
-   * ```
+	 * 
    * // index.js
    * const controller = new Server({ })
    * 

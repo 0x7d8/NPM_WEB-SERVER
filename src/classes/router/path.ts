@@ -1,4 +1,4 @@
-import { ExternalRouter, LoadPath, Routed, HTTPMethods, RoutedValidation } from "../../types/internal"
+import { ExternalRouter, LoadPath, HTTPMethods, RoutedValidation } from "../../types/internal"
 import Static from "../../types/static"
 import HTTP from "../../types/http"
 import WebSocket from "../../types/webSocket"

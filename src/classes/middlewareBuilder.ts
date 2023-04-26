@@ -27,7 +27,7 @@ export interface MiddlewareData<Config extends object = {}, Context extends obje
 export default class MiddlewareBuilder<Config extends object = {}, Context extends object = {}>{
 	private data: MiddlewareData<Config, Context> = {}
 	private context: Context = {} as any
-	private version = currentVersion
+	protected version = currentVersion
 
 	/**
 	 * Add a Callback for when the Middleware gets loaded

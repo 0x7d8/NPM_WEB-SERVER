@@ -50,7 +50,7 @@ pnpm add rjweb-server
 - 2.X | Deprecated
 - 3.X | Deprecated
 - 4.X | Deprecated
-- 5.X | Basic Patches
+- 5.X | Deprecated
 - 6.X | Patches & Features
 
 ## Typescript
@@ -574,7 +574,15 @@ Serve a Static Folder using CLI
 rjweb serve [path to folder] [arguments]
 
 # Example
-rjweb serve ./static --port=4444 --hideHTML
+rjweb serve ./static --port 4444 --hideHTML
+```
+
+Generate a Template using CLI
+```sh
+rjweb generate [path to destination folder]
+
+# Example
+rjweb generate ./chat-app
 ```
 
 View Help

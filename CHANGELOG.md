@@ -1,3 +1,8 @@
+## 6.6.3
+
+- Improve JSDocs
+- Added more CLI examples to README
+
 ## 6.6.2
 
 - Add .escaped() method to html builder for escaping user input to prevent xss

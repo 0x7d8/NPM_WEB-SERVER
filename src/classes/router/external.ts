@@ -24,9 +24,7 @@ export default class RouteExternal {
 	 *     })
 	 *   )
 	 * )
-	 * ```
-   * 
-   * ```
+	 * 
    * // index.js
    * const controller = new Server({ })
    * 
