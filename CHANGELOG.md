@@ -1,3 +1,9 @@
+## 6.6.2
+
+- Add .escaped() method to html builder for escaping user input to prevent xss
+- Automatically escape direct content to tags
+- Fix HTML Function parsing
+
 ## 6.6.1
 
 - Fix some JSDocs

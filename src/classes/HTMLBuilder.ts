@@ -33,14 +33,17 @@ type GetEvery = {
 interface HTMLAttributeRecord extends Record<string, HTMLAttribute> { }
 
 const f = (attribute: string): string => {
-	return attribute
-		.replace(/"/g, '&quot;')
-		.replace(/\n/g, '&#xa;')
+	const replace: Record<string, string> = {
+		'"': '&quot;',
+		'\n': '&#xa'
+	}
+
+	return attribute.replace(/["]|\n/g, (m) => replace[m])
 }
 
 const fF = (fn: Function): string => {
 	let fnString = fn.toString()
-	let addStart = '', addEnd = ''
+	let addStart = '', addEnd = '}'
 
 	fnString = fnString
 		.replace('async', () => {
@@ -49,10 +52,22 @@ const fF = (fn: Function): string => {
 		})
 		.replace('=>', () => {
 			addStart += ' function'
-			return ''
+			return '{'
 		})
 	
 	return addStart + fnString + addEnd
+}
+
+const fH = (text: string): string => {
+  const replace: Record<string, string> = {
+    '&': '&amp;',
+    '<': '&lt;',
+    '>': '&gt;',
+    '"': '&quot;',
+    '\'': '&#039;'
+  }
+  
+  return text.replace(/[&<>"']/g, (m) => replace[m])
 }
 
 export const getFunctionArguments = (fn: Function) => {  
@@ -141,7 +156,7 @@ export default class HTMLBuilder {
 	*/ t(
 		/** The HTML Tag name */ tag: HTMLTag,
 		/** The HTML Attributes to add */ attributes: Record<string, HTMLAttribute>,
-		/** The Callback */ callback: ((tag: HTMLBuilder) => HTMLBuilder) | HTMLContent
+		/** The Callback or Content to escape */ callback: ((tag: HTMLBuilder) => HTMLBuilder) | HTMLContent
 	) {
 		this.html += `<${tag} ${parseAttributes(attributes, this.fnArguments)}>`
 
@@ -151,7 +166,7 @@ export default class HTMLBuilder {
 			callback(builder)
 			this.html += builder.html
 		} else {
-			this.html += callback
+			this.html += fH(String(callback))
 		}
 
 		this.html += `</${tag}>`
@@ -175,6 +190,27 @@ export default class HTMLBuilder {
 		/** The Raw Content to add */ content: HTMLContent
 	) {
 		this.html += content
+
+		return this
+	}
+
+	/**
+	 * Add escaped Content
+	 * @example
+	 * ```
+	 * ctr.printHTML((html) => html
+	 *   .t('div', {}, (t) => t
+	 *     .t('p', {}, (t) => t
+	 *       .escaped('hello world!')
+	 *     )
+	 *   )
+	 * )
+	 * ```
+	 * @since 6.6.2
+	*/ escaped(
+		/** The Raw Content to add */ content: HTMLContent
+	) {
+		this.html += fH(String(content))
 
 		return this
 	}
@@ -209,7 +245,6 @@ export default class HTMLBuilder {
 
 	/**
 	 * Register Variables that will be added to every context
-	 * @warning This is required for native functions because they are being replicated 1:1
 	 * @example
 	 * ```
 	 * const version = '1.0.0'
@@ -251,9 +286,12 @@ export default class HTMLBuilder {
 	 * 
 	 * ctr.printHTML((html) => html
 	 *   .getEvery(getNumbers, 1000, (t, numbers) => t
-	 *     .forEach(numbers, (t, name) => t
+	 *     .forEach(numbers, (t, number) => t
+	 *       .if(number > 0.5, (t) => t
+	 *         .t('h1', {}, 'Number is bigger than 0.5!')
+	 *       )
 	 *       .t('p', {}, (t) => t
-	 *         .raw(`I love ${name}`)
+	 *         .raw(`Crazy Number: ${number}`)
 	 *       )
 	 *     )
 	 *   )
