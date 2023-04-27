@@ -2,6 +2,7 @@ import Route, { HTTPRequestContext } from "../types/http"
 import HTMLTag from "../types/htmlTag"
 import { RealAny } from "../types/internal"
 import { hashStr } from "rjutils-collection"
+import HTMLComponent from "./HTMLComponent"
 
 export type HTMLContent =
 	| string
@@ -156,7 +157,7 @@ export default class HTMLBuilder {
 	*/ t(
 		/** The HTML Tag name */ tag: HTMLTag,
 		/** The HTML Attributes to add */ attributes: Record<string, HTMLAttribute>,
-		/** The Callback or Content to escape */ callback: ((tag: HTMLBuilder) => HTMLBuilder) | HTMLContent
+		/** The Callback or Content to escape */ callback: ((tag: HTMLBuilder) => HTMLBuilder) | HTMLContent | HTMLComponent
 	) {
 		this.html += `<${tag} ${parseAttributes(attributes, this.fnArguments)}>`
 
@@ -170,6 +171,34 @@ export default class HTMLBuilder {
 		}
 
 		this.html += `</${tag}>`
+		return this
+	}
+
+	/**
+	 * Add a new HTML Component
+	 * @example
+	 * ```
+	 * const component = new HTMLComponent((html, options) => html
+	 *   .t('p', {}, options?.hello)
+	 * )
+	 * 
+	 * ctr.printHTML((html) => html
+	 *   .t('div', {}, (t) => t
+	 *     .t('p', {}, (t) => t
+	 *       .raw('hello world!')
+	 *     )
+	 *     .c(component, { hello: 'Hello world!' })
+	 *   )
+	 * )
+	 * ```
+	 * @since 6.7.0
+	*/ c<Component extends HTMLComponent>(
+		/** The Component Object */ component: Component,
+		/** The Options to add */ options?: Component extends HTMLComponent<infer Options> ? Options : never
+	) {
+		const builder = (component as any).toBuilder(this.route, options) as HTMLBuilder
+		this.html += builder.html
+
 		return this
 	}
 
@@ -262,7 +291,7 @@ export default class HTMLBuilder {
 	 * @since 6.6.1
 	*/ if(
 		/** The Boolean to check */ state: boolean,
-		/** The Callback for when the Boolean is truthy */ callback: ((tag: HTMLBuilder) => HTMLBuilder) | HTMLContent
+		/** The Callback for when the Boolean is truthy */ callback: ((tag: HTMLBuilder) => HTMLBuilder) | HTMLContent | HTMLComponent
 	) {
 		if (state) {
 			if (typeof callback === 'function') {
@@ -271,7 +300,7 @@ export default class HTMLBuilder {
 				callback(builder)
 				this.html += builder.html
 			} else {
-				this.html += callback
+				this.html += String(callback)
 			}
 		}
 

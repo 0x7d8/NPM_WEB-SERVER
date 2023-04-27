@@ -14,8 +14,9 @@ export default class RouteContentTypes {
 	 * ```
 	 * const controller = new Server({ })
 	 * 
-	 * controller.contentTypes()
+	 * controller.contentTypes((cT) => cT
 	 *   .add('.png', 'image/png')
+	 * )
 	 * ```
 	 * @since 5.3.0
 	*/ add(

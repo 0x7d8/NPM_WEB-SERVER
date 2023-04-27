@@ -1,3 +1,9 @@
+## 6.7.0
+
+- Fix some JSDocs
+- Add HTMLComponents
+- Upgrade Dependencies
+
 ## 6.6.3
 
 - Improve JSDocs

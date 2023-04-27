@@ -1,6 +1,7 @@
 import { HTTPMethods } from "./internal"
 export { Options } from "../functions/parseOptions"
 export { default as HTMLBuilder, HTMLAttribute, HTMLContent } from "../classes/HTMLBuilder"
+export { default as HTMLComponent } from "../classes/HTMLComponent"
 
 type UnionToIntersection<U>
 	= (U extends any ? (k: U) => void : never) extends ((k: infer I) => void) ? I : never

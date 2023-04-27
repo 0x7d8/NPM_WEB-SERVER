@@ -16,8 +16,9 @@ export default class RouteContentTypes {
 	 * ```
 	 * const controller = new Server({ })
 	 * 
-	 * controller.defaultHeaders()
+	 * controller.defaultHeaders((dH) => dH
 	 *   .add('Copyright', 2023)
+	 * )
 	 * ```
 	 * @since 5.3.0
 	*/ add(
