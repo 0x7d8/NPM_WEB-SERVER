@@ -82,7 +82,8 @@ export const getFunctionArguments = (fn: Function) => {
 }
 
 export const parseAttributes = (attributes: Record<string, HTMLAttribute>, fnArguments: FnArgument[]): string => {
-	let result = ''
+	const result: string[] = []
+
 	Object.entries(attributes).forEach(([ key, attribute ]) => {
 		let value = ''
 
@@ -120,10 +121,10 @@ export const parseAttributes = (attributes: Record<string, HTMLAttribute>, fnArg
 			}
 		}
 
-		result += `${key.replace(/"/g, '')}="${value}"`
+		result.push(`${key.replace(/"/g, '')}="${value}"`)
 	})
 
-	return result
+	return result.join(' ')
 }
 
 export default class HTMLBuilder {

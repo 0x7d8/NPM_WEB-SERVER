@@ -1,3 +1,8 @@
+## 6.7.1
+
+- Use rjbuild-typescript for building
+- Fix broken Attribute parsing
+
 ## 6.7.0
 
 - Fix some JSDocs
