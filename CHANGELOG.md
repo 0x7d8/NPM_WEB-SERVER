@@ -1,3 +1,11 @@
+## 7.0.2
+
+- Fix Readme
+
+## 7.0.1
+
+- Fix Typescript Lib Checks
+
 ## 7.0.0
 
 - Added some Basic Unit Tests

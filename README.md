@@ -18,7 +18,7 @@ It allows insane performance though
 
 <br>
 
-### 🍔 [v6 to v7 Migration Guide](https://docs.rjweb.rjansen.de/v6/migrating-from-v5)
+### 🍔 [v6 to v7 Migration Guide](https://docs.rjweb.rjansen.de/v6/migrating-from-v6)
 ### 🍔 [v5 to v6 Migration Guide](https://docs.rjweb.rjansen.de/v6/migrating-from-v5)
 
 <br>
@@ -52,7 +52,7 @@ pnpm add rjweb-server
 - 3.X | Deprecated
 - 4.X | Deprecated
 - 5.X | Deprecated
-- 6.X | Patches
+- 6.X | Basic Patches
 - 7.X | Patches and Features
 
 ## Typescript
