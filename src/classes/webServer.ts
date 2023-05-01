@@ -203,14 +203,16 @@ export default class Webserver<GlobContext extends Record<any, any> = {}, Middle
 				}
 			}; if (stopExecution) return
 
-			/** @ts-ignore */
-			this.globalContext.classContexts.http = class extends this.middlewares.map((m) => m.data.classModifications.http).reduce((base, extender) => class extends extender(base) {}) { } as any
-			/** @ts-ignore */
-			this.globalContext.classContexts.wsConnect = class extends this.middlewares.map((m) => m.data.classModifications.wsConnect).reduce((base, extender) => class extends extender(base) {}) { } as any
-			/** @ts-ignore */
-			this.globalContext.classContexts.wsMessage = class extends this.middlewares.map((m) => m.data.classModifications.wsMessage).reduce((base, extender) => class extends extender(base) {}) { } as any
-			/** @ts-ignore */
-			this.globalContext.classContexts.wsClose = class extends this.middlewares.map((m) => m.data.classModifications.wsClose).reduce((base, extender) => class extends extender(base) {}) { } as any
+			if (this.middlewares.length > 0) {
+				/** @ts-ignore */
+				this.globalContext.classContexts.http = class extends this.middlewares.map((m) => m.data.classModifications.http).reduce((base, extender) => class extends extender(base) {}) { } as any
+				/** @ts-ignore */
+				this.globalContext.classContexts.wsConnect = class extends this.middlewares.map((m) => m.data.classModifications.wsConnect).reduce((base, extender) => class extends extender(base) {}) { } as any
+				/** @ts-ignore */
+				this.globalContext.classContexts.wsMessage = class extends this.middlewares.map((m) => m.data.classModifications.wsMessage).reduce((base, extender) => class extends extender(base) {}) { } as any
+				/** @ts-ignore */
+				this.globalContext.classContexts.wsClose = class extends this.middlewares.map((m) => m.data.classModifications.wsClose).reduce((base, extender) => class extends extender(base) {}) { } as any
+			}
 
 			if (this.globalContext.options.ssl.enabled) {
 				try {

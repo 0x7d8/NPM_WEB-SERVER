@@ -1,6 +1,6 @@
 import { MiddlewareBuilder } from "rjweb-server"
 
-const { init } = new MiddlewareBuilder()
+export const middleware = new MiddlewareBuilder()
   .init((lCtx, config) => {
     console.log('middleware initted!')
   })
@@ -11,5 +11,3 @@ const { init } = new MiddlewareBuilder()
     }
   })
   .build()
-
-export { init }

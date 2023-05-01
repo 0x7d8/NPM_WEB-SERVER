@@ -9,18 +9,6 @@
 npm i my-middleware
 ```
 
-## Add Intellisense
-```ts
-// webserver.d.ts
-
-import { MiddlewareToProps } from "rjweb-server"
-import { Props as AdditionalProps1 } from "my-middleware"
-
-declare module "rjweb-server" {
-  export interface HTTPRequestContext extends MiddlewareToProps<[ AdditionalProps1 ]> {}
-}
-```
-
 ## Usage
 
 (Explain what your Middleware does and how to use it)

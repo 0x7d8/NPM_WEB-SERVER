@@ -1,8 +1,7 @@
-import { RouteFile } from "rjweb-server"
-import { WebServerContext } from "../types/context"
+import { server } from "../index"
 
-export = new RouteFile((file) => file
-  .http<WebServerContext>('POST', '/echo', (http) => http
+export = new server.routeFile((file) => file
+  .http('POST', '/echo', (http) => http
     .onRequest((ctr) => {
       ctr.print({ content: ctr.rawBody, requests: ctr["@"].requests })
     })

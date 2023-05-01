@@ -1,3 +1,8 @@
+## 7.0.3
+
+- Update Examples
+- Fix Reduce on empty arrays
+
 ## 7.0.2
 
 - Fix Readme

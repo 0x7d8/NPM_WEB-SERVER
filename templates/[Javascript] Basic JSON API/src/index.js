@@ -1,6 +1,6 @@
 import { Server } from "rjweb-server"
 
-const server = new Server({
+export const server = new Server({
   port: 8000
 })
 

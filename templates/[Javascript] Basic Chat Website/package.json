@@ -5,6 +5,6 @@
     "start": "cd src && node index && cd .."
   },
   "dependencies": {
-    "rjweb-server": "^6.3.1"
+    "rjweb-server": "^7.0.0"
   }
 }

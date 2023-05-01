@@ -1,12 +1,12 @@
-import { Server, HTTPRequestContext } from "rjweb-server"
+import { Server } from "rjweb-server"
 import { WebServerContext } from "./types/context"
 
-const server = new Server({
+export const server = new Server<WebServerContext>({
   port: 8000
 })
 
 server.path('/', (path) => path
-  .http<WebServerContext>('GET', '/', (http) => http
+  .http('GET', '/', (http) => http
     .onRequest((ctr) => {
       ctr.print('<a href="/api/hello">hello api</a>')
     })
@@ -17,9 +17,7 @@ server.path('/', (path) => path
 )
 
 let requests = 0
-server.on('httpRequest', (ctrR) => {
-  const ctr = ctrR as HTTPRequestContext<WebServerContext>
-
+server.on('httpRequest', (ctr) => {
   console.log(`Request made to ${ctr.url.href}`)
 
   requests++
