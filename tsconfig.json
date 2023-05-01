@@ -10,9 +10,10 @@
     "declaration": true,
     "esModuleInterop": true,
     "target": "ES2018",
-    "outDir": "lib/typings",
+    "outDir": "lib/typings"
   },
   "include": [
-    "src/**/*"
+    "src/**/*",
+    "tests/**/*"
   ]
 }

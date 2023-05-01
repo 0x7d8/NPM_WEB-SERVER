@@ -1,8 +1,8 @@
 import ValueCollection from "../classes/valueCollection"
 import ServerController from "../classes/webServer"
-import { Task } from "./internal"
+import Base from "../classes/web/Base"
+import { Task, MiddlewareInitted } from "./internal"
 import HTTP from "./http"
-import { MiddlewareProduction } from "./external"
 import URLObject from "../classes/URLObject"
 import { Options } from "../functions/parseOptions"
 import Static from "./static"
@@ -10,6 +10,7 @@ import { DeepRequired } from "./internal"
 import TypedEventEmitter from "./typedEventEmitter"
 import WebSocket from "./webSocket"
 import { EventHandlerMap } from "./event"
+import { HttpRequest, WsClose, WsConnect, WsMessage } from "./external"
 
 export type Hours =
 	| '0' | '1' | '2' | '3' | '4'
@@ -23,7 +24,7 @@ export type InternalEvents = {
 	requestAborted(): void
 }
 
-export interface InternalContext {
+export type LocalContext = {
 	/** The Current Queue for Async-Sync Functions */ queue: Task[]
 	/** The Previous Hours as an Array */ previousHours: Hours[]
 	/** The Parsed Request URL */ url: URLObject
@@ -31,8 +32,11 @@ export interface InternalContext {
 	/** Whether to Execute Route Code */ executeCode: boolean
 	/** The Clients Remote IP Address */ remoteAddress: string
 	/** The Error that occured while executing HTTP Logic */ error: unknown
-	/** The List of Headers that the Client sent */ headers: Record<string, string>
-	/** The List of Cookies that the Client sent */ cookies: Record<string, string>
+	/** The List of Headers that the Client sent */ headers: Base['headers']
+	/** The List of Cookies that the Client sent */ cookies: Base['cookies']
+	/** The List of Parameters used by the URL */ params: Base['params']
+	/** The List of Query Parameters used by the URL */ queries: Base['queries']
+	/** The List of Fragments used by the URL */ fragments: Base['fragments']
 	/** An Event Emitter Responsible for all Events */ events: TypedEventEmitter<InternalEvents>
 	/** A Boolean that keeps track whether the Request is Aborted */ isAborted: boolean
 	/** The Function to handle an Error in an Async Scenario */ handleError(err: unknown): void
@@ -49,7 +53,7 @@ export interface InternalContext {
 		/** The Route Object that was found */ route: HTTP | Static | WebSocket | null
 		/** The File to Read when Route is Static */ file: string | null
 		/** Whether the Route exists */ exists: boolean
-		/** The Event to execute instead of the Route */ event: 'none' | keyof EventHandlerMap
+		/** The Event to execute instead of the Route */ event: 'none' | keyof EventHandlerMap<any, any>
 	}
 
 	/** The Response Object */ response: {
@@ -61,19 +65,27 @@ export interface InternalContext {
 	}
 }
 
-export interface GlobalContext {
-	/** The Server Controller Class */ controller: ServerController
+export type GlobalContext = {
+	/** The Server Controller Class */ controller: ServerController<any>
 	/** The File -> Content Type Mapping */ contentTypes: Record<string, string>
 	/** The Default HTTP Headers List */ defaultHeaders: Record<string, Buffer>
 	/** The HTTP Server Options */ options: DeepRequired<Options>
 	/** The Request Count */ requests: Record<Hours | 'total', number>
-	/** The Middlewares to run */ middlewares: ReturnType<MiddlewareProduction['init']>[]
+	/** The Middlewares to run */ middlewares: MiddlewareInitted[]
+
 	/** The WebSocket Stats */ webSockets: {
 		/** The Amount of Sockets Opened */ opened: Record<Hours | 'total', number>
 		/** The Amount of Socket Messages recieved */ messages: {
 			/** The Incoming Message Count */ incoming: Record<Hours | 'total', number>
 			/** The Outgoing Message Count */ outgoing: Record<Hours | 'total', number>
 		}
+	}
+
+	/** The Modified Classes to use for Creation of Contexts */ classContexts: {
+		http: typeof HttpRequest
+		wsConnect: typeof WsConnect
+		wsMessage: typeof WsMessage
+		wsClose: typeof WsClose
 	}
 
 	/** The Data Stats */ data: {
@@ -92,6 +104,6 @@ export interface GlobalContext {
   /** The Cache Stores */ cache: {
     /** The File Caches */ files: ValueCollection<string, Buffer>
 		/** The Middleware Cache (tip: save keys as "middleware:key" or similar to avoid duplicates from other middlewares) */ middlewares: ValueCollection<string, any>
-    /** The Route Caches */ routes: ValueCollection<string, { route: HTTP | Static | WebSocket, params?: Record<string, string>, file?: string }>
+    /** The Route Caches */ routes: ValueCollection<string, { route: HTTP | Static | WebSocket, params?: ValueCollection<string, string>, file?: string }>
   }
 }

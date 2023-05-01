@@ -3,23 +3,25 @@ import { GlobalContext } from "../types/context"
 import ValueCollection from "./valueCollection"
 import parseOptions, { Options } from "../functions/parseOptions"
 import RouteList from "./router"
-import handleRequest, { getPreviousHours } from "../functions/web/handleRequest"
+import handleHTTPRequest, { getPreviousHours } from "../functions/web/handleHTTPRequest"
 import handleWSOpen from "../functions/web/handleWSOpen"
 import handleWSMessage from "../functions/web/handleWSMessage"
 import handleWSClose from "../functions/web/handleWSClose"
 import WebSocket from "src/types/webSocket"
 import { currentVersion } from "./middlewareBuilder"
 import HTTP from "../types/http"
-import RouteFile from "./routeFile"
+import { MiddlewareInitted } from "../types/internal"
+import RouteFile from "./router/file"
 import { getFilesRecursively } from "rjutils-collection"
+import { HttpRequest, WsClose, WsConnect, WsMessage } from "../types/external"
 import { promises as fs } from "fs"
 
 import uWebsocket from "uWebSockets.js"
 import path from "path"
 import os from "os"
 
-export default class Webserver extends RouteList {
-	private globalContext: GlobalContext
+export default class Webserver<GlobContext extends Record<any, any> = {}, Middlewares extends MiddlewareInitted[] = []> extends RouteList<GlobContext, Middlewares> {
+	protected globalContext: GlobalContext
 	private server: uWebsocket.TemplatedApp = uWebsocket.App()
 	private socket: uWebsocket.us_listen_socket = 0
 
@@ -33,13 +35,16 @@ export default class Webserver extends RouteList {
 	 * ```
 	 * @since 3.0.0
 	*/ constructor(
-		/** The Server Options */ options: Options = {}
+		/** The Server Options */ options: Options = {},
+		/** The Middlewares */ middlewares: Middlewares = [] as any
 	) {
 		super()
 
+		this.middlewares = middlewares
+
 		const fullOptions = parseOptions(options)
 		this.globalContext = {
-			controller: this,
+			controller: this as any,
 			contentTypes: {},
 			defaultHeaders: {},
 			options: fullOptions,
@@ -79,6 +84,11 @@ export default class Webserver extends RouteList {
 						20: 0, 21: 0, 22: 0, 23: 0
 					}
 				}
+			}, classContexts: {
+				http: HttpRequest,
+				wsConnect: WsConnect,
+				wsMessage: WsMessage,
+				wsClose: WsClose
 			}, middlewares: this.middlewares,
 			data: {
 				incoming: {
@@ -132,13 +142,26 @@ export default class Webserver extends RouteList {
 	 * })
 	 * ```
 	 * @since 3.0.0
-	*/ setOptions(
+	*/ public setOptions(
 		/** The Options */ options: Options
-	) {
+	): this {
 		this.globalContext.options = parseOptions(options)
 
 		return this
 	}
+
+	/**
+	 * Route File Builder
+	 * @example
+	 * ```
+	 * const { server } = require('../index.js')
+	 * 
+	 * module.exports = new server.routeFile((file) => file
+	 *   .http(...)
+	 * )
+	 * ```
+	 * @since 7.0.0
+	*/ public routeFile: new (...args: ConstructorParameters<typeof RouteFile<GlobContext, Middlewares>>) => RouteFile<GlobContext, Middlewares> = RouteFile as any
 
 	/**
 	 * Start the Server
@@ -155,7 +178,7 @@ export default class Webserver extends RouteList {
 	 *   })
 	 * ```
 	 * @since 3.0.0
-	*/ start() {
+	*/ public start() {
 		return new Promise(async(resolve: (value: ServerEvents.StartSuccess) => void, reject: (reason: ServerEvents.StartError) => void) => {
 			let stopExecution = false
 			const externalPaths = await this.loadExternalPaths()
@@ -170,7 +193,7 @@ export default class Webserver extends RouteList {
 				}; if (!('initEvent' in middleware.data)) continue
 
 				try {
-					if (middleware.version > currentVersion) throw new Error('Middleware version cannot be higher than current supported version')
+					if (middleware.version > currentVersion) throw new Error(`Middleware version cannot be higher than currently supported version (${middleware.version} > ${currentVersion})`)
 					await Promise.resolve(middleware.data.initEvent!(middleware.localContext, middleware.config, this.globalContext))
 				} catch (error: any) {
 					reject(error)
@@ -179,6 +202,15 @@ export default class Webserver extends RouteList {
 					break
 				}
 			}; if (stopExecution) return
+
+			/** @ts-ignore */
+			this.globalContext.classContexts.http = class extends this.middlewares.map((m) => m.data.classModifications.http).reduce((base, extender) => class extends extender(base) {}) { } as any
+			/** @ts-ignore */
+			this.globalContext.classContexts.wsConnect = class extends this.middlewares.map((m) => m.data.classModifications.wsConnect).reduce((base, extender) => class extends extender(base) {}) { } as any
+			/** @ts-ignore */
+			this.globalContext.classContexts.wsMessage = class extends this.middlewares.map((m) => m.data.classModifications.wsMessage).reduce((base, extender) => class extends extender(base) {}) { } as any
+			/** @ts-ignore */
+			this.globalContext.classContexts.wsClose = class extends this.middlewares.map((m) => m.data.classModifications.wsClose).reduce((base, extender) => class extends extender(base) {}) { } as any
 
 			if (this.globalContext.options.ssl.enabled) {
 				try {
@@ -204,15 +236,15 @@ export default class Webserver extends RouteList {
 			} else this.server = uWebsocket.App()
 
 			this.server
-				.any('/*', (res, req) => handleRequest(req, res, null, 'http', this.globalContext))
+				.any('/*', (res, req) => { handleHTTPRequest(req, res, null, 'http', this.globalContext) })
 				.ws('/*', {
 					maxBackpressure: 512 * 1024 * 1024,
 					sendPingsAutomatically: true,
 					maxPayloadLength: this.globalContext.options.body.maxSize * 1e6,
-					upgrade: (res, req, connection) => handleRequest(req, res, connection, 'upgrade', this.globalContext),
-					open: (ws: any) => handleWSOpen(ws, this.globalContext),
-					message: (ws: any, message) => handleWSMessage(ws, message, this.globalContext),
-					close: (ws: any, code, message) => handleWSClose(ws, message, this.globalContext)
+					upgrade: (res, req, connection) => { handleHTTPRequest(req, res, connection, 'upgrade', this.globalContext) },
+					open: (ws: any) => { handleWSOpen(ws, this.globalContext) },
+					message: (ws: any, message) => { handleWSMessage(ws, message, this.globalContext) },
+					close: (ws: any, code, message) => { handleWSClose(ws, message, this.globalContext) }
 				})
 
 			const routes = await this.getData()
@@ -226,7 +258,7 @@ export default class Webserver extends RouteList {
 			this.globalContext.routes.websocket.push(...externalPaths.webSockets)
 
 			this.server.listen(this.globalContext.options.bind, this.globalContext.options.port, (listen) => {
-				if (!listen) return reject(new Error(`Port ${this.globalContext.options.port} is already in use`))
+				if (!listen) return reject(new Error(`Failed to start server on port ${this.globalContext.options.port}.`))
 
 				this.socket = listen
 				return resolve({ success: true, port: uWebsocket.us_socket_local_port(listen), message: 'WEBSERVER STARTED' })
@@ -249,7 +281,7 @@ export default class Webserver extends RouteList {
 	 *   })
 	 * ```
 	 * @since 3.0.0
-	*/ async reload() {
+	*/ public async reload() {
 		this.globalContext.cache.files.clear()
 		this.globalContext.cache.routes.clear()
 
@@ -339,7 +371,7 @@ export default class Webserver extends RouteList {
 	 *   })
 	 * ```
 	 * @since 3.0.0
-	*/ async stop() {
+	*/ public async stop() {
 		this.globalContext.cache.files.clear()
 		this.globalContext.cache.routes.clear()
 		uWebsocket.us_listen_socket_close(this.socket)

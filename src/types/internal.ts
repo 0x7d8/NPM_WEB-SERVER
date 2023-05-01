@@ -1,5 +1,6 @@
 import { Content } from "../functions/parseContent"
-import { HTTPRequestContext, WSRequestContext } from "./external"
+import { MiddlewareLoader } from "../classes/middlewareBuilder"
+import HTTPRequest from "../classes/web/HttpRequest"
 import Methods from "../misc/methodsEnum"
 
 import RouteIndex from "../classes/router"
@@ -12,6 +13,14 @@ import RouteHTTP from "../classes/router/http"
 
 export type EndFn = (...args: any[]) => void
 export type RealAny = PromiseLike<any> | Promise<any> | any
+
+export type UnionToIntersection<U> =
+  (U extends any ? (k: U) => void : never) extends ((k: infer I) => void) ? I : never
+
+export type MergeObjects<T extends object[]> = {
+  [K in keyof UnionToIntersection<T[number]>]:
+    UnionToIntersection<T[number]>[K]
+}
 
 export type DeepRequired<Type> = Type extends Content
 		? Type extends Map<any, any>
@@ -61,8 +70,9 @@ export type ExternalRouter = {
 	addPrefix?: string
 }
 
-export type AnyRouter = RouteWS | RouteHTTP | RouteExternal | RoutePath | RouteIndex | RouteContentTypes | RouteDefaultHeaders
+export type AnyRouter = RouteWS<any, any, any> | RouteHTTP<any, any, any> | RouteExternal<any> | RoutePath<any> | RouteIndex<any> | RouteContentTypes | RouteDefaultHeaders
 
-export type Routed = (ctr: HTTPRequestContext) => RealAny
-export type RoutedValidation<Context extends Record<any, any> = {}, Body = unknown> = (ctr: HTTPRequestContext<Context, Body>, end: EndFn) => RealAny
-export type RoutedWS = (ctr: WSRequestContext) => RealAny
+export type MiddlewareInitted = ReturnType<MiddlewareLoader<any, any, any, any, any, any>['config']>
+
+export type Routed = (ctr: HTTPRequest) => RealAny
+export type RoutedValidation<Context extends Record<any, any> = {}, Body = unknown, Middlewares extends MiddlewareInitted[] = []> = (ctr: HTTPRequest<Context, Body> & MergeObjects<Middlewares>, end: EndFn) => RealAny

@@ -1,4 +1,4 @@
-import Route, { HTTPRequestContext } from "../types/http"
+import HTTPRequest from "./web/HttpRequest"
 import HTMLTag from "../types/htmlTag"
 import { RealAny } from "../types/internal"
 import { hashStr } from "rjutils-collection"
@@ -26,7 +26,7 @@ type FnArgument = {
 
 type GetEvery = {
 	id: string
-	getter(ctr: HTTPRequestContext): RealAny
+	getter(ctr: HTTPRequest): RealAny
 	callback(tag: HTMLBuilder, data: any): HTMLBuilder
 	fnArguments: FnArgument[]
 }
@@ -131,10 +131,10 @@ export default class HTMLBuilder {
 	protected html = ''
 	protected fnArguments: FnArgument[]
 	protected getEveries: GetEvery[]
-	private route: Route
+	private route: string
 	private everyId: { n: number }
 
-	constructor(route: Route, fnArguments: FnArgument[] = [], getEvery: GetEvery[] = [], everyId: { n: number } = { n: 0 }) {
+	constructor(route: string, fnArguments: FnArgument[] = [], getEvery: GetEvery[] = [], everyId: { n: number } = { n: 0 }) {
 		this.fnArguments = fnArguments
 		this.getEveries = getEvery
 		this.route = route
@@ -155,11 +155,11 @@ export default class HTMLBuilder {
 	 * )
 	 * ```
 	 * @since 6.6.0
-	*/ t(
+	*/ public t(
 		/** The HTML Tag name */ tag: HTMLTag,
 		/** The HTML Attributes to add */ attributes: Record<string, HTMLAttribute>,
 		/** The Callback or Content to escape */ callback: ((tag: HTMLBuilder) => HTMLBuilder) | HTMLContent | HTMLComponent
-	) {
+	): this {
 		this.html += `<${tag} ${parseAttributes(attributes, this.fnArguments)}>`
 
 		if (typeof callback === 'function') {
@@ -193,10 +193,10 @@ export default class HTMLBuilder {
 	 * )
 	 * ```
 	 * @since 6.7.0
-	*/ c<Component extends HTMLComponent>(
+	*/ public c<Component extends HTMLComponent>(
 		/** The Component Object */ component: Component,
 		/** The Options to add */ options?: Component extends HTMLComponent<infer Options> ? Options : never
-	) {
+	): this {
 		const builder = (component as any).toBuilder(this.route, options) as HTMLBuilder
 		this.html += builder.html
 
@@ -216,9 +216,9 @@ export default class HTMLBuilder {
 	 * )
 	 * ```
 	 * @since 6.6.0
-	*/ raw(
+	*/ public raw(
 		/** The Raw Content to add */ content: HTMLContent
-	) {
+	): this {
 		this.html += content
 
 		return this
@@ -237,9 +237,9 @@ export default class HTMLBuilder {
 	 * )
 	 * ```
 	 * @since 6.6.2
-	*/ escaped(
+	*/ public escaped(
 		/** The Raw Content to add */ content: HTMLContent
-	) {
+	): this {
 		this.html += fH(String(content))
 
 		return this
@@ -260,9 +260,9 @@ export default class HTMLBuilder {
 	 * )
 	 * ```
 	 * @since 6.6.0
-	*/ var(
+	*/ public var(
 		/** The Variables as Object */ variables: Record<string, any>
-	) {
+	): this {
 		Object.keys(variables).forEach((key) => {
 			this.fnArguments.push({
 				name: key,
@@ -290,10 +290,10 @@ export default class HTMLBuilder {
 	 * )
 	 * ```
 	 * @since 6.6.1
-	*/ if(
+	*/ public if(
 		/** The Boolean to check */ state: boolean,
 		/** The Callback for when the Boolean is truthy */ callback: ((tag: HTMLBuilder) => HTMLBuilder) | HTMLContent | HTMLComponent
-	) {
+	): this {
 		if (state) {
 			if (typeof callback === 'function') {
 				const builder = new HTMLBuilder(this.route, [ ...this.fnArguments ], this.getEveries, this.everyId)
@@ -328,12 +328,12 @@ export default class HTMLBuilder {
 	 * )
 	 * ```
 	 * @since 6.6.0
-	*/ getEvery<T extends (ctr: HTTPRequestContext) => RealAny>(
+	*/ public getEvery<T extends (ctr: HTTPRequest) => RealAny>(
 		/** The Function to get Data */ getter: T,
 		/** The Interval for Iterations (ms) */ interval: number,
 		/** The Callback for each Iteration */ callback: (tag: HTMLBuilder, item: Awaited<ReturnType<T>>) => HTMLBuilder
-	) {
-		const id = `${this.route.path.replace('/', '-')}___rId___${this.everyId.n++}___${hashStr({ text: callback.toString(), algorithm: 'sha1' })}`
+	): this {
+		const id = `${this.route.replace('/', '-')}___rId___${this.everyId.n++}___${hashStr({ text: callback.toString(), algorithm: 'sha1' })}`
 
 		this.html += `<div id="${id}" style="display: contents;"></div>`
 		this.html += `<script type="text/javascript">setInterval(function(){var e=new XMLHttpRequest;e.onreadystatechange=function(){e.readyState===XMLHttpRequest.DONE&&e.status>199&&e.status<300&&(document.getElementById("${id}").innerHTML=e.responseText)},e.open("GET","/___rjweb-html-auto/${id}",!0),e.send()},${interval})</script>`
@@ -369,10 +369,10 @@ export default class HTMLBuilder {
 	 * )
 	 * ```
 	 * @since 6.6.0
-	*/ forEach<T extends Array<any>>(
+	*/ public forEach<T extends Array<any>>(
 		/** The Items to loop over */ items: T,
 		/** The Callback for each Item */ callback: (tag: HTMLBuilder, item: T[number]) => HTMLBuilder
-	) {
+	): this {
 		items.forEach((item) => {
 			const builder = new HTMLBuilder(this.route, [ ...this.fnArguments, { name: getFunctionArguments(callback)[1].replace(')', ''), value: item } ], this.getEveries, this.everyId)
 			callback(builder, item)

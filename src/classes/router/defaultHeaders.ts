@@ -21,10 +21,10 @@ export default class RouteContentTypes {
 	 * )
 	 * ```
 	 * @since 5.3.0
-	*/ add(
+	*/ public add(
 		/** The Name of the Header */ name: Lowercase<string>,
 		/** The Value of the Header */ contentType: Content
-	) {
+	): this {
 		this.defaultHeaders[name] = contentType
 
 		return this
@@ -34,13 +34,13 @@ export default class RouteContentTypes {
 	/**
 	 * Internal Method for Generating Headers Object
 	 * @since 6.0.0
-	*/ async getData() {
+	*/ public async getData() {
 		const parsedHeaders: Record<string, Buffer> = {}
 
 		for (const header in this.defaultHeaders) {
 			try {
 				const value = (await parseContent(this.defaultHeaders[header])).content
-				parsedHeaders[header] = value
+				parsedHeaders[header.toLowerCase()] = value
 			} catch { }
 		}
 

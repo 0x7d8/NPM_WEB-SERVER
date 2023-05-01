@@ -1,6 +1,6 @@
 {
   "name": "rjweb-server",
-  "version": "6.7.1",
+  "version": "7.0.0",
   "description": "Easy and Robust Way to create a Web Server with Many Easy-to-use Features in NodeJS",
   "main": "./lib/cjs/index.js",
   "module": "./lib/esm/index.js",
@@ -12,10 +12,10 @@
     "pnpm": ">=6.0.0"
   },
   "scripts": {
-    "build": "rm -rf lib && tsc && typia generate --input=src --output=lib/transformed && rjbuild build lib/transformed --format='cjs' --out='lib/cjs' && rjbuild build lib/transformed --format='esm' --out='lib/esm' && cp -r src/dashboard/index.html lib/cjs/dashboard/index.html && cp -r src/dashboard/index.html lib/esm/dashboard/index.html && cp package.json lib/cjs/pckg.json && cp package.json lib/esm/pckg.json && rm -rf lib/transformed",
+    "build": "rm -rf lib && tsc && rm -rf lib/typings/tests && mv lib/typings/src/* lib/typings && rm -rf lib/typings/src && rjbuild build src --format='cjs' --out='lib/cjs' && rjbuild build src --format='esm' --out='lib/esm' && cp package.json lib/cjs/pckg.json && cp package.json lib/esm/pckg.json",
     "docs": "typedoc --out docs src/index.ts && chmod -R a+rw docs",
-    "install:dev": "npm install -g --install-links .",
-    "test": "yarn build && node test"
+    "test": "jest",
+    "install:dev": "npm install -g --install-links ."
   },
   "repository": {
     "type": "git",
@@ -46,18 +46,20 @@
   "homepage": "https://github.com/rotvproHD/NPM_WEB-SERVER#readme",
   "devDependencies": {
     "@types/inquirer": "^9.0.3",
+    "@types/jest": "^29.5.1",
     "@types/node": "^18.11.18",
     "@types/yargs": "^17.0.24",
+    "jest": "^29.5.0",
     "rjbuild-typescript": "^1.0.1",
     "rjweb-server": "link:.",
+    "ts-jest": "^29.1.0",
     "typedoc": "^0.24.4",
     "typescript": "^5.0.0"
   },
   "dependencies": {
     "inquirer": "^9.1.5",
     "rjutils-collection": "^1.3.0",
-    "typia": "^3.7.5",
-    "uWebSockets.js": "uNetworking/uWebSockets.js#v20.23.0",
+    "uWebSockets.js": "uNetworking/uWebSockets.js#v20.24.0",
     "yargs": "^17.7.1"
   }
 }

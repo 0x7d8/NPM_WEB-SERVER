@@ -1,8 +1,7 @@
-import { GlobalContext, InternalContext } from "../types/context"
-import { pathParser } from "../classes/URLObject"
+import { GlobalContext, LocalContext } from "../types/context"
+import parsePath from "../functions/parsePath"
 import { getFilesRecursively } from "rjutils-collection"
-import { HTTPRequestContext } from "../types/external"
-import { WebSocketConnect } from "../types/webSocket"
+import { RequestContext } from "../types/external"
 import { Readable } from "stream"
 import { Version } from "../index"
 
@@ -11,13 +10,13 @@ import os from "os"
 
 const coreCount = os.cpus().length
 
-export default async function statsRoute(ctr: HTTPRequestContext | WebSocketConnect, ctg: GlobalContext, ctx: InternalContext, type: 'http' | 'socket') {
+export default async function statsRoute(ctr: RequestContext, ctg: GlobalContext, ctx: LocalContext, type: 'http' | 'socket') {
   switch (type) {
     case "http": {
       if (ctr.type !== 'http') return
 
       const dashboard = (await fs.readFile(`${__dirname}/index.html`, 'utf8'))
-        .replaceAll('/rjweb-dashboard', pathParser(ctg.options.dashboard.path))
+        .replaceAll('/rjweb-dashboard', parsePath(ctg.options.dashboard.path))
         .replace('/* PWD */ true', String(!!ctg.options.dashboard.password))
         .replace('1.1.1', Version)
 
@@ -27,17 +26,17 @@ export default async function statsRoute(ctr: HTTPRequestContext | WebSocketConn
     case "socket": {
       if (ctr.type !== 'connect') return
 
-      if (ctg.options.dashboard.password && ctr.queries.get('password') !== ctg.options.dashboard.password) return ctr.close({
+      if (ctg.options.dashboard.password && ctr.queries.get('password') !== ctg.options.dashboard.password) return ctr.close(1, {
         error: 'password'
       })
 
-      let interval: NodeJS.Timer
+      let interval: NodeJS.Timer | null = null
       ctr.printStream((() => {
         const readable = new Readable({
           objectMode: true,
           read() {},
           destroy() {
-            clearInterval(interval)
+            clearInterval(interval!)
           }
         })
 

@@ -19,10 +19,10 @@ export default class RouteContentTypes {
 	 * )
 	 * ```
 	 * @since 5.3.0
-	*/ add(
+	*/ public add(
 		/** The File ending to apply this to */ ending: string,
 		/** The Content Type to add to it */ contentType: string
-	) {
+	): this {
 		this.contentTypes[ending] = contentType
 
 		return this
@@ -32,7 +32,7 @@ export default class RouteContentTypes {
 	/**
 	 * Internal Method for Generating Content Types Object
 	 * @since 5.3.0
-	*/ getData() {
+	*/ public getData() {
 		return {
 			contentTypes: this.contentTypes
 		}

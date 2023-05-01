@@ -1,4 +1,4 @@
-<h1 align="center">Welcome to rjweb-server v6 👋</h1>
+<h1 align="center">Welcome to rjweb-server v7 👋</h1>
 <div align="center">
   <a href="https://www.npmjs.com/package/rjweb-server" target="_blank">
     <img alt="Version" src="https://img.shields.io/npm/v/rjweb-server.svg">
@@ -18,6 +18,7 @@ It allows insane performance though
 
 <br>
 
+### 🍔 [v6 to v7 Migration Guide](https://docs.rjweb.rjansen.de/v6/migrating-from-v5)
 ### 🍔 [v5 to v6 Migration Guide](https://docs.rjweb.rjansen.de/v6/migrating-from-v5)
 
 <br>
@@ -51,7 +52,8 @@ pnpm add rjweb-server
 - 3.X | Deprecated
 - 4.X | Deprecated
 - 5.X | Deprecated
-- 6.X | Patches & Features
+- 6.X | Patches
+- 7.X | Patches and Features
 
 ## Typescript
 
@@ -105,47 +107,6 @@ server.start()
   .catch((e) => {
     console.error('An Error occured while starting the Server!\n', e)
   })
-```
-
-Function File
-```ts
-import { RouteFile, Status } from "rjweb-server"
-
-interface Custom {
-  count: number
-} // You should import / export this Interface Stuff (look examples section)
-
-interface Body {
-  username?: string
-}
-
-export = new RouteFile((file) => file
-  .http<Custom, Body>('POST', '/v2/account', (http) => http
-    .onRequest((ctr) => {
-      if (!('username' in ctr.body)) return ctr.print('no username in body!!')
-
-      ctr.status(Status.NO_CONTENT).print(ctr.body.username)
-    })
-  )
-)
-```
-
-Middleware Intellisense
-```ts
-/**
- * This Feature has not been finished and may change in the future
-*/
-
-
-// webserver.d.ts
-
-import { MiddlewareToProps } from "rjweb-server"
-import { Props as AdditionalProps1 } from "random-middleware"
-import { Props as AdditionalProps2 } from "random-middlewareasd"
-
-declare module "rjweb-server" {
-  export interface HTTPRequestContext extends MiddlewareToProps<[ AdditionalProps1, AdditionalProps2 ]> {}
-}
 ```
 
 ## Usage
@@ -357,11 +318,10 @@ const server = new Server({
   cors: false, // If Cors Headers will be added
   port: 5000, // The Port which the Server runs on
   proxy: true // If enabled, alternate IPs will be shown
-})
-
-server.middleware(someMiddleware.init())
-server.middleware(someOtherMiddleware.init())
-// For Intellisense of the Middlewares look at the Typescript Section at the top of this file
+}, [
+  someMiddleware.config({}),
+  someOtherMiddleware.config({})
+])
 
 server.start()
   .then((s) => {
@@ -539,6 +499,8 @@ const server = new Server({
   proxy: true
 })
 
+module.exports.server = server // Important! Needed to make route Files
+
 server.path('/', (path) => path
   .loadCJS('./functions') // This loads CJS files (module.exports)
   .loadESM('./functions') // This loads ESM files (export default)
@@ -555,9 +517,9 @@ server.start()
 
 Making a route File
 ```js
-const { RouteFile } = require('rjweb-server')
+const { server } = require('../index.js')
 
-module.exports = new RouteFile((file) => file
+module.exports = new server.routeFile((file) => file
   .http('GET', '/say/<word>', (http) => http
     .onRequest((ctr) => {
       const word = ctr.params.get('word')

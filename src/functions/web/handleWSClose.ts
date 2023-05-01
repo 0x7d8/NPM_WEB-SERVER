@@ -1,10 +1,8 @@
 import { GlobalContext } from "../../types/context"
 import { WebSocket } from "uWebSockets.js"
-import { parse as parseQuery } from "querystring"
-import ValueCollection from "../../classes/valueCollection"
-import { WebSocketClose, WebSocketContext } from "../../types/webSocket"
+import { WebSocketContext } from "../../types/webSocket"
 import handleEvent from "../handleEvent"
-import { getPreviousHours } from "./handleRequest"
+import { getPreviousHours } from "./handleHTTPRequest"
 
 export default function handleWSClose(ws: WebSocket<WebSocketContext>, message: ArrayBuffer, ctg: GlobalContext) {
 	const { custom, ctx } = ws.getUserData()
@@ -27,55 +25,9 @@ export default function handleWSClose(ws: WebSocket<WebSocketContext>, message: 
 	}
 
   {(async() => {
-    // Get Correct Host IP
-		let hostIp: string
-		if (ctg.options.proxy && ctx.headers['x-forwarded-for']) hostIp = ctx.headers['x-forwarded-for']
-		else hostIp = ctx.remoteAddress.split(':')[0]
-
 		// Create Context Response Object
-		const ctr: WebSocketClose = {
-			type: 'close',
-
-			// Properties
-			controller: ctg.controller,
-			headers: new ValueCollection(ctx.headers, decodeURIComponent) as any,
-			cookies: new ValueCollection(ctx.cookies, decodeURIComponent),
-			params: new ValueCollection(ws.getUserData().params, decodeURIComponent),
-			queries: new ValueCollection(parseQuery(ctx.url.query) as any),
-			hashes: new ValueCollection(parseQuery(ctx.url.hash) as any),
-
-			// Variables
-			client: {
-				userAgent: ctx.headers['user-agent'] ?? null,
-				port: Number(ctx.remoteAddress.split(':')[1]),
-				ip: hostIp
-			}, get message() {
-				if (!ctx.body.parsed) {
-					const stringified = ctx.body.raw.toString()
-					if (ctg.options.body.parse) {
-						try { ctx.body.parsed = JSON.parse(stringified) }
-						catch { ctx.body.parsed = stringified }
-					} else ctx.body.parsed = stringified
-				}
-
-				return ctx.body.parsed
-			}, get rawMessage() {
-				return ctx.body.raw.toString()
-			},
-
-			url: ctx.url,
-			domain: ctx.headers['host'],
-
-			// Custom Variables
-			'@': custom,
-
-			// Functions
-			setCustom(name, value) {
-				ctr['@'][name] = value
-
-				return ctr
-			}
-		}
+		const ctr = new ctg.classContexts.wsClose(ctg.controller, ctx, ws)
+		ctr["@"] = custom
 
 		// Execute Middleware
 		if (ctg.middlewares.length > 0 && !ctx.error) {
@@ -105,7 +57,7 @@ export default function handleWSClose(ws: WebSocket<WebSocketContext>, message: 
 			// Execute Normal Route
 			if ('onClose' in ctx.execute.route && ctx.execute.route.type === 'websocket' && ctx.executeCode) {
 				try {
-					await Promise.resolve(ctx.execute.route.onClose!(ctr))
+					await Promise.resolve(ctx.execute.route.onClose!(ctr as any))
 				} catch (err) {
 					ctx.error = err
 					ctx.execute.event = 'wsCloseError'

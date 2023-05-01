@@ -1,5 +1,4 @@
 import { isMap, isSet } from "util/types"
-import typia from "typia"
 
 export type Content =
 	| string
@@ -12,12 +11,7 @@ export type Content =
 	| Record<any, any>
 	| symbol
 	| Function
-	| (
-			| Record<any, any>
-			| string
-			| number
-			| boolean
-		)[]
+	| any[]
 
 export type ParseContentReturns = Awaited<ReturnType<typeof parseContent>>
 
@@ -35,7 +29,7 @@ export default async function parseContent(content: Content, prettify: boolean =
 		case "object":
 			try {
 				if (prettify) returnObject.content = Buffer.from(JSON.stringify(content, null, 2))
-				else returnObject.content = Buffer.from(typia.stringify(content))
+				else returnObject.content = Buffer.from(JSON.stringify(content))
 
 				returnObject.headers['content-type'] = Buffer.from('application/json')
 			} catch {

@@ -1,5 +1,4 @@
-import { ExternalRouter, LoadPath } from "../../types/internal"
-import { MiddlewareProduction } from "../../types/external"
+import { ExternalRouter, LoadPath, MiddlewareInitted } from "../../types/internal"
 import SafeServerEventEmitter from "../safeEventEmitter"
 import HTTP from "../../types/http"
 import Websocket from "../../types/webSocket"
@@ -10,35 +9,17 @@ import RouteExternal from "./external"
 import RouteContentTypes from "./contentTypes"
 import RouteDefaultHeaders from "./defaultHeaders"
 
-export default class RouteList extends SafeServerEventEmitter {
-	protected middlewares: ReturnType<MiddlewareProduction['init']>[]
+export default class RouteList<GlobContext extends Record<any, any>, Middlewares extends MiddlewareInitted[] = []> extends SafeServerEventEmitter<GlobContext, Middlewares> {
+	protected middlewares: MiddlewareInitted[]
 	private externals: ExternalRouter[]
 
-	/** List of Routes */
-	constructor() {
+	/**
+	 * List of Routes
+	*/ constructor() {
 		super()
 
 		this.externals = []
 		this.middlewares = []
-	}
-
-	/**
-	 * Add a new Middleware
-	 * @example
-	 * ```
-	 * // We will use the custom middleware
-	 * const middleware = require('middleware-package')
-	 * const controller = new Server({ })
-	 * 
-	 * controller.middleware(middleware())
-	 * ```
-	 * @since 4.4.0
-	*/ middleware(
-		/** The Middleware to run on a Request */ middleware: ReturnType<MiddlewareProduction['init']>
-	) {
-		this.middlewares.push(middleware)
-		
-		return this
 	}
 
 	/**
@@ -48,26 +29,30 @@ export default class RouteList extends SafeServerEventEmitter {
 	 * const controller = new Server({ })
 	 * 
 	 * controller.path('/', (path) => path
-	 *   .http('GET', '/cool', (ctr) => {
-	 *     ctr.print('cool!')
-	 *   })
-	 *   .path('/api', (path) => path
-	 *     .http('GET', '/', (ctr) => {
-	 *       ctr.print('Welcome to the API')
+	 *   .http('GET', '/cool', (http) => http
+	 *     .onRequest((ctr) => {
+	 *       ctr.print('cool!')
 	 *     })
+	 *   )
+	 *   .path('/api', (path) => path
+	 *     .http('GET', '/', (http) => http
+	 *       .onRequest((ctr) => {
+	 *         ctr.print('Welcome to the API!')
+	 *       })
+	 *     )
 	 *   )
 	 * )
 	 * ```
 	 * @since 5.0.0
-	*/ path(
+	*/ public path(
 		/** The Path Prefix */ prefix: string,
-		/** The Code to handle the Prefix */ router: ((path: RoutePath) => RoutePath) | RoutePath | RouteExternal
-	) {
+		/** The Code to handle the Prefix */ router: ((path: RoutePath<GlobContext, Middlewares>) => RoutePath<GlobContext, Middlewares>) | RoutePath<GlobContext> | RouteExternal<GlobContext, Middlewares>
+	): this {
 		if ('getData' in router) {
 			this.externals.push({ object: router, addPrefix: prefix })
 		} else {
-			const routePath = new RoutePath(prefix)
-			this.externals.push({ object: routePath })
+			const routePath = new RoutePath<GlobContext, Middlewares>(prefix)
+			this.externals.push({ object: routePath as any })
 			router(routePath)
 		}
 
@@ -83,9 +68,9 @@ export default class RouteList extends SafeServerEventEmitter {
 	 * )
 	 * ```
 	 * @since 5.3.0
-	*/ contentTypes(
+	*/ public contentTypes(
 		/** The Code to handle the Headers */ code: (path: RouteContentTypes) => RouteContentTypes
-	) {
+	): this {
 		const routeContentTypes = new RouteContentTypes()
 		this.externals.push({ object: routeContentTypes })
 	
@@ -103,9 +88,9 @@ export default class RouteList extends SafeServerEventEmitter {
 	 * )
 	 * ```
 	 * @since 5.3.0
-	*/ defaultHeaders(
+	*/ public defaultHeaders(
 		/** The Code to handle the Headers */ code: (path: RouteDefaultHeaders) => RouteDefaultHeaders
-	) {
+	): this {
 		const routeDefaultHeaders = new RouteDefaultHeaders()
 		this.externals.push({ object: routeDefaultHeaders })
 
@@ -118,7 +103,7 @@ export default class RouteList extends SafeServerEventEmitter {
 	/**
 	 * Internal Method for Generating Routes Object
 	 * @since 6.0.0
-	*/ async getData() {
+	*/ public async getData() {
 		const routes: HTTP[] = [], webSockets: Websocket[] = [],
 			statics: Static[] = [], loadPaths: LoadPath[] = []
 

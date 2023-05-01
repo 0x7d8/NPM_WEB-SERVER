@@ -1,14 +1,14 @@
-import { pathParser } from "../classes/URLObject"
+import parsePath from "./parsePath"
 
-export default function addPrefixes<T extends Record<string, any>>(objects: T[], key: string, splitKey: string | null, prefix: string): T[] {
+export default function addPrefixes<T extends Record<string, any>>(objects: T[], key: keyof T, splitKey: keyof T | null, prefix: string): T[] {
 	if (objects.length === 0) return []
 	else if (splitKey) return objects.map((obj, index) => ({
 		...obj,
-		[key]: pathParser([ prefix, objects[index][key] ]),
-		[splitKey]: pathParser([ prefix, objects[index][key] ]).split('/')
+		[key]: parsePath([ prefix, objects[index][key] ]),
+		[splitKey]: parsePath([ prefix, objects[index][key] ]).split('/')
 	}))
 	else return objects.map((obj, index) => ({
 		...obj,
-		[key]: pathParser([ prefix, objects[index][key] ])
+		[key]: parsePath([ prefix, objects[index][key] ])
 	}))
 }

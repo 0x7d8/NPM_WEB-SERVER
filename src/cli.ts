@@ -1,4 +1,4 @@
-#!/usr/bin/env node
+#! /usr/bin/env node
 
 import { StartError } from "./types/serverEvents"
 import { Version, Status } from "."

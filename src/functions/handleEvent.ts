@@ -1,8 +1,8 @@
-import { HTTPRequestContext, WSRequestContext } from ".."
-import { GlobalContext, InternalContext } from "../types/context"
+import { RequestContext } from ".."
+import { GlobalContext, LocalContext } from "../types/context"
 import { EventHandlerMap } from "../types/event"
 
-export default async function handleEvent(event: keyof EventHandlerMap, ctr: HTTPRequestContext | WSRequestContext, ctx: InternalContext, ctg: GlobalContext) {
+export default async function handleEvent(event: keyof EventHandlerMap<any, any>, ctr: RequestContext, ctx: LocalContext, ctg: GlobalContext) {
 	ctx.execute.event = 'none'
 
 	switch (event) {

@@ -1,3 +1,22 @@
+## 7.0.0
+
+- Added some Basic Unit Tests
+- Added a new, custom query & cookie parser thats 10x faster than before
+- Added a more optimized path parser
+- Switched Request Contexts to Classes to save memory & cpu
+- Added ability to predefine contexts for routes and make them permanent
+- Added ability to manually control the request body as its coming in
+- Allow Route Paths to be regular expressions
+- Dont Check Cache on every Route iteration
+- Renamed Hashes to Fragments to match proper naming conventions
+- Define Middlewares in the Server Constructor to allow automatic middleware intellisense
+- Rework general Middleware definition system for Typescript
+- Renamed .init() on middlewares to .config()
+- Require a config for Middlewares to always be passed in
+- Added Global Context to Server that applies to everything, including events
+- Rework Route Files to support Middleware & Global Context Intellisense
+- Upgrade uWebsockets to v20.24.0
+
 ## 6.7.1
 
 - Use rjbuild-typescript for building

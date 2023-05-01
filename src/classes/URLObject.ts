@@ -1,31 +1,6 @@
 import { HTTPMethods } from "../index"
 import { parse, UrlWithStringQuery } from "url"
-
-export const pathParser = (path: string | string[], removeSingleSlash?: boolean) => {
-	if (!path) return '/'
-
-	const paths = Array.isArray(path) ? path : [path]
-	const callParse = (paths: string[]) => {
-		let output = ''
-
-		for (let pathIndex = 0; pathIndex < paths?.length; pathIndex++) {
-			path = paths[pathIndex]
-				.replace(/\/{2,}/g, '/')
-				.replace('/?', '?')
-				.replace('/#', '#')
-
-			if (path.endsWith('?')) path = path.slice(0, -1)
-			if (path.endsWith('/') && path !== '/') path = path.slice(0, -1)
-			if (!path.startsWith('/') && path !== '/') path = `/${path}`
-
-			output += (removeSingleSlash && path === '/') ? '' : path || '/'
-		}
-
-		return output
-	}
-
-	return callParse([ callParse(paths) ]).replace(/\/{2,}/g, '/')
-}
+import parsePath from "../functions/parsePath"
 
 export default class URLObject {
 	private url: UrlWithStringQuery
@@ -34,7 +9,7 @@ export default class URLObject {
 	}
 
 	constructor(url: string, method: string) {
-		this.url = parse(pathParser(url))
+		this.url = parse(parsePath(url))
 		this.data = {
 			method: method.toUpperCase() as HTTPMethods
 		}
@@ -49,7 +24,7 @@ export default class URLObject {
 	 * url.method // "POST"
 	 * ```
 	 * @since 5.6.0
-	*/ get method(): HTTPMethods {
+	*/ public get method(): HTTPMethods {
 		return this.data.method
 	}
 
@@ -62,7 +37,7 @@ export default class URLObject {
 	 * url.href // "/lol/ok?ok=124#yes=ok"
 	 * ```
 	 * @since 5.6.0
-	*/ get href(): string {
+	*/ public get href(): string {
 		return this.url.href ?? '/'
 	}
 
@@ -75,33 +50,33 @@ export default class URLObject {
 	 * url.path // "/lol/ok"
 	 * ```
 	 * @since 5.6.0
-	*/ get path(): string {
-		return this.url.pathname ?? '/'
+	*/ public get path(): string {
+		return decodeURI(this.url.pathname ?? '/')
 	}
 
 	/**
 	 * The Query of the URL
 	 * @example
 	 * ```
-	 * // URL is https://example.com/lol/ok?ok=123&test=567
+	 * // URL is https://example.com/lol/e?ok=123&test=567
 	 * 
-	 * url.query // "ok=123&test=567"
+	 * url.query // "e=123&test=567"
 	 * ```
 	 * @since 5.6.0
-	*/ get query(): string {
-		return this.url.query ?? ''
+	*/ public get query(): string {
+		return (this.url.query ?? '').replace('?', '')
 	}
 
 	/**
-	 * The Hash of the URL
+	 * The Fragments of the URL
 	 * @example
 	 * ```
-	 * // URL is https://example.com/lol/ok#ok=123&test=567
+	 * // URL is https://example.com/lol/ok#u=123&test=567
 	 * 
-	 * url.hash // "ok=123&test=567"
+	 * url.fragments // "u=123&test=567"
 	 * ```
 	 * @since 5.6.0
-	*/ get hash(): string {
+	*/ public get fragments(): string {
 		return (this.url.hash ?? '').replace('#', '')
 	}
 }
