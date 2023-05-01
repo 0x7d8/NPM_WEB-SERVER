@@ -1,6 +1,6 @@
 import { EventHandlerMap } from "../types/event"
 import { EventEmitter } from "events"
-import { MiddlewareInitted } from "src/types/internal"
+import { MiddlewareInitted } from "../types/internal"
 
 export default class SafeServerEventEmitter<Context extends Record<any, any>, Middlewares extends MiddlewareInitted[]> {
 	private instance: EventEmitter = new EventEmitter()

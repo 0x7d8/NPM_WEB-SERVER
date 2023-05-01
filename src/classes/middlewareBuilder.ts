@@ -99,7 +99,7 @@ export default class MiddlewareBuilder<
 	 * @example
 	 * ```
 	 * const middleware = new MiddlewareBuilder()
-	 *   .httpClass((Expand) => class H extends Expand {
+	 *   .httpClass((Expand) => class extends Expand {
 	 *     printHi() {
 	 *       this.print('Hi')
 	 *     }
@@ -125,7 +125,7 @@ export default class MiddlewareBuilder<
 	 * @example
 	 * ```
 	 * const middleware = new MiddlewareBuilder()
-	 *   .wsConnectClass((Expand) => class H extends Expand {
+	 *   .wsConnectClass((Expand) => class extends Expand {
 	 *     printHi() {
 	 *       this.print('Hi')
 	 *     }
@@ -151,7 +151,7 @@ export default class MiddlewareBuilder<
 	 * @example
 	 * ```
 	 * const middleware = new MiddlewareBuilder()
-	 *   .wsMessageClass((Expand) => class H extends Expand {
+	 *   .wsMessageClass((Expand) => class extends Expand {
 	 *     printHi() {
 	 *       this.print('Hi')
 	 *     }
@@ -177,7 +177,7 @@ export default class MiddlewareBuilder<
 	 * @example
 	 * ```
 	 * const middleware = new MiddlewareBuilder()
-	 *   .wsCloseClass((Expand) => class H extends Expand {
+	 *   .wsCloseClass((Expand) => class extends Expand {
 	 *     logBye() {
 	 *       console.log('Bye,', this.client.ip)
 	 *     }
