@@ -1,3 +1,8 @@
+## 7.0.4
+
+- Improve Readme
+- Add Logo / Icon
+
 ## 7.0.3
 
 - Update Examples

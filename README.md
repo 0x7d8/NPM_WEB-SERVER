@@ -1,20 +1,13 @@
-<h1 align="center">Welcome to rjweb-server v7 👋</h1>
 <div align="center">
-  <a href="https://www.npmjs.com/package/rjweb-server" target="_blank">
-    <img alt="Version" src="https://img.shields.io/npm/v/rjweb-server.svg">
-  </a>
-  <a href="https://github.com/rotvproHD/NPM_WEB-SERVER#readme" target="_blank">
-    <img alt="Documentation" src="https://img.shields.io/badge/documentation-yes-brightgreen.svg" />
-  </a>
-  <a href="https://github.com/rotvproHD/NPM_WEB-SERVER/graphs/commit-activity" target="_blank">
-    <img alt="Maintenance" src="https://img.shields.io/badge/Maintained%3F-yes-green.svg" />
-  </a>
 
-  Easy and Robust Way to create a Web Server in Node.js with the help of native C++ from uWebsockets
+  [<img src="https://img.rjansen.de/rjweb/logo.png" style="padding-bottom:10px;" height="150">](https://www.npmjs.com/package/rjweb-server)
+
+  [<img src="https://img.rjansen.de/rjweb/docs.svg" height="75px" style="margin-top:0px;">](https://docs.rjweb.rjansen.de)
+  [<img src="https://img.rjansen.de/rjweb/types.svg" height="75px" style="margin-top:0px;margin-left:-15px;">](https://types.rjweb.rjansen.de)
+
+  [<img src="https://img.rjansen.de/rjweb/changelog.svg" height="75px" style="margin-top:-25px;">](https://github.com/rotvproHD/NPM_WEB-SERVER/blob/main/CHANGELOG.md)
+
 </div>
-
-# INFO: Since we are using native C++ the full bundle is ~90MB
-It allows insane performance though
 
 <br>
 
@@ -22,13 +15,6 @@ It allows insane performance though
 ### 🍔 [v5 to v6 Migration Guide](https://docs.rjweb.rjansen.de/v6/migrating-from-v5)
 
 <br>
-<br>
-
-### 🏠 [Homepage](https://github.com/rotvproHD/NPM_WEB-SERVER#readme)
-### 🛠️ [Changelog](https://github.com/rotvproHD/NPM_WEB-SERVER/blob/main/CHANGELOG.md)
-### 🌐 [Documentation](https://docs.rjweb.rjansen.de)
-### 🈸 [TypeDocs](https://typedocs.rjweb.rjansen.de)
-
 <br>
 
 ## Install
