@@ -1,3 +1,7 @@
+## 7.2.1
+
+- Allow Reference Setters to be callbacks
+
 ## 7.2.0
 
 - Add Reference System

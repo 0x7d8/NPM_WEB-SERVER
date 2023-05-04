@@ -65,11 +65,12 @@ export default class Reference<Value extends Content = any> {
 	 * const ref = new Reference('Hello')
 	 * 
 	 * ref.set('Moin')
+	 * ref.set((prev) => `${prev}!`)
 	 * 
-	 * ref.get() // 'Moin'
+	 * ref.get() // 'Moin!'
 	 * ```
 	 * @since 7.2.0
-	*/ public set(value: Value, options: {
+	*/ public set(value: Value | ((value: Value) => Value), options: {
 		/**
 		 * Whether to emit the State change to listeners
 		 * @default true
@@ -78,10 +79,11 @@ export default class Reference<Value extends Content = any> {
 	} = {}): this {
 		const emit = options?.emit ?? true
 
-		this.state = value
+		if (typeof value === 'function') this.state = value(this.state)
+		else this.state = value
 
 		if (emit) {
-			const data = this.processDataFn(value)
+			const data = this.processDataFn(this.state)
 
 			for (const listener of this.listeners) {
 				if (listener) listener(data)
