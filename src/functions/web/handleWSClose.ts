@@ -24,6 +24,10 @@ export default function handleWSClose(ws: WebSocket<WebSocketContext>, message: 
 		ctx.execute.event = 'wsCloseError'
 	}
 
+	for (const { ref, refListener } of ctx.refListeners) {
+		ref['removeOnChange'](refListener)
+	}
+
   {(async() => {
 		// Create Context Response Object
 		const ctr = new ctg.classContexts.wsClose(ctg.controller, ctx, ws)

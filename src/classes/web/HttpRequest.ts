@@ -209,7 +209,7 @@ export default class HTTPRequest<Context extends Record<any, any> = {}, Body = u
 	} = {}): this {
 		const htmlLanguage = options?.htmlLanguage ?? 'en'
 
-		const builder = new HTMLBuilder(this.ctx.url.path)
+		const builder = new HTMLBuilder(this.ctx.execute.route?.path.toString() ?? 'default')
 		callback(builder)
 
 		this.ctx.response.headers['content-type'] = 'text/html'

@@ -11,7 +11,6 @@ import fs from "fs"
 
 import RouteWS from "./ws"
 import RouteHTTP from "./http"
-import RouteExternal from "./external"
 import RouteDefaultHeaders from "./defaultHeaders"
 
 export default class RoutePath<GlobContext extends Record<any, any>, Middlewares extends MiddlewareInitted[] = []> {
@@ -324,7 +323,7 @@ export default class RoutePath<GlobContext extends Record<any, any>, Middlewares
 	 * @since 5.0.0
 	*/ public path(
 		/** The Path Prefix */ prefix: string,
-		/** The Code to handle the Prefix */ router: ((path: RoutePath<GlobContext, Middlewares>) => RoutePath<GlobContext, Middlewares>) | RoutePath<GlobContext> | RouteExternal<GlobContext, Middlewares>
+		/** The Code to handle the Prefix */ router: ((path: RoutePath<GlobContext, Middlewares>) => RoutePath<GlobContext, Middlewares>) | RoutePath<GlobContext>
 	): this {
 		if ('getData' in router) {
 			this.externals.push({ object: router, addPrefix: parsePath([ this.httpPath, prefix ]) })

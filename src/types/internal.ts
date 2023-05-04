@@ -4,7 +4,6 @@ import HTTPRequest from "../classes/web/HttpRequest"
 import Methods from "../misc/methodsEnum"
 
 import RouteIndex from "../classes/router"
-import RouteExternal from "../classes/router/external"
 import RoutePath from "../classes/router/path"
 import RouteContentTypes from "../classes/router/contentTypes"
 import RouteDefaultHeaders from "../classes/router/defaultHeaders"
@@ -70,7 +69,7 @@ export type ExternalRouter = {
 	addPrefix?: string
 }
 
-export type AnyRouter = RouteWS<any, any, any> | RouteHTTP<any, any, any> | RouteExternal<any> | RoutePath<any> | RouteIndex<any> | RouteContentTypes | RouteDefaultHeaders
+export type AnyRouter = RouteWS<any, any, any> | RouteHTTP<any, any, any> | RoutePath<any> | RouteIndex<any> | RouteContentTypes | RouteDefaultHeaders
 
 export type MiddlewareInitted = ReturnType<MiddlewareLoader<any, any, any, any, any, any>['config']>
 

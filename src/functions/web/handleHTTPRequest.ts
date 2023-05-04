@@ -65,6 +65,7 @@ export default async function handleHTTPRequest(req: HttpRequest, res: HttpRespo
 		fragments: parseKV(url.fragments),
 		events: new EventEmitter() as any,
 		isAborted: false,
+		refListeners: [],
 		previousHours: getPreviousHours(),
 		body: {
 			chunks: [],

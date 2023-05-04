@@ -1,3 +1,12 @@
+## 7.2.0
+
+- Add Reference System
+- Use less 'as any's
+- Correctly handle printing Promises
+- Make printHTML work correctly on 404 routes
+- Fix printHTML with regex routes
+- Update Templates
+
 ## 7.1.1
 
 - Improve Readme

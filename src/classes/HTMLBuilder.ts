@@ -19,12 +19,12 @@ export type HTMLAttribute =
 	| HTMLAttribute[]
 	| HTMLAttributeRecord
 
-type FnArgument = {
+export type FnArgument = {
 	name: string
 	value: any
 }
 
-type GetEvery = {
+export type GetEvery = {
 	id: string
 	getter(ctr: HTTPRequest): RealAny
 	callback(tag: HTMLBuilder, data: any): HTMLBuilder
@@ -197,7 +197,7 @@ export default class HTMLBuilder {
 		/** The Component Object */ component: Component,
 		/** The Options to add */ options?: Component extends HTMLComponent<infer Options> ? Options : never
 	): this {
-		const builder = (component as any).toBuilder(this.route, options) as HTMLBuilder
+		const builder = component['toBuilder'](this.route, [ ...this.fnArguments ], this.getEveries, this.everyId, options) as HTMLBuilder
 		this.html += builder.html
 
 		return this

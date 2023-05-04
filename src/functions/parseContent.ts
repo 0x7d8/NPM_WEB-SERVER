@@ -1,4 +1,4 @@
-import { isMap, isSet } from "util/types"
+import { isMap, isPromise, isSet } from "util/types"
 
 export type Content =
 	| string
@@ -12,6 +12,7 @@ export type Content =
 	| symbol
 	| Function
 	| any[]
+	| Promise<Content>
 
 export type ParseContentReturns = Awaited<ReturnType<typeof parseContent>>
 
@@ -24,6 +25,20 @@ export default async function parseContent(content: Content, prettify: boolean =
 	if (Buffer.isBuffer(content)) return { headers: {}, content }
 	if (isMap(content)) content = Object.fromEntries(content.entries())
 	if (isSet(content)) content = Object.fromEntries(content.entries())
+
+	if (isPromise(content)) {
+		await new Promise<void>((resolve, reject) => {
+			(content as Promise<Content>)
+				.then((r) => {
+					content = r
+
+					resolve()
+				})
+				.catch((e) => {
+					reject(e)
+				})
+		})
+	}
 
 	switch (typeof content) {
 		case "object":

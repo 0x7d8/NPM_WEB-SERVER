@@ -5,6 +5,7 @@ import { WebSocket } from "@rjweb/uws"
 import { WebSocketContext } from "../../types/webSocket"
 import parseContent, { Content, ParseContentReturns } from "../../functions/parseContent"
 import { Readable } from "stream"
+import Reference from "../reference"
 
 export default class WSConnect<Context extends Record<any, any> = {}, Type = 'connect'> extends Base<Context> {
 	/**
@@ -100,6 +101,78 @@ export default class WSConnect<Context extends Record<any, any> = {}, Type = 'co
 				this.ctg.webSockets.messages.outgoing[this.ctx.previousHours[4]]++
 			} catch { }
 		}))
+
+		return this
+	}
+
+	/**
+	 * Print a references value every time it changes
+	 * @example
+	 * ```
+	 * const ref = new Reference('Hello')
+	 * 
+	 * ctr.printRef(ref)
+	 * 
+	 * ref.set('Ok')
+	 * ```
+	 * @since 7.2.0
+	*/ public printRef(reference: Reference): this {
+		this.ctx.scheduleQueue('execution', () => new Promise<void>((resolve) => {
+			this.ctx.continueSend = false
+
+			try {
+				const ref = reference['onChange'](async(value) => {
+					let data: Buffer
+
+					try {
+						data = (await parseContent(value)).content
+					} catch (err) {
+						return this.ctx.handleError(err)
+					}
+
+					try {
+						this.ctg.webSockets.messages.outgoing.total++
+						this.ctg.webSockets.messages.outgoing[this.ctx.previousHours[4]]++
+
+						this.rawWs.send(data)
+					} catch {
+						this.ctx.events.emit('requestAborted')
+					}
+				})
+				
+				this.ctx.refListeners.push({
+					ref: reference,
+					refListener: ref
+				})
+
+				return resolve()
+			} catch { }
+		}))
+
+		return this
+	}
+
+	/**
+	 * Remove a reference subscription
+	 * @example
+	 * ```
+	 * const ref = new Reference('Hello')
+	 * 
+	 * ctr.printRef(ref)
+	 * 
+	 * ref.set('Ok')
+	 * 
+	 * ctr.removeRef(ref)
+	 * ```
+	 * @since 7.2.0
+	*/ public removeRef(reference: Reference): this {
+		const index = this.ctx.refListeners.findIndex(({ ref }) => Object.is(ref, reference))
+
+		if (index >= 0) {
+			reference['removeOnChange'](this.ctx.refListeners[index].refListener)
+
+			this.ctx.refListeners.splice(index, 1)
+		}
 
 		return this
 	}

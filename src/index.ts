@@ -4,6 +4,7 @@ export { default as MiddlewareBuilder } from "./classes/middlewareBuilder"
 export { default as URLObject } from "./classes/URLObject"
 export { default as parseContent, Content } from "./functions/parseContent"
 export { default as parseStatus } from "./functions/parseStatus"
+export { default as Reference } from "./classes/reference"
 
 /** @ts-ignore */
 import { version } from "./pckg.json"

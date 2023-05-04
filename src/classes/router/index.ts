@@ -5,11 +5,10 @@ import Websocket from "../../types/webSocket"
 import Static from "../../types/static"
 
 import RoutePath from "./path"
-import RouteExternal from "./external"
 import RouteContentTypes from "./contentTypes"
 import RouteDefaultHeaders from "./defaultHeaders"
 
-export default class RouteList<GlobContext extends Record<any, any>, Middlewares extends MiddlewareInitted[] = []> extends SafeServerEventEmitter<GlobContext, Middlewares> {
+export default class RouteIndex<GlobContext extends Record<any, any>, Middlewares extends MiddlewareInitted[] = []> extends SafeServerEventEmitter<GlobContext, Middlewares> {
 	protected middlewares: MiddlewareInitted[]
 	private externals: ExternalRouter[]
 
@@ -46,7 +45,7 @@ export default class RouteList<GlobContext extends Record<any, any>, Middlewares
 	 * @since 5.0.0
 	*/ public path(
 		/** The Path Prefix */ prefix: string,
-		/** The Code to handle the Prefix */ router: ((path: RoutePath<GlobContext, Middlewares>) => RoutePath<GlobContext, Middlewares>) | RoutePath<GlobContext> | RouteExternal<GlobContext, Middlewares>
+		/** The Code to handle the Prefix */ router: ((path: RoutePath<GlobContext, Middlewares>) => RoutePath<GlobContext, Middlewares>) | RoutePath<GlobContext>
 	): this {
 		if ('getData' in router) {
 			this.externals.push({ object: router, addPrefix: prefix })

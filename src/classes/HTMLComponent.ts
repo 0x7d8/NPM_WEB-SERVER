@@ -1,6 +1,5 @@
-import { isRegExp } from "util/types"
 import Route from "../types/http"
-import HTMLBuilder from "./HTMLBuilder"
+import HTMLBuilder, { FnArgument, GetEvery } from "./HTMLBuilder"
 
 export default class HTMLComponent<Options extends Record<any, any> = {}> {
 	private callback: (tag: HTMLBuilder, options: Options | undefined) => HTMLBuilder
@@ -39,8 +38,8 @@ export default class HTMLComponent<Options extends Record<any, any> = {}> {
 	/**
 	 * Internal Method for Generating HTML Builder
 	 * @since 6.7.0
-	*/ protected toBuilder(route: Route, options: Options | undefined): HTMLBuilder {
-		const builder = new HTMLBuilder(isRegExp(route.path) ? (route as any).pathStartWith + route.path.toString() : route.path)
+	*/ protected toBuilder(route: string, fnArguments: FnArgument[], getEvery: GetEvery[], getEveryId: { n: number }, options: Options | undefined): HTMLBuilder {
+		const builder = new HTMLBuilder(route, fnArguments, getEvery, getEveryId)
 		this.callback(builder, options)
 
 		return builder

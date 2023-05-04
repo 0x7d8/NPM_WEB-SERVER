@@ -11,6 +11,7 @@ import TypedEventEmitter from "./typedEventEmitter"
 import WebSocket from "./webSocket"
 import { EventHandlerMap } from "./event"
 import { HttpRequest, WsClose, WsConnect, WsMessage } from "./external"
+import Reference, { RefListener } from "../classes/reference"
 
 export type Hours =
 	| '0' | '1' | '2' | '3' | '4'
@@ -39,6 +40,7 @@ export type LocalContext = {
 	/** The List of Fragments used by the URL */ fragments: Base['fragments']
 	/** An Event Emitter Responsible for all Events */ events: TypedEventEmitter<InternalEvents>
 	/** A Boolean that keeps track whether the Request is Aborted */ isAborted: boolean
+	/** The Reference Listeners to keep track of and delete */ refListeners: { ref: Reference, refListener: RefListener }[]
 	/** The Function to handle an Error in an Async Scenario */ handleError(err: unknown): void
 	/** Schedule an Async Task for Execution */ scheduleQueue(type: Task['type'], callback: Task['function']): void
 	/** Run all current Functions contained in the Queue */ runQueue(): Promise<Error | null>
