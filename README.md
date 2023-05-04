@@ -7,6 +7,9 @@
 
   [<img src="https://img.rjansen.de/rjweb/changelog.svg" height="75px" style="margin-top:-25px;">](https://github.com/rotvproHD/NPM_WEB-SERVER/blob/main/CHANGELOG.md)
 
+  [![install size](https://packagephobia.com/badge?p=rjweb-server)](https://packagephobia.com/result?p=rjweb-server)
+  [![Socket Badge](https://socket.dev/api/badge/npm/package/rjweb-server)](https://socket.dev/npm/package/rjweb-server)
+
 </div>
 
 <br>

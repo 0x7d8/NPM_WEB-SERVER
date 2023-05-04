@@ -1,3 +1,7 @@
+## 7.1.1
+
+- Improve Readme
+
 ## 7.1.0
 
 - Switch to custom uWS version
