@@ -12,3 +12,4 @@ jspm_packages/
 lib/
 test/
 docs/
+yarn.lock
