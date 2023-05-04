@@ -1,3 +1,8 @@
+## 7.1.0
+
+- Switch to custom uWS version
+- Remove uwebsockets header
+
 ## 7.0.4
 
 - Improve Readme

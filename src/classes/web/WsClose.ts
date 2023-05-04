@@ -1,7 +1,7 @@
 import Server from "../webServer"
 import { LocalContext } from "../../types/context"
 import Base from "./Base"
-import { WebSocket } from "uWebSockets.js"
+import { WebSocket } from "@rjweb/uws"
 import { WebSocketContext } from "../../types/webSocket"
 
 export default class WSClose<Context extends Record<any, any> = {}, Message = unknown> extends Base<Context> {

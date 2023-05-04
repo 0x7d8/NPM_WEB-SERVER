@@ -16,7 +16,7 @@ import { getFilesRecursively } from "rjutils-collection"
 import { HttpRequest, WsClose, WsConnect, WsMessage } from "../types/external"
 import { promises as fs } from "fs"
 
-import uWebsocket from "uWebSockets.js"
+import uWebsocket from "@rjweb/uws"
 import path from "path"
 import os from "os"
 

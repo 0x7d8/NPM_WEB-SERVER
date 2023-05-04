@@ -1,5 +1,5 @@
 import { GlobalContext, Hours, LocalContext } from "../../types/context"
-import { HttpRequest, HttpResponse, us_socket_context_t } from "uWebSockets.js"
+import { HttpRequest, HttpResponse, us_socket_context_t } from "@rjweb/uws"
 import parsePath from "../parsePath"
 import URLObject from "../../classes/URLObject"
 import { resolve as pathResolve } from "path"
@@ -84,7 +84,7 @@ export default async function handleHTTPRequest(req: HttpRequest, res: HttpRespo
 		}
 	}
 
-	req.forEach((header, value) => {
+	req.forEachHeader((header, value) => {
 		ctx.headers.set(header, value)
 	})
 

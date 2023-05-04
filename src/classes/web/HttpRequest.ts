@@ -1,4 +1,4 @@
-import { HttpRequest, HttpResponse } from "uWebSockets.js"
+import { HttpRequest, HttpResponse } from "@rjweb/uws"
 import Status from "../../misc/statusEnum"
 import Server from "../webServer"
 import { LocalContext } from "../../types/context"

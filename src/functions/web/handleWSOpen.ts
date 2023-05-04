@@ -1,5 +1,5 @@
 import { GlobalContext } from "../../types/context"
-import { WebSocket } from "uWebSockets.js"
+import { WebSocket } from "@rjweb/uws"
 import { WebSocketContext } from "../../types/webSocket"
 import { getPreviousHours } from "./handleHTTPRequest"
 import handleEvent from "../handleEvent"
