@@ -88,7 +88,7 @@ export default class RouteFile<GlobContext extends Record<any, any>, Middlewares
 		this.externals.push({ object: routeDefaultHeaders })
 
 		code(routeDefaultHeaders)
-		this.headers = { ...this.headers, ...(routeDefaultHeaders as any).defaultHeaders }
+		this.headers = Object.assign(this.headers, routeDefaultHeaders['defaultHeaders'])
 
 		return this
 	}

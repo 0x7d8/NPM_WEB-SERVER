@@ -25,6 +25,7 @@ export default class WSMessage<Context extends Record<any, any> = {}, Message = 
 	*/ public get message(): Message {
 		if (!this.ctx.body.parsed) {
 			const stringified = this.ctx.body.raw.toString()
+
 			if (this.ctg.options.body.parse) {
 				try { this.ctx.body.parsed = JSON.parse(stringified) }
 				catch { this.ctx.body.parsed = stringified }

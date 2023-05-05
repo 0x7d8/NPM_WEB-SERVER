@@ -1,3 +1,12 @@
+## 7.2.2
+
+- Remove more 'as any's
+- Dont Cork on WebSocket printStream's
+- Fix some JSDoc Comments
+- Remove endRequest Option on Websocket printStream's
+- Use Object.assign instead of spreading for default headers in routers
+- Add Headers on WebSocket Upgrade requests
+
 ## 7.2.1
 
 - Allow Reference Setters to be callbacks

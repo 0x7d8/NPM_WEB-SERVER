@@ -93,13 +93,13 @@ export default class RoutePath<GlobContext extends Record<any, any>, Middlewares
 	*/ public http<Context extends Record<any, any> = {}, Body = unknown>(
     /** The Request Method */ method: HTTPMethods,
 		/** The Path on which this will be available */ path: string | RegExp,
-		/** The Code to handle the Socket */ code: (path: RouteHTTP<GlobContext & Context, Body, Middlewares>) => RouteHTTP<GlobContext & Context, Body, Middlewares>
+		/** The Callback to handle the Endpoint */ callback: (path: RouteHTTP<GlobContext & Context, Body, Middlewares>) => RouteHTTP<GlobContext & Context, Body, Middlewares>
 	): this {
 		if (this.routes.some((obj) => isRegExp(obj.path) ? false : obj.path === parsePath(path as string))) return this
 	
 		const routeHTTP = new RouteHTTP<Context, Body, Middlewares>(isRegExp(path) ? path : parsePath([ this.httpPath, path ]), method, this.validations, this.parsedHeaders)
 		this.externals.push({ object: routeHTTP, addPrefix: this.httpPath })
-		code(routeHTTP)
+		callback(routeHTTP)
 	
 		return this
 	}
@@ -125,13 +125,13 @@ export default class RoutePath<GlobContext extends Record<any, any>, Middlewares
 	 * @since 5.4.0
 	*/ public ws<Context extends Record<any, any> = {}, Message = unknown>(
 		/** The Path on which this will be available */ path: string | RegExp,
-		/** The Code to handle the Socket */ code: (path: RouteWS<GlobContext & Context, Message, Middlewares>) => RouteWS<GlobContext & Context, Message, Middlewares>
+		/** The Callback to handle the Endpoint */ callback: (path: RouteWS<GlobContext & Context, Message, Middlewares>) => RouteWS<GlobContext & Context, Message, Middlewares>
 	): this {
 		if (this.webSockets.some((obj) => isRegExp(obj.path) ? false : obj.path === parsePath(path as string))) return this
 
 		const routeWS = new RouteWS<Context, Message, Middlewares>(isRegExp(path) ? path : parsePath([ this.httpPath, path ]), this.validations)
 		this.externals.push({ object: routeWS, addPrefix: this.httpPath })
-		code(routeWS)
+		callback(routeWS)
 
 		return this
 	}
@@ -148,13 +148,13 @@ export default class RoutePath<GlobContext extends Record<any, any>, Middlewares
 	 * ```
 	 * @since 6.0.0
 	*/ public defaultHeaders(
-		/** The Code to handle the Headers */ code: (path: RouteDefaultHeaders) => RouteDefaultHeaders
+		/** The Callback to handle the Headers */ callback: (path: RouteDefaultHeaders) => RouteDefaultHeaders
 	): this {
 		const routeDefaultHeaders = new RouteDefaultHeaders()
 		this.externals.push({ object: routeDefaultHeaders })
 
-		code(routeDefaultHeaders)
-		this.headers = { ...this.headers, ...(routeDefaultHeaders as any).defaultHeaders }
+		callback(routeDefaultHeaders)
+		this.headers = Object.assign(this.headers, routeDefaultHeaders['defaultHeaders'])
 
 		return this
 	}
@@ -323,7 +323,7 @@ export default class RoutePath<GlobContext extends Record<any, any>, Middlewares
 	 * @since 5.0.0
 	*/ public path(
 		/** The Path Prefix */ prefix: string,
-		/** The Code to handle the Prefix */ router: ((path: RoutePath<GlobContext, Middlewares>) => RoutePath<GlobContext, Middlewares>) | RoutePath<GlobContext>
+		/** The Callback to handle the Prefix */ router: ((path: RoutePath<GlobContext, Middlewares>) => RoutePath<GlobContext, Middlewares>) | RoutePath<GlobContext>
 	): this {
 		if ('getData' in router) {
 			this.externals.push({ object: router, addPrefix: parsePath([ this.httpPath, prefix ]) })

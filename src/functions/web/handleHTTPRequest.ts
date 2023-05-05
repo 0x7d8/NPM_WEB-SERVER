@@ -548,6 +548,15 @@ export default async function handleHTTPRequest(req: HttpRequest, res: HttpRespo
 					resolve(true)
 
           if (!ctx.isAborted) return res.cork(() => {
+						// Write Status
+						if (!ctx.isAborted) res.writeStatus(parseStatus(Status.SWITCHING_PROTOCOLS))
+
+						// Write Headers
+						for (const header in ctx.response.headers) {
+							if (!ctx.isAborted) res.writeHeader(header, ctx.response.headers[header])
+						}
+
+						// Upgrade Request to WebSocket
             if (!ctx.isAborted) return res.upgrade(
               { ctx, custom: ctr["@"] } satisfies WebSocketContext,
               ctx.headers.get('sec-websocket-key', ''),

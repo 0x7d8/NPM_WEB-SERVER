@@ -53,6 +53,7 @@ export default class HTTPRequest<Context extends Record<any, any> = {}, Body = u
 
 		if (!this.ctx.body.parsed) {
 			const stringified = this.ctx.body.raw.toString()
+
 			if (this.ctg.options.body.parse && this.ctx.headers.get('content-type', '') === 'application/json') {
 				try { this.ctx.body.parsed = JSON.parse(stringified) }
 				catch { this.ctx.body.parsed = stringified }
@@ -213,24 +214,24 @@ export default class HTTPRequest<Context extends Record<any, any> = {}, Body = u
 		callback(builder)
 
 		this.ctx.response.headers['content-type'] = 'text/html'
-		this.ctx.response.content = Buffer.from(`<!DOCTYPE html><html ${parseAttributes({ lang: htmlLanguage }, [])}>${(builder as any).html}</html>`)
+		this.ctx.response.content = Buffer.from(`<!DOCTYPE html><html ${parseAttributes({ lang: htmlLanguage }, [])}>${builder['html']}</html>`)
 
 		const path = this.ctx.url.path
 		if (!this.ctg.routes.htmlBuilder.some((h) => h.path === path)) {
-			for (const getEvery of (builder as any).getEveries) {
+			for (const getEvery of builder['getEveries']) {
 				const route: Route = {
 					method: 'GET',
 					path: `/___rjweb-html-auto/${getEvery.id}`,
 					pathArray: `/___rjweb-html-auto/${getEvery.id}`.split('/'),
 					async onRequest(ctr) {
-						const res = await Promise.resolve(getEvery.getter(ctr))
+						const res = await Promise.resolve(getEvery.getter(ctr as any))
 
 						getEvery.fnArguments[getEvery.fnArguments.length - 1].value = res
 
 						const builder = new HTMLBuilder(path, getEvery.fnArguments)
 						getEvery.callback(builder, res)
 
-						ctr.print((builder as any).html)
+						ctr.print(builder['html'])
 					}, type: 'route',
 					data: {
 						headers: (this.ctx.execute.route as any)?.data.headers!,
@@ -426,7 +427,7 @@ export default class HTTPRequest<Context extends Record<any, any> = {}, Body = u
 		 * @since 4.3.5
 		*/ endRequest?: boolean
 		/**
-		 * Whether to Destroy the Stream if the Request is aborted
+		 * Whether to Destroy the Stream when the Request gets aborted
 		 * @default true
 		 * @since 4.3.5
 		*/ destroyAbort?: boolean

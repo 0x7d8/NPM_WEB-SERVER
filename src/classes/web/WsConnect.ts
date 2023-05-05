@@ -187,72 +187,63 @@ export default class WSConnect<Context extends Record<any, any> = {}, Type = 'co
 	 * @since 5.4.0
 	*/ public printStream(stream: Readable, options: {
 		/**
-		 * Whether to end the Request after the Stream finishes
+		 * Whether to Destroy the Stream if the Socket gets closed
 		 * @default true
-		 * @since 4.3.5
-		*/ endRequest?: boolean
-		/**
-		 * Whether to Destroy the Stream if the Request is aborted
-		 * @default true
-		 * @since 4.3.5
+		 * @since 5.4.0
 		*/ destroyAbort?: boolean
 	} = {}): this {
-		const endRequest = options?.endRequest ?? true
 		const destroyAbort = options?.destroyAbort ?? true
 
 		this.ctx.scheduleQueue('execution', () => new Promise<void>((resolve) => {
 			this.ctx.continueSend = false
 
 			try {
-				this.rawWs.cork(() => {
-					const destroyStream = () => {
-						stream.destroy()
+				const destroyStream = () => {
+					stream.destroy()
+				}
+
+				const dataListener = async(data: Buffer) => {
+					try {
+						data = (await parseContent(data)).content
+					} catch (err) {
+						return this.ctx.handleError(err)
 					}
 
-					const dataListener = async(data: Buffer) => {
-						try {
-							data = (await parseContent(data)).content
-						} catch (err) {
-							return this.ctx.handleError(err)
-						}
+					try {
+						this.ctg.webSockets.messages.outgoing.total++
+						this.ctg.webSockets.messages.outgoing[this.ctx.previousHours[4]]++
 
-						try {
-							this.ctg.webSockets.messages.outgoing.total++
-							this.ctg.webSockets.messages.outgoing[this.ctx.previousHours[4]]++
-
-							this.rawWs.send(data)
-						} catch {
-							this.ctx.events.emit('requestAborted')
-						}
-
-						this.ctg.data.outgoing.total += data.byteLength
-						this.ctg.data.outgoing[this.ctx.previousHours[4]] += data.byteLength
-					}, closeListener = () => {
-						if (destroyAbort) this.ctx.events.removeListener('requestAborted', destroyStream)
-						if (endRequest) resolve()
-					}, errorListener = (error: Error) => {
-						this.ctx.handleError(error)
-						stream
-							.removeListener('data', dataListener)
-							.removeListener('close', closeListener)
-							.removeListener('error', errorListener)
-
-						return resolve()
+						this.rawWs.send(data)
+					} catch {
+						this.ctx.events.emit('requestAborted')
 					}
 
-					if (destroyAbort) this.ctx.events.once('requestAborted', destroyStream)
-	
+					this.ctg.data.outgoing.total += data.byteLength
+					this.ctg.data.outgoing[this.ctx.previousHours[4]] += data.byteLength
+				}, closeListener = () => {
+					if (destroyAbort) this.ctx.events.removeListener('requestAborted', destroyStream)
+				}, errorListener = (error: Error) => {
+					this.ctx.handleError(error)
 					stream
-						.on('data', dataListener)
-						.once('close', closeListener)
-						.once('error', errorListener)
-
-					this.ctx.events.once('requestAborted', () => stream
 						.removeListener('data', dataListener)
 						.removeListener('close', closeListener)
 						.removeListener('error', errorListener)
-					)
-				})
+				}
+
+				if (destroyAbort) this.ctx.events.once('requestAborted', destroyStream)
+	
+				stream
+					.on('data', dataListener)
+					.once('close', closeListener)
+					.once('error', errorListener)
+
+				this.ctx.events.once('requestAborted', () => stream
+					.removeListener('data', dataListener)
+					.removeListener('close', closeListener)
+					.removeListener('error', errorListener)
+				)
+
+				return resolve()
 			} catch { }
 		}))
 

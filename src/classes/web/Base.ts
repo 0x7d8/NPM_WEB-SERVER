@@ -12,7 +12,7 @@ export default class Base<Context extends Record<any, any> = {}> {
 	 * @since 7.0.0
 	*/ constructor(controller: Server<any>, localContext: LocalContext) {
 		this.ctx = localContext
-		this.ctg = (controller as any).globalContext
+		this.ctg = controller['globalContext']
 		this.controller = controller
 
 		this.headers = localContext.headers
