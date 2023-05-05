@@ -4,8 +4,7 @@ import parsePath from "../parsePath"
 import URLObject from "../../classes/URLObject"
 import { resolve as pathResolve } from "path"
 import parseContent from "../parseContent"
-import { Task } from "../../types/internal"
-import statsRoute from "../../dashboard/routes"
+import { dashboardIndexRoute, dashboardWsRoute } from "../../dashboard/routes"
 import { promises as fs } from "fs"
 import handleCompressType, { CompressMapping } from "../handleCompressType"
 import handleDecompressType, { DecompressMapping } from "../handleDecompressType"
@@ -24,6 +23,17 @@ import parseHeaders from "../parseHeaders"
 
 export const getPreviousHours = (): Hours[] => {
 	return Array.from({ length: 7 }, (_, i) => (new Date().getHours() - (4 - i) + 24) % 24) as any
+}
+
+const fileExists = async(location: string) => {
+	location = pathResolve(location)
+
+	try {
+		const res = await fs.stat(location)
+		return res.isFile()
+	} catch {
+		return false
+	}
 }
 
 export default async function handleHTTPRequest(req: HttpRequest, res: HttpResponse, socket: us_socket_context_t | null, requestType: 'http' | 'upgrade', ctg: GlobalContext) {
@@ -121,7 +131,7 @@ export default async function handleHTTPRequest(req: HttpRequest, res: HttpRespo
 			// Set Cache
 			ctg.cache.routes.set(`route::static::${ctx.url.path}`, { route: url, file })
 		}
-		
+
 		// Get From Cache
 		if (ctg.cache.routes.has(`route::static::${ctx.url.path}`)) {
 			const url = ctg.cache.routes.get(`route::static::${ctx.url.path}`)!
@@ -142,17 +152,6 @@ export default async function handleHTTPRequest(req: HttpRequest, res: HttpRespo
 			// Find File
 			const urlPath = parsePath(ctx.url.path.replace(url.path, '')).substring(1)
 
-			const fileExists = async(location: string) => {
-				location = pathResolve(location)
-
-				try {
-					const res = await fs.stat(location)
-					return res.isFile()
-				} catch {
-					return false
-				}
-			}
-
 			if (url.data.hideHTML) {
 				if (await fileExists(url.location + '/' + urlPath + '/index.html')) foundStatic(pathResolve(url.location + '/' + urlPath + '/index.html'), url)
 				else if (await fileExists(url.location + '/' + urlPath + '.html')) foundStatic(pathResolve(url.location + '/' + urlPath + '.html'), url)
@@ -162,21 +161,7 @@ export default async function handleHTTPRequest(req: HttpRequest, res: HttpRespo
 
 		// Check Dashboard Path
 		if (ctg.options.dashboard.enabled && ctx.url.path === parsePath(ctg.options.dashboard.path)) {
-			ctx.execute.route = {
-				type: 'route',
-				method: 'GET',
-				path: '/',
-				pathArray: ['', ''],
-				onRequest: async(ctr) => await statsRoute(ctr as any, ctg, ctx, 'http'),
-				data: {
-					validations: [],
-					headers: {}
-				}, context: {
-					data: {},
-					keep: true
-				}
-			}
-
+			ctx.execute.route = dashboardIndexRoute(ctg, ctx)
 			ctx.execute.found = true
 		}
 
@@ -184,7 +169,6 @@ export default async function handleHTTPRequest(req: HttpRequest, res: HttpRespo
 		const htmlBuilderRoute = ctg.routes.htmlBuilder.find((h) => h.path === ctx.url.path)
 		if (htmlBuilderRoute) {
 			ctx.execute.route = htmlBuilderRoute
-
 			ctx.execute.found = true
 		}
 
@@ -271,18 +255,7 @@ export default async function handleHTTPRequest(req: HttpRequest, res: HttpRespo
 	} else {
 		// Check Dashboard Path
 		if (ctg.options.dashboard.enabled && ctx.url.path === parsePath([ ctg.options.dashboard.path, '/ws' ])) {
-			ctx.execute.route = {
-				type: 'websocket',
-				path: '/',
-				pathArray: ['', ''],
-				onConnect: async(ctr) => await statsRoute(ctr as any, ctg, ctx, 'socket'),
-				data: {
-					validations: []
-				}, context: {
-					data: {},
-					keep: true
-				}
-			}
+			ctx.execute.route = dashboardWsRoute(ctg, ctx)
 
 			ctx.execute.found = true
 		}
@@ -514,6 +487,7 @@ export default async function handleHTTPRequest(req: HttpRequest, res: HttpRespo
 		
 							if (!ctx.isAborted) res.end('Invalid Content-Length Header')
 						})
+						else return
 					}
 
 					if (isLast) deCompression.end()
@@ -592,8 +566,8 @@ export default async function handleHTTPRequest(req: HttpRequest, res: HttpRespo
 				return resolve()
 			}
 
-			// Execute Normal Route
-			if (ctx.execute.route.type === 'route' && ctx.executeCode) {
+			// Execute HTTP Route
+			if (ctx.execute.route.type === 'http' && ctx.executeCode) {
 				try {
 					await Promise.resolve(ctx.execute.route.onRequest(ctr as any))
 				} catch (err) {
@@ -631,12 +605,12 @@ export default async function handleHTTPRequest(req: HttpRequest, res: HttpRespo
 			let eTag: string | null
 			if (ctg.options.performance.eTag) {
 				eTag = toETag(response.content, parsedHeaders, ctx.response.status)
-				if (eTag) ctx.response.headers['etag'] = `W/"${eTag}"`
+				if (eTag) parsedHeaders['etag'] = Buffer.from(`W/"${eTag}"`)
 			}
 
 			if (!ctx.isAborted && ctx.continueSend) return res.cork(() => {
 				let endEarly = false
-				if (ctg.options.performance.eTag && eTag && ctx.headers.get('if-none-match') === ctx.response.headers['etag']) {
+				if (ctg.options.performance.eTag && eTag && ctx.headers.get('if-none-match') === `W/"${eTag}"`) {
 					ctx.response.status = Status.NOT_MODIFIED
 					ctx.response.statusMessage = undefined
 					endEarly = true

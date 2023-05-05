@@ -204,7 +204,7 @@ export default class HTTPRequest<Context extends Record<any, any> = {}, Body = u
 						getEvery.callback(builder, res)
 
 						ctr.print(builder['html'])
-					}, type: 'route',
+					}, type: 'http',
 					data: {
 						headers: (this.ctx.execute.route as any)?.data.headers!,
 						validations: this.ctx.execute.route?.data.validations!

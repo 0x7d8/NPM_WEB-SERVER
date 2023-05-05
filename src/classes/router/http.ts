@@ -14,7 +14,7 @@ export default class RouteHTTP<Context extends Record<any, any> = {}, Body = unk
 	) {
 		if (isRegExp(path)) {
 			this.data = {
-				type: 'route',
+				type: 'http',
 				method,
 	
 				path,
@@ -30,7 +30,7 @@ export default class RouteHTTP<Context extends Record<any, any> = {}, Body = unk
 			}
 		} else {
 			this.data = {
-				type: 'route',
+				type: 'http',
 				method,
 	
 				path,

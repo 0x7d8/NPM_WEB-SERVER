@@ -2,11 +2,41 @@ import { GlobalContext, LocalContext } from "../types/context"
 import parsePath from "../functions/parsePath"
 import { getFilesRecursively } from "rjutils-collection"
 import { RequestContext } from "../types/external"
+import WebSocket from "../types/webSocket"
+import HTTP from "../types/http"
 import { Readable } from "stream"
 import { Version } from "../index"
 
 import fs from "fs/promises"
 import os from "os"
+
+export const dashboardIndexRoute = (ctg: GlobalContext, ctx: LocalContext): HTTP => ({
+  type: 'http',
+  method: 'GET',
+  path: '/',
+  pathArray: ['', ''],
+  onRequest: async(ctr) => await statsRoute(ctr as any, ctg, ctx, 'http'),
+  data: {
+    validations: [],
+    headers: {}
+  }, context: {
+    data: {},
+    keep: true
+  }
+})
+
+export const dashboardWsRoute = (ctg: GlobalContext, ctx: LocalContext): WebSocket => ({
+  type: 'websocket',
+  path: '/',
+  pathArray: ['', ''],
+  onConnect: async(ctr) => await statsRoute(ctr as any, ctg, ctx, 'socket'),
+  data: {
+    validations: []
+  }, context: {
+    data: {},
+    keep: true
+  }
+})
 
 const coreCount = os.cpus().length
 

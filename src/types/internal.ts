@@ -39,11 +39,6 @@ export type DeepRequired<Type> = Type extends Content
   ? { [Key in keyof Type]-?: DeepRequired<Type[Key]> }
   : Required<Type>
 
-export type Task = {
-	type: 'context' | 'execution'
-	function: Function
-}
-
 export type LoadPath = {
 	path: string
 	prefix: string

@@ -3,7 +3,7 @@ import { HTTPMethods } from "./external"
 import { EndFn, MergeObjects, MiddlewareInitted, RealAny, RoutedValidation } from "./internal"
 
 interface RouteGeneral<Context extends Record<any, any> = {}, Body = unknown, Middlewares extends MiddlewareInitted[] = []> {
-	/** The Type of this Object */ type: 'route'
+	/** The Type of this Object */ type: 'http'
 
 	/** The Request Method of the Route */ method: HTTPMethods
 	/** The Async Code to run on every Raw Body recieved */ onRawBody?(ctr: MergeObjects<[ HTTPRequest<Context, ''>, InstanceType<Middlewares[number]['data']['classModifications']['http']> ]>, end: EndFn, chunk: Buffer, isLast: boolean): RealAny

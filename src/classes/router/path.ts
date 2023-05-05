@@ -178,7 +178,7 @@ export default class RoutePath<GlobContext extends Record<any, any>, Middlewares
 		/** The Redirect Path to Redirect to */ redirect: string
 	): this {
 		this.routes.push({
-			type: 'route',
+			type: 'http',
 			method: 'GET',
 			path: parsePath([ this.httpPath, request ]),
 			pathArray: parsePath([ this.httpPath, request ]).split('/'),

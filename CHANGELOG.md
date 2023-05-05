@@ -1,3 +1,7 @@
+## 7.3.1
+
+- General Code & Performance Improvements
+
 ## 7.3.0
 
 - Add #/s count to dashboard

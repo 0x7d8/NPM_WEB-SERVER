@@ -1,7 +1,7 @@
 import ValueCollection from "../classes/valueCollection"
 import ServerController from "../classes/webServer"
 import Base from "../classes/web/Base"
-import { Task, MiddlewareInitted } from "./internal"
+import { MiddlewareInitted } from "./internal"
 import HTTP from "./http"
 import URLObject from "../classes/URLObject"
 import { Options } from "../functions/parseOptions"

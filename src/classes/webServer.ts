@@ -23,8 +23,8 @@ import os from "os"
 
 export default class Webserver<GlobContext extends Record<any, any> = {}, Middlewares extends MiddlewareInitted[] = []> extends RouteList<GlobContext, Middlewares> {
 	protected globalContext: GlobalContext
-	private server: uWebsocket.TemplatedApp = uWebsocket.App()
-	private socket: uWebsocket.us_listen_socket = 0
+	protected server: uWebsocket.TemplatedApp = uWebsocket.App()
+	protected socket: uWebsocket.us_listen_socket = 0
 
 	/**
 	 * Initialize a new Server
