@@ -1,3 +1,8 @@
+## 7.2.3
+
+- Decode Cookie and Query Parameters Correctly
+- Add Case to parseKV tests
+
 ## 7.2.2
 
 - Remove more 'as any's

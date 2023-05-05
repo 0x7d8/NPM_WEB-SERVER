@@ -27,7 +27,7 @@ export default function parseKV(keyValue: string, equal = '=', splitter = '&'): 
 		let equalPos = keyValue.slice(progress, splitterPos).indexOf(equal)
 		if (equalPos === -1) equalPos = splitterPos
 
-		values.set(trimString(keyValue.slice(progress, progress + equalPos)), keyValue.slice(progress + equalPos + 1, splitterPos))
+		values.set(trimString(keyValue.slice(progress, progress + equalPos)), decodeURIComponent(keyValue.slice(progress + equalPos + 1, splitterPos)))
 		progress += splitterPos + 1
 	}
 

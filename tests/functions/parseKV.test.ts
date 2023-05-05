@@ -5,6 +5,10 @@ test('parses "ok=564&test=wasd" to expect ok to be "564" & for test to exist', (
 	expect(parseKV('ok=564&test=wasd').has('test')).toBeTruthy()
 })
 
+test('parses "ok=hello%20mate!" to expect ok to be "hello mate!"', () => {
+	expect(parseKV('ok=hello%20mate!').get('ok')).toBe('hello mate!')
+})
+
 test('parses "ok&test" to expect ok & test to exist', () => {
 	expect(parseKV('ok&test').has('ok')).toBeTruthy()
 	expect(parseKV('ok&test').has('test')).toBeTruthy()
