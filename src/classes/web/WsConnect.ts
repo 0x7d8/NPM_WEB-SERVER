@@ -45,22 +45,23 @@ export default class WSConnect<Context extends Record<any, any> = {}, Type = 'co
 	*/ public close(code: number, message?: Content): this {
 		this.ctx.continueSend = false
 
-		this.ctx.scheduleQueue('execution', (async() => {
+		this.ctx.setExecuteSelf(async() => {
 			this.ctx.events.emit('requestAborted')
 
 			let result: ParseContentReturns
 			try {
 				result = await parseContent(message)
 			} catch (err) {
-				return this.ctx.handleError(err)
+				this.ctx.handleError(err)
+				return true
 			}
 
 			try {
 				this.rawWs.end(code, result.content)
 			} catch { }
 
-			this.ctx.queue = []
-		}))
+			return true
+		})
 
 		return this
 	}
@@ -87,20 +88,23 @@ export default class WSConnect<Context extends Record<any, any> = {}, Type = 'co
 	} = {}): this {
 		const prettify = options?.prettify ?? false
 
-		this.ctx.scheduleQueue('execution', (async() => {
+		this.ctx.setExecuteSelf(async() => {
 			let result: ParseContentReturns
 			try {
 				result = await parseContent(message, prettify)
 			} catch (err) {
-				return this.ctx.handleError(err)
+				this.ctx.handleError(err)
+				return true
 			}
 
 			try {
 				this.rawWs.send(result.content)
-				this.ctg.webSockets.messages.outgoing.total++
-				this.ctg.webSockets.messages.outgoing[this.ctx.previousHours[4]]++
+				this.ctg.webSockets.messages.outgoing.increase()
+				this.ctg.data.outgoing.increase(result.content.byteLength)
 			} catch { }
-		}))
+
+			return true
+		})
 
 		return this
 	}
@@ -117,9 +121,7 @@ export default class WSConnect<Context extends Record<any, any> = {}, Type = 'co
 	 * ```
 	 * @since 7.2.0
 	*/ public printRef(reference: Reference): this {
-		this.ctx.scheduleQueue('execution', () => new Promise<void>((resolve) => {
-			this.ctx.continueSend = false
-
+		this.ctx.setExecuteSelf(() => new Promise((resolve) => {
 			try {
 				const ref = reference['onChange'](async(value) => {
 					let data: Buffer
@@ -131,10 +133,9 @@ export default class WSConnect<Context extends Record<any, any> = {}, Type = 'co
 					}
 
 					try {
-						this.ctg.webSockets.messages.outgoing.total++
-						this.ctg.webSockets.messages.outgoing[this.ctx.previousHours[4]]++
-
 						this.rawWs.send(data)
+						this.ctg.webSockets.messages.outgoing.increase()
+						this.ctg.data.outgoing.increase(data.byteLength)
 					} catch {
 						this.ctx.events.emit('requestAborted')
 					}
@@ -145,7 +146,7 @@ export default class WSConnect<Context extends Record<any, any> = {}, Type = 'co
 					refListener: ref
 				})
 
-				return resolve()
+				return resolve(true)
 			} catch { }
 		}))
 
@@ -194,9 +195,7 @@ export default class WSConnect<Context extends Record<any, any> = {}, Type = 'co
 	} = {}): this {
 		const destroyAbort = options?.destroyAbort ?? true
 
-		this.ctx.scheduleQueue('execution', () => new Promise<void>((resolve) => {
-			this.ctx.continueSend = false
-
+		this.ctx.setExecuteSelf(() => new Promise((resolve) => {
 			try {
 				const destroyStream = () => {
 					stream.destroy()
@@ -210,16 +209,12 @@ export default class WSConnect<Context extends Record<any, any> = {}, Type = 'co
 					}
 
 					try {
-						this.ctg.webSockets.messages.outgoing.total++
-						this.ctg.webSockets.messages.outgoing[this.ctx.previousHours[4]]++
-
 						this.rawWs.send(data)
+						this.ctg.webSockets.messages.outgoing.increase()
+						this.ctg.data.outgoing.increase(data.byteLength)
 					} catch {
 						this.ctx.events.emit('requestAborted')
 					}
-
-					this.ctg.data.outgoing.total += data.byteLength
-					this.ctg.data.outgoing[this.ctx.previousHours[4]] += data.byteLength
 				}, closeListener = () => {
 					if (destroyAbort) this.ctx.events.removeListener('requestAborted', destroyStream)
 				}, errorListener = (error: Error) => {
@@ -243,7 +238,7 @@ export default class WSConnect<Context extends Record<any, any> = {}, Type = 'co
 					.removeListener('error', errorListener)
 				)
 
-				return resolve()
+				return resolve(true)
 			} catch { }
 		}))
 

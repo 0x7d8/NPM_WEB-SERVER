@@ -406,6 +406,10 @@
     },
   })
 
+  Number.prototype.toFixedNum = function(decimals) {
+    return parseInt(this.toFixed(decimals))
+  }
+
   function formatBytes(bytes) {
     if (bytes < 1024) return { amount: (bytes), format: 'B' }
     else if (bytes < 1048576) return { amount: (bytes / 1024).toFixed(2), format: 'KB' }
@@ -432,44 +436,44 @@
     document.querySelector('#stat-staticFiles').innerText = data.static_files
     document.querySelector('#stat-cached').innerText = data.cached
 
-    for (let stat = 1; stat < data.requests.length; stat++) {
+    for (let stat = 2; stat < data.requests.length; stat++) {
       const { hour, amount } = data.requests[stat]
 
-      requestChart.data.labels[stat - 1] = `${hour}:00`
-      requestChart.data.datasets[0].data[stat - 1] = amount
+      requestChart.data.labels[stat - 2] = `${hour}:00`
+      requestChart.data.datasets[0].data[stat - 2] = amount
     }; requestChart.update()
-    document.querySelector('#stat-requests').innerText = data.requests[0]
-    for (let stat = 1; stat < data.web_sockets.opened.length; stat++) {
+    document.querySelector('#stat-requests').innerText = `${data.requests[0]} (${data.requests[1].toFixedNum(2)}/s)`
+    for (let stat = 2; stat < data.web_sockets.opened.length; stat++) {
       const { hour, amount } = data.web_sockets.opened[stat]
 
-      websocketsOpenedChart.data.labels[stat - 1] = `${hour}:00`
-      websocketsOpenedChart.data.datasets[0].data[stat - 1] = amount
+      websocketsOpenedChart.data.labels[stat - 2] = `${hour}:00`
+      websocketsOpenedChart.data.datasets[0].data[stat - 2] = amount
     }; websocketsOpenedChart.update()
-    document.querySelector('#stat-websocketsOpened').innerText = data.web_sockets.opened[0]
-    for (let stat = 1; stat < data.data.outgoing.length; stat++) {
+    document.querySelector('#stat-websocketsOpened').innerText = `${data.web_sockets.opened[0]} (${data.web_sockets.opened[1].toFixedNum(2)}/s)`
+    for (let stat = 2; stat < data.data.outgoing.length; stat++) {
       const { hour, amount } = data.web_sockets.messages.outgoing[stat]
 
-      websocketMessagesChart.data.labels[stat - 1] = `${hour}:00`
-      websocketMessagesChart.data.datasets[0].data[stat - 1] = amount
-    }; for (let stat = 1; stat < data.data.incoming.length; stat++) {
+      websocketMessagesChart.data.labels[stat - 2] = `${hour}:00`
+      websocketMessagesChart.data.datasets[0].data[stat - 2] = amount
+    }; for (let stat = 2; stat < data.data.incoming.length; stat++) {
       const { hour, amount } = data.web_sockets.messages.incoming[stat]
 
-      websocketMessagesChart.data.labels[stat - 1] = `${hour}:00`
-      websocketMessagesChart.data.datasets[1].data[stat - 1] = amount
+      websocketMessagesChart.data.labels[stat - 2] = `${hour}:00`
+      websocketMessagesChart.data.datasets[1].data[stat - 2] = amount
     }; websocketMessagesChart.update()
-    document.querySelector('#stat-websocketMessages').innerText = `${data.web_sockets.messages.outgoing[0]} | ${data.web_sockets.messages.incoming[0]}`
-    for (let stat = 1; stat < data.data.outgoing.length; stat++) {
+    document.querySelector('#stat-websocketMessages').innerText = `${data.web_sockets.messages.outgoing[0]} (${data.web_sockets.messages.outgoing[1].toFixedNum(2)}/s) | ${data.web_sockets.messages.incoming[0]} (${data.web_sockets.messages.incoming[1].toFixedNum(2)}/s)`
+    for (let stat = 2; stat < data.data.outgoing.length; stat++) {
       const { hour, amount } = data.data.outgoing[stat]
 
-      networkChart.data.labels[stat - 1] = `${hour}:00`
-      networkChart.data.datasets[0].data[stat - 1] = amount
-    }; for (let stat = 1; stat < data.data.incoming.length; stat++) {
+      networkChart.data.labels[stat - 2] = `${hour}:00`
+      networkChart.data.datasets[0].data[stat - 2] = amount
+    }; for (let stat = 2; stat < data.data.incoming.length; stat++) {
       const { hour, amount } = data.data.incoming[stat]
 
-      networkChart.data.labels[stat - 1] = `${hour}:00`
-      networkChart.data.datasets[1].data[stat - 1] = amount
+      networkChart.data.labels[stat - 2] = `${hour}:00`
+      networkChart.data.datasets[1].data[stat - 2] = amount
     }; networkChart.update()
-    document.querySelector('#stat-network').innerText = `${formatBytes(data.data.outgoing[0]).amount}${formatBytes(data.data.outgoing[0]).format} | ${formatBytes(data.data.incoming[0]).amount}${formatBytes(data.data.incoming[0]).format}`
+    document.querySelector('#stat-network').innerText = `${formatBytes(data.data.outgoing[0]).amount}${formatBytes(data.data.outgoing[0]).format} (${formatBytes(data.data.outgoing[1]).amount}${formatBytes(data.data.outgoing[1]).format}/s) | ${formatBytes(data.data.incoming[0]).amount}${formatBytes(data.data.incoming[0]).format} (${formatBytes(data.data.incoming[1]).amount}${formatBytes(data.data.incoming[1]).format}/s)`
 
     cpuChart.data.labels.push('')
     cpuChart.data.datasets[0].data.push(data.cpu.usage)

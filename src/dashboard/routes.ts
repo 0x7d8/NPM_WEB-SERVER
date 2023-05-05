@@ -62,46 +62,52 @@ export default async function statsRoute(ctr: RequestContext, ctg: GlobalContext
           }, 500))
   
           readable.push({
-            requests: Array.from({ length: 6 }, (value, index) => {
-              if (index === 0) return ctg.requests.total
+            requests: Array.from({ length: 7 }, (value, index) => {
+              if (index === 0) return ctg.requests.stats.total
+              else if (index === 1) return ctg.requests.stats.perSecond
               else return {
-                hour: ctx.previousHours[index - 1],
-                amount: ctg.requests[ctx.previousHours[index - 1]]
+                hour: ctx.previousHours[index - 2],
+                amount: ctg.requests.stats[ctx.previousHours[index - 2]]
               }
             }), web_sockets: {
-              opened: Array.from({ length: 6 }, (value, index) => {
-                if (index === 0) return ctg.webSockets.opened.total
+              opened: Array.from({ length: 7 }, (value, index) => {
+                if (index === 0) return ctg.webSockets.opened.stats.total
+                else if (index === 1) return ctg.webSockets.opened.stats.perSecond
                 else return {
-                  hour: ctx.previousHours[index - 1],
-                  amount: ctg.webSockets.opened[ctx.previousHours[index - 1]]
+                  hour: ctx.previousHours[index - 2],
+                  amount: ctg.webSockets.opened.stats[ctx.previousHours[index - 2]]
                 }
               }), messages: {
-                incoming: Array.from({ length: 6 }, (value, index) => {
-                  if (index === 0) return ctg.webSockets.messages.incoming.total
+                incoming: Array.from({ length: 7 }, (value, index) => {
+                  if (index === 0) return ctg.webSockets.messages.incoming.stats.total
+                  else if (index === 1) return ctg.webSockets.messages.incoming.stats.perSecond
                   else return {
-                    hour: ctx.previousHours[index - 1],
-                    amount: ctg.webSockets.messages.incoming[ctx.previousHours[index - 1]]
+                    hour: ctx.previousHours[index - 2],
+                    amount: ctg.webSockets.messages.incoming.stats[ctx.previousHours[index - 2]]
                   }
-                }), outgoing: Array.from({ length: 6 }, (value, index) => {
-                  if (index === 0) return ctg.webSockets.messages.outgoing.total
+                }), outgoing: Array.from({ length: 7 }, (value, index) => {
+                  if (index === 0) return ctg.webSockets.messages.outgoing.stats.total
+                  else if (index === 1) return ctg.webSockets.messages.outgoing.stats.perSecond
                   else return {
-                    hour: ctx.previousHours[index - 1],
-                    amount: ctg.webSockets.messages.outgoing[ctx.previousHours[index - 1]]
+                    hour: ctx.previousHours[index - 2],
+                    amount: ctg.webSockets.messages.outgoing.stats[ctx.previousHours[index - 2]]
                   }
                 })
               }
             }, data: {
-              incoming: Array.from({ length: 6 }, (value, index) => {
-                if (index === 0) return ctg.data.incoming.total
+              incoming: Array.from({ length: 7 }, (value, index) => {
+                if (index === 0) return ctg.data.incoming.stats.total
+                else if (index === 1) return ctg.data.incoming.stats.perSecond
                 else return {
-                  hour: ctx.previousHours[index - 1],
-                  amount: ctg.data.incoming[ctx.previousHours[index - 1]]
+                  hour: ctx.previousHours[index - 2],
+                  amount: ctg.data.incoming.stats[ctx.previousHours[index - 2]]
                 }
-              }), outgoing: Array.from({ length: 6 }, (value, index) => {
-                if (index === 0) return ctg.data.outgoing.total
+              }), outgoing: Array.from({ length: 7 }, (value, index) => {
+                if (index === 0) return ctg.data.outgoing.stats.total
+                else if (index === 1) return ctg.data.outgoing.stats.perSecond
                 else return {
-                  hour: ctx.previousHours[index - 1],
-                  amount: ctg.data.outgoing[ctx.previousHours[index - 1]]
+                  hour: ctx.previousHours[index - 2],
+                  amount: ctg.data.outgoing.stats[ctx.previousHours[index - 2]]
                 }
               })
             }, cpu: {

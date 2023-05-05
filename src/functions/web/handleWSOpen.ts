@@ -10,8 +10,8 @@ export default function handleWSOpen(ws: WebSocket<WebSocketContext>, ctg: Globa
 	ctx.response.content = Buffer.allocUnsafe(0)
 	ctx.previousHours = getPreviousHours()
 	ctx.continueSend = true
+	ctx.executeSelf = () => true
 	ctx.executeCode = true
-	ctx.queue = []
 
 	ctx.handleError = (err) => {
 		if (!err) return
@@ -66,27 +66,15 @@ export default function handleWSOpen(ws: WebSocket<WebSocketContext>, ctg: Globa
 			return resolve()
 		}); await runPageLogic()
 
-		// Execute Queue
-		if (ctx.queue.length > 0) {
-			const err = await ctx.runQueue()
-
-			if (err) {
-				ctx.error = err
-				ctx.execute.event = 'wsConnectError'
-			}
-		}; await runPageLogic(true)
-
-
-		// Handle Reponse
+		// Execute Self Sufficient Script
 		try {
-			if (ctx.response.content.byteLength > 0 && ctx.continueSend) return ws.cork(() => {
-				try {
-					ctg.webSockets.messages.outgoing.total++
-					ctg.webSockets.messages.outgoing[ctx.previousHours[4]]++
+			const result = await Promise.resolve(ctx.executeSelf())
+			ctx.continueSend = result
 
-					ws.send(ctx.response.content)
-				} catch { }
-			})
-		} catch { }
+			if (result) await runPageLogic(true)
+		} catch (err) {
+			ctx.handleError(err)
+			await runPageLogic(true)
+		}
   }) ()}
 }

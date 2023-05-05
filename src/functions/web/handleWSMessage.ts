@@ -12,14 +12,11 @@ export default function handleWSConnect(ws: WebSocket<WebSocketContext>, message
 	ctx.body.raw = Buffer.from(message)
 	ctx.body.parsed = ''
 	ctx.continueSend = true
+	ctx.executeSelf = () => true
 	ctx.executeCode = true
-	ctx.queue = []
 
-	ctg.data.incoming.total += ctx.body.raw.byteLength
-	ctg.data.incoming[ctx.previousHours[4]] += ctx.body.raw.byteLength
-
-	ctg.webSockets.messages.incoming.total++
-	ctg.webSockets.messages.incoming[ctx.previousHours[4]]++
+	ctg.data.incoming.increase(ctx.body.raw.byteLength)
+	ctg.webSockets.messages.incoming.increase()
 
 	ctx.handleError = (err) => {
 		if (!err) return
@@ -74,27 +71,15 @@ export default function handleWSConnect(ws: WebSocket<WebSocketContext>, message
 			return resolve()
 		}); await runPageLogic()
 
-		// Execute Queue
-		if (ctx.queue.length > 0) {
-			const err = await ctx.runQueue()
-
-			if (err) {
-				ctx.error = err
-				ctx.execute.event = 'wsMessageError'
-			}
-		}; await runPageLogic(true)
-
-
-		// Handle Reponse
+		// Execute Self Sufficient Script
 		try {
-			if (ctx.response.content.byteLength > 0 && ctx.continueSend) return ws.cork(() => {
-				try {
-					ctg.webSockets.messages.outgoing.total++
-					ctg.webSockets.messages.outgoing[ctx.previousHours[4]]++
+			const result = await Promise.resolve(ctx.executeSelf())
+			ctx.continueSend = result
 
-					ws.send(ctx.response.content)
-				} catch { }
-			})
-		} catch { }
+			if (result) await runPageLogic(true)
+		} catch (err) {
+			ctx.handleError(err)
+			await runPageLogic(true)
+		}; ctx.executeSelf = () => false
   }) ()}
 }

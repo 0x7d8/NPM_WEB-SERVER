@@ -2,7 +2,7 @@ import { WsConnect, WsMessage, WsClose, HttpRequest } from "../types/external"
 import { LocalContext, GlobalContext } from "../types/context"
 import { RealAny, EndFn } from "../types/internal"
 
-export const currentVersion = 2
+export const currentVersion = 3
 
 export interface MiddlewareData<
 	Config extends Record<any, any>,
@@ -108,9 +108,9 @@ export default class MiddlewareBuilder<
 	 * ```
 	 * @since 7.0.0
 	*/ public httpClass<Class extends new(...args: any[]) => any>(
-		/** The Callback to the Class extending the HTTP Class */ callback: (extend: typeof HttpRequest) => Class
+		/** The Callback to the Class extending the HTTP Class */ callback: (extend: typeof HttpRequest, localContext: Context) => Class
 	): MiddlewareBuilder<Config, Context, Class, WSConnectContext, WSMessageContext, WSCloseContext> {
-		this.data.classModifications.http = callback(HttpRequest) as any
+		this.data.classModifications.http = callback(HttpRequest, this.dataContext) as any
 
 		const builder = new MiddlewareBuilder()
 		builder.data = this.data
@@ -134,9 +134,9 @@ export default class MiddlewareBuilder<
 	 * ```
 	 * @since 7.0.0
 	*/ public wsConnectClass<Class extends new(...args: any[]) => any>(
-		/** The Callback to the Class extending the HTTP Class */ callback: (extend: typeof WsConnect) => Class
+		/** The Callback to the Class extending the HTTP Class */ callback: (extend: typeof WsConnect, localContext: Context) => Class
 	): MiddlewareBuilder<Config, Context, HTTPContext, Class, WSMessageContext, WSCloseContext> {
-		this.data.classModifications.wsConnect = callback(WsConnect) as any
+		this.data.classModifications.wsConnect = callback(WsConnect, this.dataContext) as any
 
 		const builder = new MiddlewareBuilder()
 		builder.data = this.data
@@ -160,9 +160,9 @@ export default class MiddlewareBuilder<
 	 * ```
 	 * @since 7.0.0
 	*/ public wsMessageClass<Class extends new(...args: any[]) => any>(
-		/** The Callback to the Class extending the HTTP Class */ callback: (extend: typeof WsMessage) => Class
+		/** The Callback to the Class extending the HTTP Class */ callback: (extend: typeof WsMessage, localContext: Context) => Class
 	): MiddlewareBuilder<Config, Context, HTTPContext, WSConnectContext, Class, WSCloseContext> {
-		this.data.classModifications.wsMessage = callback(WsMessage) as any
+		this.data.classModifications.wsMessage = callback(WsMessage, this.dataContext) as any
 	
 		const builder = new MiddlewareBuilder()
 		builder.data = this.data
@@ -186,9 +186,9 @@ export default class MiddlewareBuilder<
 	 * ```
 	 * @since 7.0.0
 	*/ public wsCloseClass<Class extends new(...args: any[]) => any>(
-		/** The Callback to the Class extending the HTTP Class */ callback: (extend: typeof WsClose) => Class
+		/** The Callback to the Class extending the HTTP Class */ callback: (extend: typeof WsClose, localContext: Context) => Class
 	): MiddlewareBuilder<Config, Context, HTTPContext, WSConnectContext, WSMessageContext, Class> {
-		this.data.classModifications.wsClose = callback(WsClose) as any
+		this.data.classModifications.wsClose = callback(WsClose, this.dataContext) as any
 	
 		const builder = new MiddlewareBuilder()
 		builder.data = this.data

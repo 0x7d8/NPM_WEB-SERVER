@@ -10,12 +10,12 @@ export default function handleWSClose(ws: WebSocket<WebSocketContext>, message: 
 	ctx.previousHours = getPreviousHours()
 	ctx.body.raw = Buffer.from(message)
 	ctx.body.parsed = ''
+	ctx.executeSelf = () => true
 	ctx.executeCode = true
 
 	ctx.events.emit('requestAborted')
 
-	ctg.data.incoming.total += ctx.body.raw.byteLength
-	ctg.data.incoming[ctx.previousHours[4]] += ctx.body.raw.byteLength
+	ctg.data.incoming.increase()
 
 	ctx.handleError = (err) => {
 		if (!err) return
@@ -74,14 +74,15 @@ export default function handleWSClose(ws: WebSocket<WebSocketContext>, message: 
 			return resolve()
 		}); await runPageLogic()
 
-		// Execute Queue
-		if (ctx.queue.length > 0) {
-			const err = await ctx.runQueue()
+		// Execute Self Sufficient Script
+		try {
+			const result = await Promise.resolve(ctx.executeSelf())
+			ctx.continueSend = result
 
-			if (err) {
-				ctx.error = err
-				ctx.execute.event = 'wsCloseError'
-			}
-		}; await runPageLogic(true)
+			if (result) await runPageLogic(true)
+		} catch (err) {
+			ctx.handleError(err)
+			await runPageLogic(true)
+		}
   }) ()}
 }

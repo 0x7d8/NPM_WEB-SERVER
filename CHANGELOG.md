@@ -1,3 +1,10 @@
+## 7.3.0
+
+- Add #/s count to dashboard
+- Rework Internal Structure to remove Queue
+- Add LocalContext to Middleware Class extendor
+- Correctly count WebSocket Stats
+
 ## 7.2.3
 
 - Decode Cookie and Query Parameters Correctly

@@ -12,6 +12,7 @@ import handleCompressType, { CompressMapping } from "../../functions/handleCompr
 import { resolve as pathResolve } from "path"
 import { promises as fs, createReadStream } from "fs"
 import parseStatus from "../../functions/parseStatus"
+import parseHeaders from "../../functions/parseHeaders"
 
 export default class HTTPRequest<Context extends Record<any, any> = {}, Body = unknown> extends Base<Context> {
 	/**
@@ -85,18 +86,7 @@ export default class HTTPRequest<Context extends Record<any, any> = {}, Body = u
 	 * ```
 	 * @since 0.6.3
 	*/ public setHeader(name: string, value: Content): this {
-		this.ctx.response.headers[name.toLowerCase()] = Buffer.allocUnsafe(0)
-
-		this.ctx.scheduleQueue('context', async() => {
-			let result: ParseContentReturns
-			try {
-				result = await parseContent(value)
-			} catch (err) {
-				return this.ctx.handleError(err)
-			}
-
-			this.ctx.response.headers[name.toLowerCase()] = result.content
-		})
+		this.ctx.response.headers[name.toLowerCase()] = value
 
 		return this
 	}
@@ -147,33 +137,15 @@ export default class HTTPRequest<Context extends Record<any, any> = {}, Body = u
 	 * @since 0.0.2
 	*/ public print(content: Content, options: {
 		/**
-		 * The Content Type to use
-		 * @default ""
-		 * @since 2.7.5
-		*/ contentType?: string
-		/**
 		 * Whether to prettify output (currently just JSONs)
 		 * @default false
 		 * @since 6.2.0
 		*/ prettify?: boolean
 	} = {}): this {
-		const contentType = options?.contentType ?? ''
 		const prettify = options?.prettify ?? false
 
-		this.ctx.scheduleQueue('execution', (async() => {
-			let result: ParseContentReturns
-			try {
-				result = await parseContent(content, prettify)
-			} catch (err) {
-				return this.ctx.handleError(err)
-			}
-
-			for (const header in result.headers) {
-				this.ctx.response.headers[header.toLowerCase()] = result.headers[header]
-			}; if (contentType) this.ctx.response.headers['content-type'] = contentType
-
-			this.ctx.response.content = result.content
-		}))
+		this.ctx.response.content = content
+		this.ctx.response.contentPrettify = prettify
 
 		return this
 	}
@@ -214,7 +186,7 @@ export default class HTTPRequest<Context extends Record<any, any> = {}, Body = u
 		callback(builder)
 
 		this.ctx.response.headers['content-type'] = 'text/html'
-		this.ctx.response.content = Buffer.from(`<!DOCTYPE html><html ${parseAttributes({ lang: htmlLanguage }, [])}>${builder['html']}</html>`)
+		this.ctx.response.content = `<!DOCTYPE html><html ${parseAttributes({ lang: htmlLanguage }, [])}>${builder['html']}</html>`
 
 		const path = this.ctx.url.path
 		if (!this.ctg.routes.htmlBuilder.some((h) => h.path === path)) {
@@ -278,17 +250,20 @@ export default class HTTPRequest<Context extends Record<any, any> = {}, Body = u
 		if (addTypes) this.ctx.response.headers['content-type'] = Buffer.from(handleContentType(file, this.ctg))
 		if (this.ctx.headers.get('accept-encoding', '').includes(CompressMapping[this.ctg.options.compression].toString())) {
 			this.ctx.response.headers['content-encoding'] = CompressMapping[this.ctg.options.compression]
-			this.ctx.response.headers['vary'] = Buffer.from('Accept-Encoding')
+			this.ctx.response.headers['vary'] = 'Accept-Encoding'
 		}
 
-		this.ctx.scheduleQueue('execution', () => new Promise<void>(async(resolve) => {
+		this.ctx.setExecuteSelf(() => new Promise(async(resolve) => {
 			if (this.ctg.options.performance.lastModified) try {
 				const fileStat = await fs.stat(pathResolve(file))
 				this.ctx.response.headers['last-modified'] = fileStat.mtime.toUTCString()
 			} catch (err) {
 				this.ctx.handleError(err)
-				return resolve()
+				return resolve(true)
 			}
+
+			// Parse Headers
+			const parsedHeaders = await parseHeaders(this.ctx.response.headers)
 
 			if (!this.ctx.isAborted) this.rawRes.cork(() => {
 				let endEarly = false
@@ -300,32 +275,26 @@ export default class HTTPRequest<Context extends Record<any, any> = {}, Body = u
 
 				// Write Headers & Status
 				if (!this.ctx.isAborted) this.rawRes.writeStatus(parseStatus(this.ctx.response.status))
-				for (const header in this.ctx.response.headers) {
-					if (!this.ctx.isAborted) this.rawRes.writeHeader(header, this.ctx.response.headers[header])
+				for (const header in parsedHeaders) {
+					if (!this.ctx.isAborted) this.rawRes.writeHeader(header, parsedHeaders[header])
 				}
 
 				if (endEarly) {
 					if (!this.ctx.isAborted) this.rawRes.end('')
-					return resolve()
+					return resolve(false)
 				}
 
 				// Check Cache
 				if (this.ctg.cache.files.has(`file::${file}`)) {
-					this.ctg.data.outgoing.total += this.ctg.cache.files.get(`file::${file}`)!.byteLength
-					this.ctg.data.outgoing[this.ctx.previousHours[4]] += this.ctg.cache.files.get(`file::${file}`)!.byteLength
 					this.ctx.response.content = this.ctg.cache.files.get(`file::${file}`)!
 
-					return resolve()
+					return resolve(true)
 				} else if (this.ctg.cache.files.has(`file::${this.ctg.options.compression}::${file}`)) {
 					this.ctx.response.isCompressed = true
-					this.ctg.data.outgoing.total += this.ctg.cache.files.get(`file::${this.ctg.options.compression}::${file}`)!.byteLength
-					this.ctg.data.outgoing[this.ctx.previousHours[4]] += this.ctg.cache.files.get(`file::${this.ctg.options.compression}::${file}`)!.byteLength
 					this.ctx.response.content = this.ctg.cache.files.get(`file::${this.ctg.options.compression}::${file}`)!
 
-					return resolve()
+					return resolve(true)
 				}
-
-				this.ctx.continueSend = false
 
 				// Get File Content
 				if (this.ctx.headers.get('accept-encoding', '').includes(CompressMapping[this.ctg.options.compression].toString())) {
@@ -338,8 +307,7 @@ export default class HTTPRequest<Context extends Record<any, any> = {}, Body = u
 
 					// Handle Compression
 					compression.on('data', (content: Buffer) => {
-						this.ctg.data.outgoing.total += content.byteLength
-						this.ctg.data.outgoing[this.ctx.previousHours[4]] += content.byteLength
+						this.ctg.data.outgoing.increase(content.byteLength)
 
 						if (!this.ctx.isAborted) this.rawRes.write(content)
 
@@ -351,7 +319,7 @@ export default class HTTPRequest<Context extends Record<any, any> = {}, Body = u
 					}).once('close', () => {
 						this.ctx.response.content = Buffer.allocUnsafe(0)
 						this.ctx.events.removeListener('requestAborted', destroyStreams)
-						resolve()
+						resolve(false)
 						if (!this.ctx.isAborted) this.rawRes.end()
 					})
 
@@ -360,7 +328,7 @@ export default class HTTPRequest<Context extends Record<any, any> = {}, Body = u
 					// Handle Errors
 					stream.once('error', (err) => {
 						this.ctx.handleError(err)
-						return resolve()
+						return resolve(true)
 					})
 
 					// Handle Data
@@ -378,13 +346,12 @@ export default class HTTPRequest<Context extends Record<any, any> = {}, Body = u
 					// Handle Errors
 					stream.once('error', (err) => {
 						this.ctx.handleError(err)
-						return resolve()
+						return resolve(true)
 					})
 
 					// Handle Data
 					stream.on('data', (content: Buffer) => {
-						this.ctg.data.outgoing.total += content.byteLength
-						this.ctg.data.outgoing[this.ctx.previousHours[4]] += content.byteLength
+						this.ctg.data.outgoing.increase(content.byteLength)
 
 						if (!this.ctx.isAborted) this.rawRes.write(content)
 
@@ -396,7 +363,7 @@ export default class HTTPRequest<Context extends Record<any, any> = {}, Body = u
 					}).once('close', () => {
 						this.ctx.response.content = Buffer.allocUnsafe(0)
 						this.ctx.events.removeListener('requestAborted', destroyStream)
-						resolve()
+						resolve(true)
 						if (!this.ctx.isAborted) this.rawRes.end()
 					})
 
@@ -404,7 +371,7 @@ export default class HTTPRequest<Context extends Record<any, any> = {}, Body = u
 					this.ctx.events.once('requestAborted', destroyStream)
 				}
 			})
-			else resolve()
+			else resolve(false)
 		}))
 
 		return this
@@ -435,14 +402,14 @@ export default class HTTPRequest<Context extends Record<any, any> = {}, Body = u
 		const endRequest = options?.endRequest ?? true
 		const destroyAbort = options?.destroyAbort ?? true
 
-		this.ctx.scheduleQueue('execution', () => new Promise<void>((resolve) => {
-			this.ctx.continueSend = false
+		this.ctx.setExecuteSelf(() => new Promise(async(resolve) => {
+			const parsedHeaders = await parseHeaders(this.ctx.response.headers)
 
 			if (!this.ctx.isAborted) this.rawRes.cork(() => {
 				// Write Headers & Status
 				if (!this.ctx.isAborted) this.rawRes.writeStatus(parseStatus(this.ctx.response.status, this.ctx.response.statusMessage))
-				for (const header in this.ctx.response.headers) {
-					if (!this.ctx.isAborted) this.rawRes.writeHeader(header, this.ctx.response.headers[header])
+				for (const header in parsedHeaders) {
+					if (!this.ctx.isAborted) this.rawRes.writeHeader(header, parsedHeaders[header])
 				}
 
 				const destroyStream = () => {
@@ -458,12 +425,11 @@ export default class HTTPRequest<Context extends Record<any, any> = {}, Body = u
 
 					if (!this.ctx.isAborted) this.rawRes.write(data)
 
-					this.ctg.data.outgoing.total += data.byteLength
-					this.ctg.data.outgoing[this.ctx.previousHours[4]] += data.byteLength
+					this.ctg.data.outgoing.increase(data.byteLength)
 				}, closeListener = () => {
 					if (destroyAbort) this.ctx.events.removeListener('requestAborted', destroyStream)
 					if (endRequest) {
-						resolve()
+						resolve(false)
 						if (!this.ctx.isAborted) this.rawRes.end()
 					}
 				}, errorListener = (error: Error) => {
@@ -473,7 +439,7 @@ export default class HTTPRequest<Context extends Record<any, any> = {}, Body = u
 						.removeListener('close', closeListener)
 						.removeListener('error', errorListener)
 
-					return resolve()
+					return resolve(false)
 				}
 
 				if (destroyAbort) this.ctx.events.once('requestAborted', destroyStream)

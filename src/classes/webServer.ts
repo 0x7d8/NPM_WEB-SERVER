@@ -3,7 +3,7 @@ import { GlobalContext } from "../types/context"
 import ValueCollection from "./valueCollection"
 import parseOptions, { Options } from "../functions/parseOptions"
 import RouteList from "./router"
-import handleHTTPRequest, { getPreviousHours } from "../functions/web/handleHTTPRequest"
+import handleHTTPRequest from "../functions/web/handleHTTPRequest"
 import handleWSOpen from "../functions/web/handleWSOpen"
 import handleWSMessage from "../functions/web/handleWSMessage"
 import handleWSClose from "../functions/web/handleWSClose"
@@ -14,6 +14,7 @@ import { MiddlewareInitted } from "../types/internal"
 import RouteFile from "./router/file"
 import { getFilesRecursively } from "rjutils-collection"
 import { HttpRequest, WsClose, WsConnect, WsMessage } from "../types/external"
+import DataStat from "./dataStat"
 import { promises as fs } from "fs"
 
 import uWebsocket from "@rjweb/uws"
@@ -48,41 +49,12 @@ export default class Webserver<GlobContext extends Record<any, any> = {}, Middle
 			contentTypes: {},
 			defaultHeaders: {},
 			options: fullOptions,
-			requests: {
-				total: 0,
-				0: 0, 1: 0, 2: 0, 3: 0,
-				4: 0, 5: 0, 6: 0, 7: 0,
-				8: 0, 9: 0, 10: 0, 11: 0,
-				12: 0, 13: 0, 14: 0, 15: 0,
-				16: 0, 17: 0, 18: 0, 19: 0,
-				20: 0, 21: 0, 22: 0, 23: 0
-			}, webSockets: {
-				opened: {
-					total: 0,
-					0: 0, 1: 0, 2: 0, 3: 0,
-					4: 0, 5: 0, 6: 0, 7: 0,
-					8: 0, 9: 0, 10: 0, 11: 0,
-					12: 0, 13: 0, 14: 0, 15: 0,
-					16: 0, 17: 0, 18: 0, 19: 0,
-					20: 0, 21: 0, 22: 0, 23: 0
-				}, messages: {
-					incoming: {
-						total: 0,
-						0: 0, 1: 0, 2: 0, 3: 0,
-						4: 0, 5: 0, 6: 0, 7: 0,
-						8: 0, 9: 0, 10: 0, 11: 0,
-						12: 0, 13: 0, 14: 0, 15: 0,
-						16: 0, 17: 0, 18: 0, 19: 0,
-						20: 0, 21: 0, 22: 0, 23: 0
-					}, outgoing: {
-						total: 0,
-						0: 0, 1: 0, 2: 0, 3: 0,
-						4: 0, 5: 0, 6: 0, 7: 0,
-						8: 0, 9: 0, 10: 0, 11: 0,
-						12: 0, 13: 0, 14: 0, 15: 0,
-						16: 0, 17: 0, 18: 0, 19: 0,
-						20: 0, 21: 0, 22: 0, 23: 0
-					}
+			requests: new DataStat(),
+			webSockets: {
+				opened: new DataStat(),
+				messages: {
+					incoming: new DataStat(),
+					outgoing: new DataStat()
 				}
 			}, classContexts: {
 				http: HttpRequest,
@@ -91,23 +63,8 @@ export default class Webserver<GlobContext extends Record<any, any> = {}, Middle
 				wsClose: WsClose
 			}, middlewares: this.middlewares,
 			data: {
-				incoming: {
-					total: 0,
-					0: 0, 1: 0, 2: 0, 3: 0,
-					4: 0, 5: 0, 6: 0, 7: 0,
-					8: 0, 9: 0, 10: 0, 11: 0,
-					12: 0, 13: 0, 14: 0, 15: 0,
-					16: 0, 17: 0, 18: 0, 19: 0,
-					20: 0, 21: 0, 22: 0, 23: 0
-				}, outgoing: {
-					total: 0,
-					0: 0, 1: 0, 2: 0, 3: 0,
-					4: 0, 5: 0, 6: 0, 7: 0,
-					8: 0, 9: 0, 10: 0, 11: 0,
-					12: 0, 13: 0, 14: 0, 15: 0,
-					16: 0, 17: 0, 18: 0, 19: 0,
-					20: 0, 21: 0, 22: 0, 23: 0
-				}
+				incoming: new DataStat(),
+				outgoing: new DataStat()
 			}, routes: {
 				normal: [],
 				websocket: [],
@@ -120,15 +77,6 @@ export default class Webserver<GlobContext extends Record<any, any> = {}, Middle
 				routes: new ValueCollection(undefined, undefined, fullOptions.cache)
 			}
 		}
-
-		// Stats Cleaner
-		setInterval(() => {
-			const previousHours = getPreviousHours()
-
-			this.globalContext.requests[previousHours[6]] = 0
-			this.globalContext.data.incoming[previousHours[6]] = 0
-			this.globalContext.data.outgoing[previousHours[6]] = 0
-		}, 300000)
 	}
 
 	/**
@@ -183,17 +131,28 @@ export default class Webserver<GlobContext extends Record<any, any> = {}, Middle
 			let stopExecution = false
 			const externalPaths = await this.loadExternalPaths()
 
+			this.globalContext.webSockets = {
+				opened: new DataStat(),
+				messages: {
+					incoming: new DataStat(),
+					outgoing: new DataStat()
+				}
+			}; this.globalContext.data = {
+				incoming: new DataStat(),
+				outgoing: new DataStat()
+			}; this.globalContext.requests = new DataStat()
+
 			for (let middlewareIndex = 0; middlewareIndex < this.middlewares.length; middlewareIndex++) {
 				const middleware = this.middlewares[middlewareIndex]
 				if (!('data' in middleware)) {
-					reject(new Error(`Middleware ${(middleware as any).name} is outdated!`))
+					reject(new Error(`Middleware ${(middleware as any).name} is too old!`))
 					stopExecution = true
 
 					break
 				}; if (!('initEvent' in middleware.data)) continue
 
 				try {
-					if (middleware.version > currentVersion) throw new Error(`Middleware version cannot be higher than currently supported version (${middleware.version} > ${currentVersion})`)
+					if (middleware.version !== currentVersion) throw new Error(`Middleware version cannot be higher or lower than currently supported version (${middleware.version} != ${currentVersion})`)
 					await Promise.resolve(middleware.data.initEvent!(middleware.localContext, middleware.config, this.globalContext))
 				} catch (error: any) {
 					reject(error)
@@ -298,62 +257,6 @@ export default class Webserver<GlobContext extends Record<any, any> = {}, Middle
 		this.globalContext.routes.normal.push(...externalPaths.routes)
 		this.globalContext.routes.websocket.push(...externalPaths.webSockets)
 
-		this.globalContext.webSockets = {
-			opened: {
-				total: 0,
-				0: 0, 1: 0, 2: 0, 3: 0,
-				4: 0, 5: 0, 6: 0, 7: 0,
-				8: 0, 9: 0, 10: 0, 11: 0,
-				12: 0, 13: 0, 14: 0, 15: 0,
-				16: 0, 17: 0, 18: 0, 19: 0,
-				20: 0, 21: 0, 22: 0, 23: 0
-			}, messages: {
-				incoming: {
-					total: 0,
-					0: 0, 1: 0, 2: 0, 3: 0,
-					4: 0, 5: 0, 6: 0, 7: 0,
-					8: 0, 9: 0, 10: 0, 11: 0,
-					12: 0, 13: 0, 14: 0, 15: 0,
-					16: 0, 17: 0, 18: 0, 19: 0,
-					20: 0, 21: 0, 22: 0, 23: 0
-				}, outgoing: {
-					total: 0,
-					0: 0, 1: 0, 2: 0, 3: 0,
-					4: 0, 5: 0, 6: 0, 7: 0,
-					8: 0, 9: 0, 10: 0, 11: 0,
-					12: 0, 13: 0, 14: 0, 15: 0,
-					16: 0, 17: 0, 18: 0, 19: 0,
-					20: 0, 21: 0, 22: 0, 23: 0
-				}
-			}
-		}; this.globalContext.data = {
-			incoming: {
-				total: 0,
-				0: 0, 1: 0, 2: 0, 3: 0,
-				4: 0, 5: 0, 6: 0, 7: 0,
-				8: 0, 9: 0, 10: 0, 11: 0,
-				12: 0, 13: 0, 14: 0, 15: 0,
-				16: 0, 17: 0, 18: 0, 19: 0,
-				20: 0, 21: 0, 22: 0, 23: 0
-			}, outgoing: {
-				total: 0,
-				0: 0, 1: 0, 2: 0, 3: 0,
-				4: 0, 5: 0, 6: 0, 7: 0,
-				8: 0, 9: 0, 10: 0, 11: 0,
-				12: 0, 13: 0, 14: 0, 15: 0,
-				16: 0, 17: 0, 18: 0, 19: 0,
-				20: 0, 21: 0, 22: 0, 23: 0
-			}
-		}; this.globalContext.requests = {
-			total: 0,
-			0: 0, 1: 0, 2: 0, 3: 0,
-			4: 0, 5: 0, 6: 0, 7: 0,
-			8: 0, 9: 0, 10: 0, 11: 0,
-			12: 0, 13: 0, 14: 0, 15: 0,
-			16: 0, 17: 0, 18: 0, 19: 0,
-			20: 0, 21: 0, 22: 0, 23: 0
-		}
-
 		this.stop()
 		return this.start()
 	}
@@ -377,34 +280,6 @@ export default class Webserver<GlobContext extends Record<any, any> = {}, Middle
 		this.globalContext.cache.files.clear()
 		this.globalContext.cache.routes.clear()
 		uWebsocket.us_listen_socket_close(this.socket)
-
-		this.globalContext.data = {
-			incoming: {
-				total: 0,
-				0: 0, 1: 0, 2: 0, 3: 0,
-				4: 0, 5: 0, 6: 0, 7: 0,
-				8: 0, 9: 0, 10: 0, 11: 0,
-				12: 0, 13: 0, 14: 0, 15: 0,
-				16: 0, 17: 0, 18: 0, 19: 0,
-				20: 0, 21: 0, 22: 0, 23: 0
-			}, outgoing: {
-				total: 0,
-				0: 0, 1: 0, 2: 0, 3: 0,
-				4: 0, 5: 0, 6: 0, 7: 0,
-				8: 0, 9: 0, 10: 0, 11: 0,
-				12: 0, 13: 0, 14: 0, 15: 0,
-				16: 0, 17: 0, 18: 0, 19: 0,
-				20: 0, 21: 0, 22: 0, 23: 0
-			}
-		}; this.globalContext.requests = {
-			total: 0,
-			0: 0, 1: 0, 2: 0, 3: 0,
-			4: 0, 5: 0, 6: 0, 7: 0,
-			8: 0, 9: 0, 10: 0, 11: 0,
-			12: 0, 13: 0, 14: 0, 15: 0,
-			16: 0, 17: 0, 18: 0, 19: 0,
-			20: 0, 21: 0, 22: 0, 23: 0
-		}
 
 		return { success: true, message: 'WEBSERVER CLOSED' }
 	}
