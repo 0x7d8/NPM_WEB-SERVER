@@ -1,3 +1,8 @@
+## 7.5.0
+
+- Fix Content Parsing for Promisified Content
+- Add File based Routing
+
 ## 7.4.0
 
 - Added prettify to more methods

@@ -13,7 +13,8 @@ import HTTP from "../types/http"
 import { MiddlewareInitted } from "../types/internal"
 import RouteFile from "./router/file"
 import { getFilesRecursively } from "rjutils-collection"
-import { HttpRequest, WsClose, WsConnect, WsMessage } from "../types/external"
+import { HttpRequest, WsClose, WsConnect, WsMessage, parsePath } from "../types/external"
+import { addPathsToLoadedRouter } from "../functions/routeFileParsing"
 import DataStat from "./dataStat"
 import Logger from "./logger"
 import { promises as fs } from "fs"
@@ -21,6 +22,7 @@ import { promises as fs } from "fs"
 import uWebsocket from "@rjweb/uws"
 import path from "path"
 import os from "os"
+import { isRegExp } from "util/types"
 
 export default class Webserver<GlobContext extends Record<any, any> = {}, Middlewares extends MiddlewareInitted[] = []> extends RouteList<GlobContext, Middlewares> {
 	protected globalContext: GlobalContext
@@ -287,8 +289,9 @@ export default class Webserver<GlobContext extends Record<any, any> = {}, Middle
 	}
 
 
-	/** Load all External Paths */
-	private async loadExternalPaths() {
+	/**
+	 * Load all External Paths
+	*/ private async loadExternalPaths() {
 		const loadedRoutes: {
 			routes: HTTP[]
 			webSockets: WebSocket[]
@@ -311,18 +314,22 @@ export default class Webserver<GlobContext extends Record<any, any> = {}, Middle
 						!(route instanceof RouteFile)
 					) throw new Error(`Invalid Route @ ${file}`)
 
-					const routeInfos = await route.getData(loadPath.prefix)
-					for (const routeInfo of routeInfos.routes) {
+					const routeInfos = await route.getData('/')
+
+					let realRoutes = Object.assign({}, routeInfos)
+					if (loadPath.fileBasedRouting) realRoutes = await addPathsToLoadedRouter(loadPath, route, file.replace(loadPath.path, '').replace(/index|\.(js|ts|cjs|cts|mjs|mts)/g, ''), this.globalContext.logger)
+
+					for (const routeInfo of realRoutes.routes) {
 						routeInfo.data.validations.push(...loadPath.validations)
 						routeInfo.data.headers = Object.assign(routeInfo.data.headers, loadPath.headers)
 					}
 
-					for (const routeInfo of routeInfos.webSockets) {
+					for (const routeInfo of realRoutes.webSockets) {
 						routeInfo.data.validations.push(...loadPath.validations)
 					}
 
-					loadedRoutes.routes.push(...routeInfos.routes)
-					loadedRoutes.webSockets.push(...routeInfos.webSockets)
+					loadedRoutes.routes.push(...realRoutes.routes)
+					loadedRoutes.webSockets.push(...realRoutes.webSockets)
 				}
 			} else {
 				for (const file of (await getFilesRecursively(loadPath.path, true)).filter((f) => f.endsWith('js'))) {
@@ -339,18 +346,22 @@ export default class Webserver<GlobContext extends Record<any, any> = {}, Middle
 						!(route instanceof RouteFile)
 					) throw new Error(`Invalid Route @ ${file}`)
 
-					const routeInfos = await route.getData(loadPath.prefix)
-					for (const routeInfo of routeInfos.routes) {
+					const routeInfos = await route.getData('/')
+
+					let realRoutes = Object.assign({}, routeInfos)
+					if (loadPath.fileBasedRouting) realRoutes = await addPathsToLoadedRouter(loadPath, route, file.replace(loadPath.path, '').replace(/index|\.(js|ts|cjs|cts|mjs|mts)/g, ''), this.globalContext.logger)
+
+					for (const routeInfo of realRoutes.routes) {
 						routeInfo.data.validations.push(...loadPath.validations)
 						routeInfo.data.headers = Object.assign(routeInfo.data.headers, loadPath.headers)
 					}
 
-					for (const routeInfo of routeInfos.webSockets) {
+					for (const routeInfo of realRoutes.webSockets) {
 						routeInfo.data.validations.push(...loadPath.validations)
 					}
 
-					loadedRoutes.routes.push(...routeInfos.routes)
-					loadedRoutes.webSockets.push(...routeInfos.webSockets)
+					loadedRoutes.routes.push(...realRoutes.routes)
+					loadedRoutes.webSockets.push(...realRoutes.webSockets)
 				}
 			}
 		}

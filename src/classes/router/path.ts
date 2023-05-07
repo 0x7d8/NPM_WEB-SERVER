@@ -256,8 +256,17 @@ export default class RoutePath<GlobContext extends Record<any, any>, Middlewares
 	 * ```
 	 * @since 3.1.0
 	*/ public loadCJS(
-		/** The Folder which will be used */ folder: string
+		/** The Folder which will be used */ folder: string,
+		/** The Options */ options: {
+			/**
+			 * Whether to enable file based routing, works similarly to static file hideHTML
+			 * @default false
+			 * @since 7.5.0
+			*/ fileBasedRouting?: boolean
+		} = {}
 	): this {
+		const fileBasedRouting = options?.fileBasedRouting ?? false
+
 		if (!fs.existsSync(path.resolve(folder))) throw Error('The CJS Function folder wasnt found!')
 
 		this.loadPaths.push({
@@ -265,6 +274,7 @@ export default class RoutePath<GlobContext extends Record<any, any>, Middlewares
 			prefix: this.httpPath,
 			type: 'cjs',
 			validations: this.validations,
+			fileBasedRouting,
 			headers: this.parsedHeaders
 		})
 
@@ -284,8 +294,17 @@ export default class RoutePath<GlobContext extends Record<any, any>, Middlewares
 	 * ```
 	 * @since 4.0.0
 	*/ public loadESM(
-		/** The Folder which will be used */ folder: string
+		/** The Folder which will be used */ folder: string,
+		/** The Options */ options: {
+			/**
+			 * Whether to enable file based routing, works similarly to static file hideHTML
+			 * @default false
+			 * @since 7.5.0
+			*/ fileBasedRouting?: boolean
+		} = {}
 	): this {
+		const fileBasedRouting = options?.fileBasedRouting ?? false
+
 		if (!fs.existsSync(path.resolve(folder))) throw Error('The ESM Function folder wasnt found!')
 
 		this.loadPaths.push({
@@ -293,6 +312,7 @@ export default class RoutePath<GlobContext extends Record<any, any>, Middlewares
 			prefix: this.httpPath,
 			type: 'esm',
 			validations: this.validations,
+			fileBasedRouting,
 			headers: this.parsedHeaders
 		})
 

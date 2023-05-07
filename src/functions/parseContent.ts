@@ -23,10 +23,6 @@ export default async function parseContent(content: Content, prettify: boolean =
 }> {
 	const returnObject: ParseContentReturns = { headers: {}, content: Buffer.allocUnsafe(0) }
 
-	if (Buffer.isBuffer(content)) return { headers: {}, content }
-	if (isMap(content)) content = Object.fromEntries(content.entries())
-	if (isSet(content)) content = Object.fromEntries(content.entries())
-
 	if (isPromise(content)) {
 		try {
 			await new Promise<void>((resolve, reject) => {
@@ -44,6 +40,10 @@ export default async function parseContent(content: Content, prettify: boolean =
 			logger?.error('Failed to resolve promisified content:', err)
 		}
 	}
+
+	if (Buffer.isBuffer(content)) return { headers: {}, content }
+	if (isMap(content)) content = Object.fromEntries(content.entries())
+	if (isSet(content)) content = Object.fromEntries(content.entries())
 
 	switch (typeof content) {
 		case "object":

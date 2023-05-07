@@ -154,7 +154,7 @@ export default class RouteFile<GlobContext extends Record<any, any>, Middlewares
 
 
 	/**
-	 * Internal Method for Generating Headers Object
+	 * Internal Method for Generating Router Object
 	 * @since 6.0.0
 	*/ public async getData(prefix: string) {
 		if (!this.hasCalledGet) for (const external of this.externals) {

@@ -43,6 +43,7 @@ export type LoadPath = {
 	path: string
 	prefix: string
 	type: 'cjs' | 'esm'
+	fileBasedRouting: boolean
 	validations: RoutedValidation[]
 	headers: Record<string, Buffer>
 }
