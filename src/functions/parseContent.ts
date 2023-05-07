@@ -1,3 +1,4 @@
+import Logger from "../classes/logger"
 import { isMap, isPromise, isSet } from "util/types"
 
 export type Content =
@@ -16,7 +17,7 @@ export type Content =
 
 export type ParseContentReturns = Awaited<ReturnType<typeof parseContent>>
 
-export default async function parseContent(content: Content, prettify: boolean = false): Promise<{
+export default async function parseContent(content: Content, prettify: boolean = false, logger?: Logger): Promise<{
 	headers: Record<string, Buffer>
 	content: Buffer
 }> {
@@ -27,17 +28,21 @@ export default async function parseContent(content: Content, prettify: boolean =
 	if (isSet(content)) content = Object.fromEntries(content.entries())
 
 	if (isPromise(content)) {
-		await new Promise<void>((resolve, reject) => {
-			(content as Promise<Content>)
-				.then((r) => {
-					content = r
+		try {
+			await new Promise<void>((resolve, reject) => {
+				(content as Promise<Content>)
+					.then(async(r) => {
+						content = await parseContent(r, prettify, logger)
 
-					resolve()
-				})
-				.catch((e) => {
-					reject(e)
-				})
-		})
+						resolve()
+					})
+					.catch((e) => {
+						reject(e)
+					})
+			})
+		} catch (err) {
+			logger?.error('Failed to resolve promisified content:', err)
+		}
 	}
 
 	switch (typeof content) {
@@ -47,7 +52,8 @@ export default async function parseContent(content: Content, prettify: boolean =
 				else returnObject.content = Buffer.from(JSON.stringify(content))
 
 				returnObject.headers['content-type'] = Buffer.from('application/json')
-			} catch {
+			} catch (err) {
+				logger?.error('Failed to parse Object content:', err)
 				returnObject.content = Buffer.from('Failed to parse provided Object')
 			}
 
@@ -69,7 +75,7 @@ export default async function parseContent(content: Content, prettify: boolean =
 
 		case "function":
 			const result = await Promise.resolve(content())
-			returnObject.content = (await parseContent(result)).content
+			returnObject.content = (await parseContent(result, prettify, logger)).content
 
 			break
 

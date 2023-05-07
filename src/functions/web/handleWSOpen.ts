@@ -7,6 +7,8 @@ import handleEvent from "../handleEvent"
 export default function handleWSOpen(ws: WebSocket<WebSocketContext>, ctg: GlobalContext) {
 	const { custom, ctx } = ws.getUserData()
 
+	ctg.logger.debug('WebSocket connection established')
+
 	ctx.response.content = Buffer.allocUnsafe(0)
 	ctx.previousHours = getPreviousHours()
 	ctx.continueSend = true

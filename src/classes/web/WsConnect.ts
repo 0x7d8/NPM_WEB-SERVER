@@ -50,7 +50,7 @@ export default class WSConnect<Context extends Record<any, any> = {}, Type = 'co
 
 			let result: ParseContentReturns
 			try {
-				result = await parseContent(message)
+				result = await parseContent(message, false, this.ctg.logger)
 			} catch (err) {
 				this.ctx.handleError(err)
 				return true
@@ -91,7 +91,7 @@ export default class WSConnect<Context extends Record<any, any> = {}, Type = 'co
 		this.ctx.setExecuteSelf(async() => {
 			let result: ParseContentReturns
 			try {
-				result = await parseContent(message, prettify)
+				result = await parseContent(message, prettify, this.ctg.logger)
 			} catch (err) {
 				this.ctx.handleError(err)
 				return true
@@ -120,14 +120,22 @@ export default class WSConnect<Context extends Record<any, any> = {}, Type = 'co
 	 * ref.set('Ok')
 	 * ```
 	 * @since 7.2.0
-	*/ public printRef(reference: Reference): this {
+	*/ public printRef(reference: Reference, options: {
+		/**
+		 * Whether to prettify output (currently just JSONs)
+		 * @default false
+		 * @since 7.4.0
+		*/ prettify?: boolean
+	} = {}): this {
+		const prettify = options?.prettify ?? false
+
 		this.ctx.setExecuteSelf(() => new Promise((resolve) => {
 			try {
 				const ref = reference['onChange'](async(value) => {
 					let data: Buffer
 
 					try {
-						data = (await parseContent(value)).content
+						data = (await parseContent(value, prettify, this.ctg.logger)).content
 					} catch (err) {
 						return this.ctx.handleError(err)
 					}
@@ -188,11 +196,17 @@ export default class WSConnect<Context extends Record<any, any> = {}, Type = 'co
 	 * @since 5.4.0
 	*/ public printStream(stream: Readable, options: {
 		/**
+		 * Whether to prettify output (currently just JSONs)
+		 * @default false
+		 * @since 7.4.0
+		*/ prettify?: boolean
+		/**
 		 * Whether to Destroy the Stream if the Socket gets closed
 		 * @default true
 		 * @since 5.4.0
 		*/ destroyAbort?: boolean
 	} = {}): this {
+		const prettify = options?.prettify ?? false
 		const destroyAbort = options?.destroyAbort ?? true
 
 		this.ctx.setExecuteSelf(() => new Promise((resolve) => {
@@ -203,7 +217,7 @@ export default class WSConnect<Context extends Record<any, any> = {}, Type = 'co
 
 				const dataListener = async(data: Buffer) => {
 					try {
-						data = (await parseContent(data)).content
+						data = (await parseContent(data, prettify, this.ctg.logger)).content
 					} catch (err) {
 						return this.ctx.handleError(err)
 					}

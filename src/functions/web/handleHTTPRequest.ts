@@ -39,6 +39,8 @@ const fileExists = async(location: string) => {
 export default async function handleHTTPRequest(req: HttpRequest, res: HttpResponse, socket: us_socket_context_t | null, requestType: 'http' | 'upgrade', ctg: GlobalContext) {
 	const url = new URLObject(req.getUrl() + '?' + req.getQuery(), req.getMethod())
 
+	ctg.logger.debug('HTTP Request recieved')
+
 	const ctx: LocalContext = {
 		executeSelf: () => true,
 		handleError(err) {
@@ -104,7 +106,9 @@ export default async function handleHTTPRequest(req: HttpRequest, res: HttpRespo
 		ctx.response.headers['access-control-allow-methods'] = '*'
 
 		if (ctx.url.method === 'OPTIONS') {
-			const parsedHeaders = await parseHeaders(ctx.response.headers)
+			ctg.logger.debug('OPTIONS CORS Early End Request succeeded')
+
+			const parsedHeaders = await parseHeaders(ctx.response.headers, ctg.logger)
 
 			if (!ctx.isAborted) return res.cork(() => {
 				// Write Headers
@@ -387,7 +391,7 @@ export default async function handleHTTPRequest(req: HttpRequest, res: HttpRespo
 	/// Handle Incoming HTTP Data
 	// Handle Data
 	if (ctx.executeCode && requestType === 'http' && ctx.url.method !== 'GET') {
-		const parsedHeaders = await parseHeaders(ctx.response.headers)
+		const parsedHeaders = await parseHeaders(ctx.response.headers, ctg.logger)
 
 		// Check for Content-Length Header
 		if (ctx.headers.has('content-length') && isNaN(parseInt(ctx.headers.get('content-length')))) return res.cork(() => {
@@ -400,7 +404,7 @@ export default async function handleHTTPRequest(req: HttpRequest, res: HttpRespo
 			if (!ctx.isAborted) res.end()
 		})
 		else if (ctx.headers.has('content-length') && parseInt(ctx.headers.get('content-length')) > (ctg.options.body.maxSize * 1e6)) {
-			const result = await parseContent(ctg.options.body.message)
+			const result = await parseContent(ctg.options.body.message, false, ctg.logger)
 
 			if (!ctx.isAborted) return res.cork(() => {
 				// Write Headers & Status
@@ -418,6 +422,8 @@ export default async function handleHTTPRequest(req: HttpRequest, res: HttpRespo
 
 		let totalBytes = 0
 		deCompression.on('data', async(data: Buffer) => {
+			ctg.logger.debug(`decompressed http body chunk (${ctx.headers.get('content-type')}) with bytelen`, data.byteLength)
+
 			ctx.body.chunks.push(data)
 		}).once('error', () => {
 			deCompression.destroy()
@@ -431,11 +437,15 @@ export default async function handleHTTPRequest(req: HttpRequest, res: HttpRespo
 				if (!ctx.isAborted) res.end('Invalid Content-Encoding Header or Content')
 			})
 		}).once('close', () => {
+			ctg.logger.debug('Finished http body streaming with', ctx.body.chunks.length, 'chunks')
+
 			ctx.events.emit('startRequest')
 		})
 
 		// Recieve Data
 		if (!ctx.isAborted) res.onData(async(rawChunk, isLast) => {
+			ctg.logger.debug('Recieved http body chunk with bytelen', rawChunk.byteLength, 'is last:', isLast)
+
 			if (ctx.error) return
 			if (!ctx.executeCode) return
 
@@ -462,7 +472,8 @@ export default async function handleHTTPRequest(req: HttpRequest, res: HttpRespo
 					ctg.data.incoming.increase(sendBuffer.byteLength)
 
 					if (totalBytes > (ctg.options.body.maxSize * 1e6)) {
-						const result = await parseContent(ctg.options.body.message)
+						const result = await parseContent(ctg.options.body.message, false, ctg.logger)
+						ctg.logger.debug('big http body request aborted')
 						deCompression.destroy()
 		
 						if (!ctx.isAborted) return res.cork(() => {
@@ -476,6 +487,7 @@ export default async function handleHTTPRequest(req: HttpRequest, res: HttpRespo
 						})
 						else return
 					} else if (ctx.headers.has('content-length') && totalBytes > parseInt(ctx.headers.get('content-length'))) {
+						ctg.logger.debug('invalid http body request aborted')
 						deCompression.destroy()
 
 						if (!ctx.isAborted) return res.cork(() => {
@@ -533,9 +545,11 @@ export default async function handleHTTPRequest(req: HttpRequest, res: HttpRespo
 					resolve(true)
 
 					// Parse Headers
-					const parsedHeaders = await parseHeaders(ctx.response.headers)
+					const parsedHeaders = await parseHeaders(ctx.response.headers, ctg.logger)
 
           if (!ctx.isAborted) return res.cork(() => {
+						ctg.logger.debug('Upgraded http request to websocket')
+
 						// Write Status & Headers
 						if (!ctx.isAborted) res.writeStatus(parseStatus(Status.SWITCHING_PROTOCOLS))
 						for (const header in parsedHeaders) {
@@ -598,9 +612,9 @@ export default async function handleHTTPRequest(req: HttpRequest, res: HttpRespo
 
 		// Handle Reponse
 		try {
-			const response = await parseContent(ctx.response.content, ctx.response.contentPrettify)
+			const response = await parseContent(ctx.response.content, ctx.response.contentPrettify, ctg.logger)
 			ctx.response.headers = Object.assign(ctx.response.headers, response.headers)
-			const parsedHeaders = await parseHeaders(ctx.response.headers)
+			const parsedHeaders = await parseHeaders(ctx.response.headers, ctg.logger)
 
 			let eTag: string | null
 			if (ctg.options.performance.eTag) {
@@ -611,6 +625,8 @@ export default async function handleHTTPRequest(req: HttpRequest, res: HttpRespo
 			if (!ctx.isAborted && ctx.continueSend) return res.cork(() => {
 				let endEarly = false
 				if (ctg.options.performance.eTag && eTag && ctx.headers.get('if-none-match') === `W/"${eTag}"`) {
+					ctg.logger.debug('ended etag request early because of match')
+
 					ctx.response.status = Status.NOT_MODIFIED
 					ctx.response.statusMessage = undefined
 					endEarly = true
@@ -640,10 +656,14 @@ export default async function handleHTTPRequest(req: HttpRequest, res: HttpRespo
 
 					const compression = handleCompressType(ctg.options.compression)
 					compression.on('data', (data: Buffer) => {
+						ctg.logger.debug(`compressed http body chunk (${ctg.options.compression}) with bytelen`, data.byteLength)
+
 						ctg.data.outgoing.increase(data.byteLength)
 				
 						if (!ctx.isAborted) res.write(data)
 					}).once('close', () => {
+						ctg.logger.debug('Finished http body sending')
+
 						if (!ctx.isAborted) res.end()
 					})
 
@@ -660,12 +680,9 @@ export default async function handleHTTPRequest(req: HttpRequest, res: HttpRespo
 					else if (!ctx.isAborted) res.end(response.content)
 				}
 			})
-		} catch { }
-
-		ctx.response.content = null as any
-		ctx.body.chunks.length = 0
-		ctx.body.parsed = ''
-		ctx.body.raw = null as any
+		} catch (err) {
+			ctg.logger.error(`Ending Request ${ctr.url.href} errored:`, err)
+		}
 	})
 
 	if (!ctx.executeCode || requestType === 'upgrade' || ctx.url.method === 'GET') ctx.events.emit('startRequest')

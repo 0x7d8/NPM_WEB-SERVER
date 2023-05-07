@@ -15,6 +15,7 @@ import RouteFile from "./router/file"
 import { getFilesRecursively } from "rjutils-collection"
 import { HttpRequest, WsClose, WsConnect, WsMessage } from "../types/external"
 import DataStat from "./dataStat"
+import Logger from "./logger"
 import { promises as fs } from "fs"
 
 import uWebsocket from "@rjweb/uws"
@@ -48,6 +49,7 @@ export default class Webserver<GlobContext extends Record<any, any> = {}, Middle
 			controller: this as any,
 			contentTypes: {},
 			defaultHeaders: {},
+			logger: new Logger(fullOptions.logging),
 			options: fullOptions,
 			requests: new DataStat(),
 			webSockets: {
@@ -296,8 +298,12 @@ export default class Webserver<GlobContext extends Record<any, any> = {}, Middle
 		}
 
 		for (const loadPath of (await this.getData()).loadPaths) {
+			this.globalContext.logger.debug('Loading Route Path', loadPath)
+
 			if (loadPath.type === 'cjs') {
 				for (const file of (await getFilesRecursively(loadPath.path, true)).filter((f) => f.endsWith('js'))) {
+					this.globalContext.logger.debug('Loading cjs Route file', file)
+
 					const route: unknown = require(file)
 
 					if (
@@ -320,6 +326,8 @@ export default class Webserver<GlobContext extends Record<any, any> = {}, Middle
 				}
 			} else {
 				for (const file of (await getFilesRecursively(loadPath.path, true)).filter((f) => f.endsWith('js'))) {
+					this.globalContext.logger.debug('Loading esm Route file', file)
+
 					const path = os.platform() === 'win32'
 						? `file:///${file}`
 						: file

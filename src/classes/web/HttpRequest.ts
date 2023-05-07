@@ -263,11 +263,13 @@ export default class HTTPRequest<Context extends Record<any, any> = {}, Body = u
 			}
 
 			// Parse Headers
-			const parsedHeaders = await parseHeaders(this.ctx.response.headers)
+			const parsedHeaders = await parseHeaders(this.ctx.response.headers, this.ctg.logger)
 
 			if (!this.ctx.isAborted) this.rawRes.cork(() => {
 				let endEarly = false
 				if (this.ctg.options.performance.lastModified && this.ctx.headers.get('if-modified-since') === this.ctx.response.headers['last-modified']) {
+					this.ctg.logger.debug('Ended modified-last request early because of match')
+
 					this.ctx.response.status = Status.NOT_MODIFIED
 					this.ctx.response.statusMessage = undefined
 					endEarly = true
@@ -307,6 +309,8 @@ export default class HTTPRequest<Context extends Record<any, any> = {}, Body = u
 
 					// Handle Compression
 					compression.on('data', (content: Buffer) => {
+						this.ctg.logger.debug('compressed http body chunk with bytelen', content.byteLength)
+
 						this.ctg.data.outgoing.increase(content.byteLength)
 
 						if (!this.ctx.isAborted) this.rawRes.write(content)
@@ -394,16 +398,22 @@ export default class HTTPRequest<Context extends Record<any, any> = {}, Body = u
 		 * @since 4.3.5
 		*/ endRequest?: boolean
 		/**
+		 * Whether to prettify output (currently just JSONs)
+		 * @default false
+		 * @since 7.4.0
+		*/ prettify?: boolean
+		/**
 		 * Whether to Destroy the Stream when the Request gets aborted
 		 * @default true
 		 * @since 4.3.5
 		*/ destroyAbort?: boolean
 	} = {}): this {
 		const endRequest = options?.endRequest ?? true
+		const prettify = options?.prettify ?? false
 		const destroyAbort = options?.destroyAbort ?? true
 
 		this.ctx.setExecuteSelf(() => new Promise(async(resolve) => {
-			const parsedHeaders = await parseHeaders(this.ctx.response.headers)
+			const parsedHeaders = await parseHeaders(this.ctx.response.headers, this.ctg.logger)
 
 			if (!this.ctx.isAborted) this.rawRes.cork(() => {
 				// Write Headers & Status
@@ -418,7 +428,7 @@ export default class HTTPRequest<Context extends Record<any, any> = {}, Body = u
 
 				const dataListener = async(data: Buffer) => {
 					try {
-						data = (await parseContent(data)).content
+						data = (await parseContent(data, prettify, this.ctg.logger)).content
 					} catch (err) {
 						return this.ctx.handleError(err)
 					}

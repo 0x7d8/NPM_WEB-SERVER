@@ -14,6 +14,7 @@ import { HttpRequest, WsClose, WsConnect, WsMessage } from "./external"
 import Reference, { RefListener } from "../classes/reference"
 import { Content } from "../functions/parseContent"
 import DataStat from "../classes/dataStat"
+import Logger from "../classes/logger"
 
 export type Hours =
 	| '0' | '1' | '2' | '3' | '4'
@@ -93,6 +94,7 @@ export type GlobalContext = {
 	/** The Server Controller Class */ controller: ServerController<any>
 	/** The File -> Content Type Mapping */ contentTypes: Record<string, string>
 	/** The Default HTTP Headers List */ defaultHeaders: Record<string, Buffer>
+	/** The Logger to use for everything internal */ logger: Logger
 	/** The HTTP Server Options */ options: DeepRequired<Options>
 	/** The Request Count */ requests: DataStat
 	/** The Middlewares to run */ middlewares: MiddlewareInitted[]

@@ -31,6 +31,27 @@ export type Options = {
 	}
 
 	/**
+	 * Logging Settings
+	 * @since 7.4.0
+	*/ logging?: {
+		/**
+		 * Whether to enable `ERROR` Logs
+		 * @default true
+		 * @since 7.4.0
+		*/ error?: boolean
+		/**
+		 * Whether to enable `WARN` Logs
+		 * @default true
+		 * @since 7.4.0
+		*/ warn?: boolean
+		/**
+		 * Whether to enable `DEBUG` Logs
+		 * @default false
+		 * @since 7.4.0
+		*/ debug?: boolean
+	}
+
+	/**
 	 * SSL Settings
 	 * @since 6.0.0
 	*/ ssl?: {
@@ -157,6 +178,10 @@ export default function parseOptions(provided: Options): DeepRequired<Options> {
 			parse: true,
 			maxSize: 5,
 			message: 'Payload too large'
+		}, logging: {
+			error: true,
+			warn: true,
+			debug: false
 		}, ssl: {
 			enabled: false,
 			ciphers: 'ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256:ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-ECDSA-CHACHA20-POLY1305:ECDHE-RSA-CHACHA20-POLY1305:DHE-RSA-AES128-GCM-SHA256:DHE-RSA-AES256-GCM-SHA384',

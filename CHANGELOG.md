@@ -1,3 +1,9 @@
+## 7.4.0
+
+- Added prettify to more methods
+- Added Logging Options
+- Allow recursion for promisified content
+
 ## 7.3.1
 
 - General Code & Performance Improvements

@@ -7,6 +7,8 @@ import { getPreviousHours } from "./handleHTTPRequest"
 export default function handleWSClose(ws: WebSocket<WebSocketContext>, message: ArrayBuffer, ctg: GlobalContext) {
 	const { custom, ctx } = ws.getUserData()
 
+	ctg.logger.debug('WebSocket connection closed')
+
 	ctx.previousHours = getPreviousHours()
 	ctx.body.raw = Buffer.from(message)
 	ctx.body.parsed = ''
