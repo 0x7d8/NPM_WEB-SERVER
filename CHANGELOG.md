@@ -1,3 +1,8 @@
+## 7.5.1
+
+- Fix some Errors relating to using socket after aborted
+- Fix ?undefined query on requests without query
+
 ## 7.5.0
 
 - Fix Content Parsing for Promisified Content

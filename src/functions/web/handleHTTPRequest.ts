@@ -37,7 +37,8 @@ const fileExists = async(location: string) => {
 }
 
 export default async function handleHTTPRequest(req: HttpRequest, res: HttpResponse, socket: us_socket_context_t | null, requestType: 'http' | 'upgrade', ctg: GlobalContext) {
-	const url = new URLObject(req.getUrl() + '?' + req.getQuery(), req.getMethod())
+	const queryString = req.getQuery(),
+		url = new URLObject(req.getUrl() + (queryString ? `?${queryString}` : ''), req.getMethod())
 
 	ctg.logger.debug('HTTP Request recieved')
 
@@ -619,10 +620,11 @@ export default async function handleHTTPRequest(req: HttpRequest, res: HttpRespo
 			let eTag: string | null
 			if (ctg.options.performance.eTag) {
 				eTag = toETag(response.content, parsedHeaders, ctx.response.status)
+				ctg.logger.debug('generated etag with content of bytelen', response.content.byteLength)
 				if (eTag) parsedHeaders['etag'] = Buffer.from(`W/"${eTag}"`)
 			}
 
-			if (!ctx.isAborted && ctx.continueSend) return res.cork(() => {
+			if (ctx.continueSend && !ctx.isAborted) return res.cork(() => {
 				let endEarly = false
 				if (ctg.options.performance.eTag && eTag && ctx.headers.get('if-none-match') === `W/"${eTag}"`) {
 					ctg.logger.debug('ended etag request early because of match')
