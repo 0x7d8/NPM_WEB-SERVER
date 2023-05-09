@@ -1,3 +1,9 @@
+## 7.6.0
+
+- Allow getting OpenAPI 3.1 Definitions from the Server with .getOpenAPI3Def()
+- Fix Some Typescript Check Lib Errors
+- Fix Errors around Compression
+
 ## 7.5.1
 
 - Fix some Errors relating to using socket after aborted

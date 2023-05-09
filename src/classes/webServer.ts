@@ -7,14 +7,16 @@ import handleHTTPRequest from "../functions/web/handleHTTPRequest"
 import handleWSOpen from "../functions/web/handleWSOpen"
 import handleWSMessage from "../functions/web/handleWSMessage"
 import handleWSClose from "../functions/web/handleWSClose"
-import WebSocket from "src/types/webSocket"
+import { OpenAPIObject } from "../types/openAPI3"
+import WebSocket from "../types/webSocket"
 import { currentVersion } from "./middlewareBuilder"
 import HTTP from "../types/http"
 import { MiddlewareInitted } from "../types/internal"
 import RouteFile from "./router/file"
 import { getFilesRecursively } from "rjutils-collection"
-import { HttpRequest, WsClose, WsConnect, WsMessage, parsePath } from "../types/external"
+import { HttpRequest, WsClose, WsConnect, WsMessage } from "../types/external"
 import { addPathsToLoadedRouter } from "../functions/routeFileParsing"
+import generateOpenAPI3 from "../functions/generateOpenAPI3"
 import DataStat from "./dataStat"
 import Logger from "./logger"
 import { promises as fs } from "fs"
@@ -22,7 +24,6 @@ import { promises as fs } from "fs"
 import uWebsocket from "@rjweb/uws"
 import path from "path"
 import os from "os"
-import { isRegExp } from "util/types"
 
 export default class Webserver<GlobContext extends Record<any, any> = {}, Middlewares extends MiddlewareInitted[] = []> extends RouteList<GlobContext, Middlewares> {
 	protected globalContext: GlobalContext
@@ -36,6 +37,8 @@ export default class Webserver<GlobContext extends Record<any, any> = {}, Middle
 	 * const controller = new Server({
 	 *   port: 8000
 	 * })
+	 * 
+	 * module.exports.server = controller
 	 * ```
 	 * @since 3.0.0
 	*/ constructor(
@@ -100,6 +103,25 @@ export default class Webserver<GlobContext extends Record<any, any> = {}, Middle
 		this.globalContext.options = parseOptions(options)
 
 		return this
+	}
+
+	/**
+	 * Get OpenAPI 3.1 Defininitions for this Server (make sure to let all routes load before calling)
+	 * @example
+	 * ```
+	 * const controller = new Server({ port: 4200 })
+	 * 
+	 * controller.path('/', (path) => path
+	 *   .http('GET', '/openapi', (http) => http
+	 *     .onRequest((ctr) => {
+	 *       ctr.print(ctr.controller.getOpenApi3Def('http://localhost:4200'))
+	 *     })
+	 *   )
+	 * )
+	 * ```
+	 * @since 7.6.0
+	*/ public getOpenAPI3Def(serverUrl?: string): OpenAPIObject {
+		return generateOpenAPI3(this.globalContext, serverUrl)
 	}
 
 	/**

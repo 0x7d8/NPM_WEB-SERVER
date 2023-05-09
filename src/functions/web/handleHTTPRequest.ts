@@ -669,7 +669,7 @@ export default async function handleHTTPRequest(req: HttpRequest, res: HttpRespo
 						if (!ctx.isAborted) res.end()
 					})
 
-					compression.end(ctx.response.content)
+					compression.end(response.content)
 				} else {
 					ctg.data.outgoing.increase(response.content.byteLength)
 

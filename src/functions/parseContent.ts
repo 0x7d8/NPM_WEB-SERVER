@@ -84,5 +84,10 @@ export default async function parseContent(content: Content, prettify: boolean =
 			break
 	}
 
+	if (!Buffer.isBuffer(returnObject.content)) {
+		logger?.error('Unknown Content Parsing Error occured (nB):', returnObject.content)
+		returnObject.content = Buffer.from('Unknown Parsing Error')
+	}
+
 	return returnObject
 }
