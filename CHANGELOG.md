@@ -1,3 +1,7 @@
+## 7.6.2
+
+- Use Posix Paths for FFR
+
 ## 7.6.1
 
 - Fix File Based Routing on Windows

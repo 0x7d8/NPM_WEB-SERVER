@@ -339,7 +339,7 @@ export default class Webserver<GlobContext extends Record<any, any> = {}, Middle
 					const routeInfos = await route.getData('/')
 
 					let realRoutes = Object.assign({}, routeInfos)
-					if (loadPath.fileBasedRouting) realRoutes = await addPathsToLoadedRouter(loadPath, route, path.posix.resolve(file).replace(loadPath.path, '').replace(/index|\.(js|ts|cjs|cts|mjs|mts)/g, ''), this.globalContext.logger)
+					if (loadPath.fileBasedRouting) realRoutes = await addPathsToLoadedRouter(loadPath, route, path.posix.normalize(file.replace(loadPath.path, '')).replace(/index|\.(js|ts|cjs|cts|mjs|mts)/g, ''), this.globalContext.logger)
 
 					for (const routeInfo of realRoutes.routes) {
 						routeInfo.data.validations.push(...loadPath.validations)
@@ -371,7 +371,7 @@ export default class Webserver<GlobContext extends Record<any, any> = {}, Middle
 					const routeInfos = await route.getData('/')
 
 					let realRoutes = Object.assign({}, routeInfos)
-					if (loadPath.fileBasedRouting) realRoutes = await addPathsToLoadedRouter(loadPath, route, path.posix.resolve(file).replace(loadPath.path, '').replace(/index|\.(js|ts|cjs|cts|mjs|mts)/g, ''), this.globalContext.logger)
+					if (loadPath.fileBasedRouting) realRoutes = await addPathsToLoadedRouter(loadPath, route, path.posix.normalize(file.replace(loadPath.path, '')).replace(/index|\.(js|ts|cjs|cts|mjs|mts)/g, ''), this.globalContext.logger)
 
 					for (const routeInfo of realRoutes.routes) {
 						routeInfo.data.validations.push(...loadPath.validations)
