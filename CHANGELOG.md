@@ -1,3 +1,7 @@
+## 7.6.1
+
+- Fix File Based Routing on Windows
+
 ## 7.6.0
 
 - Allow getting OpenAPI 3.1 Definitions from the Server with .getOpenAPI3Def()

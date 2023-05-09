@@ -339,7 +339,7 @@ export default class Webserver<GlobContext extends Record<any, any> = {}, Middle
 					const routeInfos = await route.getData('/')
 
 					let realRoutes = Object.assign({}, routeInfos)
-					if (loadPath.fileBasedRouting) realRoutes = await addPathsToLoadedRouter(loadPath, route, file.replace(loadPath.path, '').replace(/index|\.(js|ts|cjs|cts|mjs|mts)/g, ''), this.globalContext.logger)
+					if (loadPath.fileBasedRouting) realRoutes = await addPathsToLoadedRouter(loadPath, route, path.posix.resolve(file).replace(loadPath.path, '').replace(/index|\.(js|ts|cjs|cts|mjs|mts)/g, ''), this.globalContext.logger)
 
 					for (const routeInfo of realRoutes.routes) {
 						routeInfo.data.validations.push(...loadPath.validations)
@@ -357,11 +357,11 @@ export default class Webserver<GlobContext extends Record<any, any> = {}, Middle
 				for (const file of (await getFilesRecursively(loadPath.path, true)).filter((f) => f.endsWith('js'))) {
 					this.globalContext.logger.debug('Loading esm Route file', file)
 
-					const path = os.platform() === 'win32'
+					const importFile = os.platform() === 'win32'
 						? `file:///${file}`
 						: file
 
-					const route: unknown = (await import(path)).default
+					const route: unknown = (await import(importFile)).default
 
 					if (
 						!route ||
@@ -371,7 +371,7 @@ export default class Webserver<GlobContext extends Record<any, any> = {}, Middle
 					const routeInfos = await route.getData('/')
 
 					let realRoutes = Object.assign({}, routeInfos)
-					if (loadPath.fileBasedRouting) realRoutes = await addPathsToLoadedRouter(loadPath, route, file.replace(loadPath.path, '').replace(/index|\.(js|ts|cjs|cts|mjs|mts)/g, ''), this.globalContext.logger)
+					if (loadPath.fileBasedRouting) realRoutes = await addPathsToLoadedRouter(loadPath, route, path.posix.resolve(file).replace(loadPath.path, '').replace(/index|\.(js|ts|cjs|cts|mjs|mts)/g, ''), this.globalContext.logger)
 
 					for (const routeInfo of realRoutes.routes) {
 						routeInfo.data.validations.push(...loadPath.validations)
