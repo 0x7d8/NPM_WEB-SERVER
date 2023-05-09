@@ -1,3 +1,7 @@
+## 7.6.3
+
+- Normalize Posix Paths correctly
+
 ## 7.6.2
 
 - Use Posix Paths for FFR
