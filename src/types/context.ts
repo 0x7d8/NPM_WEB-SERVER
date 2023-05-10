@@ -53,9 +53,8 @@ export type InternalEvents = {
 
 export type LocalContext = {
 	/** The Code to execute custom */ executeSelf: () => boolean | Promise<boolean>
-	/** The Previous Hours as an Array */ previousHours: Hours[]
 	/** The Parsed Request URL */ url: URLObject
-	/** Whether to Continue ending the Request */ continueSend: boolean
+	/** Whether to Continue sending the Request */ continueSend: boolean
 	/** Whether to Execute Route Code */ executeCode: boolean
 	/** The Clients Remote IP Address */ remoteAddress: string
 	/** The Error that occured while executing HTTP Logic */ error: unknown

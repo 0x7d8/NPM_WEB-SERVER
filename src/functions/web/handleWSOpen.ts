@@ -1,7 +1,6 @@
 import { GlobalContext } from "../../types/context"
 import { WebSocket } from "@rjweb/uws"
 import { WebSocketContext } from "../../types/webSocket"
-import { getPreviousHours } from "./handleHTTPRequest"
 import handleEvent from "../handleEvent"
 
 export default function handleWSOpen(ws: WebSocket<WebSocketContext>, ctg: GlobalContext) {
@@ -10,7 +9,6 @@ export default function handleWSOpen(ws: WebSocket<WebSocketContext>, ctg: Globa
 	ctg.logger.debug('WebSocket connection established')
 
 	ctx.response.content = Buffer.allocUnsafe(0)
-	ctx.previousHours = getPreviousHours()
 	ctx.continueSend = true
 	ctx.executeSelf = () => true
 	ctx.executeCode = true
@@ -26,6 +24,9 @@ export default function handleWSOpen(ws: WebSocket<WebSocketContext>, ctg: Globa
     // Create Context Response Object
 		const ctr = new ctg.classContexts.wsConnect(ctg.controller, ctx, ws)
 		ctr["@"] = custom
+
+		// Execute Custom Run Function
+		if (ctx.executeCode) await handleEvent('wsConnect', ctr, ctx, ctg)
 
 		// Execute Middleware
 		if (ctg.middlewares.length > 0 && !ctx.error) {

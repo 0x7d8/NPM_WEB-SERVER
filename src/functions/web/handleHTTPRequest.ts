@@ -1,4 +1,4 @@
-import { GlobalContext, Hours, LocalContext } from "../../types/context"
+import { GlobalContext, LocalContext } from "../../types/context"
 import { HttpRequest, HttpResponse, us_socket_context_t } from "@rjweb/uws"
 import parsePath from "../parsePath"
 import URLObject from "../../classes/URLObject"
@@ -10,7 +10,7 @@ import handleCompressType, { CompressMapping } from "../handleCompressType"
 import handleDecompressType, { DecompressMapping } from "../handleDecompressType"
 import ValueCollection from "../../classes/valueCollection"
 import handleEvent from "../handleEvent"
-import { Version } from "../../index"
+import { Version } from "../.."
 import EventEmitter from "events"
 import Status from "../../misc/statusEnum"
 import Static from "../../types/static"
@@ -20,10 +20,6 @@ import parseStatus from "../parseStatus"
 import { isRegExp } from "util/types"
 import parseKV from "../parseKV"
 import parseHeaders from "../parseHeaders"
-
-export const getPreviousHours = (): Hours[] => {
-	return Array.from({ length: 7 }, (_, i) => (new Date().getHours() - (4 - i) + 24) % 24) as any
-}
 
 const fileExists = async(location: string) => {
 	location = pathResolve(location)
@@ -64,7 +60,6 @@ export default async function handleHTTPRequest(req: HttpRequest, res: HttpRespo
 		events: new EventEmitter() as any,
 		isAborted: false,
 		refListeners: [],
-		previousHours: getPreviousHours(),
 		body: {
 			chunks: [],
 			raw: Buffer.allocUnsafe(0),
@@ -356,6 +351,9 @@ export default async function handleHTTPRequest(req: HttpRequest, res: HttpRespo
 	const ctr = new ctg.classContexts.http(ctg.controller, ctx, req, res, requestType)
 	if (ctx.execute.route && 'context' in ctx.execute.route) ctr["@"] = ctx.execute.route.context.keep ? ctx.execute.route.context.data : Object.assign({}, ctx.execute.route.context.data)
 
+	// Execute Custom Run Function
+	if (ctx.executeCode) await handleEvent('httpRequest', ctr, ctx, ctg)
+
 	// Execute Middleware
 	if (ctx.executeCode && ctg.middlewares.length > 0 && !ctx.error) {
 		for (let middlewareIndex = 0; middlewareIndex < ctg.middlewares.length; middlewareIndex++) {
@@ -371,9 +369,6 @@ export default async function handleHTTPRequest(req: HttpRequest, res: HttpRespo
 			}
 		}
 	}
-
-	// Execute Custom Run Function
-	if (ctx.executeCode) await handleEvent('httpRequest', ctr, ctx, ctg)
 
 	// Execute Validations
 	if (ctx.executeCode && ctx.execute.found && ctx.execute.route!.data.validations.length > 0 && !ctx.error) {

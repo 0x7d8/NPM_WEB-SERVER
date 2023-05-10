@@ -19,7 +19,7 @@ export type EventHandlerMap<Context extends Record<any, any>, Middlewares extend
 
 	wsConnect: WSConnect<Context, Middlewares>
 	wsMessage: WSMessage<Context, Middlewares>
-	wSClose: WSClose<Context, Middlewares>
+	wsClose: WSClose<Context, Middlewares>
 	wsConnectError: WSConnectError<Context, Middlewares>
 	wsMessageError: WSMessageError<Context, Middlewares>
 	wsCloseError: WSCloseError<Context, Middlewares>

@@ -2,7 +2,6 @@ import { GlobalContext } from "../../types/context"
 import { WebSocket } from "@rjweb/uws"
 import { WebSocketContext } from "../../types/webSocket"
 import handleEvent from "../handleEvent"
-import { getPreviousHours } from "./handleHTTPRequest"
 
 export default function handleWSConnect(ws: WebSocket<WebSocketContext>, message: ArrayBuffer, ctg: GlobalContext) {
 	const { custom, ctx } = ws.getUserData()
@@ -10,7 +9,6 @@ export default function handleWSConnect(ws: WebSocket<WebSocketContext>, message
 	ctg.logger.debug('WebSocket message with bytelen', message.byteLength, 'recieved')
 
 	ctx.response.content = Buffer.allocUnsafe(0)
-	ctx.previousHours = getPreviousHours()
 	ctx.body.raw = Buffer.from(message)
 	ctx.body.parsed = ''
 	ctx.continueSend = true
@@ -31,6 +29,9 @@ export default function handleWSConnect(ws: WebSocket<WebSocketContext>, message
     // Create Context Response Object
 		const ctr = new ctg.classContexts.wsMessage(ctg.controller, ctx, ws)
 		ctr["@"] = custom
+
+		// Execute Custom Run Function
+		if (ctx.executeCode) await handleEvent('wsMessage', ctr, ctx, ctg)
 
 		// Execute Middleware
 		if (ctg.middlewares.length > 0 && !ctx.error) {

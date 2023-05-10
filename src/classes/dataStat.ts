@@ -1,5 +1,8 @@
-import { getPreviousHours } from "../functions/web/handleHTTPRequest";
-import { Hours } from "../types/context";
+import { Hours } from "../types/context"
+
+export const getPreviousHours = (): Hours[] => {
+	return Array.from({ length: 7 }, (_, i) => (new Date().getHours() - (4 - i) + 24) % 24) as any
+}
 
 export default class DataStat {
 	private secondStat: number = 0

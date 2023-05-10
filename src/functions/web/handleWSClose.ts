@@ -2,14 +2,12 @@ import { GlobalContext } from "../../types/context"
 import { WebSocket } from "@rjweb/uws"
 import { WebSocketContext } from "../../types/webSocket"
 import handleEvent from "../handleEvent"
-import { getPreviousHours } from "./handleHTTPRequest"
 
 export default function handleWSClose(ws: WebSocket<WebSocketContext>, message: ArrayBuffer, ctg: GlobalContext) {
 	const { custom, ctx } = ws.getUserData()
 
 	ctg.logger.debug('WebSocket connection closed')
 
-	ctx.previousHours = getPreviousHours()
 	ctx.body.raw = Buffer.from(message)
 	ctx.body.parsed = ''
 	ctx.executeSelf = () => true
@@ -34,6 +32,9 @@ export default function handleWSClose(ws: WebSocket<WebSocketContext>, message: 
 		// Create Context Response Object
 		const ctr = new ctg.classContexts.wsClose(ctg.controller, ctx, ws)
 		ctr["@"] = custom
+
+		// Execute Custom Run Function
+		if (ctx.executeCode) await handleEvent('wsClose', ctr, ctx, ctg)
 
 		// Execute Middleware
 		if (ctg.middlewares.length > 0 && !ctx.error) {

@@ -67,7 +67,7 @@ export default async function handleEvent(event: keyof EventHandlerMap<any, any>
 
 		case "wsConnect":
 		case "wsMessage":
-		case "wSClose": {
+		case "wsClose": {
 			try {
 				await ctg.controller.emitSafe(event, ctr as any, () => ctx.executeCode = false)
 			} catch (err) {

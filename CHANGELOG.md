@@ -1,3 +1,10 @@
+## 7.6.4
+
+- Add Icon to every TypeDoc Page
+- Remove unnecessary Variables
+- Fix WebSocket Events not working properly
+- Rename wSClose Event to wsClose (Fix Typo)
+
 ## 7.6.3
 
 - Normalize Posix Paths correctly
