@@ -28,7 +28,11 @@
     document.querySelector('#send').disabled = false
     document.querySelector('#message').disabled = false
 
-    socket = new WebSocket('wss://test.paperstudios.dev/chat/ws?username=' + document.querySelector('#username').value)
+    try {
+      socket = new WebSocket(`ws://${window.location.host}/chat/ws?username=${document.querySelector('#username').value}`)
+    } catch {
+      socket = new WebSocket(`wss://${window.location.host}/chat/ws?username=${document.querySelector('#username').value}`)
+    }
 
     socket.onmessage = (event) => {
       document.querySelector('#chat').innerText += '\n' + event.data
