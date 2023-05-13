@@ -1,12 +1,12 @@
-import { GlobalContext, LocalContext } from "../types/context"
-import parsePath from "../functions/parsePath"
+import { GlobalContext, LocalContext } from "../../types/context"
+import parsePath from "../parsePath"
 import { getFilesRecursively } from "rjutils-collection"
-import { getPreviousHours } from "../classes/dataStat"
-import { RequestContext } from "../types/external"
-import WebSocket from "../types/webSocket"
-import HTTP from "../types/http"
+import { getPreviousHours } from "../../classes/dataStat"
+import { RequestContext } from "../../types/external"
+import WebSocket from "../../types/webSocket"
+import HTTP from "../../types/http"
 import { Readable } from "stream"
-import { Version } from "../index"
+import { Version } from "../../index"
 
 import fs from "fs/promises"
 import os from "os"
@@ -144,7 +144,7 @@ export default async function statsRoute(ctr: RequestContext, ctg: GlobalContext
     case "http": {
       if (ctr.type !== 'http') return
 
-      const dashboard = (await fs.readFile(`${__dirname}/index.html`, 'utf8'))
+      const dashboard = (await fs.readFile(`${__dirname}/dashboard.html`, 'utf8'))
         .replaceAll('/rjweb-dashboard', parsePath(ctg.options.dashboard.path))
         .replace('1.1.1', Version)
 

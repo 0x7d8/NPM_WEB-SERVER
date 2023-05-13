@@ -1,6 +1,6 @@
 {
   "name": "rjweb-server",
-  "version": "7.7.0",
+  "version": "7.7.1",
   "description": "Easy and Robust Way to create a Web Server with Many Easy-to-use Features in NodeJS",
   "main": "./lib/cjs/index.js",
   "module": "./lib/esm/index.js",
@@ -9,7 +9,7 @@
     "node": "16.x || 18.x || 20.x"
   },
   "scripts": {
-    "build": "rm -rf lib && cd dashboard && yarn build && cd .. && tsc && rm -rf lib/typings/tests && mv lib/typings/src/* lib/typings && rm -rf lib/typings/src && rjbuild build src --format='cjs' --out='lib/cjs' && rjbuild build src --format='esm' --out='lib/esm' && cp package.json lib/cjs/pckg.json && cp dashboard/dist/index.html lib/cjs/dashboard/index.html && cp package.json lib/esm/pckg.json && cp dashboard/dist/index.html lib/esm/dashboard/index.html",
+    "build": "rm -rf lib && cd dashboard && yarn build && cd .. && tsc && rm -rf lib/typings/tests && mv lib/typings/src/* lib/typings && rm -rf lib/typings/src && rjbuild build src --format='cjs' --out='lib/cjs' && rjbuild build src --format='esm' --out='lib/esm' && cp package.json lib/cjs/pckg.json && cp dashboard/dist/index.html lib/cjs/functions/web/dashboard.html && cp package.json lib/esm/pckg.json && cp dashboard/dist/index.html lib/esm/functions/web/dashboard.html",
     "docs": "rm -rf docs && typedoc --out docs src/index.ts && sed -i -e 's|<meta charSet=\"utf-8\"/>|<meta charSet=\"utf-8\"/><link rel=\"icon\" type=\"image/png\" href=\"https://img.rjansen.de/rjweb/icon.png\">|' docs/**/*.html && chmod -R a+rw docs",
     "test": "jest",
     "install:dev": "npm install -g --install-links ."

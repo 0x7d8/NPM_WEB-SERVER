@@ -22,7 +22,7 @@
     /* Paths */
     "paths": {
       "@/*": ["./src/*"],
-      "@def": ["../src/dashboard/routes.ts"]
+      "@def": ["../src/functions/web/handleDashboard.ts"]
     }
   },
   "include": ["src", "tailwind.config.js"],

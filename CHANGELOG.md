@@ -1,3 +1,7 @@
+## 7.7.1
+
+- Fix some npm ignore issues
+
 ## 7.7.0
 
 - Rewrite Dashboard in React
