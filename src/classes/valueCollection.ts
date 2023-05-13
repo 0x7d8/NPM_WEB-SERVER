@@ -1,7 +1,7 @@
 import { RealAny } from "../types/internal"
 
 export default class ValueCollection<Key extends string | number | symbol = string | number | symbol, Value = any> {
-	public data: Record<Key, Value> = {} as any
+	protected data: Record<Key, Value> = {} as any
 	public allowModify: boolean
 
 	/**
@@ -36,7 +36,7 @@ export default class ValueCollection<Key extends string | number | symbol = stri
 	*/ public get<T extends Key, Fallback extends Value | undefined = undefined>(
 		/** The Key to get */ key: T,
 		/** The Fallback Value */ fallback?: Fallback
-	): this['data'][T] | Fallback {
+	): Value | Fallback {
 		return this.data[key] ?? (fallback as any)
 	}
 
@@ -109,7 +109,7 @@ export default class ValueCollection<Key extends string | number | symbol = stri
 	*/ public forEach(
 		/** Callback Function */ callback: (key: Key, value: Value, index: number) => RealAny,
 		/** Excluded Keys */ excluded: Key[] = []
-	) {
+	): this {
 		callback = callback ?? (() => undefined)
 
 		{(Object.keys(this.data) as Key[])
@@ -117,6 +117,25 @@ export default class ValueCollection<Key extends string | number | symbol = stri
 			.forEach((key, index) => callback(key, this.data[key], index))}
 
 		return this
+	}
+
+	/**
+	 * Object Iterator (similar to .forEach() but can be used in for ... of loops)
+	 * @since 7.7.0
+	*/ public [Symbol.iterator](): Iterator<[ Key, Value ]> {
+		const object = Object.entries(this.data)
+		let index = -1
+
+		return {
+			next: () => {
+				index++
+
+				return {
+					value: [object[index]?.at(0) as Key, object[index]?.at(1) as Value],
+					done: object.length <= index
+				}
+			}
+		}
 	}
 
 	/**

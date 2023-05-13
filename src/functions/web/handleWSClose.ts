@@ -13,7 +13,7 @@ export default function handleWSClose(ws: WebSocket<WebSocketContext>, message: 
 	ctx.executeSelf = () => true
 	ctx.executeCode = true
 
-	ctx.events.emit('requestAborted')
+	ctx.events.send('requestAborted')
 
 	ctg.data.incoming.increase()
 

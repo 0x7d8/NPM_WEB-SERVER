@@ -39,6 +39,104 @@ export const dashboardWsRoute = (ctg: GlobalContext, ctx: LocalContext): WebSock
   }
 })
 
+const hashCode = (value: string) => {
+  return value.split('').reduce((a, b) => {
+    a = ((a << 5) - a) + b.charCodeAt(0)
+    return a & a
+  }, 0).toString(16).replace('-', 'M')
+}
+
+const runStats = async(ctg: GlobalContext) => {
+  const date = new Date()
+  const startTime = date.getTime()
+  const startUsage = process.cpuUsage()
+  const previousHours = getPreviousHours()
+
+  const staticFiles = await new Promise<number>(async(resolve) => {
+    let staticFiles = 0
+    for (let staticNumber = 0; staticNumber < ctg.routes.static.length; staticNumber++) {
+      staticFiles += (await getFilesRecursively(ctg.routes.static[staticNumber].location, true)).length
+    }
+
+    resolve(staticFiles)
+  })
+
+  const cpuUsage = await new Promise<number>((resolve) => setTimeout(() => {
+    const currentUsage = process.cpuUsage(startUsage)
+    const currentTime = new Date().getTime()
+    const timeDelta = (currentTime - startTime) * 5 * coreCount
+    resolve((currentUsage.system + currentUsage.user) / timeDelta)
+  }, 500))
+
+  return {
+    requests: {
+      total: ctg.requests.stats.total,
+      perSecond: ctg.requests.stats.perSecond,
+      hours: Array.from({ length: 5 }, (value, index) => ({
+        hour: previousHours[index],
+        amount: ctg.requests.stats[previousHours[index]]
+      }))
+    }, webSockets: {
+      opened: {
+        total: ctg.webSockets.opened.stats.total,
+        perSecond: ctg.webSockets.opened.stats.perSecond,
+        hours: Array.from({ length: 5 }, (value, index) => ({
+          hour: previousHours[index],
+          amount: ctg.webSockets.opened.stats[previousHours[index]]
+        }))
+      }, messages: {
+        incoming: {
+          total: ctg.webSockets.messages.incoming.stats.total,
+          perSecond: ctg.webSockets.messages.incoming.stats.perSecond,
+          hours: Array.from({ length: 5 }, (value, index) => ({
+            hour: previousHours[index],
+            amount: ctg.webSockets.messages.incoming.stats[previousHours[index]]
+          }))
+        }, outgoing: {
+          total: ctg.webSockets.messages.outgoing.stats.total,
+          perSecond: ctg.webSockets.messages.outgoing.stats.perSecond,
+          hours: Array.from({ length: 5 }, (value, index) => ({
+            hour: previousHours[index],
+            amount: ctg.webSockets.messages.outgoing.stats[previousHours[index]]
+          }))
+        }
+      }
+    }, data: {
+      incoming: {
+        total: ctg.data.incoming.stats.total,
+        perSecond: ctg.data.incoming.stats.perSecond,
+        hours: Array.from({ length: 5 }, (value, index) => ({
+          hour: previousHours[index],
+          amount: ctg.data.incoming.stats[previousHours[index]]
+        }))
+      }, outgoing: {
+        total: ctg.data.outgoing.stats.total,
+        perSecond: ctg.data.outgoing.stats.perSecond,
+        hours: Array.from({ length: 5 }, (value, index) => ({
+          hour: previousHours[index],
+          amount: ctg.data.outgoing.stats[previousHours[index]]
+        }))
+      }
+    }, cpu: {
+      time: `${date.getHours()}:${date.getMinutes()}:${date.getSeconds()}`,
+      usage: cpuUsage.toFixed(2)
+    }, memory: {
+      time: `${date.getHours()}:${date.getMinutes()}:${date.getSeconds()}`,
+      usage: process.memoryUsage().heapUsed
+    },
+
+    routes: {
+      user: ctg.routes.normal.length + ctg.routes.websocket.length,
+      automatic: ctg.routes.htmlBuilder.length
+    }, staticFiles,
+    cached: ctg.cache.files.objectCount
+      + ctg.cache.middlewares.objectCount
+      + ctg.cache.routes.objectCount
+  }
+}
+
+export type DashboardStats = Awaited<ReturnType<typeof runStats>>
+
 const coreCount = os.cpus().length
 
 export default async function statsRoute(ctr: RequestContext, ctg: GlobalContext, ctx: LocalContext, type: 'http' | 'socket') {
@@ -48,7 +146,6 @@ export default async function statsRoute(ctr: RequestContext, ctg: GlobalContext
 
       const dashboard = (await fs.readFile(`${__dirname}/index.html`, 'utf8'))
         .replaceAll('/rjweb-dashboard', parsePath(ctg.options.dashboard.path))
-        .replace('/* PWD */ true', String(!!ctg.options.dashboard.password))
         .replace('1.1.1', Version)
 
       return ctr.print(dashboard)
@@ -57,7 +154,7 @@ export default async function statsRoute(ctr: RequestContext, ctg: GlobalContext
     case "socket": {
       if (ctr.type !== 'connect') return
 
-      if (ctg.options.dashboard.password && ctr.queries.get('password') !== ctg.options.dashboard.password) return ctr.close(1, {
+      if (ctg.options.dashboard.password && ctr.queries.get('password') !== hashCode(ctg.options.dashboard.password)) return ctr.close(1, {
         error: 'password'
       })
 
@@ -71,96 +168,8 @@ export default async function statsRoute(ctr: RequestContext, ctg: GlobalContext
           }
         })
 
-        const runStats = async() => {
-          const date = new Date()
-          const startTime = date.getTime()
-          const startUsage = process.cpuUsage()
-          const previousHours = getPreviousHours()
-  
-          const staticFiles = await new Promise<number>(async(resolve) => {
-            let staticFiles = 0
-            for (let staticNumber = 0; staticNumber < ctg.routes.static.length; staticNumber++) {
-              staticFiles += (await getFilesRecursively(ctg.routes.static[staticNumber].location, true)).length
-            }
-  
-            resolve(staticFiles)
-          })
-  
-          const cpuUsage = await new Promise<number>((resolve) => setTimeout(() => {
-            const currentUsage = process.cpuUsage(startUsage)
-            const currentTime = new Date().getTime()
-            const timeDelta = (currentTime - startTime) * 5 * coreCount
-            resolve((currentUsage.system + currentUsage.user) / timeDelta)
-          }, 500))
-  
-          readable.push({
-            requests: Array.from({ length: 7 }, (value, index) => {
-              if (index === 0) return ctg.requests.stats.total
-              else if (index === 1) return ctg.requests.stats.perSecond
-              else return {
-                hour: previousHours[index - 2],
-                amount: ctg.requests.stats[previousHours[index - 2]]
-              }
-            }), web_sockets: {
-              opened: Array.from({ length: 7 }, (value, index) => {
-                if (index === 0) return ctg.webSockets.opened.stats.total
-                else if (index === 1) return ctg.webSockets.opened.stats.perSecond
-                else return {
-                  hour: previousHours[index - 2],
-                  amount: ctg.webSockets.opened.stats[previousHours[index - 2]]
-                }
-              }), messages: {
-                incoming: Array.from({ length: 7 }, (value, index) => {
-                  if (index === 0) return ctg.webSockets.messages.incoming.stats.total
-                  else if (index === 1) return ctg.webSockets.messages.incoming.stats.perSecond
-                  else return {
-                    hour: previousHours[index - 2],
-                    amount: ctg.webSockets.messages.incoming.stats[previousHours[index - 2]]
-                  }
-                }), outgoing: Array.from({ length: 7 }, (value, index) => {
-                  if (index === 0) return ctg.webSockets.messages.outgoing.stats.total
-                  else if (index === 1) return ctg.webSockets.messages.outgoing.stats.perSecond
-                  else return {
-                    hour: previousHours[index - 2],
-                    amount: ctg.webSockets.messages.outgoing.stats[previousHours[index - 2]]
-                  }
-                })
-              }
-            }, data: {
-              incoming: Array.from({ length: 7 }, (value, index) => {
-                if (index === 0) return ctg.data.incoming.stats.total
-                else if (index === 1) return ctg.data.incoming.stats.perSecond
-                else return {
-                  hour: previousHours[index - 2],
-                  amount: ctg.data.incoming.stats[previousHours[index - 2]]
-                }
-              }), outgoing: Array.from({ length: 7 }, (value, index) => {
-                if (index === 0) return ctg.data.outgoing.stats.total
-                else if (index === 1) return ctg.data.outgoing.stats.perSecond
-                else return {
-                  hour: previousHours[index - 2],
-                  amount: ctg.data.outgoing.stats[previousHours[index - 2]]
-                }
-              })
-            }, cpu: {
-              time: `${date.getHours()}:${date.getMinutes()}:${date.getSeconds()}`,
-              usage: cpuUsage.toFixed(2)
-            }, memory: {
-              time: `${date.getHours()}:${date.getMinutes()}:${date.getSeconds()}`,
-              usage: (process.memoryUsage().heapUsed / 1000 / 1000).toFixed(2)
-            },
-  
-            static_files: staticFiles,
-            user_routes: ctg.routes.normal.length + ctg.routes.websocket.length,
-            automatic_routes: ctg.routes.htmlBuilder.length,
-            cached: ctg.cache.files.objectCount
-              + ctg.cache.middlewares.objectCount
-              + ctg.cache.routes.objectCount
-          })
-        }
-
-        interval = setInterval(runStats, ctg.options.dashboard.updateInterval)
-        runStats()
+        interval = setInterval(() => readable.push(runStats(ctg)), ctg.options.dashboard.updateInterval)
+        process.nextTick(() => readable.push(runStats(ctg)))
 
         return readable
       }) ())

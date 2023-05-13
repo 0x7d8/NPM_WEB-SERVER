@@ -7,7 +7,7 @@ import URLObject from "../classes/URLObject"
 import { Options } from "../functions/parseOptions"
 import Static from "./static"
 import { DeepRequired } from "./internal"
-import TypedEventEmitter from "./typedEventEmitter"
+import MiniEventEmitter from "../classes/miniEventEmitter"
 import WebSocket from "./webSocket"
 import { EventHandlerMap } from "./event"
 import { HttpRequest, WsClose, WsConnect, WsMessage } from "./external"
@@ -63,7 +63,7 @@ export type LocalContext = {
 	/** The List of Parameters used by the URL */ params: Base['params']
 	/** The List of Query Parameters used by the URL */ queries: Base['queries']
 	/** The List of Fragments used by the URL */ fragments: Base['fragments']
-	/** An Event Emitter Responsible for all Events */ events: TypedEventEmitter<InternalEvents>
+	/** An Event Emitter Responsible for all Events */ events: MiniEventEmitter<InternalEvents>
 	/** A Boolean that keeps track whether the Request is Aborted */ isAborted: boolean
 	/** The Reference Listeners to keep track of and delete */ refListeners: { ref: Reference, refListener: RefListener }[]
 

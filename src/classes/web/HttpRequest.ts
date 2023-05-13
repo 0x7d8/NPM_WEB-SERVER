@@ -322,7 +322,7 @@ export default class HTTPRequest<Context extends Record<any, any> = {}, Body = u
 						}
 					}).once('close', () => {
 						this.ctx.response.content = Buffer.allocUnsafe(0)
-						this.ctx.events.removeListener('requestAborted', destroyStreams)
+						this.ctx.events.unlist('requestAborted', destroyStreams)
 						resolve(false)
 						if (!this.ctx.isAborted) this.rawRes.end()
 					})
@@ -339,7 +339,7 @@ export default class HTTPRequest<Context extends Record<any, any> = {}, Body = u
 					stream.pipe(compression)
 
 					// Destroy if required
-					this.ctx.events.once('requestAborted', destroyStreams)
+					this.ctx.events.listen('requestAborted', destroyStreams)
 				} else {
 					const destroyStream = () => {
 						stream.destroy()
@@ -366,13 +366,13 @@ export default class HTTPRequest<Context extends Record<any, any> = {}, Body = u
 						}
 					}).once('close', () => {
 						this.ctx.response.content = Buffer.allocUnsafe(0)
-						this.ctx.events.removeListener('requestAborted', destroyStream)
+						this.ctx.events.unlist('requestAborted', destroyStream)
 						resolve(true)
 						if (!this.ctx.isAborted) this.rawRes.end()
 					})
 
 					// Destroy if required
-					this.ctx.events.once('requestAborted', destroyStream)
+					this.ctx.events.listen('requestAborted', destroyStream)
 				}
 			})
 			else resolve(false)
@@ -437,7 +437,7 @@ export default class HTTPRequest<Context extends Record<any, any> = {}, Body = u
 
 					this.ctg.data.outgoing.increase(data.byteLength)
 				}, closeListener = () => {
-					if (destroyAbort) this.ctx.events.removeListener('requestAborted', destroyStream)
+					if (destroyAbort) this.ctx.events.unlist('requestAborted', destroyStream)
 					if (endRequest) {
 						resolve(false)
 						if (!this.ctx.isAborted) this.rawRes.end()
@@ -452,14 +452,14 @@ export default class HTTPRequest<Context extends Record<any, any> = {}, Body = u
 					return resolve(false)
 				}
 
-				if (destroyAbort) this.ctx.events.once('requestAborted', destroyStream)
+				if (destroyAbort) this.ctx.events.listen('requestAborted', destroyStream)
 
 				stream
 					.on('data', dataListener)
 					.once('close', closeListener)
 					.once('error', errorListener)
 
-				this.ctx.events.once('requestAborted', () => stream
+				this.ctx.events.listen('requestAborted', () => stream
 					.removeListener('data', dataListener)
 					.removeListener('close', closeListener)
 					.removeListener('error', errorListener)

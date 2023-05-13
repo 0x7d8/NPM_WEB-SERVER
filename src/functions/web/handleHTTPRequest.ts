@@ -8,6 +8,7 @@ import { dashboardIndexRoute, dashboardWsRoute } from "../../dashboard/routes"
 import { promises as fs } from "fs"
 import handleCompressType, { CompressMapping } from "../handleCompressType"
 import handleDecompressType, { DecompressMapping } from "../handleDecompressType"
+import MiniEventEmitter from "../../classes/miniEventEmitter"
 import ValueCollection from "../../classes/valueCollection"
 import handleEvent from "../handleEvent"
 import { Version } from "../.."
@@ -57,7 +58,7 @@ export default async function handleHTTPRequest(req: HttpRequest, res: HttpRespo
 		params: new ValueCollection(),
 		queries: parseKV(url.query),
 		fragments: parseKV(url.fragments),
-		events: new EventEmitter() as any,
+		events: new MiniEventEmitter(),
 		isAborted: false,
 		refListeners: [],
 		body: {
@@ -90,7 +91,7 @@ export default async function handleHTTPRequest(req: HttpRequest, res: HttpRespo
 
 	// Handle Aborting Requests
 	res.onAborted(() => {
-		ctx.events.emit('requestAborted')
+		ctx.events.send('requestAborted')
 		ctx.isAborted = true
 	})
 
@@ -435,7 +436,7 @@ export default async function handleHTTPRequest(req: HttpRequest, res: HttpRespo
 		}).once('close', () => {
 			ctg.logger.debug('Finished http body streaming with', ctx.body.chunks.length, 'chunks')
 
-			ctx.events.emit('startRequest')
+			ctx.events.send('startRequest')
 		})
 
 		// Recieve Data
@@ -453,10 +454,10 @@ export default async function handleHTTPRequest(req: HttpRequest, res: HttpRespo
 					if (!ctx.isAborted) await Promise.resolve(ctx.execute.route.onRawBody!(ctr as any, () => ctx.executeCode = false, sendBuffer, isLast))
 				} catch (err) {
 					ctx.handleError(err)
-					ctx.events.emit('startRequest')
+					ctx.events.send('startRequest')
 				}
 
-				if (isLast) ctx.events.emit('startRequest')
+				if (isLast) ctx.events.send('startRequest')
 			} else {
 				try {
 					const buffer = Buffer.from(rawChunk), sendBuffer = Buffer.allocUnsafe(buffer.byteLength)
@@ -506,7 +507,7 @@ export default async function handleHTTPRequest(req: HttpRequest, res: HttpRespo
 
 
 	// Handle Response Data
-	ctx.events.once('startRequest', async() => {
+	ctx.events.listen('startRequest', async() => {
 		// Handle Websocket onUpgrade
 		if (ctx.executeCode && requestType === 'upgrade' && ctx.execute.found && ctx.execute.route!.type === 'websocket' && 'onUpgrade' in ctx.execute.route!) {
 			try {
@@ -653,7 +654,7 @@ export default async function handleHTTPRequest(req: HttpRequest, res: HttpRespo
 
 					const compression = handleCompressType(ctg.options.compression)
 					compression.on('data', (data: Buffer) => {
-						ctg.logger.debug(`compressed http body chunk (${ctg.options.compression}) with bytelen`, data.byteLength)
+						ctg.logger.debug(`compressed and sent http body chunk (${ctg.options.compression}) with bytelen`, data.byteLength)
 
 						ctg.data.outgoing.increase(data.byteLength)
 				
@@ -673,14 +674,14 @@ export default async function handleHTTPRequest(req: HttpRequest, res: HttpRespo
 						if (!ctx.isAborted) res.writeHeader(header, response.headers[header])
 					}
 
-					if (!ctx.isAborted && ctx.response.isCompressed) res.end()
+					if (ctx.response.isCompressed && !ctx.isAborted) res.end()
 					else if (!ctx.isAborted) res.end(response.content)
 				}
 			})
 		} catch (err) {
-			ctg.logger.error(`Ending Request ${ctr.url.href} errored:`, err)
+			ctg.logger.debug(`Ending Request ${ctr.url.href} discarded unknown:`, err)
 		}
 	})
 
-	if (!ctx.executeCode || requestType === 'upgrade' || ctx.url.method === 'GET') ctx.events.emit('startRequest')
+	if (!ctx.executeCode || requestType === 'upgrade' || ctx.url.method === 'GET') ctx.events.send('startRequest')
 }

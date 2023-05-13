@@ -1,3 +1,11 @@
+## 7.7.0
+
+- Rewrite Dashboard in React
+- Add native Iterator to ValueCollections
+- Correctly parse promised content
+- Use Logger for default error messages
+- Use Mini Event Emitter for http requests
+
 ## 7.6.4
 
 - Add Icon to every TypeDoc Page

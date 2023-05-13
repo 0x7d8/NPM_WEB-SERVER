@@ -21,7 +21,7 @@ export default async function handleEvent(event: keyof EventHandlerMap<any, any>
 						console.error(`An Error occured:\n`, ctx.error)
 					} else {
 						ctr.print(Buffer.from(`An Error occured:\n${ctx.error}`))
-						console.error(`An Error occured:\n`, ctx.error)
+						ctg.logger.error(`An Error while handling request occured:\n`, ctx.error)
 					}
 				}
 			} catch (err) {

@@ -46,7 +46,7 @@ export default class WSConnect<Context extends Record<any, any> = {}, Type = 'co
 		this.ctx.continueSend = false
 
 		this.ctx.setExecuteSelf(async() => {
-			this.ctx.events.emit('requestAborted')
+			this.ctx.events.send('requestAborted')
 
 			let result: ParseContentReturns
 			try {
@@ -145,7 +145,7 @@ export default class WSConnect<Context extends Record<any, any> = {}, Type = 'co
 						this.ctg.webSockets.messages.outgoing.increase()
 						this.ctg.data.outgoing.increase(data.byteLength)
 					} catch {
-						this.ctx.events.emit('requestAborted')
+						this.ctx.events.send('requestAborted')
 					}
 				})
 				
@@ -227,10 +227,10 @@ export default class WSConnect<Context extends Record<any, any> = {}, Type = 'co
 						this.ctg.webSockets.messages.outgoing.increase()
 						this.ctg.data.outgoing.increase(data.byteLength)
 					} catch {
-						this.ctx.events.emit('requestAborted')
+						this.ctx.events.send('requestAborted')
 					}
 				}, closeListener = () => {
-					if (destroyAbort) this.ctx.events.removeListener('requestAborted', destroyStream)
+					if (destroyAbort) this.ctx.events.unlist('requestAborted', destroyStream)
 				}, errorListener = (error: Error) => {
 					this.ctx.handleError(error)
 					stream
@@ -239,14 +239,14 @@ export default class WSConnect<Context extends Record<any, any> = {}, Type = 'co
 						.removeListener('error', errorListener)
 				}
 
-				if (destroyAbort) this.ctx.events.once('requestAborted', destroyStream)
+				if (destroyAbort) this.ctx.events.listen('requestAborted', destroyStream)
 	
 				stream
 					.on('data', dataListener)
 					.once('close', closeListener)
 					.once('error', errorListener)
 
-				this.ctx.events.once('requestAborted', () => stream
+				this.ctx.events.listen('requestAborted', () => stream
 					.removeListener('data', dataListener)
 					.removeListener('close', closeListener)
 					.removeListener('error', errorListener)

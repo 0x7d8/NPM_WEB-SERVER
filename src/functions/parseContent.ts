@@ -18,8 +18,8 @@ export type Content =
 export type ParseContentReturns = Awaited<ReturnType<typeof parseContent>>
 
 export default async function parseContent(content: Content, prettify: boolean = false, logger?: Logger): Promise<{
-	headers: Record<string, Buffer>
-	content: Buffer
+	/** The Headers associated with the parsed Content */ headers: Record<string, Buffer>
+	/** The Parsed Content, 100% a Buffer */ content: Buffer
 }> {
 	const returnObject: ParseContentReturns = { headers: {}, content: Buffer.allocUnsafe(0) }
 
@@ -28,7 +28,7 @@ export default async function parseContent(content: Content, prettify: boolean =
 			await new Promise<void>((resolve, reject) => {
 				(content as Promise<Content>)
 					.then(async(r) => {
-						content = await parseContent(r, prettify, logger)
+						content = (await parseContent(r, prettify, logger)).content
 
 						resolve()
 					})
