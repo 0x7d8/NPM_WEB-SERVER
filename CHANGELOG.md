@@ -1,3 +1,7 @@
+## 7.7.2
+
+- Only search for static files on GET Requests
+
 ## 7.7.1
 
 - Fix some npm ignore issues

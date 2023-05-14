@@ -122,54 +122,56 @@ export default async function handleHTTPRequest(req: HttpRequest, res: HttpRespo
 	const actualUrl = ctx.url.path.split('/')
 
 	if (requestType === 'http') {
-		// Check Static Paths
-		const foundStatic = (file: string, url: Static) => {
-			ctx.execute.found = true
-			ctx.execute.route = url
-			ctx.execute.file = file
+		if (ctx.url.method === 'GET') {
+			// Check Static Paths
+			const foundStatic = (file: string, url: Static) => {
+				ctx.execute.found = true
+				ctx.execute.route = url
+				ctx.execute.file = file
 
-			// Set Cache
-			ctg.cache.routes.set(`route::static::${ctx.url.path}`, { route: url, file })
-		}
+				// Set Cache
+				ctg.cache.routes.set(`route::static::${ctx.url.path}`, { route: url, file })
+			}
 
-		// Get From Cache
-		if (ctg.cache.routes.has(`route::static::${ctx.url.path}`)) {
-			const url = ctg.cache.routes.get(`route::static::${ctx.url.path}`)!
+			// Get From Cache
+			if (ctg.cache.routes.has(`route::static::${ctx.url.path}`)) {
+				const url = ctg.cache.routes.get(`route::static::${ctx.url.path}`)!
 
-			ctx.execute.file = url.file!
-			ctx.execute.route = url.route!
-			ctx.execute.found = true
-		}
+				ctx.execute.file = url.file!
+				ctx.execute.route = url.route!
+				ctx.execute.found = true
+			}
 
-		if (!ctx.execute.found && ctx.url.method === 'GET') for (let staticNumber = 0; staticNumber < ctg.routes.static.length; staticNumber++) {
-			if (ctx.execute.found) break
+			if (!ctx.execute.found) for (let staticNumber = 0; staticNumber < ctg.routes.static.length; staticNumber++) {
+				if (ctx.execute.found) break
 
-			const url = ctg.routes.static[staticNumber]
+				const url = ctg.routes.static[staticNumber]
 
-			// Skip if not related
-			if (!ctx.url.path.startsWith(url.path)) continue
+				// Skip if not related
+				if (!ctx.url.path.startsWith(url.path)) continue
 
-			// Find File
-			const urlPath = parsePath(ctx.url.path.replace(url.path, '')).substring(1)
+				// Find File
+				const urlPath = parsePath(ctx.url.path.replace(url.path, '')).substring(1)
 
-			if (url.data.hideHTML) {
-				if (await fileExists(url.location + '/' + urlPath + '/index.html')) foundStatic(pathResolve(url.location + '/' + urlPath + '/index.html'), url)
-				else if (await fileExists(url.location + '/' + urlPath + '.html')) foundStatic(pathResolve(url.location + '/' + urlPath + '.html'), url)
-				else if (await fileExists(url.location + '/' + urlPath)) foundStatic(pathResolve(url.location + '/' + urlPath), url)
-			} else if (await fileExists(url.location + '/' + urlPath)) foundStatic(pathResolve(url.location + '/' + urlPath), url)
-		}
+				if (url.data.hideHTML) {
+					if (await fileExists(url.location + '/' + urlPath + '/index.html')) foundStatic(pathResolve(url.location + '/' + urlPath + '/index.html'), url)
+					else if (await fileExists(url.location + '/' + urlPath + '.html')) foundStatic(pathResolve(url.location + '/' + urlPath + '.html'), url)
+					else if (await fileExists(url.location + '/' + urlPath)) foundStatic(pathResolve(url.location + '/' + urlPath), url)
+				} else if (await fileExists(url.location + '/' + urlPath)) foundStatic(pathResolve(url.location + '/' + urlPath), url)
+			}
 
-		// Check Dashboard Path
-		if (ctg.options.dashboard.enabled && ctx.url.path === parsePath(ctg.options.dashboard.path)) {
-			ctx.execute.route = dashboardIndexRoute(ctg, ctx)
-			ctx.execute.found = true
-		}
+			// Check Dashboard Path
+			if (ctg.options.dashboard.enabled && ctx.url.path === parsePath(ctg.options.dashboard.path)) {
+				ctx.execute.route = dashboardIndexRoute(ctg, ctx)
+				ctx.execute.found = true
+			}
 
-		// Check HTMLBuilder Paths
-		const htmlBuilderRoute = ctg.routes.htmlBuilder.find((h) => h.path === ctx.url.path)
-		if (htmlBuilderRoute) {
-			ctx.execute.route = htmlBuilderRoute
-			ctx.execute.found = true
+			// Check HTMLBuilder Paths
+			const htmlBuilderRoute = ctg.routes.htmlBuilder.find((h) => h.path === ctx.url.path)
+			if (htmlBuilderRoute) {
+				ctx.execute.route = htmlBuilderRoute
+				ctx.execute.found = true
+			}
 		}
 
 		// Get From Cache
