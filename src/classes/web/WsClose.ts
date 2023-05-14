@@ -32,10 +32,9 @@ export default class WSClose<Context extends Record<any, any> = {}, Message = un
 	*/ public get message(): Message {
 		if (!this.ctx.body.parsed) {
 			const stringified = this.ctx.body.raw.toString()
-			if (this.ctg.options.body.parse) {
-				try { this.ctx.body.parsed = JSON.parse(stringified) }
-				catch { this.ctx.body.parsed = stringified }
-			} else this.ctx.body.parsed = stringified
+
+			try { this.ctx.body.parsed = JSON.parse(stringified) }
+			catch { this.ctx.body.parsed = stringified }
 		}
 
 		return this.ctx.body.parsed

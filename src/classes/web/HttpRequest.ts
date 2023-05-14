@@ -10,6 +10,7 @@ import Route from "../../types/http"
 import handleContentType from "../../functions/handleContentType"
 import handleCompressType, { CompressMapping } from "../../functions/handleCompressType"
 import { resolve as pathResolve } from "path"
+import { getParts } from "@rjweb/uws"
 import { promises as fs, createReadStream } from "fs"
 import parseStatus from "../../functions/parseStatus"
 import parseHeaders from "../../functions/parseHeaders"
@@ -56,13 +57,34 @@ export default class HTTPRequest<Context extends Record<any, any> = {}, Body = u
 		if (!this.ctx.body.parsed) {
 			const stringified = this.ctx.body.raw.toString()
 
-			if (this.ctg.options.body.parse && this.ctx.headers.get('content-type', '') === 'application/json') {
-				try { this.ctx.body.parsed = JSON.parse(stringified) }
-				catch { this.ctx.body.parsed = stringified }
-			} else if (this.ctg.options.body.parse && this.ctx.headers.get('content-type', '') === 'application/x-www-form-urlencoded') {
-				try { this.ctx.body.parsed = parseKV(stringified).toJSON() }
-				catch { this.ctx.body.parsed = stringified }
-			} else this.ctx.body.parsed = stringified
+			switch (this.ctx.headers.get('content-type', '')) {
+				case "application/json": {
+					try { this.ctx.body.parsed = JSON.parse(stringified) }
+					catch { this.ctx.body.parsed = stringified }
+
+					break
+				}
+
+				case "application/x-www-form-urlencoded": {
+					try { this.ctx.body.parsed = parseKV(stringified).toJSON() }
+					catch { this.ctx.body.parsed = stringified }
+
+					break
+				}
+
+				case "multipart/form-data": {
+					try { this.ctx.body.parsed = getParts(stringified, 'multipart/form-data') }
+					catch { this.ctx.body.parsed = stringified }
+
+					break
+				}
+
+				default: {
+					this.ctx.body.parsed = stringified
+
+					break
+				}
+			}
 		}
 
 		return this.ctx.body.parsed

@@ -1,4 +1,10 @@
-## 7.2.3
+## 7.7.4
+
+- Remove ability to disable body parsing because .rawBody exists
+- Automatically parse multipart/form-data
+- Use Switch Statement instead of else if for body parsing checks
+
+## 7.7.3
 
 - Automatically parse application/x-www-form-urlencoded into jsons
 - export parseKV

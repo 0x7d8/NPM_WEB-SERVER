@@ -14,11 +14,6 @@ export type Options = {
 		 * @since 2.6.0
 		*/ enabled?: boolean
 		/**
-		 * Whether to try parsing the HTTP Body / WS Message as JSON
-		 * @default true
-		 * @since 2.7.3
-		*/ parse?: boolean
-		/**
 		 * The Maximum Size of the HTTP Body / WS Message in MB
 		 * @default 5
 		 * @since 2.6.0
@@ -175,7 +170,6 @@ export default function parseOptions(provided: Options): DeepRequired<Options> {
 	return deepParseOptions({
 		body: {
 			enabled: true,
-			parse: true,
 			maxSize: 5,
 			message: 'Payload too large'
 		}, logging: {
