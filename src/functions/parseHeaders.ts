@@ -1,7 +1,10 @@
 import Logger from "../classes/logger"
 import parseContent, { Content } from "./parseContent"
 
-export default async function parseHeaders(headers: Record<string, Content>, logger: Logger): Promise<Record<string, Buffer>> {
+/**
+ * Parses Headers to be compatible with HTTP
+ * @since 7.3.0
+*/ export default async function parseHeaders(headers: Record<string, Content>, logger: Logger): Promise<Record<string, Buffer>> {
 	const parsedHeaders: Record<string, Buffer> = {}
 
 	for (const header in headers) {

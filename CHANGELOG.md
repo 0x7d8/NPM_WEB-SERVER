@@ -1,3 +1,9 @@
+## 7.7.6
+
+- Automatically free() memory at the end of a request
+- Show correct memory usage in Dashboard
+- Add more JSDocs
+
 ## 7.7.5
 
 - Prefer Defined Paths over Static Paths

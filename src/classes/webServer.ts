@@ -248,7 +248,7 @@ export default class Webserver<GlobContext extends Record<any, any> = {}, Middle
 				if (!listen) return reject(new Error(`Failed to start server on port ${this.globalContext.options.port}.`))
 
 				this.socket = listen
-				return resolve({ success: true, port: uWebsocket.us_socket_local_port(listen), message: 'WEBSERVER STARTED' })
+				return resolve({ success: true, port: uWebsocket.getSocketPort(listen), message: 'WEBSERVER STARTED' })
 			})
 		})
 	}
@@ -305,7 +305,7 @@ export default class Webserver<GlobContext extends Record<any, any> = {}, Middle
 	*/ public async stop() {
 		this.globalContext.cache.files.clear()
 		this.globalContext.cache.routes.clear()
-		uWebsocket.us_listen_socket_close(this.socket)
+		uWebsocket.closeSocket(this.socket)
 
 		return { success: true, message: 'WEBSERVER CLOSED' }
 	}

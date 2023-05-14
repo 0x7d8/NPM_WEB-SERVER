@@ -166,7 +166,10 @@ export type Options = {
 	*/ poweredBy?: boolean
 }
 
-export default function parseOptions(provided: Options): DeepRequired<Options> {
+/**
+ * Parses Provided Server Options into a full Version
+ * @since 6.2.0
+*/ export default function parseOptions(provided: Options): DeepRequired<Options> {
 	return deepParseOptions({
 		body: {
 			enabled: true,

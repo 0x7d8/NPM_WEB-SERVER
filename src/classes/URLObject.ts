@@ -8,7 +8,10 @@ export default class URLObject {
 		method: HTTPMethods
 	}
 
-	constructor(url: string, method: string) {
+	/**
+	 * Create a new URL object for an easy Wrapper of `url.parse()`
+	 * @since 5.6.0
+	*/ constructor(url: string, method: string) {
 		this.url = parse(parsePath(url))
 		this.data = {
 			method: method.toUpperCase() as HTTPMethods

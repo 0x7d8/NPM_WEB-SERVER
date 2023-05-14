@@ -17,7 +17,10 @@ export type Content =
 
 export type ParseContentReturns = Awaited<ReturnType<typeof parseContent>>
 
-export default async function parseContent(content: Content, prettify: boolean = false, logger?: Logger): Promise<{
+/**
+ * Parse almost anything into a Buffer that resolves to a string
+ * @since 5.0.0
+*/ export default async function parseContent(content: Content, prettify: boolean = false, logger?: Logger): Promise<{
 	/** The Headers associated with the parsed Content */ headers: Record<string, Buffer>
 	/** The Parsed Content, 100% a Buffer */ content: Buffer
 }> {

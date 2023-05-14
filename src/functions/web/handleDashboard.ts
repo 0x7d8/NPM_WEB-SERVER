@@ -122,7 +122,7 @@ const runStats = async(ctg: GlobalContext) => {
       usage: cpuUsage.toFixed(2)
     }, memory: {
       time: `${date.getHours()}:${date.getMinutes()}:${date.getSeconds()}`,
-      usage: process.memoryUsage().heapUsed
+      usage: process.memoryUsage().heapUsed + process.memoryUsage().external
     },
 
     routes: {

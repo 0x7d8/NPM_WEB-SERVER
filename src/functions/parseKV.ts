@@ -14,7 +14,10 @@ const trimString = (str: string): string => {
   return str.substring(start, end + 1)
 }
 
-export default function parseKV(keyValue: string, equal = '=', splitter = '&'): ValueCollection<string, string> {
+/**
+ * Efficiently parse Key-Value Strings into ValueCollections
+ * @since 7.0.0
+*/ export default function parseKV(keyValue: string, equal = '=', splitter = '&'): ValueCollection<string, string> {
 	const values = new ValueCollection<string, string>()
 
 	if (!keyValue) return values

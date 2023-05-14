@@ -1,6 +1,9 @@
 import { createHash } from "crypto"
 
-export default function toETag(data: Buffer, headers: Record<string, string | Buffer>, status: number) {
+/**
+ * Generate a Hash from a Body, Headers & Status Code to be used for caching using SHA1
+ * @since 6.0.0
+*/ export default function toETag(data: Buffer, headers: Record<string, string | Buffer>, status: number) {
   if (status < 200 || status >= 300) return null
 
   const hashed = createHash('sha1')

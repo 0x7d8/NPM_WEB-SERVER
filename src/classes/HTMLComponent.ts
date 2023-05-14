@@ -1,4 +1,3 @@
-import Route from "../types/http"
 import HTMLBuilder, { FnArgument, GetEvery } from "./HTMLBuilder"
 
 export default class HTMLComponent<Options extends Record<any, any> = {}> {
