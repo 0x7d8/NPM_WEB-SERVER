@@ -1,3 +1,8 @@
+## 7.7.5
+
+- Prefer Defined Paths over Static Paths
+- Correctly handle invalid multipart
+
 ## 7.7.4
 
 - Remove ability to disable body parsing because .rawBody exists

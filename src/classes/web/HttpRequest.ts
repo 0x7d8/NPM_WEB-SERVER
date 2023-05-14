@@ -76,6 +76,8 @@ export default class HTTPRequest<Context extends Record<any, any> = {}, Body = u
 					try { this.ctx.body.parsed = getParts(stringified, 'multipart/form-data') }
 					catch { this.ctx.body.parsed = stringified }
 
+					if (!this.ctx.body.parsed) this.ctx.body.parsed = stringified
+
 					break
 				}
 
