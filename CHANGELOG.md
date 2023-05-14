@@ -1,3 +1,8 @@
+## 7.2.3
+
+- Automatically parse application/x-www-form-urlencoded into jsons
+- export parseKV
+
 ## 7.7.2
 
 - Only search for static files on GET Requests

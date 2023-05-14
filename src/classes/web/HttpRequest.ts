@@ -13,6 +13,7 @@ import { resolve as pathResolve } from "path"
 import { promises as fs, createReadStream } from "fs"
 import parseStatus from "../../functions/parseStatus"
 import parseHeaders from "../../functions/parseHeaders"
+import parseKV from "../../functions/parseKV"
 
 export default class HTTPRequest<Context extends Record<any, any> = {}, Body = unknown> extends Base<Context> {
 	/**
@@ -57,6 +58,9 @@ export default class HTTPRequest<Context extends Record<any, any> = {}, Body = u
 
 			if (this.ctg.options.body.parse && this.ctx.headers.get('content-type', '') === 'application/json') {
 				try { this.ctx.body.parsed = JSON.parse(stringified) }
+				catch { this.ctx.body.parsed = stringified }
+			} else if (this.ctg.options.body.parse && this.ctx.headers.get('content-type', '') === 'application/x-www-form-urlencoded') {
+				try { this.ctx.body.parsed = parseKV(stringified).toJSON() }
 				catch { this.ctx.body.parsed = stringified }
 			} else this.ctx.body.parsed = stringified
 		}

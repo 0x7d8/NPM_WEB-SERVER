@@ -2,7 +2,6 @@ import { HTTPMethods } from "./internal"
 export { Options } from "../functions/parseOptions"
 export { default as HTMLBuilder, HTMLAttribute, HTMLContent } from "../classes/HTMLBuilder"
 export { default as HTMLComponent } from "../classes/HTMLComponent"
-export { default as parsePath } from "../functions/parsePath"
 
 export * from "./webSocket"
 
