@@ -1,3 +1,8 @@
+## 7.7.7
+
+- Improve JSDocs
+- export parseContentType
+
 ## 7.7.6
 
 - Automatically free() memory at the end of a request

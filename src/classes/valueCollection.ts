@@ -1,11 +1,39 @@
 import { RealAny } from "../types/internal"
 
-export default class ValueCollection<Key extends string | number | symbol = string | number | symbol, Value = any> {
+/**
+ * A Key - Value Store with easy access functions
+ * @example
+ * ```
+ * const collection = new ValueCollection(...)
+ * ```
+ * @since 2.5.0
+*/ export default class ValueCollection<Key extends string | number | symbol = string | number | symbol, Value = any> {
 	protected data: Record<Key, Value> = {} as any
 	public allowModify: boolean
 
 	/**
 	 * Create a New Value Collection
+	 * @example
+	 * ```
+	 * const collection = new ValueCollection()
+	 * 
+	 * collection
+	 *   .set('name', 'beta')
+	 *   .set('key', 'value')
+	 * 
+	 * collection.has('key') // true
+	 * collection.has('ms') // false
+	 * 
+	 * collection.toJSON() // { name: 'beta', key: 'value' }
+	 * 
+	 * collection.forEach((key, value) => {
+	 *   console.log(key, value)
+	 * })
+	 * 
+	 * collection.clear(['key'])
+	 * 
+	 * collection.toJSON() // { key: 'value' }
+	 * ```
 	 * @since 2.5.0
 	*/ constructor(
 		/** JSON Data to Import */ data?: Record<Key, Value>,

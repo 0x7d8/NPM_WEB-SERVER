@@ -2,7 +2,14 @@ import { HTTPMethods } from "../index"
 import { parse, UrlWithStringQuery } from "url"
 import parsePath from "../functions/parsePath"
 
-export default class URLObject {
+/**
+ * A Utility to make output of `url.parse()` safer
+ * @example
+ * ```
+ * const url = new URLObject(...)
+ * ```
+ * @since 5.6.0
+*/ export default class URLObject {
 	private url: UrlWithStringQuery
 	private data: {
 		method: HTTPMethods

@@ -4,7 +4,14 @@ export const getPreviousHours = (): Hours[] => {
 	return Array.from({ length: 7 }, (_, i) => (new Date().getHours() - (4 - i) + 24) % 24) as any
 }
 
-export default class DataStat {
+/**
+ * A Utility used for keeping track of information and parsing it automatically
+ * @example
+ * ```
+ * const stat = new DataStat(...)
+ * ```
+ * @since 7.3.0
+*/ export default class DataStat {
 	private secondStat: number = 0
 	public stats: Record<'total' | 'perSecond' | Hours, number> = {
 		total: 0, perSecond: 0,

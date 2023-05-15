@@ -33,7 +33,14 @@ export const colors = {
 	}
 }
 
-export default class Logger {
+/**
+ * A Logger used for automatically parsing messages from any place
+ * @example
+ * ```
+ * const logger = new Logger(...)
+ * ```
+ * @since 7.4.0
+*/ export default class Logger {
 	private options: DeepRequired<Options>['logging']
 
 	/**

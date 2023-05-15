@@ -63,7 +63,14 @@ export class MiddlewareLoader<
 	}
 }
 
-export default class MiddlewareBuilder<
+/**
+ * A Utility used for constructing middlewares
+ * @example
+ * ```
+ * const middleware = new MiddlewareBuilder(...).build()
+ * ```
+ * @since 7.0.0
+*/ export default class MiddlewareBuilder<
 	Config extends Record<any, any> = {},
 	Context extends Record<any, any> = {},
 	HTTPContext extends new(...args: any[]) => any = typeof Dummy,

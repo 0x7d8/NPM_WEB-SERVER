@@ -1,6 +1,13 @@
 const normalize = <Object extends Array<any>>(o: Object): Object => o ?? []
 
-export default class MiniEventEmitter<Events extends Record<string, (...args: any) => any>> {
+/**
+ * A Minimal Event Emitter used for requests
+ * @example
+ * ```
+ * const emitter = new MiniEventEmitter(...)
+ * ```
+ * @since 7.7.0
+*/ export default class MiniEventEmitter<Events extends Record<string, (...args: any) => any>> {
 	protected listeners: Record<keyof Events, Function[]> = {} as any
 
 	/**

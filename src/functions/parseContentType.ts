@@ -1,7 +1,10 @@
 import { GlobalContext } from "../types/context"
 
-export default function handleContentType(name: string, ctg: GlobalContext) {
-	for (const [ key, value ] of Object.entries(ctg.contentTypes)) {
+/**
+ * Parse File Name into a Content Type or empty string
+ * @since 4.0.0
+*/ export default function parseContentType(name: string, customTypes: GlobalContext['contentTypes']): string {
+	for (const [ key, value ] of Object.entries(customTypes)) {
 		if (name.endsWith(key)) return value
 	}
 

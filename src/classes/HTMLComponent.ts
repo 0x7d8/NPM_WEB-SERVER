@@ -1,6 +1,13 @@
 import HTMLBuilder, { FnArgument, GetEvery } from "./HTMLBuilder"
 
-export default class HTMLComponent<Options extends Record<any, any> = {}> {
+/**
+ * A Utility used for creating Components to use in the `.printHTML()` syntax
+ * @example
+ * ```
+ * const component = new HTMLComponent(...)
+ * ```
+ * @since 6.7.0
+*/ export default class HTMLComponent<Options extends Record<any, any> = {}> {
 	private callback: (tag: HTMLBuilder, options: Options | undefined) => HTMLBuilder
 
 	/**

@@ -1,4 +1,4 @@
-import Server from "../webServer"
+import Server from "../server"
 import { LocalContext } from "../../types/context"
 import Base from "./Base"
 import { WebSocket } from "@rjweb/uws"

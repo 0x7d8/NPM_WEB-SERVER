@@ -1,17 +1,17 @@
 import { HttpRequest, HttpResponse } from "@rjweb/uws"
 import Status from "../../misc/statusEnum"
-import Server from "../webServer"
+import Server from "../server"
 import { LocalContext } from "../../types/context"
 import parseContent, { Content } from "../../functions/parseContent"
 import HTMLBuilder, { parseAttributes } from "../HTMLBuilder"
 import { Readable } from "stream"
 import Base from "./Base"
 import Route from "../../types/http"
-import handleContentType from "../../functions/handleContentType"
 import handleCompressType, { CompressMapping } from "../../functions/handleCompressType"
 import { resolve as pathResolve } from "path"
 import { getParts } from "@rjweb/uws"
 import { promises as fs, createReadStream } from "fs"
+import parseContentType from "../../functions/parseContentType"
 import parseStatus from "../../functions/parseStatus"
 import parseHeaders from "../../functions/parseHeaders"
 import parseKV from "../../functions/parseKV"
@@ -275,7 +275,7 @@ export default class HTTPRequest<Context extends Record<any, any> = {}, Body = u
 		const cache = options?.cache ?? false
 
 		// Add Headers
-		if (addTypes) this.ctx.response.headers['content-type'] = Buffer.from(handleContentType(file, this.ctg))
+		if (addTypes) this.ctx.response.headers['content-type'] = Buffer.from(parseContentType(file, this.ctg.contentTypes))
 		if (this.ctx.headers.get('accept-encoding', '').includes(CompressMapping[this.ctg.options.compression].toString())) {
 			this.ctx.response.headers['content-encoding'] = CompressMapping[this.ctg.options.compression]
 			this.ctx.response.headers['vary'] = 'Accept-Encoding'

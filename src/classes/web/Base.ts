@@ -1,7 +1,7 @@
 import { GlobalContext, LocalContext } from "../../types/context"
 import URLObject from "../URLObject"
 import ValueCollection from "../valueCollection"
-import Server from "../webServer"
+import Server from "../server"
 
 export default class Base<Context extends Record<any, any> = {}> {
 	protected ctx: LocalContext

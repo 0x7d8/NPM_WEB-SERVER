@@ -1,5 +1,5 @@
 import ValueCollection from "../classes/valueCollection"
-import ServerController from "../classes/webServer"
+import ServerController from "../classes/server"
 import Base from "../classes/web/Base"
 import { MiddlewareInitted } from "./internal"
 import HTTP from "./http"

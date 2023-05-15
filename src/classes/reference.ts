@@ -5,7 +5,14 @@ type Listener = (value: Content) => RealAny
 
 export type RefListener = { index: number }
 
-export default class Reference<Value extends Content = any> {
+/**
+ * A Shared Reference for miscellaneous use cases
+ * @example
+ * ```
+ * const ref = new Reference(...)
+ * ```
+ * @since 7.2.0
+*/ export default class Reference<Value extends Content = any> {
 	private state: Value
 	private processDataFn: ((value: Value) => Content | Promise<Content>) = (v) => v
 	private listeners: (Listener | null)[] = []

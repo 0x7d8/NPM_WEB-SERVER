@@ -4,7 +4,7 @@ import { StartError } from "./types/serverEvents"
 import { Version, Status } from "."
 import { Spinner } from "rjutils-collection"
 import { colors } from "./classes/logger"
-import Server from "./classes/webServer"
+import Server from "./classes/server"
 
 import { exec, execSync } from "child_process"
 import https from "https"
