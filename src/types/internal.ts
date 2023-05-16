@@ -16,6 +16,10 @@ export type RealAny = PromiseLike<any> | Promise<any> | any
 export type UnionToIntersection<U> =
   (U extends any ? (k: U) => void : never) extends ((k: infer I) => void) ? I : never
 
+export type ExctractParameters<Path extends string> = Path extends `${infer Segment}/${infer Rest}`
+  ? Segment extends `<${infer Param}>` ? Record<Param, string> & ExctractParameters<Rest> : ExctractParameters<Rest>
+  : Path extends `<${infer Param}>` ? Record<Param, string> : {}
+
 export type MergeObjects<T extends object[]> = {
   [K in keyof UnionToIntersection<T[number]>]:
     UnionToIntersection<T[number]>[K]

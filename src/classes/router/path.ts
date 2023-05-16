@@ -90,14 +90,14 @@ export default class RoutePath<GlobContext extends Record<any, any>, Middlewares
 	 * )
 	 * ```
 	 * @since 6.0.0
-	*/ public http<Context extends Record<any, any> = {}, Body = unknown>(
+	*/ public http<Context extends Record<any, any> = {}, Body = unknown, Path extends string = '/'>(
     /** The Request Method */ method: HTTPMethods,
-		/** The Path on which this will be available */ path: string | RegExp,
-		/** The Callback to handle the Endpoint */ callback: (path: RouteHTTP<GlobContext & Context, Body, Middlewares>) => RouteHTTP<GlobContext & Context, Body, Middlewares>
+		/** The Path on which this will be available */ path: Path | RegExp,
+		/** The Callback to handle the Endpoint */ callback: (path: RouteHTTP<GlobContext & Context, Body, Middlewares, Path>) => RouteHTTP<GlobContext & Context, Body, Middlewares, Path>
 	): this {
 		if (this.routes.some((obj) => isRegExp(obj.path) ? false : obj.path === parsePath(path as string))) return this
 	
-		const routeHTTP = new RouteHTTP<Context, Body, Middlewares>(isRegExp(path) ? path : parsePath([ this.httpPath, path ]), method, this.validations, this.parsedHeaders)
+		const routeHTTP = new RouteHTTP<Context, Body, Middlewares, Path>(isRegExp(path) ? path : parsePath([ this.httpPath, path ]) as any, method, this.validations, this.parsedHeaders)
 		this.externals.push({ object: routeHTTP, addPrefix: this.httpPath })
 		callback(routeHTTP)
 	
@@ -123,13 +123,13 @@ export default class RoutePath<GlobContext extends Record<any, any>, Middlewares
 	 * )
 	 * ```
 	 * @since 5.4.0
-	*/ public ws<Context extends Record<any, any> = {}, Message = unknown>(
-		/** The Path on which this will be available */ path: string | RegExp,
-		/** The Callback to handle the Endpoint */ callback: (path: RouteWS<GlobContext & Context, Message, Middlewares>) => RouteWS<GlobContext & Context, Message, Middlewares>
+	*/ public ws<Context extends Record<any, any> = {}, Message = unknown, Path extends string = '/'>(
+		/** The Path on which this will be available */ path: Path | RegExp,
+		/** The Callback to handle the Endpoint */ callback: (path: RouteWS<GlobContext & Context, Message, Middlewares, Path>) => RouteWS<GlobContext & Context, Message, Middlewares, Path>
 	): this {
 		if (this.webSockets.some((obj) => isRegExp(obj.path) ? false : obj.path === parsePath(path as string))) return this
 
-		const routeWS = new RouteWS<Context, Message, Middlewares>(isRegExp(path) ? path : parsePath([ this.httpPath, path ]), this.validations)
+		const routeWS = new RouteWS<Context, Message, Middlewares, Path>(isRegExp(path) ? path : parsePath([ this.httpPath, path ]) as any, this.validations)
 		this.externals.push({ object: routeWS, addPrefix: this.httpPath })
 		callback(routeWS)
 

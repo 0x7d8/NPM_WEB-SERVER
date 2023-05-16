@@ -2,12 +2,12 @@ import { isRegExp } from "util/types"
 import { HTTPMethods, MiddlewareInitted, RoutedValidation } from "../../types/internal"
 import HTTP from "../../types/http"
 
-export default class RouteHTTP<Context extends Record<any, any> = {}, Body = unknown, Middlewares extends MiddlewareInitted[] = []> {
+export default class RouteHTTP<Context extends Record<any, any> = {}, Body = unknown, Middlewares extends MiddlewareInitted[] = [], Path extends string = '/'> {
 	private data: HTTP
 
 	/** Generate HTTP Endpoint */
 	constructor(
-		/** The Path of the Routes */ path: string | RegExp,
+		/** The Path of the Routes */ path: Path | RegExp,
 		/** The Method to use */ method: HTTPMethods,
 		/** The Validations to add */ validations: RoutedValidation[] = [],
 		/** The Headers to add */ headers: Record<string, Buffer> = {}
@@ -108,7 +108,7 @@ export default class RouteHTTP<Context extends Record<any, any> = {}, Body = unk
 	 * ```
 	 * @since 6.0.0
 	*/ public onRawBody(
-		/** The Async Code to run when the Socket gets an Upgrade HTTP Request */ code: HTTP<Context, never, Middlewares>['onRawBody']
+		/** The Async Code to run when the Socket gets an Upgrade HTTP Request */ code: HTTP<Context, never, Middlewares, Path>['onRawBody']
 	): this {
 		this.data.onRawBody = code as any
 
@@ -131,7 +131,7 @@ export default class RouteHTTP<Context extends Record<any, any> = {}, Body = unk
 	 * ```
 	 * @since 6.0.0
 	*/ public onRequest(
-		/** The Async Code to run when the Socket is Established */ code: HTTP<Context, Body, Middlewares>['onRequest']
+		/** The Async Code to run when the Socket is Established */ code: HTTP<Context, Body, Middlewares, Path>['onRequest']
 	): this {
 		this.data.onRequest = code as any
 

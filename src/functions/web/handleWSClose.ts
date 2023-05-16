@@ -8,6 +8,7 @@ export default function handleWSClose(ws: WebSocket<WebSocketContext>, message: 
 
 	ctg.logger.debug('WebSocket connection closed')
 
+	ctx.body.type = 'unknown'
 	ctx.body.raw = Buffer.from(message)
 	ctx.body.parsed = ''
 	ctx.executeSelf = () => true

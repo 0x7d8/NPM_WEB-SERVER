@@ -61,6 +61,7 @@ export default async function handleHTTPRequest(req: HttpRequest, res: HttpRespo
 		isAborted: false,
 		refListeners: [],
 		body: {
+			type: 'unknown',
 			chunks: [],
 			raw: Buffer.allocUnsafe(0),
 			parsed: ''
@@ -682,9 +683,6 @@ export default async function handleHTTPRequest(req: HttpRequest, res: HttpRespo
 				}
 
 				freeMemory(ctx.body.raw)
-				for (const buffer of ctx.body.chunks) {
-					freeMemory(buffer)
-				}
 			})
 		} catch (err) {
 			ctg.logger.debug(`Ending Request ${ctr.url.href} discarded unknown:`, err)

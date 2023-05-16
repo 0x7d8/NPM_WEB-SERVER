@@ -1,3 +1,9 @@
+## 7.8.0
+
+- Allow checking how a http body or ws message was parsed as using .bodyType and .messageType
+- Export JSONParsed, URLEncodedParsed & MultiPartParsed Types
+- Add automatic path parameter intellisense for .params.get()
+
 ## 7.7.7
 
 - Improve JSDocs

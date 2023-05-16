@@ -4,7 +4,7 @@ import WSConnect from "./WsConnect"
 import { WebSocket } from "@rjweb/uws"
 import { WebSocketContext } from "../../types/webSocket"
 
-export default class WSMessage<Context extends Record<any, any> = {}, Message = unknown> extends WSConnect<Context, 'message'> {
+export default class WSMessage<Context extends Record<any, any> = {}, Message = unknown, Path extends string = '/'> extends WSConnect<Context, 'message', Path> {
 	/**
 	 * Initializes a new Instance of a Web Context
 	 * @since 7.0.0
@@ -18,6 +18,15 @@ export default class WSMessage<Context extends Record<any, any> = {}, Message = 
 	*/ public readonly type = 'message'
 
 
+
+	/**
+	 * The Type of the Socket Message
+	 * @since 7.8.0
+	*/ public get messageType(): LocalContext['body']['type'] {
+		if (!this.ctx.body.parsed) this.message
+
+		return this.ctx.body.type
+	}
 
 	/**
 	 * The Socket Message (JSON Automatically parsed if enabled)

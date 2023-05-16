@@ -2,8 +2,9 @@ import { GlobalContext, LocalContext } from "../../types/context"
 import URLObject from "../URLObject"
 import ValueCollection from "../valueCollection"
 import Server from "../server"
+import { ExctractParameters } from "../../types/internal"
 
-export default class Base<Context extends Record<any, any> = {}> {
+export default class Base<Context extends Record<any, any> = {}, Path extends string = '/'> {
 	protected ctx: LocalContext
 	protected ctg: GlobalContext
 
@@ -17,7 +18,7 @@ export default class Base<Context extends Record<any, any> = {}> {
 
 		this.headers = localContext.headers
 		this.cookies = localContext.cookies
-		this.params = localContext.params
+		this.params = localContext.params as ValueCollection<any, string>
 		this.queries = localContext.queries
 		this.fragments = localContext.fragments
 
@@ -76,7 +77,7 @@ export default class Base<Context extends Record<any, any> = {}> {
 	 * console.log(ctr.params.get('server')) // Will print undefined if not present
 	 * ```
 	 * @since 2.0.0
-	*/ public readonly params: ValueCollection<string, string>
+	*/ public readonly params: ValueCollection<keyof ExctractParameters<Path> extends never ? string : keyof ExctractParameters<Path>, string>
 	/**
 	 * A Collection of all URL Queries
 	 * @example

@@ -2,12 +2,12 @@ import { isRegExp } from "util/types"
 import { MiddlewareInitted, RoutedValidation } from "../../types/internal"
 import WebSocket from "../../types/webSocket"
 
-export default class RouteWS<Context extends Record<any, any> = {}, Message = unknown, Middlewares extends MiddlewareInitted[] = []> {
+export default class RouteWS<Context extends Record<any, any> = {}, Message = unknown, Middlewares extends MiddlewareInitted[] = [], Path extends string = '/'> {
 	private data: WebSocket
 
 	/** Generate WS Endpoint */
 	constructor(
-		/** The Path of the Routes */ path: string | RegExp,
+		/** The Path of the Routes */ path: Path | RegExp,
 		/** The Validations to add */ validations: RoutedValidation[] = []
 	) {
 		if (isRegExp(path)) {
@@ -93,7 +93,7 @@ export default class RouteWS<Context extends Record<any, any> = {}, Message = un
 	 * ```
 	 * @since 5.10.0
 	*/ public onUpgrade(
-		/** The Async Code to run when the Socket gets an Upgrade HTTP Request */ code: WebSocket<Context, never, Middlewares>['onUpgrade']
+		/** The Async Code to run when the Socket gets an Upgrade HTTP Request */ code: WebSocket<Context, never, Middlewares, Path>['onUpgrade']
 	): this {
 		this.data.onUpgrade = code as any
 
@@ -116,7 +116,7 @@ export default class RouteWS<Context extends Record<any, any> = {}, Message = un
 	 * ```
 	 * @since 5.4.0
 	*/ public onConnect(
-		/** The Async Code to run when the Socket is Established */ code: WebSocket<Context, never, Middlewares>['onConnect']
+		/** The Async Code to run when the Socket is Established */ code: WebSocket<Context, never, Middlewares, Path>['onConnect']
 	): this {
 		this.data.onConnect = code as any
 
@@ -139,7 +139,7 @@ export default class RouteWS<Context extends Record<any, any> = {}, Message = un
 	 * ```
 	 * @since 5.4.0
 	*/ public onMessage(
-		/** The Async Code to run on a Message */ code: WebSocket<Context, Message, Middlewares>['onMessage']
+		/** The Async Code to run on a Message */ code: WebSocket<Context, Message, Middlewares, Path>['onMessage']
 	): this {
 		this.data.onMessage = code as any
 
@@ -162,7 +162,7 @@ export default class RouteWS<Context extends Record<any, any> = {}, Message = un
 	 * ```
 	 * @since 5.4.0
 	*/ public onClose(
-		/** The Async Code to run when the Socket Closes */ code: WebSocket<Context, Message, Middlewares>['onClose']
+		/** The Async Code to run when the Socket Closes */ code: WebSocket<Context, Message, Middlewares, Path>['onClose']
 	): this {
 		this.data.onClose = code as any
 

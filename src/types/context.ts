@@ -71,6 +71,7 @@ export type LocalContext = {
 	/** Set the Code to run when executeCode is false */ setExecuteSelf(callback: LocalContext['executeSelf']): void
 
 	/** The Current Request Body */ body: {
+		/** The Type of the Body */ type: 'unknown' | 'json' | 'url-encoded' | 'multipart'
 		/** The Body as Chunks */ chunks: Buffer[]
 		/** The Body as a raw Buffer */ raw: Buffer
 		/** The Body as a parsed Object */ parsed: any

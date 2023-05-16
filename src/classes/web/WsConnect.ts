@@ -7,7 +7,7 @@ import parseContent, { Content, ParseContentReturns } from "../../functions/pars
 import { Readable } from "stream"
 import Reference from "../reference"
 
-export default class WSConnect<Context extends Record<any, any> = {}, Type = 'connect'> extends Base<Context> {
+export default class WSConnect<Context extends Record<any, any> = {}, Type = 'connect', Path extends string = '/'> extends Base<Context, Path> {
 	/**
 	 * Initializes a new Instance of a Web Context
 	 * @since 7.0.0

@@ -16,7 +16,7 @@ import parseStatus from "../../functions/parseStatus"
 import parseHeaders from "../../functions/parseHeaders"
 import parseKV from "../../functions/parseKV"
 
-export default class HTTPRequest<Context extends Record<any, any> = {}, Body = unknown> extends Base<Context> {
+export default class HTTPRequest<Context extends Record<any, any> = {}, Body = unknown, Path extends string = '/'> extends Base<Context, Path> {
 	/**
 	 * Initializes a new Instance of a Web Context
 	 * @since 7.0.0
@@ -46,6 +46,15 @@ export default class HTTPRequest<Context extends Record<any, any> = {}, Body = u
 
 
 	/**
+	 * The Type of the HTTP Body
+	 * @since 7.8.0
+	*/ public get bodyType(): LocalContext['body']['type'] {
+		if (!this.ctx.body.parsed) this.body
+
+		return this.ctx.body.type
+	}
+
+	/**
 	 * The Request Body (JSON Automatically parsed if enabled)
 	 * @since 0.4.0
 	*/ public get body(): Body {
@@ -62,12 +71,16 @@ export default class HTTPRequest<Context extends Record<any, any> = {}, Body = u
 					try { this.ctx.body.parsed = JSON.parse(stringified) }
 					catch { this.ctx.body.parsed = stringified }
 
+					this.ctx.body.type = 'json'
+
 					break
 				}
 
 				case "application/x-www-form-urlencoded": {
 					try { this.ctx.body.parsed = parseKV(stringified).toJSON() }
 					catch { this.ctx.body.parsed = stringified }
+
+					this.ctx.body.type = 'url-encoded'
 
 					break
 				}
@@ -77,6 +90,7 @@ export default class HTTPRequest<Context extends Record<any, any> = {}, Body = u
 					catch { this.ctx.body.parsed = stringified }
 
 					if (!this.ctx.body.parsed) this.ctx.body.parsed = stringified
+					else this.ctx.body.type = 'multipart'
 
 					break
 				}
@@ -103,7 +117,6 @@ export default class HTTPRequest<Context extends Record<any, any> = {}, Body = u
 
 		return this.ctx.body.raw.toString()
 	}
-
 
 
 	/**

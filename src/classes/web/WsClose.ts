@@ -4,7 +4,7 @@ import Base from "./Base"
 import { WebSocket } from "@rjweb/uws"
 import { WebSocketContext } from "../../types/webSocket"
 
-export default class WSClose<Context extends Record<any, any> = {}, Message = unknown> extends Base<Context> {
+export default class WSClose<Context extends Record<any, any> = {}, Message = unknown, Path extends string = '/'> extends Base<Context, Path> {
 	/**
 	 * Initializes a new Instance of a Web Context
 	 * @since 7.0.0
