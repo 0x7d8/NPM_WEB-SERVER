@@ -43,14 +43,14 @@ export default class RouteIndex<GlobContext extends Record<any, any>, Middleware
 	 * )
 	 * ```
 	 * @since 5.0.0
-	*/ public path(
-		/** The Path Prefix */ prefix: string,
-		/** The Code to handle the Prefix */ router: ((path: RoutePath<GlobContext, Middlewares>) => RoutePath<GlobContext, Middlewares>) | RoutePath<GlobContext>
+	*/ public path<Path extends string>(
+		/** The Path Prefix */ prefix: Path,
+		/** The Code to handle the Prefix */ router: ((path: RoutePath<GlobContext, Middlewares, Path>) => RoutePath<GlobContext, Middlewares, Path>) | RoutePath<GlobContext>
 	): this {
 		if ('getData' in router) {
 			this.externals.push({ object: router, addPrefix: prefix })
 		} else {
-			const routePath = new RoutePath<GlobContext, Middlewares>(prefix)
+			const routePath = new RoutePath<GlobContext, Middlewares, Path>(prefix as any)
 			this.externals.push({ object: routePath as any })
 			router(routePath)
 		}

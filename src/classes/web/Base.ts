@@ -2,7 +2,7 @@ import { GlobalContext, LocalContext } from "../../types/context"
 import URLObject from "../URLObject"
 import ValueCollection from "../valueCollection"
 import Server from "../server"
-import { ExctractParameters } from "../../types/internal"
+import { ExtractParameters } from "../../types/internal"
 
 export default class Base<Context extends Record<any, any> = {}, Path extends string = '/'> {
 	protected ctx: LocalContext
@@ -77,7 +77,7 @@ export default class Base<Context extends Record<any, any> = {}, Path extends st
 	 * console.log(ctr.params.get('server')) // Will print undefined if not present
 	 * ```
 	 * @since 2.0.0
-	*/ public readonly params: ValueCollection<keyof ExctractParameters<Path> extends never ? string : keyof ExctractParameters<Path>, string>
+	*/ public readonly params: ValueCollection<ExtractParameters<Path>, string>
 	/**
 	 * A Collection of all URL Queries
 	 * @example

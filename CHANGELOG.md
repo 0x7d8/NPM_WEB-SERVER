@@ -1,3 +1,9 @@
+## 7.8.1
+
+- Begin routeCollection Class (UNFINISHED!)
+- Add Waterfalling Param Intellisense (not for files though)
+- Allow passing a function to .status() that gives a status enum to decide from (NOT ASYNC)
+
 ## 7.8.0
 
 - Allow checking how a http body or ws message was parsed as using .bodyType and .messageType

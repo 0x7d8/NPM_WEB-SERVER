@@ -140,10 +140,15 @@ export default class HTTPRequest<Context extends Record<any, any> = {}, Body = u
 	 * 
 	 * // or
 	 * ctr.status(666, 'The Devil').print('The Devil')
+	 * 
+	 * // or
+	 * ctr.status((c) => c.IM_A_TEAPOT).print('Im a Teapot')
 	 * ```
 	 * @since 0.0.2
-	*/ public status(code: number, message?: string): this {
-		this.ctx.response.status = code ?? Status.OK
+	*/ public status(code: number | ((codes: typeof Status) => number), message?: string): this {
+		if (typeof code === 'function') this.ctx.response.status = code(Status)
+		else this.ctx.response.status = code
+
 		this.ctx.response.statusMessage = message
 
 		return this
@@ -157,7 +162,9 @@ export default class HTTPRequest<Context extends Record<any, any> = {}, Body = u
 	 * ```
 	 * @since 2.8.5
 	*/ public redirect(location: string, statusCode?: 301 | 302): this {
-		this.status(statusCode ?? Status.FOUND)
+		this.ctx.response.status = statusCode ?? Status.FOUND
+		this.ctx.response.statusMessage = undefined
+
 		this.ctx.response.headers['location'] = location
 
 		return this

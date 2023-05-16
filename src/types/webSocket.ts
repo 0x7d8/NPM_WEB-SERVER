@@ -10,7 +10,7 @@ interface RouteGeneral<Context extends Record<any, any> = {}, Message = unknown,
 	/** The Type of this Object */ type: 'websocket'
 
 	/** The Async Code to run when the Socket gets an Upgrade HTTP Request */ onUpgrade?(ctr: MergeObjects<[ HTTPRequest<Context, '', Path>, InstanceType<Middlewares[number]['data']['classModifications']['http']> ]>, end: (...args: any[]) => void): Promise<any> |any
-	/** The Async Code to run when the Socket Connects */ onConnect?(ctr: MergeObjects<[ WSConnect<Context, Path>, InstanceType<Middlewares[number]['data']['classModifications']['wsConnect']> ]>): RealAny
+	/** The Async Code to run when the Socket Connects */ onConnect?(ctr: MergeObjects<[ WSConnect<Context, 'connect', Path>, InstanceType<Middlewares[number]['data']['classModifications']['wsConnect']> ]>): RealAny
 	/** The Async Code to run when the Socket recieves a Message */ onMessage?(ctr: MergeObjects<[ WSMessage<Context, Message, Path>, InstanceType<Middlewares[number]['data']['classModifications']['wsMessage']> ]>): RealAny
 	/** The Async Code to run when the Socket Closes */ onClose?(ctr: MergeObjects<[ WSClose<Context, Message, Path>, InstanceType<Middlewares[number]['data']['classModifications']['wsClose']> ]>): RealAny
 
@@ -34,7 +34,7 @@ interface RouteRegExp<Context extends Record<any, any> = {}, Message = unknown, 
 	/** The Path that the URL has to start with */ pathStartWith: string
 }
 
-type Route<Context extends Record<any, any> = {}, Message = unknown, Middlewares extends MiddlewareInitted[] = [], Path extends string = '/'> = RouteString<Context, Message, Middlewares> | RouteRegExp<Context, Message, Middlewares, Path>
+type Route<Context extends Record<any, any> = {}, Message = unknown, Middlewares extends MiddlewareInitted[] = [], Path extends string = '/'> = RouteString<Context, Message, Middlewares, Path> | RouteRegExp<Context, Message, Middlewares, Path>
 export default Route
 
 
