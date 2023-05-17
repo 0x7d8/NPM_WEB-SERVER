@@ -1,16 +1,16 @@
 import { WsConnect, WsMessage, WsClose, HttpRequest } from "../types/external"
 import { LocalContext, GlobalContext } from "../types/context"
-import { RealAny, EndFn } from "../types/internal"
+import { RealAny, EndFn, AnyClass } from "../types/internal"
 
 export const currentVersion = 3
 
 export interface MiddlewareData<
 	Config extends Record<any, any>,
 	Context extends Record<any, any>,
-	HTTPContext extends new(...args: any[]) => any,
-	WSConnectContext extends new(...args: any[]) => any,
-	WSMessageContext extends new(...args: any[]) => any,
-	WSCloseContext extends new(...args: any[]) => any
+	HTTPContext extends AnyClass,
+	WSConnectContext extends AnyClass,
+	WSMessageContext extends AnyClass,
+	WSCloseContext extends AnyClass
 > {
 	/** The Code to run when the Middleware gets loaded */ initEvent?(localContext: Context, config: Config, ctg: GlobalContext): RealAny
 	/** The Code to run when an HTTP Request Triggers */ httpEvent?(localContext: Context, end: EndFn, ctr: HttpRequest, ctx: LocalContext, ctg: GlobalContext): RealAny
@@ -31,10 +31,10 @@ class Dummy {}
 export class MiddlewareLoader<
 	Config extends Record<any, any>,
 	Context extends Record<any, any>,
-	HTTPContext extends new(...args: any[]) => any,
-	WSConnectContext extends new(...args: any[]) => any,
-	WSMessageContext extends new(...args: any[]) => any,
-	WSCloseContext extends new(...args: any[]) => any
+	HTTPContext extends AnyClass,
+	WSConnectContext extends AnyClass,
+	WSMessageContext extends AnyClass,
+	WSCloseContext extends AnyClass
 > {
 	protected context: Context
 	protected data: MiddlewareData<Config, Context, HTTPContext, WSConnectContext, WSMessageContext, WSCloseContext>
@@ -73,10 +73,10 @@ export class MiddlewareLoader<
 */ export default class MiddlewareBuilder<
 	Config extends Record<any, any> = {},
 	Context extends Record<any, any> = {},
-	HTTPContext extends new(...args: any[]) => any = typeof Dummy,
-	WSConnectContext extends new(...args: any[]) => any = typeof Dummy,
-	WSMessageContext extends new(...args: any[]) => any = typeof Dummy,
-	WSCloseContext extends new(...args: any[]) => any = typeof Dummy
+	HTTPContext extends AnyClass = typeof Dummy,
+	WSConnectContext extends AnyClass = typeof Dummy,
+	WSMessageContext extends AnyClass = typeof Dummy,
+	WSCloseContext extends AnyClass = typeof Dummy
 > {
 	private data: MiddlewareData<Config, Context, HTTPContext, WSConnectContext, WSMessageContext, WSCloseContext> = {
 		classModifications: {
@@ -114,7 +114,7 @@ export class MiddlewareLoader<
 	 *   .build()
 	 * ```
 	 * @since 7.0.0
-	*/ public httpClass<Class extends new(...args: any[]) => any>(
+	*/ public httpClass<Class extends AnyClass>(
 		/** The Callback to the Class extending the HTTP Class */ callback: (extend: typeof HttpRequest, localContext: Context) => Class
 	): MiddlewareBuilder<Config, Context, Class, WSConnectContext, WSMessageContext, WSCloseContext> {
 		this.data.classModifications.http = callback(HttpRequest, this.dataContext) as any
@@ -140,7 +140,7 @@ export class MiddlewareLoader<
 	 *   .build()
 	 * ```
 	 * @since 7.0.0
-	*/ public wsConnectClass<Class extends new(...args: any[]) => any>(
+	*/ public wsConnectClass<Class extends AnyClass>(
 		/** The Callback to the Class extending the HTTP Class */ callback: (extend: typeof WsConnect, localContext: Context) => Class
 	): MiddlewareBuilder<Config, Context, HTTPContext, Class, WSMessageContext, WSCloseContext> {
 		this.data.classModifications.wsConnect = callback(WsConnect, this.dataContext) as any
@@ -166,7 +166,7 @@ export class MiddlewareLoader<
 	 *   .build()
 	 * ```
 	 * @since 7.0.0
-	*/ public wsMessageClass<Class extends new(...args: any[]) => any>(
+	*/ public wsMessageClass<Class extends AnyClass>(
 		/** The Callback to the Class extending the HTTP Class */ callback: (extend: typeof WsMessage, localContext: Context) => Class
 	): MiddlewareBuilder<Config, Context, HTTPContext, WSConnectContext, Class, WSCloseContext> {
 		this.data.classModifications.wsMessage = callback(WsMessage, this.dataContext) as any
@@ -192,7 +192,7 @@ export class MiddlewareLoader<
 	 *   .build()
 	 * ```
 	 * @since 7.0.0
-	*/ public wsCloseClass<Class extends new(...args: any[]) => any>(
+	*/ public wsCloseClass<Class extends AnyClass>(
 		/** The Callback to the Class extending the HTTP Class */ callback: (extend: typeof WsClose, localContext: Context) => Class
 	): MiddlewareBuilder<Config, Context, HTTPContext, WSConnectContext, WSMessageContext, Class> {
 		this.data.classModifications.wsClose = callback(WsClose, this.dataContext) as any

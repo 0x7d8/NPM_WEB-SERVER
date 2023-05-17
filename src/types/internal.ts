@@ -12,6 +12,7 @@ import RouteHTTP from "../classes/router/http"
 
 export type EndFn = (...args: any[]) => void
 export type RealAny = PromiseLike<any> | Promise<any> | any
+export type AnyClass = new (...args: any[]) => any
 
 export type UnionToIntersection<U> =
   (U extends any ? (k: U) => void : never) extends ((k: infer I) => void) ? I : never

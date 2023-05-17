@@ -16,6 +16,7 @@ import RouteFile from "./router/file"
 import { getFilesRecursively } from "rjutils-collection"
 import { HttpRequest, WsClose, WsConnect, WsMessage } from "../types/external"
 import { addPathsToLoadedRouter } from "../functions/routeFileParsing"
+import mergeClasses from "../functions/mergeClasses"
 import generateOpenAPI3 from "../functions/generateOpenAPI3"
 import DataStat from "./dataStat"
 import Logger from "./logger"
@@ -71,10 +72,10 @@ import os from "os"
 					outgoing: new DataStat()
 				}
 			}, classContexts: {
-				http: HttpRequest,
-				wsConnect: WsConnect,
-				wsMessage: WsMessage,
-				wsClose: WsClose
+				http: mergeClasses(HttpRequest, ...middlewares.map((m) => m.data.classModifications.http)),
+				wsConnect: mergeClasses(WsConnect, ...middlewares.map((m) => m.data.classModifications.http)),
+				wsMessage: mergeClasses(WsMessage, ...middlewares.map((m) => m.data.classModifications.http)),
+				wsClose: mergeClasses(WsClose, ...middlewares.map((m) => m.data.classModifications.http))
 			}, middlewares: this.middlewares,
 			data: {
 				incoming: new DataStat(),
@@ -194,17 +195,6 @@ import os from "os"
 					break
 				}
 			}; if (stopExecution) return
-
-			if (this.middlewares.length > 0) {
-				/** @ts-ignore */
-				this.globalContext.classContexts.http = class extends this.middlewares.map((m) => m.data.classModifications.http).reduce((base, extender) => class extends extender(base) {}) { } as any
-				/** @ts-ignore */
-				this.globalContext.classContexts.wsConnect = class extends this.middlewares.map((m) => m.data.classModifications.wsConnect).reduce((base, extender) => class extends extender(base) {}) { } as any
-				/** @ts-ignore */
-				this.globalContext.classContexts.wsMessage = class extends this.middlewares.map((m) => m.data.classModifications.wsMessage).reduce((base, extender) => class extends extender(base) {}) { } as any
-				/** @ts-ignore */
-				this.globalContext.classContexts.wsClose = class extends this.middlewares.map((m) => m.data.classModifications.wsClose).reduce((base, extender) => class extends extender(base) {}) { } as any
-			}
 
 			if (this.globalContext.options.ssl.enabled) {
 				try {

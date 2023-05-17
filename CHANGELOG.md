@@ -1,3 +1,9 @@
+## 7.8.2
+
+- Provide Fallback for invalid middleware class extensions
+- Add Internal AnyClass Type
+- Fix class merging (hopefully)
+
 ## 7.8.1
 
 - Begin routeCollection Class (UNFINISHED!)

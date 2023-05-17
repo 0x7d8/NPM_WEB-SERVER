@@ -295,7 +295,7 @@ export default class HTTPRequest<Context extends Record<any, any> = {}, Body = u
 		const cache = options?.cache ?? false
 
 		// Add Headers
-		if (addTypes) this.ctx.response.headers['content-type'] = Buffer.from(parseContentType(file, this.ctg.contentTypes))
+		if (addTypes) this.ctx.response.headers['content-type'] = parseContentType(file, this.ctg.contentTypes)
 		if (this.ctx.headers.get('accept-encoding', '').includes(CompressMapping[this.ctg.options.compression].toString())) {
 			this.ctx.response.headers['content-encoding'] = CompressMapping[this.ctg.options.compression]
 			this.ctx.response.headers['vary'] = 'Accept-Encoding'
