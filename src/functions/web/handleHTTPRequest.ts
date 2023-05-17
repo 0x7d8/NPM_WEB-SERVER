@@ -121,7 +121,6 @@ export default async function handleHTTPRequest(req: HttpRequest, res: HttpRespo
 
 	/// Check if URL exists
 	const actualUrl = ctx.url.path.split('/')
-
 	if (requestType === 'http') {
 		// Get From Cache
 		if (ctg.cache.routes.has(`route::normal::${ctx.url.path}::${ctx.url.method}`)) {

@@ -1,3 +1,9 @@
+## 7.8.3
+
+- Fix References not being removed correctly
+- Handle x-gzip as gzip for compatibility
+- Support byte ranges for .printFile()
+
 ## 7.8.2
 
 - Provide Fallback for invalid middleware class extensions

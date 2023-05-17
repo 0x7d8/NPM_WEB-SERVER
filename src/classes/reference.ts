@@ -3,7 +3,7 @@ import { RealAny } from "../types/internal"
 
 type Listener = (value: Content) => RealAny
 
-export type RefListener = { index: number }
+export type RefListener = { index: Listener }
 
 /**
  * A Shared Reference for miscellaneous use cases
@@ -111,8 +111,10 @@ export type RefListener = { index: number }
 	 * Listen for Changes (when actually emitted)
 	 * @since 7.2.0
 	*/ protected onChange(listener: Listener): RefListener {
+		this.listeners.push(listener)
+
 		return {
-			index: this.listeners.push(listener) - 1
+			index: listener
 		}
 	}
 
@@ -120,7 +122,7 @@ export type RefListener = { index: number }
 	 * Remove a Listener by index
 	 * @since 7.2.0
 	*/ protected removeOnChange(listener: RefListener): this {
-		this.listeners.splice(listener.index, 1)
+		this.listeners.splice(this.listeners.findIndex((l) => Object.is(l, listener)), 1)
 
 		return this
 	}

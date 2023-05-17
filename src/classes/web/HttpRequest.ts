@@ -295,6 +295,7 @@ export default class HTTPRequest<Context extends Record<any, any> = {}, Body = u
 		const cache = options?.cache ?? false
 
 		// Add Headers
+		this.ctx.response.headers['accept-ranges'] = 'bytes'
 		if (addTypes) this.ctx.response.headers['content-type'] = parseContentType(file, this.ctg.contentTypes)
 		if (this.ctx.headers.get('accept-encoding', '').includes(CompressMapping[this.ctg.options.compression].toString())) {
 			this.ctx.response.headers['content-encoding'] = CompressMapping[this.ctg.options.compression]
@@ -302,8 +303,34 @@ export default class HTTPRequest<Context extends Record<any, any> = {}, Body = u
 		}
 
 		this.ctx.setExecuteSelf(() => new Promise(async(resolve) => {
+			const fileStat = await fs.stat(pathResolve(file))
+			let endEarly = false, start: number, end: number
+
+			if (this.ctx.headers.has('range') && /bytes=\d+(-\d+)?/.test(this.ctx.headers.get('range', ''))) {
+				const firstExpression = this.ctx.headers.get('range', '').match(/bytes=\d+(-\d+)?/)![0].substring(6)
+				const [ startExpect, endExpect ] = firstExpression.split('-')
+
+				start = parseInt(startExpect)
+				if (!endExpect) end = fileStat.size
+				else end = parseInt(endExpect)
+
+				if (end > fileStat.size) {
+					this.ctx.response.status = Status.RANGE_NOT_SATISFIABLE
+					this.ctx.response.statusMessage = undefined
+					endEarly = true
+				} else if (start < 0) {
+					this.ctx.response.status = Status.RANGE_NOT_SATISFIABLE
+					this.ctx.response.statusMessage = undefined
+					endEarly = true
+				}
+
+				if (!endEarly) {
+					this.ctx.response.status = Status.PARTIAL_CONTENT
+					this.ctx.response.statusMessage = undefined
+				}
+			} else start = 0, end = fileStat.size
+
 			if (this.ctg.options.performance.lastModified) try {
-				const fileStat = await fs.stat(pathResolve(file))
 				this.ctx.response.headers['last-modified'] = fileStat.mtime.toUTCString()
 			} catch (err) {
 				this.ctx.handleError(err)
@@ -314,13 +341,26 @@ export default class HTTPRequest<Context extends Record<any, any> = {}, Body = u
 			const parsedHeaders = await parseHeaders(this.ctx.response.headers, this.ctg.logger)
 
 			if (!this.ctx.isAborted) this.rawRes.cork(() => {
-				let endEarly = false
-				if (this.ctg.options.performance.lastModified && this.ctx.headers.get('if-modified-since') === this.ctx.response.headers['last-modified']) {
+				if (!endEarly && start === 0 && end === fileStat.size && this.ctg.options.performance.lastModified && this.ctx.headers.get('if-modified-since') === this.ctx.response.headers['last-modified']) {
 					this.ctg.logger.debug('Ended modified-last request early because of match')
 
 					this.ctx.response.status = Status.NOT_MODIFIED
 					this.ctx.response.statusMessage = undefined
 					endEarly = true
+				}
+
+				// Check Cache
+				if (this.ctg.cache.files.has(`file::${file}`)) {
+					this.ctx.response.content = this.ctg.cache.files.get(`file::${file}`)!
+					delete this.ctx.response.headers['accept-range']
+
+					return resolve(true)
+				} else if (this.ctg.cache.files.has(`file::${this.ctg.options.compression}::${file}`)) {
+					this.ctx.response.isCompressed = true
+					this.ctx.response.content = this.ctg.cache.files.get(`file::${this.ctg.options.compression}::${file}`)!
+					delete this.ctx.response.headers['accept-range']
+
+					return resolve(true)
 				}
 
 				// Write Headers & Status
@@ -334,18 +374,6 @@ export default class HTTPRequest<Context extends Record<any, any> = {}, Body = u
 					return resolve(false)
 				}
 
-				// Check Cache
-				if (this.ctg.cache.files.has(`file::${file}`)) {
-					this.ctx.response.content = this.ctg.cache.files.get(`file::${file}`)!
-
-					return resolve(true)
-				} else if (this.ctg.cache.files.has(`file::${this.ctg.options.compression}::${file}`)) {
-					this.ctx.response.isCompressed = true
-					this.ctx.response.content = this.ctg.cache.files.get(`file::${this.ctg.options.compression}::${file}`)!
-
-					return resolve(true)
-				}
-
 				// Get File Content
 				if (this.ctx.headers.get('accept-encoding', '').includes(CompressMapping[this.ctg.options.compression].toString())) {
 					const destroyStreams = () => {
@@ -357,7 +385,7 @@ export default class HTTPRequest<Context extends Record<any, any> = {}, Body = u
 
 					// Handle Compression
 					compression.on('data', (content: Buffer) => {
-						this.ctg.logger.debug('compressed http body chunk with bytelen', content.byteLength)
+						this.ctg.logger.debug('compressed and sent http body chunk with bytelen', content.byteLength)
 
 						this.ctg.data.outgoing.increase(content.byteLength)
 
@@ -375,7 +403,7 @@ export default class HTTPRequest<Context extends Record<any, any> = {}, Body = u
 						if (!this.ctx.isAborted) this.rawRes.end()
 					})
 
-					const stream = createReadStream(pathResolve(file))
+					const stream = createReadStream(pathResolve(file), { start, end })
 
 					// Handle Errors
 					stream.once('error', (err) => {
@@ -393,7 +421,7 @@ export default class HTTPRequest<Context extends Record<any, any> = {}, Body = u
 						stream.destroy()
 					}
 
-					const stream = createReadStream(pathResolve(file))
+					const stream = createReadStream(pathResolve(file), { start, end })
 
 					// Handle Errors
 					stream.once('error', (err) => {
@@ -403,6 +431,8 @@ export default class HTTPRequest<Context extends Record<any, any> = {}, Body = u
 
 					// Handle Data
 					stream.on('data', (content: Buffer) => {
+						this.ctg.logger.debug('sent http body chunk with bytelen', content.byteLength)
+
 						this.ctg.data.outgoing.increase(content.byteLength)
 
 						if (!this.ctx.isAborted) this.rawRes.write(content)
@@ -483,6 +513,7 @@ export default class HTTPRequest<Context extends Record<any, any> = {}, Body = u
 
 					if (!this.ctx.isAborted) this.rawRes.write(data)
 
+					this.ctg.logger.debug('sent http body chunk with bytelen', data.byteLength)
 					this.ctg.data.outgoing.increase(data.byteLength)
 				}, closeListener = () => {
 					if (destroyAbort) this.ctx.events.unlist('requestAborted', destroyStream)

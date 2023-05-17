@@ -1,6 +1,6 @@
 import ValueCollection from "../classes/valueCollection"
 
-const trimString = (str: string): string => {
+export const trimString = (str: string): string => {
   let start = 0, end = str.length - 1
 
   while (start < end && str[start] === ' ') {

@@ -4,6 +4,7 @@ import zlib from "zlib"
 
 export type DecompressTypes = 'none' | 'gzip' | 'brotli' | 'inflate'
 export const DecompressMapping = {
+	'x-gzip': 'gzip',
 	gzip: 'gzip',
 	br: 'brotli',
 	inflate: 'inflate',
