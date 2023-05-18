@@ -87,9 +87,9 @@ import os from "os"
 
 				htmlBuilder: []
 			}, cache: {
-				files: new ValueCollection(undefined, undefined, fullOptions.cache),
-				middlewares: new ValueCollection(undefined, undefined, fullOptions.cache),
-				routes: new ValueCollection(undefined, undefined, fullOptions.cache)
+				files: new ValueCollection(undefined, undefined, fullOptions.cache, fullOptions.cacheLimit),
+				middlewares: new ValueCollection(undefined, undefined, fullOptions.cache, fullOptions.cacheLimit),
+				routes: new ValueCollection(undefined, undefined, fullOptions.cache, fullOptions.cacheLimit)
 			}
 		}
 	}

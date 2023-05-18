@@ -7,9 +7,10 @@ import { RealAny } from "../types/internal"
  * const collection = new ValueCollection(...)
  * ```
  * @since 2.5.0
-*/ export default class ValueCollection<Key extends string | number | symbol = string | number | symbol, Value = any> {
-	protected data: Record<Key, Value> = {} as any
-	public allowModify: boolean
+*/ export default class ValueCollection<Key extends PropertyKey = PropertyKey, Value = any> {
+	protected data: Map<Key, Value> = new Map()
+	protected maxElements: number
+	protected allowModify: boolean
 
 	/**
 	 * Create a New Value Collection
@@ -38,14 +39,16 @@ import { RealAny } from "../types/internal"
 	*/ constructor(
 		/** JSON Data to Import */ data?: Record<Key, Value>,
 		/** Function to Parse Values with */ parse?: (value: any) => Value,
-		/** Whether to allow modifying the Values */ allowModify: boolean = true
+		/** Whether to allow modifying the Values */ allowModify: boolean = true,
+		/** How many Elements to store at max, when hit clear */ maxElements: number = Infinity
 	) {
 		data = data ?? {} as any
 		parse = parse ?? ((value) => value)
+		this.maxElements = maxElements
 		this.allowModify = allowModify
 
 		for (const key in data) {
-			this.data[key] = parse(data[key])
+			this.data.set(key, parse(data[key]))
 		}
 	}
 
@@ -55,7 +58,7 @@ import { RealAny } from "../types/internal"
 	*/ public has(
 		/** The Key to check */ key: Key
 	): boolean {
-		return (key in this.data)
+		return Object.hasOwn(this.data, key)
 	}
 
 	/**
@@ -65,7 +68,7 @@ import { RealAny } from "../types/internal"
 		/** The Key to get */ key: T,
 		/** The Fallback Value */ fallback?: Fallback
 	): Value | Fallback {
-		return this.data[key] ?? (fallback as any)
+		return this.data.get(key) ?? (fallback as any)
 	}
 
 	/**
@@ -74,13 +77,13 @@ import { RealAny } from "../types/internal"
 	*/ public set(
 		/** The Key to set */ key: Key,
 		/** The new Value */ value: Value
-	): boolean {
-		const existed = (key in this.data)
-		if (!this.allowModify) return existed
+	): this {
+		if (!this.allowModify) return this
 
-		this.data[key] = value
+		if (this.objectCount > this.maxElements) this.data.clear()
+		this.data.set(key, value)
 
-		return existed
+		return this
 	}
 
 	/**
@@ -92,9 +95,9 @@ import { RealAny } from "../types/internal"
 		if (!this.allowModify) return 0
 
 		let keys = 0
-		for (const key in this.data) {
+		for (const [key] of this.data) {
 			if (excluded.includes(key)) continue
-			delete this.data[key]
+			this.data.delete(key)
 			keys++
 		}
 
@@ -108,9 +111,9 @@ import { RealAny } from "../types/internal"
 		/** Excluded Keys */ excluded: Key[] = []
 	): Record<Key, Value> {
 		let keys = {} as any
-		for (const key in this.data) {
+		for (const [key, value] of this.data) {
 			if (excluded.includes(key)) continue
-			keys[key] = this.data[key]
+			keys[key] = value
 		}
 
 		return keys
@@ -122,13 +125,13 @@ import { RealAny } from "../types/internal"
 	*/ public toArray(
 		/** Excluded Keys */ excluded: Key[] = []
 	): Value[] {
-		const keys = []
-		for (const key in this.data) {
+		const values = []
+		for (const [key, value] of this.data) {
 			if (excluded.includes(key)) continue
-			keys.push(this.data[key])
+			values.push(value)
 		}
 
-		return keys
+		return values
 	}
 
 	/**
@@ -140,9 +143,12 @@ import { RealAny } from "../types/internal"
 	): this {
 		callback = callback ?? (() => undefined)
 
-		{(Object.keys(this.data) as Key[])
-			.filter((key) => !excluded.includes(key))
-			.forEach((key, index) => callback(key, this.data[key], index))}
+		let index = 0
+		this.data.forEach((value, key) => {
+			if (excluded.includes(key)) return
+
+			callback(key, value, index++)
+		})
 
 		return this
 	}
@@ -151,19 +157,7 @@ import { RealAny } from "../types/internal"
 	 * Object Iterator (similar to .forEach() but can be used in for ... of loops)
 	 * @since 7.7.0
 	*/ public [Symbol.iterator](): Iterator<[ Key, Value ]> {
-		const object = Object.entries(this.data)
-		let index = -1
-
-		return {
-			next: () => {
-				index++
-
-				return {
-					value: [object[index]?.at(0) as Key, object[index]?.at(1) as Value],
-					done: object.length <= index
-				}
-			}
-		}
+		return this.data.entries()
 	}
 
 	/**
@@ -171,38 +165,42 @@ import { RealAny } from "../types/internal"
 	 * @since 6.0.3
 	*/ public entries(
 		/** Excluded Keys */ excluded: Key[] = []
-	) {
-		const sortedData: Record<Key, Value> = Object.assign({}, this.data)
-		for (const key in sortedData) {
-			if (excluded.includes(key)) delete sortedData[key]
-		}
+	): [Key, Value][] {
+		const entries: [Key, Value][] = []
+		
+		this.data.forEach((value, key) => {
+			if (excluded.includes(key)) return
 
-		return (Object.keys(sortedData) as Key[]).map((key) => [ key, sortedData[key] ])
+			entries.push([ key, value ])
+		})
+
+		return entries
 	}
 
 	/**
 	 * Map the Keys to a new Array
 	 * @since 5.3.1
-	*/ public map<Callback extends (key: Key, value: Value, index: number, data: Record<Key, Value>) => RealAny>(
+	*/ public map<Callback extends (key: Key, value: Value, index: number, data: this) => RealAny>(
 		/** Callback Function */ callback: Callback,
 		/** Excluded Keys */ excluded: Key[] = []
 	): ReturnType<Callback>[] {
 		callback = callback ?? ((value) => value)
+		const result: ReturnType<Callback>[] = []
 
-		const sortedData = Object.assign({}, this.data)
-		for (const key in sortedData) {
-			if (excluded.includes(key)) delete sortedData[key]
-		}
+		let index = 0
+		this.data.forEach((value, key) => {
+			if (excluded.includes(key)) return
 
-		return (Object.keys(this.data) as Key[])
-			.filter((key) => !excluded.includes(key))
-			.map((key, index) => callback(key, this.data[key], index, sortedData))
+			result.push(callback(key, value, index++, this))
+		})
+
+		return result
 	}
 
 	/**
 	 * The Amount of Stored Objects
 	 * @since 2.7.2
 	*/ public get objectCount(): number {
-		return Object.keys(this.data).length
+		return this.data.size
 	}
 }

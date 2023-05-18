@@ -129,6 +129,12 @@ export default async function handleHTTPRequest(req: HttpRequest, res: HttpRespo
 			ctx.params = url.params!
 			ctx.execute.route = url.route
 			ctx.execute.found = true
+		} else if (ctx.url.method === 'GET' && ctg.cache.routes.has(`route::static::${ctx.url.path}`)) {
+			const url = ctg.cache.routes.get(`route::static::${ctx.url.path}`)!
+
+			ctx.execute.file = url.file!
+			ctx.execute.route = url.route!
+			ctx.execute.found = true
 		}
 
 		// Check Defined Paths
@@ -214,15 +220,6 @@ export default async function handleHTTPRequest(req: HttpRequest, res: HttpRespo
 				ctg.cache.routes.set(`route::static::${ctx.url.path}`, { route: url, file })
 			}
 
-			// Get From Cache
-			if (ctg.cache.routes.has(`route::static::${ctx.url.path}`)) {
-				const url = ctg.cache.routes.get(`route::static::${ctx.url.path}`)!
-
-				ctx.execute.file = url.file!
-				ctx.execute.route = url.route!
-				ctx.execute.found = true
-			}
-
 			if (!ctx.execute.found) for (let staticNumber = 0; staticNumber < ctg.routes.static.length; staticNumber++) {
 				if (ctx.execute.found) break
 
@@ -233,7 +230,6 @@ export default async function handleHTTPRequest(req: HttpRequest, res: HttpRespo
 
 				// Find File
 				const urlPath = parsePath(ctx.url.path.replace(url.path, '')).substring(1)
-
 				if (url.data.hideHTML) {
 					if (await fileExists(url.location + '/' + urlPath + '/index.html')) foundStatic(pathResolve(url.location + '/' + urlPath + '/index.html'), url)
 					else if (await fileExists(url.location + '/' + urlPath + '.html')) foundStatic(pathResolve(url.location + '/' + urlPath + '.html'), url)

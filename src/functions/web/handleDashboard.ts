@@ -129,6 +129,7 @@ const runStats = async(ctg: GlobalContext) => {
       user: ctg.routes.normal.length + ctg.routes.websocket.length,
       automatic: ctg.routes.htmlBuilder.length
     }, staticFiles,
+    middlewares: ctg.middlewares.length,
     cached: ctg.cache.files.objectCount
       + ctg.cache.middlewares.objectCount
       + ctg.cache.routes.objectCount

@@ -1,3 +1,10 @@
+## 7.8.4
+
+- Use all lowercase Header Keys
+- Check some Range Header edge cases
+- Add cacheLimit Option to limit the number of cached items
+- Add Middleware Count to Dashboard
+
 ## 7.8.3
 
 - Fix References not being removed correctly

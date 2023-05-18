@@ -1,12 +1,12 @@
 {
   "name": "rjweb-server",
-  "version": "7.8.3",
+  "version": "7.8.4",
   "description": "Easy and Robust Way to create a Web Server with Many Easy-to-use Features in NodeJS",
   "main": "./lib/cjs/index.js",
   "module": "./lib/esm/index.js",
   "types": "./lib/typings/index.d.ts",
   "engines": {
-    "node": "16.x || 18.x || 20.x"
+    "node": ">=16.9.0 <17.x || 18.x || 20.x"
   },
   "scripts": {
     "build:dev": "rm -rf lib && cd dashboard && yarn build:dev && cd .. && rjbuild build src --format='cjs' --out='lib/cjs' && rjbuild build src --format='esm' --out='lib/esm' && cp package.json lib/cjs/pckg.json && cp dashboard/dist/index.html lib/cjs/functions/web/dashboard.html && cp package.json lib/esm/pckg.json && cp dashboard/dist/index.html lib/esm/functions/web/dashboard.html",
@@ -57,7 +57,7 @@
     "typescript": "^5.0.0"
   },
   "dependencies": {
-    "@rjweb/uws": "1.3.0",
+    "@rjweb/uws": "1.3.1",
     "inquirer": "^9.1.5",
     "rjutils-collection": "^1.3.0",
     "yargs": "^17.7.1"

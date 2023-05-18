@@ -164,6 +164,13 @@ export default function Index() {
 
 							<div className={'w-96 mx-2 my-4'}>
 								<StatNumBox
+									title={'Middlewares'}
+									stat={websocket.lastJsonMessage.middlewares}
+								/>
+							</div>
+
+							<div className={'w-96 mx-2 my-4'}>
+								<StatNumBox
 									title={'Cached Objects'}
 									stat={websocket.lastJsonMessage.cached}
 								/>

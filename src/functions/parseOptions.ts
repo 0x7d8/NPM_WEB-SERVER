@@ -160,6 +160,11 @@ export type Options = {
 	 * @since 5.3.1
 	*/ cache?: boolean
 	/**
+	 * How many Cached Items to store before resetting the entire Cache
+	 * @default 25000
+	 * @since 7.8.4
+	*/ cacheLimit?: number
+	/**
 	 * Whether the rjweb-server Header will be added
 	 * @default true
 	 * @since 2.0.0
@@ -201,6 +206,7 @@ export type Options = {
 		cors: false,
 		port: 0,
 		cache: true,
+		cacheLimit: 25000,
 		poweredBy: true
 	}, provided)
 }

@@ -310,7 +310,8 @@ export default class HTTPRequest<Context extends Record<any, any> = {}, Body = u
 				const firstExpression = this.ctx.headers.get('range', '').match(/bytes=\d+(-\d+)?/)![0].substring(6)
 				const [ startExpect, endExpect ] = firstExpression.split('-')
 
-				start = parseInt(startExpect)
+				if (!startExpect) start = 0
+				else start = parseInt(startExpect)
 				if (!endExpect) end = fileStat.size
 				else end = parseInt(endExpect)
 
@@ -318,7 +319,7 @@ export default class HTTPRequest<Context extends Record<any, any> = {}, Body = u
 					this.ctx.response.status = Status.RANGE_NOT_SATISFIABLE
 					this.ctx.response.statusMessage = undefined
 					endEarly = true
-				} else if (start < 0) {
+				} else if (start < 0 || start > end || start > fileStat.size) {
 					this.ctx.response.status = Status.RANGE_NOT_SATISFIABLE
 					this.ctx.response.statusMessage = undefined
 					endEarly = true
