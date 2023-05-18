@@ -1,3 +1,7 @@
+## 7.8.6
+
+- Fix ValueCollection.has()
+
 ## 7.8.5
 
 - Write correct headers on uncomressed requests

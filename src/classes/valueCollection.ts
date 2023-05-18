@@ -58,7 +58,7 @@ import { RealAny } from "../types/internal"
 	*/ public has(
 		/** The Key to check */ key: Key
 	): boolean {
-		return Object.hasOwn(this.data, key)
+		return this.data.has(key)
 	}
 
 	/**
