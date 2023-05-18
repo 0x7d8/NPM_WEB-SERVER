@@ -6,7 +6,7 @@
   "module": "./lib/esm/index.js",
   "types": "./lib/typings/index.d.ts",
   "engines": {
-    "node": ">=16.9.0 <17.x || 18.x || 20.x"
+    "node": "16.x || 18.x || 20.x"
   },
   "scripts": {
     "build:dev": "rm -rf lib && cd dashboard && yarn build:dev && cd .. && rjbuild build src --format='cjs' --out='lib/cjs' && rjbuild build src --format='esm' --out='lib/esm' && cp package.json lib/cjs/pckg.json && cp dashboard/dist/index.html lib/cjs/functions/web/dashboard.html && cp package.json lib/esm/pckg.json && cp dashboard/dist/index.html lib/esm/functions/web/dashboard.html",

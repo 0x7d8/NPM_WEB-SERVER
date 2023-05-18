@@ -1,3 +1,7 @@
+## 7.8.8
+
+- Add more efficient url parser
+
 ## 7.8.7
 
 - Do not free() arraybuffers on requests finishing
@@ -600,7 +604,7 @@
 
 ## 5.1.2
 
-- Add an Async Queue worker to the Webserver in order to imrpove async tasks
+- Add an Async Queue worker to the Webserver in order to improve async tasks
 - Middleware if used should switch from the manual noWaiting to the queue
 
 ## 5.1.1

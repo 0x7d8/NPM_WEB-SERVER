@@ -1,6 +1,5 @@
-import { HTTPMethods } from "../index"
-import { parse, UrlWithStringQuery } from "url"
-import parsePath from "../functions/parsePath"
+import { HTTPMethods } from ".."
+import parseURL from "../functions/parseURL"
 
 /**
  * A Utility to make output of `url.parse()` safer
@@ -10,19 +9,18 @@ import parsePath from "../functions/parsePath"
  * ```
  * @since 5.6.0
 */ export default class URLObject {
-	private url: UrlWithStringQuery
-	private data: {
-		method: HTTPMethods
-	}
-
 	/**
 	 * Create a new URL object for an easy Wrapper of `url.parse()`
 	 * @since 5.6.0
 	*/ constructor(url: string, method: string) {
-		this.url = parse(parsePath(url))
-		this.data = {
-			method: method.toUpperCase() as HTTPMethods
-		}
+		const parsed = parseURL(url)
+
+		this.href = parsed.href
+		this.path = parsed.path
+		this.query = parsed.query
+		this.fragments = parsed.fragments
+
+		this.method = method.toUpperCase() as HTTPMethods
 	}
 
 	/**
@@ -34,9 +32,7 @@ import parsePath from "../functions/parsePath"
 	 * url.method // "POST"
 	 * ```
 	 * @since 5.6.0
-	*/ public get method(): HTTPMethods {
-		return this.data.method
-	}
+	*/ public method: HTTPMethods
 
 	/**
 	 * The full URL
@@ -47,9 +43,7 @@ import parsePath from "../functions/parsePath"
 	 * url.href // "/lol/ok?ok=124#yes=ok"
 	 * ```
 	 * @since 5.6.0
-	*/ public get href(): string {
-		return this.url.href ?? '/'
-	}
+	*/ public href: string
 
 	/**
 	 * The Path of the URL
@@ -60,9 +54,7 @@ import parsePath from "../functions/parsePath"
 	 * url.path // "/lol/ok"
 	 * ```
 	 * @since 5.6.0
-	*/ public get path(): string {
-		return decodeURI(this.url.pathname ?? '/')
-	}
+	*/ public path: string
 
 	/**
 	 * The Query of the URL
@@ -73,9 +65,7 @@ import parsePath from "../functions/parsePath"
 	 * url.query // "e=123&test=567"
 	 * ```
 	 * @since 5.6.0
-	*/ public get query(): string {
-		return (this.url.query ?? '').replace('?', '')
-	}
+	*/ public query: string
 
 	/**
 	 * The Fragments of the URL
@@ -86,7 +76,5 @@ import parsePath from "../functions/parsePath"
 	 * url.fragments // "u=123&test=567"
 	 * ```
 	 * @since 5.6.0
-	*/ public get fragments(): string {
-		return (this.url.hash ?? '').replace('#', '')
-	}
+	*/ public fragments: string
 }

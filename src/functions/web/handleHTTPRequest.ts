@@ -1,5 +1,5 @@
 import { GlobalContext, LocalContext } from "../../types/context"
-import { HttpRequest, HttpResponse, us_socket_context_t, freeMemory } from "@rjweb/uws"
+import { HttpRequest, HttpResponse, us_socket_context_t } from "@rjweb/uws"
 import parsePath from "../parsePath"
 import URLObject from "../../classes/URLObject"
 import { resolve as pathResolve } from "path"
@@ -446,7 +446,6 @@ export default async function handleHTTPRequest(req: HttpRequest, res: HttpRespo
 			if (ctx.execute.route && 'onRawBody' in ctx.execute.route) {
 				const buffer = Buffer.from(rawChunk), sendBuffer = Buffer.allocUnsafe(buffer.byteLength)
 				buffer.copy(sendBuffer)
-				freeMemory(buffer)
 
 				try {
 					if (!ctx.isAborted) await Promise.resolve(ctx.execute.route.onRawBody!(ctr as any, () => ctx.executeCode = false, sendBuffer, isLast))
@@ -460,7 +459,6 @@ export default async function handleHTTPRequest(req: HttpRequest, res: HttpRespo
 				try {
 					const buffer = Buffer.from(rawChunk), sendBuffer = Buffer.allocUnsafe(buffer.byteLength)
 					buffer.copy(sendBuffer)
-					freeMemory(buffer)
 
 					totalBytes += sendBuffer.byteLength
 					deCompression.write(sendBuffer)
