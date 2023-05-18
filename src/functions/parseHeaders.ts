@@ -11,7 +11,7 @@ import parseContent, { Content } from "./parseContent"
 		try {
 			parsedHeaders[header] = (await parseContent(headers[header], false, logger)).content
 		} catch (err) {
-			logger.error(`Failed parsing header "${header}" with content "${parsedHeaders[header]}":`, err)
+			logger.error(`Failed parsing header "${header}" with content`, headers[header], err)
 		}
 	}
 

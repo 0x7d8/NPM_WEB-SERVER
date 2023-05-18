@@ -1,3 +1,7 @@
+## 7.8.7
+
+- Do not free() arraybuffers on requests finishing
+
 ## 7.8.6
 
 - Fix ValueCollection.has()

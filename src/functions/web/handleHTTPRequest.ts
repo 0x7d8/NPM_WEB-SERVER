@@ -676,8 +676,6 @@ export default async function handleHTTPRequest(req: HttpRequest, res: HttpRespo
 					if (ctx.response.isCompressed && !ctx.isAborted) res.end()
 					else if (!ctx.isAborted) res.end(response.content)
 				}
-
-				freeMemory(ctx.body.raw)
 			})
 		} catch (err) {
 			ctg.logger.debug(`Ending Request ${ctr.url.href} discarded unknown:`, err)
