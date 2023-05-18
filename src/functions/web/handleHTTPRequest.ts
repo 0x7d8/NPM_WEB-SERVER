@@ -669,8 +669,8 @@ export default async function handleHTTPRequest(req: HttpRequest, res: HttpRespo
 					ctg.data.outgoing.increase(response.content.byteLength)
 
 					// Write Headers
-					for (const header in ctx.response.headers) {
-						if (!ctx.isAborted) res.writeHeader(header, response.headers[header])
+					for (const header in parsedHeaders) {
+						if (!ctx.isAborted) res.writeHeader(header, parsedHeaders[header])
 					}
 
 					if (ctx.response.isCompressed && !ctx.isAborted) res.end()

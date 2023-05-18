@@ -1,3 +1,7 @@
+## 7.8.5
+
+- Write correct headers on uncomressed requests
+
 ## 7.8.4
 
 - Use all lowercase Header Keys
