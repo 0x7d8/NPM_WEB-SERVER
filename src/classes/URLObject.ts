@@ -32,7 +32,7 @@ import parseURL from "../functions/parseURL"
 	 * url.method // "POST"
 	 * ```
 	 * @since 5.6.0
-	*/ public method: HTTPMethods
+	*/ public readonly method: HTTPMethods
 
 	/**
 	 * The full URL
@@ -43,7 +43,7 @@ import parseURL from "../functions/parseURL"
 	 * url.href // "/lol/ok?ok=124#yes=ok"
 	 * ```
 	 * @since 5.6.0
-	*/ public href: string
+	*/ public readonly href: string
 
 	/**
 	 * The Path of the URL
@@ -54,7 +54,7 @@ import parseURL from "../functions/parseURL"
 	 * url.path // "/lol/ok"
 	 * ```
 	 * @since 5.6.0
-	*/ public path: string
+	*/ public readonly path: string
 
 	/**
 	 * The Query of the URL
@@ -65,7 +65,7 @@ import parseURL from "../functions/parseURL"
 	 * url.query // "e=123&test=567"
 	 * ```
 	 * @since 5.6.0
-	*/ public query: string
+	*/ public readonly query: string
 
 	/**
 	 * The Fragments of the URL
@@ -76,5 +76,5 @@ import parseURL from "../functions/parseURL"
 	 * url.fragments // "u=123&test=567"
 	 * ```
 	 * @since 5.6.0
-	*/ public fragments: string
+	*/ public readonly fragments: string
 }

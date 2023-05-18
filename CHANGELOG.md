@@ -1,3 +1,8 @@
+## 7.8.9
+
+- Make URLObject properties readonly
+- Add internal Log count to dashboard
+
 ## 7.8.8
 
 - Add more efficient url parser

@@ -41,6 +41,7 @@ export const colors = {
  * ```
  * @since 7.4.0
 */ export default class Logger {
+	protected logs = 0
 	private options: DeepRequired<Options>['logging']
 
 	/**
@@ -57,6 +58,7 @@ export const colors = {
 		if (!this.options.error) return this
 
 		console.error(`${colors.bg.red} ERROR ${colors.reset}`, ...messages)
+		this.logs++
 
 		return this
 	}
@@ -68,6 +70,7 @@ export const colors = {
 		if (!this.options.warn) return this
 
 		console.warn(`${colors.bg.yellow}  WARN ${colors.reset}`, ...messages)
+		this.logs++
 
 		return this
 	}
@@ -79,6 +82,7 @@ export const colors = {
 		if (!this.options.debug) return this
 
 		console.debug(`${colors.bg.blue} DEBUG ${colors.reset}`, ...messages)
+		this.logs++
 
 		return this
 	}
