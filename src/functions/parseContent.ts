@@ -1,3 +1,4 @@
+import { Duplex } from "stream"
 import Logger from "../classes/logger"
 import { isMap, isPromise, isSet } from "util/types"
 
@@ -16,6 +17,37 @@ export type Content =
 	| Promise<Content>
 
 export type ParseContentReturns = Awaited<ReturnType<typeof parseContent>>
+
+/**
+ * Parse almost anything into a Buffer that resolves to a string in a streamed manner
+ * @example
+ * ```
+ * const parseStream = new ParseStream(...)
+ * ```
+ * @since 7.9.0
+*/ export class ParseStream extends Duplex {
+	/**
+	 * Create a new Stream for Parsing Content on the fly
+	 * @since 7.9.0
+	*/ constructor(options: {
+		/**
+		 * Whether to prettify output (currently just JSONs)
+		 * @default false
+		 * @since 7.9.0
+		*/ prettify?: boolean
+	} = {}, logger?: Logger) {
+		const prettify = options?.prettify ?? false
+
+		super({
+			writableObjectMode: true,
+			async write(chunk) {
+				const parsed = await parseContent(chunk, prettify, logger)
+
+				this.push(parsed.content, 'binary')
+			}, read() {}
+		})
+	}
+}
 
 /**
  * Parse almost anything into a Buffer that resolves to a string

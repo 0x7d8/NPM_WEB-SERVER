@@ -2,9 +2,9 @@ import { HttpRequest, HttpResponse } from "@rjweb/uws"
 import Status from "../../misc/statusEnum"
 import Server from "../server"
 import { LocalContext } from "../../types/context"
-import parseContent, { Content } from "../../functions/parseContent"
+import parseContent, { Content, ParseStream } from "../../functions/parseContent"
 import HTMLBuilder, { parseAttributes } from "../HTMLBuilder"
-import { Readable } from "stream"
+import { Duplex, PassThrough, Readable } from "stream"
 import Base from "./Base"
 import Route from "../../types/http"
 import handleCompressType, { CompressMapping } from "../../functions/handleCompressType"
@@ -15,6 +15,10 @@ import parseContentType from "../../functions/parseContentType"
 import parseStatus from "../../functions/parseStatus"
 import parseHeaders from "../../functions/parseHeaders"
 import parseKV from "../../functions/parseKV"
+
+const toArrayBuffer = (buffer: Buffer): ArrayBuffer => {
+  return buffer.buffer.slice(buffer.byteOffset, buffer.byteOffset + buffer.byteLength)
+}
 
 export default class HTTPRequest<Context extends Record<any, any> = {}, Body = unknown, Path extends string = '/'> extends Base<Context, Path> {
 	/**
@@ -286,20 +290,26 @@ export default class HTTPRequest<Context extends Record<any, any> = {}, Body = u
 		 * @since 2.2.0
 		*/ addTypes?: boolean
 		/**
+		 * Whether to compress this File
+		 * @default true
+		 * @since 7.9.0
+		 */ compress?: boolean
+		/**
 		 * Whether to Cache the sent Files after accessed once (only renew after restart)
 		 * @default false
 		 * @since 2.2.0
 		*/ cache?: boolean
 	} = {}): this {
 		const addTypes = options?.addTypes ?? true
+		const compress = options?.compress ?? true
 		const cache = options?.cache ?? false
 
 		// Add Headers
 		this.ctx.response.headers['accept-ranges'] = 'bytes'
 		if (addTypes) this.ctx.response.headers['content-type'] = parseContentType(file, this.ctg.contentTypes)
-		if (this.ctx.headers.get('accept-encoding', '').includes(CompressMapping[this.ctg.options.compression].toString())) {
+		if (compress && this.ctx.headers.get('accept-encoding', '').includes(CompressMapping[this.ctg.options.compression].toString())) {
 			this.ctx.response.headers['content-encoding'] = CompressMapping[this.ctg.options.compression]
-			this.ctx.response.headers['vary'] = 'Accept-Encoding'
+			this.ctx.response.headers['vary'] = 'accept-encoding'
 		}
 
 		this.ctx.setExecuteSelf(() => new Promise(async(resolve) => {
@@ -376,21 +386,44 @@ export default class HTTPRequest<Context extends Record<any, any> = {}, Body = u
 				}
 
 				// Get File Content
-				if (this.ctx.headers.get('accept-encoding', '').includes(CompressMapping[this.ctg.options.compression].toString())) {
+				if (compress && this.ctx.headers.get('accept-encoding', '').includes(CompressMapping[this.ctg.options.compression].toString())) {
 					const destroyStreams = () => {
-						stream.destroy()
 						compression.destroy()
+						stream.destroy()
 					}
 
 					const compression = handleCompressType(this.ctg.options.compression)
 
 					// Handle Compression
 					compression.on('data', (content: Buffer) => {
-						this.ctg.logger.debug('compressed and sent http body chunk with bytelen', content.byteLength)
+						const contentArrayBuffer = toArrayBuffer(content)
 
-						this.ctg.data.outgoing.increase(content.byteLength)
+						if (!this.ctx.isAborted) {
+							const lastOffset = this.rawRes.getWriteOffset()
+							const ok = this.rawRes.write(contentArrayBuffer)
 
-						if (!this.ctx.isAborted) this.rawRes.write(content)
+							if (!ok) {
+								compression.pause()
+								stream.pause()
+
+								this.rawRes.onWritable((offset) => {
+									const sliced = contentArrayBuffer.slice(offset - lastOffset)
+
+									const ok = this.rawRes.write(sliced)
+									if (ok) {
+										this.ctg.data.outgoing.increase(sliced.byteLength)
+										this.ctg.logger.debug('compressed and sent http body chunk with bytelen', sliced.byteLength)
+										compression.resume()
+										stream.resume()
+									}
+
+									return ok
+								})
+							} else {
+								this.ctg.data.outgoing.increase(content.byteLength)
+								this.ctg.logger.debug('compressed and sent http body chunk with bytelen', content.byteLength)
+							}
+						}
 
 						// Write to Cache Store
 						if (cache) {
@@ -400,8 +433,8 @@ export default class HTTPRequest<Context extends Record<any, any> = {}, Body = u
 					}).once('close', () => {
 						this.ctx.response.content = Buffer.allocUnsafe(0)
 						this.ctx.events.unlist('requestAborted', destroyStreams)
-						resolve(false)
 						if (!this.ctx.isAborted) this.rawRes.end()
+						resolve(false)
 					})
 
 					const stream = createReadStream(pathResolve(file), { start, end })
@@ -432,11 +465,34 @@ export default class HTTPRequest<Context extends Record<any, any> = {}, Body = u
 
 					// Handle Data
 					stream.on('data', (content: Buffer) => {
-						this.ctg.logger.debug('sent http body chunk with bytelen', content.byteLength)
+						const contentArrayBuffer = toArrayBuffer(content)
 
-						this.ctg.data.outgoing.increase(content.byteLength)
+						if (!this.ctx.isAborted) {
+							try {
+								const lastOffset = this.rawRes.getWriteOffset()
+								const [ ok ] = this.rawRes.tryEnd(contentArrayBuffer, fileStat.size)
 
-						if (!this.ctx.isAborted) this.rawRes.write(content)
+								if (!ok) {
+									stream.pause()
+
+									this.rawRes.onWritable((offset) => {
+										const sliced = contentArrayBuffer.slice(offset - lastOffset)
+
+										const [ ok ] = this.rawRes.tryEnd(sliced, fileStat.size)
+										if (ok) {
+											this.ctg.data.outgoing.increase(sliced.byteLength)
+											this.ctg.logger.debug('sent http body chunk with bytelen', sliced.byteLength)
+											stream.resume()
+										}
+
+										return ok
+									})
+								} else {
+									this.ctg.data.outgoing.increase(content.byteLength)
+									this.ctg.logger.debug('sent http body chunk with bytelen', content.byteLength)
+								}
+							} catch { }
+						}
 
 						// Write to Cache Store
 						if (cache) {
@@ -446,8 +502,7 @@ export default class HTTPRequest<Context extends Record<any, any> = {}, Body = u
 					}).once('close', () => {
 						this.ctx.response.content = Buffer.allocUnsafe(0)
 						this.ctx.events.unlist('requestAborted', destroyStream)
-						resolve(true)
-						if (!this.ctx.isAborted) this.rawRes.end()
+						resolve(false)
 					})
 
 					// Destroy if required
@@ -507,15 +562,17 @@ export default class HTTPRequest<Context extends Record<any, any> = {}, Body = u
 
 				const dataListener = async(data: Buffer) => {
 					try {
-						data = (await parseContent(data, prettify, this.ctg.logger)).content
-					} catch (err) {
-						return this.ctx.handleError(err)
-					}
+						try {
+							data = (await parseContent(data, prettify, this.ctg.logger)).content
+						} catch (err) {
+							return this.ctx.handleError(err)
+						}
 
-					if (!this.ctx.isAborted) this.rawRes.write(data)
+						if (!this.ctx.isAborted) this.rawRes.write(data)
 
-					this.ctg.logger.debug('sent http body chunk with bytelen', data.byteLength)
-					this.ctg.data.outgoing.increase(data.byteLength)
+						this.ctg.logger.debug('sent http body chunk with bytelen', data.byteLength)
+						this.ctg.data.outgoing.increase(data.byteLength)
+					} catch { }
 				}, closeListener = () => {
 					if (destroyAbort) this.ctx.events.unlist('requestAborted', destroyStream)
 					if (endRequest) {

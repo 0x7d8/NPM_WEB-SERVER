@@ -1,3 +1,11 @@
+## 7.9.0
+
+- Fix Backpressure Problems with .printFile()
+- Send Content-Length on uncompressed printFile requests
+- Allow manually toggling compression on printFile() calls
+- Add ParseStream class to parse content in a streamed manner
+- Allow printing files over 1GB (seems to only work correctly uncompressed as of now)
+
 ## 7.8.9
 
 - Make URLObject properties readonly
