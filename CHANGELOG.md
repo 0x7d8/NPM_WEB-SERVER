@@ -1,3 +1,7 @@
+## 7.9.1
+
+- Correctly calculate content-length when using ranges
+
 ## 7.9.0
 
 - Fix Backpressure Problems with .printFile()

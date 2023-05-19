@@ -470,7 +470,7 @@ export default class HTTPRequest<Context extends Record<any, any> = {}, Body = u
 						if (!this.ctx.isAborted) {
 							try {
 								const lastOffset = this.rawRes.getWriteOffset()
-								const [ ok ] = this.rawRes.tryEnd(contentArrayBuffer, fileStat.size)
+								const [ ok ] = this.rawRes.tryEnd(contentArrayBuffer, end - start)
 
 								if (!ok) {
 									stream.pause()
@@ -478,7 +478,7 @@ export default class HTTPRequest<Context extends Record<any, any> = {}, Body = u
 									this.rawRes.onWritable((offset) => {
 										const sliced = contentArrayBuffer.slice(offset - lastOffset)
 
-										const [ ok ] = this.rawRes.tryEnd(sliced, fileStat.size)
+										const [ ok ] = this.rawRes.tryEnd(sliced, end - start)
 										if (ok) {
 											this.ctg.data.outgoing.increase(sliced.byteLength)
 											this.ctg.logger.debug('sent http body chunk with bytelen', sliced.byteLength)
