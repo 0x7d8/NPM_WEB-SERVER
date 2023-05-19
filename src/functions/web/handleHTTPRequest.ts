@@ -570,7 +570,7 @@ export default async function handleHTTPRequest(req: HttpRequest, res: HttpRespo
 
 			// Execute Static Route
 			if (ctx.execute.route.type === 'static' && ctx.executeCode) {
-				ctr.printFile(ctx.execute.file!)
+				ctr.printFile(ctx.execute.file!, { compress: false })
 				return resolve()
 			}
 
@@ -605,7 +605,7 @@ export default async function handleHTTPRequest(req: HttpRequest, res: HttpRespo
 
 
 		// Handle Reponse
-		try {
+		if (ctx.continueSend) try {
 			const response = await parseContent(ctx.response.content, ctx.response.contentPrettify, ctg.logger)
 			ctx.response.headers = Object.assign(ctx.response.headers, response.headers)
 			const parsedHeaders = await parseHeaders(ctx.response.headers, ctg.logger)
@@ -617,7 +617,7 @@ export default async function handleHTTPRequest(req: HttpRequest, res: HttpRespo
 				if (eTag) parsedHeaders['etag'] = Buffer.from(`W/"${eTag}"`)
 			}
 
-			if (ctx.continueSend && !ctx.isAborted) return res.cork(() => {
+			if (!ctx.isAborted) return res.cork(() => {
 				let endEarly = false
 				if (ctg.options.performance.eTag && eTag && ctx.headers.get('if-none-match') === `W/"${eTag}"`) {
 					ctg.logger.debug('ended etag request early because of match')
@@ -671,8 +671,7 @@ export default async function handleHTTPRequest(req: HttpRequest, res: HttpRespo
 						if (!ctx.isAborted) res.writeHeader(header, parsedHeaders[header])
 					}
 
-					if (ctx.response.isCompressed && !ctx.isAborted) res.end()
-					else if (!ctx.isAborted) res.end(response.content)
+					if (!ctx.isAborted) res.end(response.content)
 				}
 			})
 		} catch (err) {

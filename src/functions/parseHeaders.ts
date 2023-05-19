@@ -9,6 +9,7 @@ import parseContent, { Content } from "./parseContent"
 
 	for (const header in headers) {
 		try {
+			if (!headers[header]) continue
 			parsedHeaders[header] = (await parseContent(headers[header], false, logger)).content
 		} catch (err) {
 			logger.error(`Failed parsing header "${header}" with content`, headers[header], err)

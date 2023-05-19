@@ -341,6 +341,10 @@ export default class HTTPRequest<Context extends Record<any, any> = {}, Body = u
 				}
 			} else start = 0, end = fileStat.size
 
+			if (start !== 0 || end !== fileStat.size) {
+				this.ctx.response.headers['content-range'] = `bytes ${start}-${end}/${fileStat.size}`
+			}
+
 			if (this.ctg.options.performance.lastModified) try {
 				this.ctx.response.headers['last-modified'] = fileStat.mtime.toUTCString()
 			} catch (err) {
@@ -348,30 +352,36 @@ export default class HTTPRequest<Context extends Record<any, any> = {}, Body = u
 				return resolve(true)
 			}
 
+			// Check Cache
+			if (this.ctg.cache.files.has(`file::${file}`)) {
+				this.ctx.response.content = this.ctg.cache.files.get(`file::${file}`)!
+				this.ctx.response.headers['accept-range'] = undefined
+
+				return resolve(true)
+			} else if (this.ctg.cache.files.has(`file::${this.ctg.options.compression}::${file}`)) {
+				this.ctx.response.isCompressed = true
+				this.ctx.response.content = this.ctg.cache.files.get(`file::${this.ctg.options.compression}::${file}`)!
+				this.ctx.response.headers['accept-range'] = undefined
+
+				return resolve(true)
+			}
+
 			// Parse Headers
 			const parsedHeaders = await parseHeaders(this.ctx.response.headers, this.ctg.logger)
 
 			if (!this.ctx.isAborted) this.rawRes.cork(() => {
-				if (!endEarly && start === 0 && end === fileStat.size && this.ctg.options.performance.lastModified && this.ctx.headers.get('if-modified-since') === this.ctx.response.headers['last-modified']) {
-					this.ctg.logger.debug('Ended modified-last request early because of match')
+				if (!endEarly && (start !== 0 || end !== fileStat.size) && this.ctx.headers.get('if-unmodified-since') !== this.ctx.response.headers['last-modified']) {
+					this.ctg.logger.debug('Ended unmodified-since request early because of no match')
+
+					this.ctx.response.status = Status.PRECONDITION_FAILED
+					this.ctx.response.statusMessage = undefined
+					endEarly = true
+				} else if (!endEarly && start === 0 && end === fileStat.size && this.ctg.options.performance.lastModified && this.ctx.headers.get('if-modified-since') === this.ctx.response.headers['last-modified']) {
+					this.ctg.logger.debug('Ended modified-since request early because of match')
 
 					this.ctx.response.status = Status.NOT_MODIFIED
 					this.ctx.response.statusMessage = undefined
 					endEarly = true
-				}
-
-				// Check Cache
-				if (this.ctg.cache.files.has(`file::${file}`)) {
-					this.ctx.response.content = this.ctg.cache.files.get(`file::${file}`)!
-					delete this.ctx.response.headers['accept-range']
-
-					return resolve(true)
-				} else if (this.ctg.cache.files.has(`file::${this.ctg.options.compression}::${file}`)) {
-					this.ctx.response.isCompressed = true
-					this.ctx.response.content = this.ctg.cache.files.get(`file::${this.ctg.options.compression}::${file}`)!
-					delete this.ctx.response.headers['accept-range']
-
-					return resolve(true)
 				}
 
 				// Write Headers & Status

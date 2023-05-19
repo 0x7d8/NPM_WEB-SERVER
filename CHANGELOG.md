@@ -1,3 +1,8 @@
+## 7.9.2
+
+- Send Correct Range Headers
+- Check Cache outside of cork
+
 ## 7.9.1
 
 - Correctly calculate content-length when using ranges
