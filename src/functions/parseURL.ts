@@ -39,7 +39,7 @@ export type URL = {
 					if (mode === 'query') queryFirst = true
 				}
 
-				if (splitterPos > 1) returns.path += '/'
+				if (splitterPos > 0) returns.path += '/'
 				returns.path += path.slice(progress, progress + splitterPos)
 				progress += splitterPos + 1
 

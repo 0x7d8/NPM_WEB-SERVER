@@ -4,6 +4,7 @@ export { default as HTMLBuilder, HTMLAttribute, HTMLContent } from "../classes/H
 import { MultipartField } from "@rjweb/uws"
 export { default as HTMLComponent } from "../classes/HTMLComponent"
 
+export * as utils from "rjutils-collection"
 export * from "./webSocket"
 
 import HttpRequest from "../classes/web/HttpRequest"

@@ -8,6 +8,7 @@ export { default as parseStatus } from "./functions/parseStatus"
 export { default as parsePath } from "./functions/parsePath"
 export { default as parseKV } from "./functions/parseKV"
 export { default as Reference } from "./classes/reference"
+export { default as size } from "./functions/size"
 
 /** @ts-ignore */
 import { version } from "./pckg.json"

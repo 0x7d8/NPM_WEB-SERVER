@@ -2,8 +2,41 @@ import { Content } from "./parseContent"
 import { CompressTypes } from "./handleCompressType"
 import { DeepRequired } from "../types/internal"
 import { deepParseOptions } from "rjutils-collection"
+import size from "./size"
 
 export type Options = {
+	/**
+	 * HTTP Compression Settings
+	 * @since 7.10.0
+	*/ httpCompression?: {
+		/**
+		 * Whether http body compression is enabled
+		 * @default true
+		 * @since 7.10.0
+		*/ enabled?: boolean
+		/**
+		 * The Maximum Size of bodies to compress
+		 * @default size(100).mb()
+		 * @since 7.10.0
+		*/ maxSize?: number
+		/**
+		 * Disabled compression algorithms
+		 * @default []
+		 * @since 7.10.0
+		*/ disabledAlgorithms?: Exclude<CompressTypes, 'none'>[]
+	}
+
+	/**
+	 * WebSocket Compression Settings
+	 * @since 7.10.0
+	*/ wsCompression?: {
+		/**
+		 * Whether http body compression is enabled
+		 * @default true
+		 * @since 7.10.0
+		*/ enabled?: boolean
+	}
+
 	/**
 	 * HTTP Body Settings
 	 * @since 2.6.0
@@ -14,14 +47,35 @@ export type Options = {
 		 * @since 2.6.0
 		*/ enabled?: boolean
 		/**
-		 * The Maximum Size of the HTTP Body / WS Message in MB
-		 * @default 5
+		 * The Maximum Size of the HTTP Body
+		 * @default size(5).mb()
 		 * @since 2.6.0
 		*/ maxSize?: number
 		/**
 		 * The Message that gets sent when the HTTP Body Size is exceeded
 		 * @default "Payload too large"
 		 * @since 2.7.1
+		*/ message?: Content
+	}
+
+	/**
+	 * WebSocket Message Settings
+	 * @since 7.10.0
+	*/ message?: {
+		/**
+		 * Whether recieving WebSocket Messages is enabled
+		 * @default true
+		 * @since 7.10.0
+		*/ enabled?: boolean
+		/**
+		 * The Maximum Size of the WebSocket Message
+		 * @default size(500).kb()
+		 * @since 7.10.0
+		*/ maxSize?: number
+		/**
+		 * The Message that gets sent when the WebSocket Message Size is exceeded
+		 * @default "Payload too large"
+		 * @since 7.10.0
 		*/ message?: Content
 	}
 
@@ -130,20 +184,52 @@ export type Options = {
 	}
 
 	/**
+	 * HTTP Proxy Options
+	 * @since 8.0.0
+	*/ proxy?: {
+		/**
+		 * Whether to check for proxies and use alternate IPs
+		 * @default false
+		 * @since 8.0.0
+		*/ enabled?: boolean
+		/**
+		 * Whether to force all requests through the proxy
+		 * @default false
+		 * @since 8.0.0
+		*/ forceProxy?: boolean
+		/**
+		 * The Header to use for getting the actual IP address
+		 * @default "X-Forwarded-For"
+		 * @since 8.0.0
+		*/ header?: string
+
+		/**
+		 * The Credentials that the proxy will use
+		 * @since 8.0.0
+		*/ credentials?: {
+			/**
+			 * Whether to authenticate proxy requests
+			 * @default true
+			 * @since 8.0.0
+			*/ authenticate?: boolean
+			/**
+			 * The Username required to authenticate
+			 * @default "proxy"
+			 * @since 8.0.0
+			*/ username?: string
+			/**
+			 * The Password required to authenticate
+			 * @default "proxy"
+			 * @since 8.0.0
+			*/ password?: string
+		}
+	}
+
+	/**
 	 * Where the Server should bind to
 	 * @default "0.0.0.0"
 	 * @since 0.0.4
 	*/ bind?: string
-	/**
-	 * Whether X-Forwarded-For will be shown as hostIp
-	 * @default false
-	 * @since 0.6.5
-	*/ proxy?: boolean
-	/**
-	 * The Method to use to compress data
-	 * @default "none"
-	 * @since 3.0.0
-	*/ compression?: CompressTypes
 	/**
 	 * Whether all cors Headers will be set
 	 * @default false
@@ -176,9 +262,19 @@ export type Options = {
  * @since 6.2.0
 */ export default function parseOptions(provided: Options): DeepRequired<Options> {
 	return deepParseOptions({
-		body: {
+		httpCompression: {
 			enabled: true,
-			maxSize: 5,
+			maxSize: size(100).mb(),
+			disabledAlgorithms: []
+		}, wsCompression: {
+			enabled: true
+		}, body: {
+			enabled: true,
+			maxSize: size(5).mb(),
+			message: 'Payload too large'
+		}, message: {
+			enabled: true,
+			maxSize: size(500).kb(),
 			message: 'Payload too large'
 		}, logging: {
 			error: true,
@@ -200,9 +296,16 @@ export type Options = {
 			eTag: true,
       lastModified: true,
       decompressBodies: true
+		}, proxy: {
+			enabled: false,
+			header: 'X-Forwarded-For',
+			forceProxy: false,
+			credentials: {
+				authenticate: true,
+				username: 'proxy',
+				password: 'proxy'
+			}
 		}, bind: '0.0.0.0',
-		proxy: false,
-		compression: 'none',
 		cors: false,
 		port: 0,
 		cache: true,

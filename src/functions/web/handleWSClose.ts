@@ -34,9 +34,6 @@ export default function handleWSClose(ws: WebSocket<WebSocketContext>, message: 
 		const ctr = new ctg.classContexts.wsClose(ctg.controller, ctx, ws)
 		ctr["@"] = custom
 
-		// Execute Custom Run Function
-		if (ctx.executeCode) await handleEvent('wsClose', ctr, ctx, ctg)
-
 		// Execute Middleware
 		if (ctg.middlewares.length > 0 && !ctx.error) {
 			for (let middlewareIndex = 0; middlewareIndex < ctg.middlewares.length; middlewareIndex++) {
@@ -52,6 +49,9 @@ export default function handleWSClose(ws: WebSocket<WebSocketContext>, message: 
 				}
 			}
 		}
+
+		// Execute Custom run function
+		await handleEvent('wsClose', ctr, ctx, ctg)
 
 		// Execute Page Logic
 		const runPageLogic = (eventOnly?: boolean) => new Promise<void>(async(resolve) => {

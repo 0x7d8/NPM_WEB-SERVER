@@ -1,4 +1,3 @@
-import * as ServerEvents from "../types/serverEvents"
 import { GlobalContext } from "../types/context"
 import ValueCollection from "./valueCollection"
 import parseOptions, { Options } from "../functions/parseOptions"
@@ -152,16 +151,16 @@ import os from "os"
 	 * const controller = new Server({ })
 	 * 
 	 * controller.start()
-	 *   .then((res) => {
-	 *     console.log(`Server started on port ${res.port}`)
+	 *   .then((port) => {
+	 *     console.log(`Server started on port ${port}`)
 	 *   })
 	 *   .catch((err) => {
 	 *     console.error(err)
 	 *   })
 	 * ```
 	 * @since 3.0.0
-	*/ public start() {
-		return new Promise(async(resolve: (value: ServerEvents.StartSuccess) => void, reject: (reason: ServerEvents.StartError) => void) => {
+	*/ public start(): Promise<number> {
+		return new Promise(async(resolve, reject) => {
 			let stopExecution = false
 			const externalPaths = await this.loadExternalPaths()
 
@@ -224,10 +223,11 @@ import os from "os"
 				.ws('/*', {
 					maxBackpressure: 512 * 1024 * 1024,
 					sendPingsAutomatically: true,
-					maxPayloadLength: this.globalContext.options.body.maxSize * 1e6,
+					compression: this.globalContext.options.wsCompression.enabled ? uWebsocket.SHARED_COMPRESSOR : undefined,
+					maxPayloadLength: this.globalContext.options.message.maxSize,
 					upgrade: (res, req, connection) => { handleHTTPRequest(req, res, connection, 'upgrade', this.globalContext) },
 					open: (ws: any) => { handleWSOpen(ws, this.globalContext) },
-					message: (ws: any, message) => { handleWSMessage(ws, message, this.globalContext) },
+					message: this.globalContext.options.message.enabled ? (ws: any, message) => { handleWSMessage(ws, message, this.globalContext) } : undefined,
 					close: (ws: any, code, message) => { handleWSClose(ws, message, this.globalContext) }
 				})
 
@@ -245,7 +245,7 @@ import os from "os"
 				if (!listen) return reject(new Error(`Failed to start server on port ${this.globalContext.options.port}.`))
 
 				this.socket = listen
-				return resolve({ success: true, port: uWebsocket.getSocketPort(listen), message: 'WEBSERVER STARTED' })
+				return resolve(uWebsocket.getSocketPort(listen))
 			})
 		})
 	}
@@ -257,15 +257,15 @@ import os from "os"
 	 * const controller = new Server({ })
 	 * 
 	 * controller.reload()
-	 *   .then((res) => {
-	 *     console.log(`Server reloaded and started on port ${res.port}`)
+	 *   .then((port) => {
+	 *     console.log(`Server reloaded and started on port ${port}`)
 	 *   })
 	 *   .catch((err) => {
 	 *     console.error(err)
 	 *   })
 	 * ```
 	 * @since 3.0.0
-	*/ public async reload() {
+	*/ public async reload(): Promise<number> {
 		this.globalContext.cache.files.clear()
 		this.globalContext.cache.routes.clear()
 
@@ -291,7 +291,7 @@ import os from "os"
 	 * const controller = new Server({ })
 	 * 
 	 * controller.stop()
-	 *   .then((res) => {
+	 *   .then(() => {
 	 *     console.log('Server stopped')
 	 *   })
 	 *   .catch((err) => {
@@ -299,12 +299,12 @@ import os from "os"
 	 *   })
 	 * ```
 	 * @since 3.0.0
-	*/ public async stop() {
+	*/ public async stop(): Promise<void> {
 		this.globalContext.cache.files.clear()
 		this.globalContext.cache.routes.clear()
 		uWebsocket.closeSocket(this.socket)
 
-		return { success: true, message: 'WEBSERVER CLOSED' }
+		return
 	}
 
 

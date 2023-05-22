@@ -1,6 +1,5 @@
 #! /usr/bin/env node
 
-import { StartError } from "./types/serverEvents"
 import { Version, Status } from "."
 import { Spinner } from "rjutils-collection"
 import { colors } from "./classes/logger"
@@ -90,9 +89,9 @@ yargs
 			})
 			.option('compress', {
 				type: 'boolean',
-				description: 'Whether to compress outgoing data with gzip',
+				description: 'Whether to compress outgoing data',
 				alias: ['C'],
-				default: false,
+				default: true,
 			})
 			.option('cors', {
 				type: 'boolean',
@@ -140,10 +139,12 @@ yargs
 				dashboard: {
 					enabled: args.dashboard,
 					password: args.dashboardPassword,
-				}, compression: args.compress ? 'gzip' : 'none',
-				cors: args.cors,
-				proxy: args.proxy,
-				bind: args.bind,
+				}, httpCompression: {
+					enabled: args.compress
+				}, cors: args.cors,
+				proxy: {
+					enabled: args.proxy
+				}, bind: args.bind,
 			})
 
 			server.path('/', (path) => path
@@ -161,10 +162,10 @@ yargs
 			})
 
 			server.start()
-				.then((s) => {
-					console.log(`${prefix} ${colors.fg.green}Started on Port ${colors.fg.cyan}${s.port}`)
+				.then((port) => {
+					console.log(`${prefix} ${colors.fg.green}Started on Port ${colors.fg.cyan}${port}`)
 				})
-				.catch((err: StartError) => {
+				.catch((err: Error) => {
 					console.error(`${prefix} ${colors.fg.red}An Error occured while starting the Server:`)
 					console.error(`${colors.fg.cyan}${err.stack}`)
 					process.exit(1)
@@ -205,7 +206,7 @@ yargs
 					host: 'api.github.com',
 					port: 443,
 					headers: {
-						"User-Agent": 'NPM_WEB-SERVER',
+						"User-Agent": `rjweb-server@cli ${Version}`,
 						"Accept": 'application/vnd.github.v3+json',
 					}
 				}, (res) => {
@@ -290,7 +291,7 @@ yargs
 						host: 'api.github.com',
 						port: 443,
 						headers: {
-							"User-Agent": 'NPM_WEB-SERVER',
+							"User-Agent": `rjweb-server@cli ${Version}`,
 							"Accept": 'application/vnd.github.v3+json',
 						}
 					}, (res) => {

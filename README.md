@@ -14,8 +14,9 @@
 
 <br>
 
-### 🍔 [v6 to v7 Migration Guide](https://docs.rjweb.rjansen.de/v6/migrating-from-v6)
-### 🍔 [v5 to v6 Migration Guide](https://docs.rjweb.rjansen.de/v6/migrating-from-v5)
+### 🍔 [v7 to v8 Migration Guide](https://docs.rjweb.rjansen.de/rjweb-server/v8/migrating-from-v7)
+### 🍔 [v6 to v7 Migration Guide](https://docs.rjweb.rjansen.de/rjweb-server/v7/migrating-from-v6)
+### 🍔 [v5 to v6 Migration Guide](https://docs.rjweb.rjansen.de/rjweb-server/v6/migrating-from-v5)
 
 <br>
 <br>
@@ -41,8 +42,9 @@ pnpm add rjweb-server
 - 3.X | Deprecated
 - 4.X | Deprecated
 - 5.X | Deprecated
-- 6.X | Basic Patches
-- 7.X | Patches and Features
+- 6.X | Deprecated
+- 7.X | Patches
+- 8.X | Patches & Features
 
 ## Typescript
 
@@ -90,8 +92,8 @@ server.on('httpRequest', async(ctr: Ctr) => {
 })
 
 server.start()
-  .then((s) => {
-    console.log(`server started on port ${s.port}`)
+  .then((port) => {
+    console.log(`server started on port ${port}`)
   })
   .catch((e) => {
     console.error('An Error occured while starting the Server!\n', e)
@@ -102,7 +104,7 @@ server.start()
 
 Initialize Server
 ```js
-const { Server, Status } = require('rjweb-server')
+const { Server, Status, size } = require('rjweb-server')
 
 const server = new Server({
   bind: '0.0.0.0', // The IP thats bound to
@@ -111,8 +113,11 @@ const server = new Server({
   proxy: true, // If enabled, alternate IPs will be shown
   body: {
     enabled: true, // Whether to enable recieving POST Bodies
-    maxSize: 20, // The Max POST Body Size in MB
+    maxSize: size(10).mb(), // Use Size helper to easily get byte count
     message: 'Payload too large' // Message that gets sent if the Limit is exceeded
+  }, httpCompression: {
+    enabled: true, // whether compressing of http bodies is enabled
+    disabledAlgorithms: ['br', 'deflate'] // algorithms to ignore for compression, in this case will only allow gzip
   }
 })
 
@@ -178,8 +183,8 @@ server.path('/', (path) => path // The / is the Path Prefix for all children pat
 )
 
 server.start()
-  .then((s) => {
-    console.log(`server started on port ${s.port}`)
+  .then((port) => {
+    console.log(`server started on port ${port}`)
   })
   .catch((e) => {
     console.error('An Error occured while starting the Server!\n', e)
@@ -257,8 +262,8 @@ server.path('/wait5sec', (path) => path
 )
 
 server.start()
-  .then((s) => {
-    console.log(`server started on port ${s.port}`)
+  .then((port) => {
+    console.log(`server started on port ${port}`)
   })
   .catch((e) => {
     console.error('An Error occured while starting the Server!\n', e)
@@ -313,8 +318,8 @@ const server = new Server({
 ])
 
 server.start()
-  .then((s) => {
-    console.log(`server started on port ${s.port}`)
+  .then((port) => {
+    console.log(`server started on port ${port}`)
   })
   .catch((e) => {
     console.error('An Error occured while starting the Server!\n', e)
@@ -339,8 +344,8 @@ server.path('/', (path) => path
 )
 
 server.start()
-  .then((s) => {
-    console.log(`server started on port ${s.port}`)
+  .then((port) => {
+    console.log(`server started on port ${port}`)
   })
   .catch((e) => {
     console.error('An Error occured while starting the Server!\n', e)
@@ -363,8 +368,8 @@ server.defaultHeaders((dH) => dH
 )
 
 server.start()
-  .then((s) => {
-    console.log(`server started on port ${s.port}`)
+  .then((port) => {
+    console.log(`server started on port ${port}`)
   })
   .catch((e) => {
     console.error('An Error occured while starting the Server!\n', e)
@@ -388,8 +393,8 @@ server.contentTypes((ct) => cT
 )
 
 server.start()
-  .then((s) => {
-    console.log(`server started on port ${s.port}`)
+  .then((port) => {
+    console.log(`server started on port ${port}`)
   })
   .catch((e) => {
     console.error('An Error occured while starting the Server!\n', e)
@@ -412,8 +417,8 @@ const server = new Server({
 })
 
 server.start()
-  .then((s) => {
-    console.log(`server started on port ${s.port}`)
+  .then((port) => {
+    console.log(`server started on port ${port}`)
   })
   .catch((e) => {
     console.error('An Error occured while starting the Server!\n', e)
@@ -443,8 +448,8 @@ server.on('httpError', async(ctr, error) => {
 })
 
 server.start()
-  .then((s) => {
-    console.log(`server started on port ${s.port}`)
+  .then((port) => {
+    console.log(`server started on port ${port}`)
   })
   .catch((e) => {
     console.error('An Error occured while starting the Server!\n', e)
@@ -468,8 +473,8 @@ server.on('httpRequest', async(ctr, end) => {
 })
 
 server.start()
-  .then((s) => {
-    console.log(`server started on port ${s.port}`)
+  .then((port) => {
+    console.log(`server started on port ${port}`)
   })
   .catch((e) => {
     console.error('An Error occured while starting the Server!\n', e)
@@ -496,8 +501,8 @@ server.path('/', (path) => path
 )
 
 server.start()
-  .then((s) => {
-    console.log(`server started on port ${s.port}`)
+  .then((port) => {
+    console.log(`server started on port ${port}`)
   })
   .catch((e) => {
     console.error('An Error occured while starting the Server!\n', e)

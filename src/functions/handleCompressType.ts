@@ -1,21 +1,33 @@
-import { PassThrough } from "stream"
+import { Duplex, PassThrough } from "stream"
+import size from "./size"
 
 import zlib from "zlib"
 
-export type CompressTypes = 'none' | 'gzip' | 'brotli' | 'deflate'
-export const CompressMapping = {
-	gzip: Buffer.from('gzip'),
-	brotli: Buffer.from('br'),
-	deflate: Buffer.from('deflate'),
-	none: Buffer.from('none')
-} as Record<CompressTypes, Buffer>
+class PassThrough64K extends Duplex {
+	constructor() {
+		super({
+			read() {},
+			write(chunk: ArrayBuffer) {
+				let chunkCount = Math.ceil(chunk.byteLength / size(64).kb()), index = 0
+		
+				while (chunkCount) {
+					this.push(chunk.slice(index, index + size(64).kb()))
+					index += size(64).kb()
+					chunkCount--
+				}
+			}
+		})
+	}
+}
+
+export type CompressTypes = 'none' | 'gzip' | 'br' | 'deflate'
 
 export default function handleCompressType(type: CompressTypes) {
 	switch (type) {
 		case "gzip":
 			return zlib.createGzip()
 
-		case "brotli":
+		case "br":
 			return zlib.createBrotliCompress()
 
 		case "deflate":

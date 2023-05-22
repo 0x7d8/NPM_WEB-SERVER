@@ -59,11 +59,12 @@ export type LocalContext = {
 	/** The Clients Remote IP Address */ remoteAddress: string
 	/** The Error that occured while executing HTTP Logic */ error: unknown
 	/** The List of Headers that the Client sent */ headers: Base['headers']
-	/** The List of Cookies that the Client sent */ cookies: Base['cookies']
-	/** The List of Parameters used by the URL */ params: Base['params']
-	/** The List of Query Parameters used by the URL */ queries: Base['queries']
-	/** The List of Fragments used by the URL */ fragments: Base['fragments']
+	/** The List of Cookies that the Client sent */ cookies: ValueCollection<string, string>
+	/** The List of Parameters used by the URL */ params: ValueCollection<string, string>
+	/** The List of Query Parameters used by the URL */ queries: ValueCollection<string, string>
+	/** The List of Fragments used by the URL */ fragments: ValueCollection<string, string>
 	/** An Event Emitter Responsible for all Events */ events: MiniEventEmitter<InternalEvents>
+	/** Whether this request was made from a proxy and is valid */ isProxy: boolean
 	/** A Boolean that keeps track whether the Request is Aborted */ isAborted: boolean
 	/** The Reference Listeners to keep track of and delete */ refListeners: { ref: Reference, refListener: RefListener }[]
 

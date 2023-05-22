@@ -25,9 +25,6 @@ export default function handleWSOpen(ws: WebSocket<WebSocketContext>, ctg: Globa
 		const ctr = new ctg.classContexts.wsConnect(ctg.controller, ctx, ws)
 		ctr["@"] = custom
 
-		// Execute Custom Run Function
-		if (ctx.executeCode) await handleEvent('wsConnect', ctr, ctx, ctg)
-
 		// Execute Middleware
 		if (ctg.middlewares.length > 0 && !ctx.error) {
 			for (let middlewareIndex = 0; middlewareIndex < ctg.middlewares.length; middlewareIndex++) {
@@ -43,6 +40,9 @@ export default function handleWSOpen(ws: WebSocket<WebSocketContext>, ctg: Globa
 				}
 			}
 		}
+
+		// Execute Custom run function
+		await handleEvent('wsConnect', ctr, ctx, ctg)
 
 		// Execute Page Logic
 		const runPageLogic = (eventOnly?: boolean) => new Promise<void>(async(resolve) => {

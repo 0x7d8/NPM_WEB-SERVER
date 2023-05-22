@@ -1,3 +1,24 @@
+## 8.0.0
+
+- Fix some path Parser Edge Cases
+- Fix KV Parser Edge Cases
+- Correctly parse Accept-Encoding header according to RFC
+- Automatically decide which compression to use based on browser
+- Add Option for limiting compression on big files
+- Add size() helper to easily define byte sizes
+- Split body Option into body & message
+- Add .httpCompression & .wsCompression options
+- Add an export for rjutils-collection
+- Allow excluding compression algorithms from automatically chosen ones
+- Add more proxy options
+- Only return port from .start()
+- replace .setHeader() with headers.set()
+- Add .wwwAuth() function to easily check for www-authentication
+- Use Promise.all() for header parsing
+- Dont require an initial value for references
+- Add real read-only valueCollections
+- Add .delete() to valueCollections
+
 ## 7.9.2
 
 - Send Correct Range Headers

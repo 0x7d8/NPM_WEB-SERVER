@@ -1,8 +1,9 @@
 import { GlobalContext, LocalContext } from "../../types/context"
 import URLObject from "../URLObject"
-import ValueCollection from "../valueCollection"
+import ValueCollection, { BaseCollection } from "../valueCollection"
 import Server from "../server"
 import { ExtractParameters } from "../../types/internal"
+import { Content } from "../../functions/parseContent"
 
 export default class Base<Context extends Record<any, any> = {}, Path extends string = '/'> {
 	protected ctx: LocalContext
@@ -22,8 +23,10 @@ export default class Base<Context extends Record<any, any> = {}, Path extends st
 		this.queries = localContext.queries
 		this.fragments = localContext.fragments
 
+		this.headers['modifyObject'] = localContext.response.headers
+
 		let hostIp: string
-		if (this.ctg.options.proxy && this.ctx.headers.has('x-forwarded-for')) hostIp = this.ctx.headers.get('x-forwarded-for', '').split(',')[0].trim()
+		if (this.ctx.isProxy && this.ctg.options.proxy.enabled && this.ctx.headers.has(this.ctg.options.proxy.header)) hostIp = this.ctx.headers.get(this.ctg.options.proxy.header, '').split(',')[0].trim()
 		else hostIp = this.ctx.remoteAddress.split(':')[0]
 
 		this.client = {
@@ -58,7 +61,7 @@ export default class Base<Context extends Record<any, any> = {}, Path extends st
 	 * console.log(ctr.headers.get('Authorization', 'hello')) // Will print 'hello' if not present
 	 * ```
 	 * @since 2.0.0
-	*/ public readonly headers: ValueCollection<string, string>
+	*/ public readonly headers: ValueCollection<string, string, Content>
 	/**
 	 * A Collection of all Client Cookies
 	 * @example
@@ -69,7 +72,7 @@ export default class Base<Context extends Record<any, any> = {}, Path extends st
 	 * console.log(ctr.cookies.get('theme', 'light')) // Will print 'light' if not present
 	 * ```
 	 * @since 2.0.0
-	*/ public readonly cookies: ValueCollection<string, string>
+	*/ public readonly cookies: BaseCollection<string, string>
 	/**
 	 * A Collection of all Path Parameters
 	 * @example
@@ -77,7 +80,7 @@ export default class Base<Context extends Record<any, any> = {}, Path extends st
 	 * console.log(ctr.params.get('server')) // Will print undefined if not present
 	 * ```
 	 * @since 2.0.0
-	*/ public readonly params: ValueCollection<ExtractParameters<Path>, string>
+	*/ public readonly params: BaseCollection<ExtractParameters<Path>, string>
 	/**
 	 * A Collection of all URL Queries
 	 * @example
@@ -88,18 +91,18 @@ export default class Base<Context extends Record<any, any> = {}, Path extends st
 	 * console.log(ctr.queries.get('user', 'default')) // Will print 'default' if not present
 	 * ```
 	 * @since 2.0.0
-	*/ public readonly queries: ValueCollection<string, string>
+	*/ public readonly queries: BaseCollection<string, string>
 	/**
 	 * A Collection of all URL Fragments
 	 * @example
 	 * ```
-	 * if (ctr.fragments.has('user')) console.log('User Hash is present')
+	 * if (ctr.fragments.has('user')) console.log('User Fragment is present')
 	 * 
 	 * console.log(ctr.fragments.get('user')) // Will print undefined if not present
 	 * console.log(ctr.fragments.get('user', 'default')) // Will print 'default' if not present
 	 * ```
 	 * @since 7.0.0
-	*/ public readonly fragments: ValueCollection<string, string>
+	*/ public readonly fragments: BaseCollection<string, string>
 
 	/** Client Infos */ public readonly client: {
 		/**

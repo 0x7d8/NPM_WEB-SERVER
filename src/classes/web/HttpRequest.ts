@@ -2,21 +2,23 @@ import { HttpRequest, HttpResponse } from "@rjweb/uws"
 import Status from "../../misc/statusEnum"
 import Server from "../server"
 import { LocalContext } from "../../types/context"
-import parseContent, { Content, ParseStream } from "../../functions/parseContent"
+import parseContent, { Content } from "../../functions/parseContent"
 import HTMLBuilder, { parseAttributes } from "../HTMLBuilder"
-import { Duplex, PassThrough, Readable } from "stream"
+import { Readable } from "stream"
 import Base from "./Base"
 import Route from "../../types/http"
-import handleCompressType, { CompressMapping } from "../../functions/handleCompressType"
+import handleCompressType from "../../functions/handleCompressType"
 import { resolve as pathResolve } from "path"
 import { getParts } from "@rjweb/uws"
-import { promises as fs, createReadStream } from "fs"
+import { promises as fs, Stats, createReadStream } from "fs"
 import parseContentType from "../../functions/parseContentType"
 import parseStatus from "../../functions/parseStatus"
 import parseHeaders from "../../functions/parseHeaders"
 import parseKV from "../../functions/parseKV"
+import getCompressMethod from "../../functions/getCompressMethod"
+import { createHash } from "crypto"
 
-const toArrayBuffer = (buffer: Buffer): ArrayBuffer => {
+export const toArrayBuffer = (buffer: Buffer): ArrayBuffer => {
   return buffer.buffer.slice(buffer.byteOffset, buffer.byteOffset + buffer.byteLength)
 }
 
@@ -124,16 +126,60 @@ export default class HTTPRequest<Context extends Record<any, any> = {}, Body = u
 
 
 	/**
-	 * Set an HTTP Header to add
+	 * HTTP WWW-Authentication Checker
 	 * @example
 	 * ```
-	 * ctr.setHeader('Content-Type', 'text/plain').print('hello sir')
+	 * const user = ctr.wwwAuth('basic', 'Access this Page.', { // Automatically adds www-authenticate header
+	 *   bob: '123!',
+	 *   rotvproHD: 'password'
+	 * })
+	 * 
+	 * if (!user) return ctr.status((s) => s.UNAUTHORIZED).print('Invalid credentials')
+	 * 
+	 * ctr.print('You authenticated with user:', user)
 	 * ```
-	 * @since 0.6.3
-	*/ public setHeader(name: string, value: Content): this {
-		this.ctx.response.headers[name.toLowerCase()] = value
+	 * @since 8.0.0
+	*/ public wwwAuth<Users extends Record<string, string>>(type: 'basic' | 'digest', reason: string, users: Users): keyof Users | null {
+		if (type === 'basic') this.ctx.response.headers['www-authenticate'] = `Basic realm="${encodeURI(reason)}", charset="UTF-8"`
+		else if (type === 'digest') this.ctx.response.headers['www-authenticate'] = `Digest realm="${encodeURI(reason)}", algorithm=MD5, nonce="${Math.random()}", cnonce="${Math.random()}", opaque="${createHash('md5').update(encodeURI(reason)).digest('hex')}", qop="auth", charset="UTF-8"`
 
-		return this
+		const spacePos = this.ctx.headers.get('authorization', '').indexOf(' ')
+		const sentType = this.ctx.headers.get('authorization', '').slice(0, spacePos)
+		const sentAuth = this.ctx.headers.get('authorization', '').slice(spacePos)
+
+		if (!sentType || !sentAuth) return null
+		let user: keyof Users | null = null
+
+		switch (sentType.toLowerCase()) {
+			case "basic": {
+				for (const [ username, password ] of Object.entries(users)) {
+					if (sentAuth === Buffer.from(`${username}:${password}`).toString('base64')) {
+						user = username
+						break
+					}
+				}
+
+				break
+			}
+
+			case "digest": {
+				for (const [ username, password ] of Object.entries(users)) {
+					const info = parseKV(sentAuth, '=', ',', (s) => s.replaceAll('"', ''))
+
+					const ha1 = createHash('md5').update(`${username}:${encodeURI(reason)}:${password}`).digest('hex')
+					const ha2 = createHash('md5').update(`${this.ctx.url.method}:${info.get('uri')}`).digest('hex')
+
+					if (info.get('response') === createHash('md5').update(`${ha1}:${info.get('nonce')}:${info.get('nc')}:${info.get('cnonce')}:${info.get('qop')}:${ha2}`).digest('hex')) {
+						user = username
+						break
+					}
+				}
+
+				break
+			}
+		}
+
+		return user
 	}
 
 	/**
@@ -146,7 +192,7 @@ export default class HTTPRequest<Context extends Record<any, any> = {}, Body = u
 	 * ctr.status(666, 'The Devil').print('The Devil')
 	 * 
 	 * // or
-	 * ctr.status((c) => c.IM_A_TEAPOT).print('Im a Teapot')
+	 * ctr.status((c) => c.IM_A_TEAPOT).print('Im a Teapot, mate!')
 	 * ```
 	 * @since 0.0.2
 	*/ public status(code: number | ((codes: typeof Status) => number), message?: string): this {
@@ -162,11 +208,13 @@ export default class HTTPRequest<Context extends Record<any, any> = {}, Body = u
 	 * Redirect a Client to another URL
 	 * @example
 	 * ```
-	 * ctr.redirect('https://example.com') // Will redirect to that URL
+	 * ctr.redirect('https://example.com', 'permanent') // Will redirect to that URL
 	 * ```
 	 * @since 2.8.5
-	*/ public redirect(location: string, statusCode?: 301 | 302): this {
-		this.ctx.response.status = statusCode ?? Status.FOUND
+	*/ public redirect(location: string, type: 'temporary' | 'permanent' = 'temporary'): this {
+		if (type === 'permanent') this.ctx.response.status = Status.MOVED_PERMANENTLY
+		else this.ctx.response.status = Status.FOUND
+
 		this.ctx.response.statusMessage = undefined
 
 		this.ctx.response.headers['location'] = location
@@ -306,14 +354,17 @@ export default class HTTPRequest<Context extends Record<any, any> = {}, Body = u
 
 		// Add Headers
 		this.ctx.response.headers['accept-ranges'] = 'bytes'
-		if (addTypes) this.ctx.response.headers['content-type'] = parseContentType(file, this.ctg.contentTypes)
-		if (compress && this.ctx.headers.get('accept-encoding', '').includes(CompressMapping[this.ctg.options.compression].toString())) {
-			this.ctx.response.headers['content-encoding'] = CompressMapping[this.ctg.options.compression]
-			this.ctx.response.headers['vary'] = 'accept-encoding'
-		}
+		if (addTypes && !this.ctx.response.headers['content-type']) this.ctx.response.headers['content-type'] = parseContentType(file, this.ctg.contentTypes)
 
 		this.ctx.setExecuteSelf(() => new Promise(async(resolve) => {
-			const fileStat = await fs.stat(pathResolve(file))
+			let fileStat: Stats
+			try {
+				fileStat = await fs.stat(pathResolve(file))
+			} catch (err) {
+				this.ctx.handleError(err)
+				return resolve(true)
+			}
+
 			let endEarly = false, start: number, end: number
 
 			if (this.ctx.headers.has('range') && /bytes=\d+(-\d+)?/.test(this.ctx.headers.get('range', ''))) {
@@ -341,10 +392,17 @@ export default class HTTPRequest<Context extends Record<any, any> = {}, Body = u
 				}
 			} else start = 0, end = fileStat.size
 
+			// Get Compression Infos
+			const [ compressMethod, compressHeader, compressWrite ] = getCompressMethod(compress, this.ctx.headers.get('accept-encoding', ''), this.rawRes, end - start, this.ctg)
+			this.ctx.response.headers['content-encoding'] = compressHeader
+			if (compressHeader) this.ctx.response.headers['vary'] = 'accept-encoding'
+
+			// Add Range Headers if needed
 			if (start !== 0 || end !== fileStat.size) {
-				this.ctx.response.headers['content-range'] = `bytes ${start}-${end}/${fileStat.size}`
+				this.ctx.response.headers['content-range'] = `bytes ${start}-${end}/${compressHeader ? '*' : fileStat.size}`
 			}
 
+			// Add Last-Modified Header
 			if (this.ctg.options.performance.lastModified) try {
 				this.ctx.response.headers['last-modified'] = fileStat.mtime.toUTCString()
 			} catch (err) {
@@ -358,9 +416,9 @@ export default class HTTPRequest<Context extends Record<any, any> = {}, Body = u
 				this.ctx.response.headers['accept-range'] = undefined
 
 				return resolve(true)
-			} else if (this.ctg.cache.files.has(`file::${this.ctg.options.compression}::${file}`)) {
+			} else if (this.ctg.cache.files.has(`file::${this.ctg.options.httpCompression}::${file}`)) {
 				this.ctx.response.isCompressed = true
-				this.ctx.response.content = this.ctg.cache.files.get(`file::${this.ctg.options.compression}::${file}`)!
+				this.ctx.response.content = this.ctg.cache.files.get(`file::${this.ctg.options.httpCompression}::${file}`)!
 				this.ctx.response.headers['accept-range'] = undefined
 
 				return resolve(true)
@@ -391,39 +449,37 @@ export default class HTTPRequest<Context extends Record<any, any> = {}, Body = u
 				}
 
 				if (endEarly) {
-					if (!this.ctx.isAborted) this.rawRes.end('')
+					if (!this.ctx.isAborted) this.rawRes.end()
 					return resolve(false)
 				}
 
 				// Get File Content
-				if (compress && this.ctx.headers.get('accept-encoding', '').includes(CompressMapping[this.ctg.options.compression].toString())) {
-					const destroyStreams = () => {
-						compression.destroy()
-						stream.destroy()
-					}
+				if (compressHeader) this.ctg.logger.debug('negotiated to use', compressHeader)
+				const compression = handleCompressType(compressMethod)
+				const destroyStreams = () => {
+					compression.destroy()
+					stream.destroy()
+				}
 
-					const compression = handleCompressType(this.ctg.options.compression)
+				// Handle Compression
+				compression.on('data', (content: Buffer) => {
+					this.rawRes.content = toArrayBuffer(content)
 
-					// Handle Compression
-					compression.on('data', (content: Buffer) => {
-						const contentArrayBuffer = toArrayBuffer(content)
-
-						if (!this.ctx.isAborted) {
-							const lastOffset = this.rawRes.getWriteOffset()
-							const ok = this.rawRes.write(contentArrayBuffer)
+					if (!this.ctx.isAborted) {
+						try {
+							this.rawRes.contentOffset = this.rawRes.getWriteOffset()
+							const ok = compressWrite(this.rawRes.content)
 
 							if (!ok) {
-								compression.pause()
 								stream.pause()
 
 								this.rawRes.onWritable((offset) => {
-									const sliced = contentArrayBuffer.slice(offset - lastOffset)
+									const sliced = this.rawRes.content.slice(offset - this.rawRes.contentOffset)
 
-									const ok = this.rawRes.write(sliced)
+									const ok = compressWrite(sliced)
 									if (ok) {
 										this.ctg.data.outgoing.increase(sliced.byteLength)
-										this.ctg.logger.debug('compressed and sent http body chunk with bytelen', sliced.byteLength)
-										compression.resume()
+										this.ctg.logger.debug('sent http body chunk with bytelen', sliced.byteLength)
 										stream.resume()
 									}
 
@@ -431,93 +487,37 @@ export default class HTTPRequest<Context extends Record<any, any> = {}, Body = u
 								})
 							} else {
 								this.ctg.data.outgoing.increase(content.byteLength)
-								this.ctg.logger.debug('compressed and sent http body chunk with bytelen', content.byteLength)
+								this.ctg.logger.debug('sent http body chunk with bytelen', content.byteLength)
 							}
-						}
-
-						// Write to Cache Store
-						if (cache) {
-							const oldData = this.ctg.cache.files.get(`file::${this.ctg.options.compression}::${file}`, Buffer.allocUnsafe(0))
-							this.ctg.cache.files.set(`file::${this.ctg.options.compression}::${file}`, Buffer.concat([ oldData, content ]))
-						}
-					}).once('close', () => {
-						this.ctx.response.content = Buffer.allocUnsafe(0)
-						this.ctx.events.unlist('requestAborted', destroyStreams)
-						if (!this.ctx.isAborted) this.rawRes.end()
-						resolve(false)
-					})
-
-					const stream = createReadStream(pathResolve(file), { start, end })
-
-					// Handle Errors
-					stream.once('error', (err) => {
-						this.ctx.handleError(err)
-						return resolve(true)
-					})
-
-					// Handle Data
-					stream.pipe(compression)
-
-					// Destroy if required
-					this.ctx.events.listen('requestAborted', destroyStreams)
-				} else {
-					const destroyStream = () => {
-						stream.destroy()
+						} catch { }
 					}
 
-					const stream = createReadStream(pathResolve(file), { start, end })
+					// Write to Cache Store
+					if (cache) {
+						const oldData = this.ctg.cache.files.get(`file::${this.ctg.options.httpCompression}::${file}`, Buffer.allocUnsafe(0))
+						this.ctg.cache.files.set(`file::${this.ctg.options.httpCompression}::${file}`, Buffer.concat([ oldData, content ]))
+					}
+				}).once('close', () => {
+					if (compressHeader && !this.ctx.isAborted) this.rawRes.end()
+					destroyStreams()
 
-					// Handle Errors
-					stream.once('error', (err) => {
-						this.ctx.handleError(err)
-						return resolve(true)
-					})
+					this.ctx.events.unlist('requestAborted', destroyStreams)
+					resolve(false)
+				})
 
-					// Handle Data
-					stream.on('data', (content: Buffer) => {
-						const contentArrayBuffer = toArrayBuffer(content)
+				const stream = createReadStream(pathResolve(file), { start, end })
 
-						if (!this.ctx.isAborted) {
-							try {
-								const lastOffset = this.rawRes.getWriteOffset()
-								const [ ok ] = this.rawRes.tryEnd(contentArrayBuffer, end - start)
+				// Handle Errors
+				stream.once('error', (err) => {
+					this.ctx.handleError(err)
+					return resolve(true)
+				})
 
-								if (!ok) {
-									stream.pause()
+				// Handle Data
+				stream.pipe(compression, { end: true })
 
-									this.rawRes.onWritable((offset) => {
-										const sliced = contentArrayBuffer.slice(offset - lastOffset)
-
-										const [ ok ] = this.rawRes.tryEnd(sliced, end - start)
-										if (ok) {
-											this.ctg.data.outgoing.increase(sliced.byteLength)
-											this.ctg.logger.debug('sent http body chunk with bytelen', sliced.byteLength)
-											stream.resume()
-										}
-
-										return ok
-									})
-								} else {
-									this.ctg.data.outgoing.increase(content.byteLength)
-									this.ctg.logger.debug('sent http body chunk with bytelen', content.byteLength)
-								}
-							} catch { }
-						}
-
-						// Write to Cache Store
-						if (cache) {
-							const oldData = this.ctg.cache.files.get(`file::${file}`, Buffer.allocUnsafe(0))
-							this.ctg.cache.files.set(`file::${file}`, Buffer.concat([ oldData, content ]))
-						}
-					}).once('close', () => {
-						this.ctx.response.content = Buffer.allocUnsafe(0)
-						this.ctx.events.unlist('requestAborted', destroyStream)
-						resolve(false)
-					})
-
-					// Destroy if required
-					this.ctx.events.listen('requestAborted', destroyStream)
-				}
+				// Destroy if required
+				this.ctx.events.listen('requestAborted', destroyStreams)
 			})
 			else resolve(false)
 		}))

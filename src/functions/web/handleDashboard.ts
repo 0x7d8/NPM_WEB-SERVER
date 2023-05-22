@@ -1,5 +1,5 @@
 import { GlobalContext, LocalContext } from "../../types/context"
-import parsePath from "../parsePath"
+import parseURL from "../parseURL"
 import { getFilesRecursively } from "rjutils-collection"
 import { getPreviousHours } from "../../classes/dataStat"
 import { RequestContext } from "../../types/external"
@@ -147,9 +147,10 @@ export default async function statsRoute(ctr: RequestContext, ctg: GlobalContext
       if (ctr.type !== 'http') return
 
       const dashboard = (await fs.readFile(`${__dirname}/dashboard.html`, 'utf8'))
-        .replaceAll('/rjweb-dashboard', parsePath(ctg.options.dashboard.path))
+        .replaceAll('/rjweb-dashboard', parseURL(ctg.options.dashboard.path).path)
         .replace('1.1.1', Version)
 
+      ctr.headers.set('content-type', 'text/html')
       return ctr.print(dashboard)
     }
 

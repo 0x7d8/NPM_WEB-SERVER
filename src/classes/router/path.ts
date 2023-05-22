@@ -70,7 +70,7 @@ export default class RoutePath<GlobContext extends Record<any, any>, Middlewares
 	 * ```
 	 * @since 3.2.1
 	*/ public validate<Context extends Record<any, any> = {}, Body = unknown>(
-		/** The Function to Validate the Request */ code: RoutedValidation<Context, Body, Middlewares>
+		/** The Function to Validate the Request */ code: RoutedValidation<Context, Body, Middlewares, Path>
 	): this {
 		this.validations.push(code as any)
 
@@ -220,6 +220,11 @@ export default class RoutePath<GlobContext extends Record<any, any>, Middlewares
 			 * @since 3.1.0
 			*/ addTypes?: boolean
 			/**
+			 * Whether to compress files when sending
+			 * @default true
+			 * @since 7.10.0
+			*/ compress?: boolean
+			/**
 			 * Whether to automatically remove .html ending from files
 			 * @default false
 			 * @since 3.1.0
@@ -227,6 +232,7 @@ export default class RoutePath<GlobContext extends Record<any, any>, Middlewares
 		} = {}
 	): this {
 		const addTypes = options?.addTypes ?? true
+		const compress = options?.compress ?? true
 		const hideHTML = options?.hideHTML ?? false
 
 		this.statics.push({
@@ -234,6 +240,7 @@ export default class RoutePath<GlobContext extends Record<any, any>, Middlewares
 			path: parsePath(this.httpPath),
 			location: folder,
 			data: {
+				doCompress: compress,
 				addTypes, hideHTML,
 				validations: this.validations,
 				headers: this.parsedHeaders

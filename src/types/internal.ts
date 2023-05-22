@@ -81,4 +81,4 @@ export type AnyRouter = RouteWS<any, any, any> | RouteHTTP<any, any, any> | Rout
 export type MiddlewareInitted = ReturnType<MiddlewareLoader<any, any, any, any, any, any>['config']>
 
 export type Routed = (ctr: HTTPRequest) => RealAny
-export type RoutedValidation<Context extends Record<any, any> = {}, Body = unknown, Middlewares extends MiddlewareInitted[] = []> = (ctr: HTTPRequest<Context, Body> & MergeObjects<Middlewares>, end: EndFn) => RealAny
+export type RoutedValidation<Context extends Record<any, any> = {}, Body = unknown, Middlewares extends MiddlewareInitted[] = [], Path extends string = '/'> = (ctr: HTTPRequest<Context, Body, Path> & MergeObjects<Middlewares>, end: EndFn) => RealAny

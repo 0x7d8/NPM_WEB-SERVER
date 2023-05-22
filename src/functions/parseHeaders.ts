@@ -7,13 +7,15 @@ import parseContent, { Content } from "./parseContent"
 */ export default async function parseHeaders(headers: Record<string, Content>, logger: Logger): Promise<Record<string, Buffer>> {
 	const parsedHeaders: Record<string, Buffer> = {}
 
-	for (const header in headers) {
-		try {
-			if (!headers[header]) continue
-			parsedHeaders[header] = (await parseContent(headers[header], false, logger)).content
-		} catch (err) {
-			logger.error(`Failed parsing header "${header}" with content`, headers[header], err)
+	try {
+		const rawKeys = Object.keys(headers).filter((key) => Boolean(headers[key]))
+		const parsedValues = await Promise.all([ ...Object.values(headers).filter(Boolean).map((h) => parseContent(h)) ])
+
+		for (let i = 0; i < rawKeys.length; i++) {
+			parsedHeaders[rawKeys[i]] = parsedValues[i].content
 		}
+	} catch (err) {
+		logger.error('Failed parsing Headers', headers, err)
 	}
 
 	return parsedHeaders

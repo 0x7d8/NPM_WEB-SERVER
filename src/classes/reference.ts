@@ -40,9 +40,9 @@ export type RefListener = { index: Listener }
 	 * ```
 	 * @since 7.2.0
 	*/ constructor(
-		/** The Initial Value of the Reference */ initialValue: Value
+		/** The Initial Value of the Reference */ initialValue?: Value
 	) {
-		this.state = initialValue
+		this.state = initialValue as never
 	}
 
 	/**

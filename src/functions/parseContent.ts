@@ -95,17 +95,17 @@ export type ParseContentReturns = Awaited<ReturnType<typeof parseContent>>
 			break
 
 		case "string":
-			returnObject.content = Buffer.from(content)
+			returnObject.content = Buffer.from(content, 'utf8')
 			break
 
 		case "symbol":
-			returnObject.content = Buffer.from(content.toString())
+			returnObject.content = Buffer.from(content.toString(), 'utf8')
 			break
 
 		case "bigint":
 		case "number":
 		case "boolean":
-			returnObject.content = Buffer.from(String(content))
+			returnObject.content = Buffer.from(String(content), 'utf8')
 			break
 
 		case "function":
@@ -121,7 +121,7 @@ export type ParseContentReturns = Awaited<ReturnType<typeof parseContent>>
 
 	if (!Buffer.isBuffer(returnObject.content)) {
 		logger?.error('Unknown Content Parsing Error occured (nB):', returnObject.content)
-		returnObject.content = Buffer.from('Unknown Parsing Error')
+		returnObject.content = Buffer.from('Unknown Parsing Error', 'utf8')
 	}
 
 	return returnObject

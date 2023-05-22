@@ -1,13 +1,7 @@
 import { RealAny } from "../types/internal"
 
-/**
- * A Key - Value Store with easy access functions
- * @example
- * ```
- * const collection = new ValueCollection(...)
- * ```
- * @since 2.5.0
-*/ export default class ValueCollection<Key extends PropertyKey = PropertyKey, Value = any> {
+export class BaseCollection<Key extends PropertyKey = PropertyKey, Value = any> {
+	protected modifyObject: Record<Key, any> | null = null
 	protected data: Map<Key, Value> = new Map()
 	protected maxElements: number
 	protected allowModify: boolean
@@ -46,11 +40,12 @@ import { RealAny } from "../types/internal"
 		parse = parse ?? ((value) => value)
 		this.maxElements = maxElements
 		this.allowModify = allowModify
-
+	
 		for (const key in data) {
 			this.data.set(key, parse(data[key]))
 		}
 	}
+
 
 	/**
 	 * Check if a Key exists
@@ -69,39 +64,6 @@ import { RealAny } from "../types/internal"
 		/** The Fallback Value */ fallback?: Fallback
 	): Value | Fallback {
 		return this.data.get(key) ?? (fallback as any)
-	}
-
-	/**
-	 * Set a Key
-	 * @since 2.5.0
-	*/ public set(
-		/** The Key to set */ key: Key,
-		/** The new Value */ value: Value
-	): this {
-		if (!this.allowModify) return this
-
-		if (this.objectCount > this.maxElements) this.data.clear()
-		this.data.set(key, value)
-
-		return this
-	}
-
-	/**
-	 * Clear the Stored Objects
-	 * @since 3.0.0
-	*/ public clear(
-		/** Excluded Keys */ excluded: Key[] = []
-	): number {
-		if (!this.allowModify) return 0
-
-		let keys = 0
-		for (const [key] of this.data) {
-			if (excluded.includes(key)) continue
-			this.data.delete(key)
-			keys++
-		}
-
-		return keys
 	}
 
 	/**
@@ -202,5 +164,70 @@ import { RealAny } from "../types/internal"
 	 * @since 2.7.2
 	*/ public get objectCount(): number {
 		return this.data.size
+	}
+}
+
+/**
+ * A Key - Value Store with easy access functions
+ * @example
+ * ```
+ * const collection = new ValueCollection(...)
+ * ```
+ * @since 2.5.0
+*/ export default class ValueCollection<Key extends PropertyKey = PropertyKey, Value = any, SetValue = Value> extends BaseCollection<Key, Value> {
+	/**
+	 * Set a Key
+	 * @since 2.5.0
+	*/ public set(
+		/** The Key to set */ key: Key,
+		/** The new Value */ value: SetValue
+	): this {
+		if (!this.allowModify) return this
+
+		if (this.objectCount > this.maxElements) this.clear()
+
+		if (this.modifyObject) this.modifyObject[key] = value
+		else this.data.set(key, value as any)
+
+		return this
+	}
+
+	/**
+	 * Delete a Key
+	 * @since 8.0.0
+	*/ public delete(
+		/** The Key to delete */ key: Key
+	): this {
+		if (!this.allowModify) return this
+
+		if (this.objectCount > this.maxElements) this.clear()
+
+		if (this.modifyObject) delete this.modifyObject[key]
+		else this.data.delete(key)
+
+		return this
+	}
+
+	/**
+	 * Clear the Stored Objects
+	 * @since 3.0.0
+	*/ public clear(
+		/** Excluded Keys */ excluded: Key[] = []
+	): number {
+		if (!this.allowModify) return 0
+
+		let keys = 0
+		if (this.modifyObject) for (const key in this.modifyObject) {
+			if (excluded.includes(key)) continue
+			delete this.modifyObject[key]
+			keys++
+		}
+		else for (const [key] of this.data) {
+			if (excluded.includes(key)) continue
+			this.data.delete(key)
+			keys++
+		}
+
+		return keys
 	}
 }
