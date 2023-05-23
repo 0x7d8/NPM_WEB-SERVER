@@ -1,3 +1,7 @@
+## 8.1.2
+
+- Fix BASIC www-authentication
+
 ## 8.1.1
 
 - Make sure validations & middleware execute BEFORE actual code

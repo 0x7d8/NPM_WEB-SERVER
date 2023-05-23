@@ -153,7 +153,7 @@ export default class HTTPRequest<Context extends Record<any, any> = {}, Body = u
 		switch (sentType.toLowerCase()) {
 			case "basic": {
 				for (const [ username, password ] of Object.entries(users)) {
-					if (sentAuth === Buffer.from(`${username}:${password}`).toString('base64')) {
+					if (sentAuth.trim() === Buffer.from(`${username}:${password}`).toString('base64')) {
 						user = username
 						break
 					}
