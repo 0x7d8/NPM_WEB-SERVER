@@ -26,7 +26,7 @@ export default class Base<Context extends Record<any, any> = {}, Path extends st
 		this.headers['modifyObject'] = localContext.response.headers
 
 		let hostIp: string
-		if (this.ctx.isProxy && this.ctg.options.proxy.enabled && this.ctx.headers.has(this.ctg.options.proxy.header)) hostIp = this.ctx.headers.get(this.ctg.options.proxy.header, '').split(',')[0].trim()
+		if (this.ctx.isProxy && this.ctx.headers.has(this.ctg.options.proxy.header)) hostIp = this.ctx.headers.get(this.ctg.options.proxy.header, '').split(',')[0].trim()
 		else hostIp = this.ctx.remoteAddress.split(':')[0]
 
 		this.client = {

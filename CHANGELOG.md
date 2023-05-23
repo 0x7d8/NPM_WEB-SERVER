@@ -1,3 +1,7 @@
+## 8.0.3
+
+- Start recieving Body before Middlewares & http request run
+
 ## 8.0.2
 
 - Include GlobalContext on .validate() methods
