@@ -1,3 +1,7 @@
+## 8.1.1
+
+- Make sure validations & middleware execute BEFORE actual code
+
 ## 8.1.0
 
 - Change Parameters to {param} to be more like the OpenAPI Specification

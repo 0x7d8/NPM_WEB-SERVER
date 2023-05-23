@@ -619,6 +619,39 @@ export default async function handleHTTPRequest(req: HttpRequest, res: HttpRespo
 	const ctr = new ctg.classContexts.http(ctg.controller, ctx, req, res, requestType)
 	if (ctx.execute.route && 'context' in ctx.execute.route) ctr["@"] = ctx.execute.route.context.keep ? ctx.execute.route.context.data : Object.assign({}, ctx.execute.route.context.data)
 
+	// Execute Middleware
+	if (ctx.executeCode && ctg.middlewares.length > 0 && !ctx.error) {
+		for (let middlewareIndex = 0; middlewareIndex < ctg.middlewares.length; middlewareIndex++) {
+			const middleware = ctg.middlewares[middlewareIndex]
+			if (!('httpEvent' in middleware.data)) continue
+
+			try {
+				await Promise.resolve(middleware.data.httpEvent!(middleware.localContext, () => ctx.executeCode = false, ctr, ctx, ctg))
+				if (ctx.error) throw ctx.error
+			} catch (err) {
+				ctx.handleError(err)
+				break
+			}
+		}
+	}
+
+	// Execute Custom run function
+	await handleEvent('httpRequest', ctr, ctx, ctg)
+
+	// Execute Validations
+	if (ctx.executeCode && ctx.execute.found && ctx.execute.route!.data.validations.length > 0 && !ctx.error) {
+		for (let validateIndex = 0; validateIndex < ctx.execute.route!.data.validations.length; validateIndex++) {
+			const validate = ctx.execute.route!.data.validations[validateIndex]
+
+			try {
+				await Promise.resolve(validate(ctr, () => ctx.executeCode = false))
+			} catch (err) {
+				ctx.handleError(err)
+				break
+			}
+		}
+	}
+
 	// Handle Incoming Data
 	if (ctx.executeCode && requestType === 'http' && ctx.url.method !== 'GET') {
 		const parsedHeaders = await parseHeaders(ctx.response.headers, ctg.logger)
@@ -711,39 +744,6 @@ export default async function handleHTTPRequest(req: HttpRequest, res: HttpRespo
 				} catch { }
 			}
 		})
-	}
-
-	// Execute Middleware
-	if (ctx.executeCode && ctg.middlewares.length > 0 && !ctx.error) {
-		for (let middlewareIndex = 0; middlewareIndex < ctg.middlewares.length; middlewareIndex++) {
-			const middleware = ctg.middlewares[middlewareIndex]
-			if (!('httpEvent' in middleware.data)) continue
-
-			try {
-				await Promise.resolve(middleware.data.httpEvent!(middleware.localContext, () => ctx.executeCode = false, ctr, ctx, ctg))
-				if (ctx.error) throw ctx.error
-			} catch (err) {
-				ctx.handleError(err)
-				break
-			}
-		}
-	}
-
-	// Execute Custom run function
-	await handleEvent('httpRequest', ctr, ctx, ctg)
-
-	// Execute Validations
-	if (ctx.executeCode && ctx.execute.found && ctx.execute.route!.data.validations.length > 0 && !ctx.error) {
-		for (let validateIndex = 0; validateIndex < ctx.execute.route!.data.validations.length; validateIndex++) {
-			const validate = ctx.execute.route!.data.validations[validateIndex]
-
-			try {
-				await Promise.resolve(validate(ctr, () => ctx.executeCode = false))
-			} catch (err) {
-				ctx.handleError(err)
-				break
-			}
-		}
 	}
 
 	// Fallback
