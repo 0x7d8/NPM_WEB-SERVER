@@ -1,3 +1,7 @@
+## 8.0.2
+
+- Include GlobalContext on .validate() methods
+
 ## 8.0.1
 
 - Fix normal route loading (without fileBased loading)

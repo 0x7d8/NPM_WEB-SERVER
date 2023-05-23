@@ -70,7 +70,7 @@ export default class RoutePath<GlobContext extends Record<any, any>, Middlewares
 	 * ```
 	 * @since 3.2.1
 	*/ public validate<Context extends Record<any, any> = {}, Body = unknown>(
-		/** The Function to Validate the Request */ code: RoutedValidation<Context, Body, Middlewares, Path>
+		/** The Function to Validate the Request */ code: RoutedValidation<GlobContext & Context, Body, Middlewares, Path>
 	): this {
 		this.validations.push(code as any)
 
