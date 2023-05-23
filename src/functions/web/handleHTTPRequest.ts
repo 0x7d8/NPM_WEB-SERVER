@@ -85,6 +85,201 @@ export default async function handleHTTPRequest(req: HttpRequest, res: HttpRespo
 		}
 	}
 
+	// Handle HTTP Response when ready
+	ctx.events.listen('startRequest', async() => {
+		// Handle Websocket onUpgrade
+		if (ctx.executeCode && requestType === 'upgrade' && ctx.execute.found && ctx.execute.route!.type === 'websocket' && 'onUpgrade' in ctx.execute.route!) {
+			try {
+				await Promise.resolve(ctx.execute.route.onUpgrade!(ctr as any, () => ctx.executeCode = false))
+			} catch (err) {
+				ctx.handleError(err)
+			}
+		}
+
+		// Execute Page Logic
+		let didExecute404 = false
+		const runPageLogic = (eventOnly?: boolean) => new Promise<void | boolean>(async(resolve) => {
+			// Execute Event
+			if (!ctx.execute.found && !didExecute404) {
+				ctx.execute.event = 'route404'
+				didExecute404 = true
+			}
+
+			if (ctx.execute.event !== 'none') {
+				await handleEvent(ctx.execute.event, ctr, ctx, ctg)
+				return resolve()
+			}; if (eventOnly) return resolve()
+			if (!ctx.execute.route) return
+
+			// Execute WebSocket Route
+			if (ctx.execute.route.type === 'websocket' && ctx.executeCode) {
+				try {
+					ctx.continueSend = false
+
+          ctg.webSockets.opened.increase()
+
+					resolve(true)
+
+					// Parse Headers
+					const parsedHeaders = await parseHeaders(ctx.response.headers, ctg.logger)
+
+          if (!ctx.isAborted) return res.cork(() => {
+						ctg.logger.debug('Upgraded http request to websocket')
+
+						// Write Status & Headers
+						if (!ctx.isAborted) res.writeStatus(parseStatus(Status.SWITCHING_PROTOCOLS))
+						for (const header in parsedHeaders) {
+							if (!ctx.isAborted) res.writeHeader(header, parsedHeaders[header])
+						}
+
+						// Upgrade Request to WebSocket
+            if (!ctx.isAborted) return res.upgrade(
+              { ctx, custom: ctr["@"] } satisfies WebSocketContext,
+              ctx.headers.get('sec-websocket-key', ''),
+              ctx.headers.get('sec-websocket-protocol', ''),
+              ctx.headers.get('sec-websocket-extensions', ''),
+              socket!
+            )
+          })
+				} catch (err) {
+					ctx.error = err
+					ctx.execute.event = 'httpError'
+					await runPageLogic(true)
+				}
+
+				return resolve()
+			}
+
+			// Execute Static Route
+			if (ctx.execute.route.type === 'static' && ctx.executeCode) {
+				ctr.printFile(ctx.execute.file!, { compress: ctx.execute.route.data.doCompress })
+				return resolve()
+			}
+
+			// Execute HTTP Route
+			if (ctx.execute.route.type === 'http' && ctx.executeCode) {
+				try {
+					await Promise.resolve(ctx.execute.route.onRequest(ctr as any))
+				} catch (err) {
+					ctx.error = err
+					ctx.execute.event = 'httpError'
+					await runPageLogic(true)
+				}
+
+				return resolve()
+			}
+
+			return resolve()
+		})
+
+		if (await runPageLogic()) return
+
+		// Execute Self Sufficient Script
+		try {
+			const result = await Promise.resolve(ctx.executeSelf())
+			ctx.continueSend = result
+
+			if (result) await runPageLogic(true)
+		} catch (err) {
+			ctx.handleError(err)
+			await runPageLogic(true)
+		}
+
+
+		// Handle Reponse
+		if (ctx.continueSend) try {
+			const response = await parseContent(ctx.response.content, ctx.response.contentPrettify, ctg.logger)
+			Object.assign(ctx.response.headers, response.headers)
+			const [ compressMethod, compressHeader, compressWrite ] = getCompressMethod(!ctx.response.isCompressed, ctx.headers.get('accept-encoding', ''), res, response.content.byteLength, ctg)
+			ctx.response.headers['content-encoding'] = compressHeader
+			if (compressHeader) ctx.response.headers['vary'] = 'accept-encoding'
+
+			const parsedHeaders = await parseHeaders(ctx.response.headers, ctg.logger)
+
+			let eTag: string | null
+			if (ctg.options.performance.eTag) {
+				eTag = toETag(response.content, parsedHeaders, ctx.response.status)
+				ctg.logger.debug('generated etag for content of bytelen', response.content.byteLength)
+				if (eTag) parsedHeaders['etag'] = Buffer.from(`W/"${eTag}"`)
+			}
+
+			if (!ctx.isAborted) return res.cork(() => {
+				let endEarly = false
+				if (ctg.options.performance.eTag && eTag && ctx.headers.get('if-none-match') === `W/"${eTag}"`) {
+					ctg.logger.debug('ended etag request early because of match')
+
+					ctx.response.status = Status.NOT_MODIFIED
+					ctx.response.statusMessage = undefined
+					endEarly = true
+				}
+
+				// Write Headers & Status
+				if (!ctx.isAborted) res.writeStatus(parseStatus(ctx.response.status))
+				for (const header in parsedHeaders) {
+					if (!ctx.isAborted) res.writeHeader(header, parsedHeaders[header])
+				}
+
+				if (endEarly) {
+					if (!ctx.isAborted) res.end()
+					return
+				}
+
+				// Get Content
+				if (compressHeader) ctg.logger.debug('negotiated to use', compressHeader)
+				const compression = handleCompressType(compressMethod)
+				const destroyStream = () => {
+					compression.destroy()
+				}
+
+				// Handle Compression
+				compression.on('data', (content: Buffer) => {
+					res.content = toArrayBuffer(content)
+
+					if (!ctx.isAborted) {
+						try {
+							res.contentOffset = res.getWriteOffset()
+							const ok = compressWrite(res.content)
+
+							if (!ok) {
+								//compression.pause()
+
+								res.onWritable((offset) => {
+									const sliced = res.content.slice(offset - res.contentOffset)
+
+									const ok = compressWrite(sliced)
+									if (ok) {
+										ctg.data.outgoing.increase(sliced.byteLength)
+										ctg.logger.debug('sent http body chunk with bytelen', sliced.byteLength)
+										//compression.resume()
+									}
+
+									return ok
+								})
+							} else {
+								ctg.data.outgoing.increase(content.byteLength)
+								ctg.logger.debug('sent http body chunk with bytelen', content.byteLength)
+							}
+						} catch { }
+					}
+				}).once('end', () => {
+					if (compressHeader && !ctx.isAborted) res.end()
+					destroyStream()
+
+					ctx.events.unlist('requestAborted', destroyStream)
+					return
+				})
+
+				// Handle Data
+				compression.end(response.content)
+
+				// Destroy if required
+				ctx.events.listen('requestAborted', destroyStream)
+			})
+		} catch (err) {
+			ctg.logger.debug(`Ending Request ${ctr.url.href} discarded unknown:`, err)
+		}
+	})
+
 	// Get Headers
 	req.forEachHeader((header, value) => {
 		ctx.headers.set(header, value)
@@ -551,201 +746,6 @@ export default async function handleHTTPRequest(req: HttpRequest, res: HttpRespo
 		}
 	}
 
-
-	// Handle Response Data
-	ctx.events.listen('startRequest', async() => {
-		// Handle Websocket onUpgrade
-		if (ctx.executeCode && requestType === 'upgrade' && ctx.execute.found && ctx.execute.route!.type === 'websocket' && 'onUpgrade' in ctx.execute.route!) {
-			try {
-				await Promise.resolve(ctx.execute.route.onUpgrade!(ctr as any, () => ctx.executeCode = false))
-			} catch (err) {
-				ctx.handleError(err)
-			}
-		}
-
-		// Execute Page Logic
-		let didExecute404 = false
-		const runPageLogic = (eventOnly?: boolean) => new Promise<void | boolean>(async(resolve) => {
-			// Execute Event
-			if (!ctx.execute.found && !didExecute404) {
-				ctx.execute.event = 'route404'
-				didExecute404 = true
-			}
-
-			if (ctx.execute.event !== 'none') {
-				await handleEvent(ctx.execute.event, ctr, ctx, ctg)
-				return resolve()
-			}; if (eventOnly) return resolve()
-			if (!ctx.execute.route) return
-
-			// Execute WebSocket Route
-			if (ctx.execute.route.type === 'websocket' && ctx.executeCode) {
-				try {
-					ctx.continueSend = false
-
-          ctg.webSockets.opened.increase()
-
-					resolve(true)
-
-					// Parse Headers
-					const parsedHeaders = await parseHeaders(ctx.response.headers, ctg.logger)
-
-          if (!ctx.isAborted) return res.cork(() => {
-						ctg.logger.debug('Upgraded http request to websocket')
-
-						// Write Status & Headers
-						if (!ctx.isAborted) res.writeStatus(parseStatus(Status.SWITCHING_PROTOCOLS))
-						for (const header in parsedHeaders) {
-							if (!ctx.isAborted) res.writeHeader(header, parsedHeaders[header])
-						}
-
-						// Upgrade Request to WebSocket
-            if (!ctx.isAborted) return res.upgrade(
-              { ctx, custom: ctr["@"] } satisfies WebSocketContext,
-              ctx.headers.get('sec-websocket-key', ''),
-              ctx.headers.get('sec-websocket-protocol', ''),
-              ctx.headers.get('sec-websocket-extensions', ''),
-              socket!
-            )
-          })
-				} catch (err) {
-					ctx.error = err
-					ctx.execute.event = 'httpError'
-					await runPageLogic(true)
-				}
-
-				return resolve()
-			}
-
-			// Execute Static Route
-			if (ctx.execute.route.type === 'static' && ctx.executeCode) {
-				ctr.printFile(ctx.execute.file!, { compress: ctx.execute.route.data.doCompress })
-				return resolve()
-			}
-
-			// Execute HTTP Route
-			if (ctx.execute.route.type === 'http' && ctx.executeCode) {
-				try {
-					await Promise.resolve(ctx.execute.route.onRequest(ctr as any))
-				} catch (err) {
-					ctx.error = err
-					ctx.execute.event = 'httpError'
-					await runPageLogic(true)
-				}
-
-				return resolve()
-			}
-
-			return resolve()
-		})
-
-		if (await runPageLogic()) return
-
-		// Execute Self Sufficient Script
-		try {
-			const result = await Promise.resolve(ctx.executeSelf())
-			ctx.continueSend = result
-
-			if (result) await runPageLogic(true)
-		} catch (err) {
-			ctx.handleError(err)
-			await runPageLogic(true)
-		}
-
-
-		// Handle Reponse
-		if (ctx.continueSend) try {
-			const response = await parseContent(ctx.response.content, ctx.response.contentPrettify, ctg.logger)
-			Object.assign(ctx.response.headers, response.headers)
-			const [ compressMethod, compressHeader, compressWrite ] = getCompressMethod(!ctx.response.isCompressed, ctx.headers.get('accept-encoding', ''), res, response.content.byteLength, ctg)
-			ctx.response.headers['content-encoding'] = compressHeader
-			if (compressHeader) ctx.response.headers['vary'] = 'accept-encoding'
-
-			const parsedHeaders = await parseHeaders(ctx.response.headers, ctg.logger)
-
-			let eTag: string | null
-			if (ctg.options.performance.eTag) {
-				eTag = toETag(response.content, parsedHeaders, ctx.response.status)
-				ctg.logger.debug('generated etag for content of bytelen', response.content.byteLength)
-				if (eTag) parsedHeaders['etag'] = Buffer.from(`W/"${eTag}"`)
-			}
-
-			if (!ctx.isAborted) return res.cork(() => {
-				let endEarly = false
-				if (ctg.options.performance.eTag && eTag && ctx.headers.get('if-none-match') === `W/"${eTag}"`) {
-					ctg.logger.debug('ended etag request early because of match')
-
-					ctx.response.status = Status.NOT_MODIFIED
-					ctx.response.statusMessage = undefined
-					endEarly = true
-				}
-
-				// Write Headers & Status
-				if (!ctx.isAborted) res.writeStatus(parseStatus(ctx.response.status))
-				for (const header in parsedHeaders) {
-					if (!ctx.isAborted) res.writeHeader(header, parsedHeaders[header])
-				}
-
-				if (endEarly) {
-					if (!ctx.isAborted) res.end()
-					return
-				}
-
-				// Get Content
-				if (compressHeader) ctg.logger.debug('negotiated to use', compressHeader)
-				const compression = handleCompressType(compressMethod)
-				const destroyStream = () => {
-					compression.destroy()
-				}
-
-				// Handle Compression
-				compression.on('data', (content: Buffer) => {
-					res.content = toArrayBuffer(content)
-
-					if (!ctx.isAborted) {
-						try {
-							res.contentOffset = res.getWriteOffset()
-							const ok = compressWrite(res.content)
-
-							if (!ok) {
-								//compression.pause()
-
-								res.onWritable((offset) => {
-									const sliced = res.content.slice(offset - res.contentOffset)
-
-									const ok = compressWrite(sliced)
-									if (ok) {
-										ctg.data.outgoing.increase(sliced.byteLength)
-										ctg.logger.debug('sent http body chunk with bytelen', sliced.byteLength)
-										//compression.resume()
-									}
-
-									return ok
-								})
-							} else {
-								ctg.data.outgoing.increase(content.byteLength)
-								ctg.logger.debug('sent http body chunk with bytelen', content.byteLength)
-							}
-						} catch { }
-					}
-				}).once('end', () => {
-					if (compressHeader && !ctx.isAborted) res.end()
-					destroyStream()
-
-					ctx.events.unlist('requestAborted', destroyStream)
-					return
-				})
-
-				// Handle Data
-				compression.end(response.content)
-
-				// Destroy if required
-				ctx.events.listen('requestAborted', destroyStream)
-			})
-		} catch (err) {
-			ctg.logger.debug(`Ending Request ${ctr.url.href} discarded unknown:`, err)
-		}
-	})
-
+	// Fallback
 	if (!ctx.executeCode || requestType === 'upgrade' || ctx.url.method === 'GET') ctx.events.send('startRequest')
 }

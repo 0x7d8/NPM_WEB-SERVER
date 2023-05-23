@@ -1,3 +1,7 @@
+## 8.0.4
+
+- Listen for http response event early
+
 ## 8.0.3
 
 - Start recieving Body before Middlewares & http request run
