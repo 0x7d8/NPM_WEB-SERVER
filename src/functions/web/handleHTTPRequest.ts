@@ -453,12 +453,12 @@ export default async function handleHTTPRequest(req: HttpRequest, res: HttpRespo
 				const urlParam = url.pathArray[partNumber]
 				const reqParam = actualUrl[partNumber]
 
-				if (!/^<.*>$/.test(urlParam) && reqParam !== urlParam) {
+				if (!/^{.*}$/.test(urlParam) && reqParam !== urlParam) {
 					ctx.execute.found = false
 
 					break
 				} else if (urlParam === reqParam) continue
-				else if (/^<.*>$/.test(urlParam)) {
+				else if (/^{.*}$/.test(urlParam)) {
 					ctx.params.set(urlParam.substring(1, urlParam.length - 1), reqParam)
 					ctx.execute = {
 						found: true,
@@ -582,11 +582,11 @@ export default async function handleHTTPRequest(req: HttpRequest, res: HttpRespo
 				const urlParam = url.pathArray[partNumber]
 				const reqParam = actualUrl[partNumber]
 
-				if (!/^<.*>$/.test(urlParam) && reqParam !== urlParam) {
+				if (!/^{.*}$/.test(urlParam) && reqParam !== urlParam) {
 					ctx.execute.found = false
 					break
 				} else if (urlParam === reqParam) continue
-				else if (/^<.*>$/.test(urlParam)) {
+				else if (/^{.*}$/.test(urlParam)) {
 					ctx.params.set(urlParam.substring(1, urlParam.length - 1), reqParam)
 					ctx.execute = {
 						found: true,

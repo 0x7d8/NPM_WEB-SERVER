@@ -1,3 +1,8 @@
+## 8.1.0
+
+- Change Parameters to {param} to be more like the OpenAPI Specification
+- Fix some generateOpenAPI Param Issues
+
 ## 8.0.4
 
 - Listen for http response event early

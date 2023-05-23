@@ -10,24 +10,30 @@ const transformRoutePath = (route: Route): {
 } => {
 	let parts: string[] = [], parameters: ParameterObject[] = []
 
-	if (isRegExp(route.path)) return {
-		path: (route as any).pathStartWith.slice(1) + `/{${route.path}}`,
-		parameters
-	}
-
-	for (const part of (route as any).pathArray as string[]) {
-		if (/^<.*>$/.test(part)) {
-			const replaced = part.replace('<', '{').replace('>', '}')
-
-			parts.push(replaced)
+	if (isRegExp(route.path)) for (const part of (route as any).pathStartWith) {
+		if (/^{.*}$/.test(part)) {
+			parts.push(part)
 			parameters.push({
-				name: replaced.replace(/\{|\}/g, ''),
+				name: part.replace(/\{|\}/g, ''),
+				in: 'path'
+			})
+		} else parts.push(part)
+	}
+	else for (const part of (route as any).pathArray as string[]) {
+		if (/^{.*}$/.test(part)) {
+			parts.push(part)
+			parameters.push({
+				name: part.replace(/\{|\}/g, ''),
 				in: 'path'
 			})
 		} else parts.push(part)
 	}
 
-	return {
+	if (isRegExp(route.path)) return {
+		path: parts.join('/').concat(`\${${route.path}}`),
+		parameters
+	}
+	else return {
 		path: parts.join('/'),
 		parameters
 	}

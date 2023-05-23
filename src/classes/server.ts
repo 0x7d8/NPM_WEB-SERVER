@@ -24,6 +24,7 @@ import { promises as fs } from "fs"
 import uWebsocket from "@rjweb/uws"
 import path from "path"
 import os from "os"
+import { isRegExp } from "util/types"
 
 /**
  * A Server Instance containing a built in router and http modules
@@ -240,6 +241,21 @@ import os from "os"
 
 			this.globalContext.routes.normal.push(...externalPaths.routes)
 			this.globalContext.routes.websocket.push(...externalPaths.webSockets)
+
+			for (const routes of [ this.globalContext.routes.normal, this.globalContext.routes.websocket ]) {
+				for (const route of routes) {
+					if (isRegExp(route.path)) for (const part of (route as any).pathStartWith) {
+						if (/^<.*>$/.test(part)) {
+							this.globalContext.logger.warn(`Params dont use <...> syntax anymore, switch to {...}`)
+						}
+					}
+					else for (const part of (route as any).pathArray as string[]) {
+						if (/^<.*>$/.test(part)) {
+							this.globalContext.logger.warn(`Params dont use <...> syntax anymore, switch to {...}`)
+						}
+					}
+				}
+			}
 
 			this.server.listen(this.globalContext.options.bind, this.globalContext.options.port, (listen) => {
 				if (!listen) return reject(new Error(`Failed to start server on port ${this.globalContext.options.port}.`))

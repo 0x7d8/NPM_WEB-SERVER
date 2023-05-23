@@ -18,8 +18,8 @@ export type UnionToIntersection<U> =
   (U extends any ? (k: U) => void : never) extends ((k: infer I) => void) ? I : never
 
 type ExtractParametersRecord<Path extends string> = Path extends `${infer Segment}/${infer Rest}`
-  ? Segment extends `<${infer Param}>` ? Record<Param, string> & ExtractParametersRecord<Rest> : ExtractParametersRecord<Rest>
-  : Path extends `<${infer Param}>` ? Record<Param, string> : {}
+  ? Segment extends `{${infer Param}}` ? Record<Param, string> & ExtractParametersRecord<Rest> : ExtractParametersRecord<Rest>
+  : Path extends `{${infer Param}}` ? Record<Param, string> : {}
 
 export type ExtractParameters<Path extends string> = keyof ExtractParametersRecord<Path> extends never ? string : keyof ExtractParametersRecord<Path>
 
