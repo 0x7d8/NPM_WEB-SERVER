@@ -1,3 +1,7 @@
+## 8.1.3
+
+- Fix broken Routes when validation is async
+
 ## 8.1.2
 
 - Fix BASIC www-authentication
