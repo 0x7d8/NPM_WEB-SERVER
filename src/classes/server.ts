@@ -333,7 +333,7 @@ import os from "os"
 						!(route instanceof RouteFile)
 					) throw new Error(`Invalid Route @ ${file}`)
 
-					const routeInfos = await route.getData('/')
+					const routeInfos = await route.getData(loadPath.fileBasedRouting ? '/' : loadPath.prefix)
 
 					let realRoutes = Object.assign({}, routeInfos)
 					if (loadPath.fileBasedRouting) realRoutes = await addPathsToLoadedRouter(loadPath, route, path.posix.normalize(path.posix.normalize(file).replace(path.posix.normalize(loadPath.path), '').replaceAll('\\', '/')).replace(/index|\.(js|ts|cjs|cts|mjs|mts)/g, ''), this.globalContext.logger)
@@ -365,7 +365,7 @@ import os from "os"
 						!(route instanceof RouteFile)
 					) throw new Error(`Invalid Route @ ${file}`)
 
-					const routeInfos = await route.getData('/')
+					const routeInfos = await route.getData(loadPath.fileBasedRouting ? '/' : loadPath.prefix)
 
 					let realRoutes = Object.assign({}, routeInfos)
 					if (loadPath.fileBasedRouting) realRoutes = await addPathsToLoadedRouter(loadPath, route, path.posix.normalize(path.posix.normalize(file).replace(path.posix.normalize(loadPath.path), '').replaceAll('\\', '/')).replace(/index|\.(js|ts|cjs|cts|mjs|mts)/g, ''), this.globalContext.logger)

@@ -731,12 +731,7 @@ export default async function handleHTTPRequest(req: HttpRequest, res: HttpRespo
 						} catch { }
 					}
 				}).once('end', () => {
-					const readData = compression.read()
-					if (compressHeader && readData && !ctx.isAborted) {
-						ctg.data.outgoing.increase(readData.byteLength)
-						ctg.logger.debug('ended http body chunks with bytelen', readData.byteLength)
-						res.end(readData)
-					} else if (compressHeader && !readData && !ctx.isAborted) res.end()
+					if (compressHeader && !ctx.isAborted) res.end()
 					destroyStream()
 
 					ctx.events.unlist('requestAborted', destroyStream)

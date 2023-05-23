@@ -1,3 +1,7 @@
+## 8.0.1
+
+- Fix normal route loading (without fileBased loading)
+
 ## 8.0.0
 
 - Fix some path Parser Edge Cases
