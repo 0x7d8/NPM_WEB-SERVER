@@ -48,4 +48,11 @@ export default class WSMessage<Context extends Record<any, any> = {}, Message = 
 	*/ public get rawMessage(): string {
 		return this.ctx.body.raw.toString()
 	}
+
+	/**
+	 * The Raw Socket Message as Buffer
+	 * @since 8.1.4
+	*/ public get rawMessageBytes(): Buffer {
+		return this.ctx.body.raw
+	}
 }

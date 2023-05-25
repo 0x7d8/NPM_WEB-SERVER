@@ -46,4 +46,11 @@ export default class WSClose<Context extends Record<any, any> = {}, Message = un
 	*/ public get rawMessage(): string {
 		return this.ctx.body.raw.toString()
 	}
+
+	/**
+	 * The Raw Socket Message as Buffer
+	 * @since 8.1.4
+	*/ public get rawMessageBytes(): Buffer {
+		return this.ctx.body.raw
+	}
 }

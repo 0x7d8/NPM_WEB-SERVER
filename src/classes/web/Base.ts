@@ -6,8 +6,14 @@ import { ExtractParameters } from "../../types/internal"
 import { Content } from "../../functions/parseContent"
 
 export default class Base<Context extends Record<any, any> = {}, Path extends string = '/'> {
-	protected ctx: LocalContext
-	protected ctg: GlobalContext
+	/**
+	 * The Request Context Object used by the server
+	 * @since 8.1.4
+	*/ public ctx: LocalContext
+	/**
+	 * The Global Context Object used by the server
+	 * @since 8.1.4
+	*/ public ctg: GlobalContext
 
 	/**
 	 * Initializes a new Instance of a Web Context

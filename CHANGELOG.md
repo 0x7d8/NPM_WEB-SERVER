@@ -1,3 +1,9 @@
+## 8.1.4
+
+- Make ctx and ctg public on the base context
+- Correctly handle .context() method on http and ws definitions
+- Add .rawBufferBytes and .rawMessageBytes properties to get Buffers easily
+
 ## 8.1.3
 
 - Fix broken Routes when validation is async

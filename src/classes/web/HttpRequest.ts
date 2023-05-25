@@ -124,6 +124,18 @@ export default class HTTPRequest<Context extends Record<any, any> = {}, Body = u
 		return this.ctx.body.raw.toString()
 	}
 
+	/**
+	 * The Raw Request Body as Buffer
+	 * @since 8.1.4
+	*/ public get rawBodyBytes(): Buffer {
+		if (!this.ctx.body.raw.byteLength) {
+			this.ctx.body.raw = Buffer.concat(this.ctx.body.chunks)
+			this.ctx.body.chunks.length = 0
+		}
+
+		return this.ctx.body.raw
+	}
+
 
 	/**
 	 * HTTP WWW-Authentication Checker

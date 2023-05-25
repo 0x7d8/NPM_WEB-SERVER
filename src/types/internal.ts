@@ -76,7 +76,7 @@ export type ExternalRouter = {
 	addPrefix?: string
 }
 
-export type AnyRouter = RouteWS<any, any, any> | RouteHTTP<any, any, any> | RoutePath<any> | RouteIndex<any> | RouteContentTypes | RouteDefaultHeaders
+export type AnyRouter = RouteWS<any, any, any, any> | RouteHTTP<any, any, any, any> | RoutePath<any> | RouteIndex<any> | RouteContentTypes | RouteDefaultHeaders
 
 export type MiddlewareInitted = ReturnType<MiddlewareLoader<any, any, any, any, any, any>['config']>
 
