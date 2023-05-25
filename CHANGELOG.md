@@ -1,3 +1,7 @@
+## 8.1.5
+
+- Correctly assign cached params
+
 ## 8.1.4
 
 - Make ctx and ctg public on the base context

@@ -433,7 +433,7 @@ export default async function handleHTTPRequest(req: HttpRequest, res: HttpRespo
 		if (ctg.cache.routes.has(`route::normal::${ctx.url.path}::${ctx.url.method}`)) {
 			const url = ctg.cache.routes.get(`route::normal::${ctx.url.path}::${ctx.url.method}`)!
 
-			ctx.params = url.params!
+			ctx.params['data'] = url.params!['data']
 			ctx.execute.route = url.route
 			ctx.execute.found = true
 		} else if (ctx.url.method === 'GET' && ctg.cache.routes.has(`route::static::${ctx.url.path}`)) {
@@ -569,7 +569,7 @@ export default async function handleHTTPRequest(req: HttpRequest, res: HttpRespo
 		if (ctg.cache.routes.has(`route::ws::${ctx.url.path}`)) {
 			const url = ctg.cache.routes.get(`route::ws::${ctx.url.path}`)!
 
-			ctx.params = url.params!
+			ctx.params['data'] = url.params!['data']
 			ctx.execute.route = url.route
 			ctx.execute.found = true
 		}

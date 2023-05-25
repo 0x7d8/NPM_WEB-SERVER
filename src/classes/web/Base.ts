@@ -25,7 +25,7 @@ export default class Base<Context extends Record<any, any> = {}, Path extends st
 
 		this.headers = localContext.headers
 		this.cookies = localContext.cookies
-		this.params = localContext.params as ValueCollection<any, string>
+		this.params = localContext.params as never
 		this.queries = localContext.queries
 		this.fragments = localContext.fragments
 
