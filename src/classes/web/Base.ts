@@ -18,7 +18,7 @@ export default class Base<Context extends Record<any, any> = {}, Path extends st
 	/**
 	 * Initializes a new Instance of a Web Context
 	 * @since 7.0.0
-	*/ constructor(controller: Server<any>, localContext: LocalContext) {
+	*/ constructor(controller: Server<any, any>, localContext: LocalContext) {
 		this.ctx = localContext
 		this.ctg = controller['globalContext']
 		this.controller = controller
@@ -52,7 +52,7 @@ export default class Base<Context extends Record<any, any> = {}, Path extends st
 	 * ctr.controller.reload()
 	 * ```
 	 * @since 3.0.0
-	*/ public controller: Server<any, any>
+	*/ public controller: Omit<Server<any, any>, 'globalContext' | 'server' | 'socket'>
 
 
 

@@ -33,7 +33,7 @@ import { isRegExp } from "util/types"
  * const server = new Server(...)
  * ```
  * @since 3.0.0
-*/ export default class Server<GlobContext extends Record<any, any> = {}, Middlewares extends MiddlewareInitted[] = []> extends RouteList<GlobContext, Middlewares> {
+*/ export default class Server<GlobContext extends Record<any, any>, Middlewares extends MiddlewareInitted[]> extends RouteList<GlobContext, Middlewares> {
 	protected globalContext: GlobalContext
 	protected server: uWebsocket.TemplatedApp = uWebsocket.App()
 	protected socket: uWebsocket.us_listen_socket = 0
@@ -51,7 +51,8 @@ import { isRegExp } from "util/types"
 	 * @since 3.0.0
 	*/ constructor(
 		/** The Server Options */ options: Options = {},
-		/** The Middlewares */ middlewares: Middlewares = [] as any
+		/** The Middlewares */ middlewares: Middlewares = [] as any,
+		/** The Default GlobalContext Values */ globContext: GlobContext = {} as any
 	) {
 		super()
 
@@ -61,7 +62,6 @@ import { isRegExp } from "util/types"
 		this.globalContext = {
 			controller: this as any,
 			contentTypes: {},
-			defaultHeaders: {},
 			logger: new Logger(fullOptions.logging),
 			options: fullOptions,
 			requests: new DataStat(),
@@ -72,10 +72,13 @@ import { isRegExp } from "util/types"
 					outgoing: new DataStat()
 				}
 			}, classContexts: {
-				http: mergeClasses(HttpRequest, ...middlewares.map((m) => m.data.classModifications.http)),
-				wsConnect: mergeClasses(WsConnect, ...middlewares.map((m) => m.data.classModifications.http)),
-				wsMessage: mergeClasses(WsMessage, ...middlewares.map((m) => m.data.classModifications.http)),
-				wsClose: mergeClasses(WsClose, ...middlewares.map((m) => m.data.classModifications.http))
+				http: mergeClasses(HttpRequest, ...this.middlewares.map((m) => m.data.classModifications.http)),
+				wsConnect: mergeClasses(WsConnect, ...this.middlewares.map((m) => m.data.classModifications.http)),
+				wsMessage: mergeClasses(WsMessage, ...this.middlewares.map((m) => m.data.classModifications.http)),
+				wsClose: mergeClasses(WsClose, ...this.middlewares.map((m) => m.data.classModifications.http))
+			}, defaults: {
+				globContext,
+				headers: {}
 			}, middlewares: this.middlewares,
 			data: {
 				incoming: new DataStat(),
@@ -237,7 +240,7 @@ import { isRegExp } from "util/types"
 			this.globalContext.routes.websocket = routes.webSockets
 			this.globalContext.routes.static = routes.statics
 			this.globalContext.contentTypes = routes.contentTypes
-			this.globalContext.defaultHeaders = routes.defaultHeaders
+			this.globalContext.defaults.headers = routes.defaultHeaders
 
 			this.globalContext.routes.normal.push(...externalPaths.routes)
 			this.globalContext.routes.websocket.push(...externalPaths.webSockets)
@@ -290,7 +293,7 @@ import { isRegExp } from "util/types"
 		this.globalContext.routes.websocket = routes.webSockets
 		this.globalContext.routes.static = routes.statics
 		this.globalContext.contentTypes = routes.contentTypes
-		this.globalContext.defaultHeaders = routes.defaultHeaders
+		this.globalContext.defaults.headers = routes.defaultHeaders
 
 		const externalPaths = await this.loadExternalPaths()
 		this.globalContext.routes.normal.push(...externalPaths.routes)

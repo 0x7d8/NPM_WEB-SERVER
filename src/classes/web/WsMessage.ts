@@ -8,7 +8,7 @@ export default class WSMessage<Context extends Record<any, any> = {}, Message = 
 	/**
 	 * Initializes a new Instance of a Web Context
 	 * @since 7.0.0
-	*/ constructor(controller: Server<any>, localContext: LocalContext, ws: WebSocket<WebSocketContext>) {
+	*/ constructor(controller: Server<any, any>, localContext: LocalContext, ws: WebSocket<WebSocketContext>) {
 		super(controller, localContext, ws)
 	}
 

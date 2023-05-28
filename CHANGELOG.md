@@ -1,3 +1,9 @@
+## 8.1.6
+
+- Fix Typescript errors related to generics
+- Parse Default Headers dynamically on requests to allow dynamic data (when using functions)
+- Allow defining globalContext in 3rd server constructor argument
+
 ## 8.1.5
 
 - Correctly assign cached params

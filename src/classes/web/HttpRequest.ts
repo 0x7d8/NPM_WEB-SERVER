@@ -26,7 +26,7 @@ export default class HTTPRequest<Context extends Record<any, any> = {}, Body = u
 	/**
 	 * Initializes a new Instance of a Web Context
 	 * @since 7.0.0
-	*/ constructor(controller: Server<any>, localContext: LocalContext, req: HttpRequest, res: HttpResponse, type: 'http' | 'upgrade') {
+	*/ constructor(controller: Server<any, any>, localContext: LocalContext, req: HttpRequest, res: HttpResponse, type: 'http' | 'upgrade') {
 		super(controller, localContext)
 
 		this.rawReq = req

@@ -76,7 +76,7 @@ export default async function handleHTTPRequest(req: HttpRequest, res: HttpRespo
 			file: null,
 			event: 'none'
 		}, response: {
-			headers: { ...ctg.defaultHeaders },
+			headers: { ...ctg.defaults.headers },
 			status: 200,
 			statusMessage: undefined,
 			isCompressed: false,
@@ -197,6 +197,8 @@ export default async function handleHTTPRequest(req: HttpRequest, res: HttpRespo
 	// Create Context Response Object
 	const ctr = new ctg.classContexts.http(ctg.controller, ctx, req, res, requestType)
 	if (ctx.execute.route && 'context' in ctx.execute.route) ctr["@"] = ctx.execute.route.context.keep ? ctx.execute.route.context.data : Object.assign({}, ctx.execute.route.context.data)
+
+	Object.assign(ctr["@"], ctg.defaults.globContext)
 
 	// Handle HTTP Response when ready
 	ctx.events.listen('startRequest', async() => {

@@ -145,7 +145,7 @@ yargs
 				proxy: {
 					enabled: args.proxy
 				}, bind: args.bind,
-			})
+			}, [])
 
 			server.path('/', (path) => path
 				.static(pR(args.folder!), {

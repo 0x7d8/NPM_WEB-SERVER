@@ -1,5 +1,5 @@
 import ValueCollection from "../classes/valueCollection"
-import ServerController from "../classes/server"
+import Server from "../classes/server"
 import Base from "../classes/web/Base"
 import { MiddlewareInitted } from "./internal"
 import HTTP from "./http"
@@ -92,9 +92,8 @@ export type LocalContext = {
 }
 
 export type GlobalContext = {
-	/** The Server Controller Class */ controller: ServerController<any>
+	/** The Server Controller Class */ controller: Server<any, any>
 	/** The File -> Content Type Mapping */ contentTypes: Record<string, string>
-	/** The Default HTTP Headers List */ defaultHeaders: Record<string, Buffer>
 	/** The Logger to use for everything internal */ logger: Logger
 	/** The HTTP Server Options */ options: DeepRequired<Options>
 	/** The Request Count */ requests: DataStat
@@ -106,6 +105,11 @@ export type GlobalContext = {
 			/** The Incoming Message Count */ incoming: DataStat
 			/** The Outgoing Message Count */ outgoing: DataStat
 		}
+	}
+
+	/** Some Default Values */ defaults: {
+		/** The Default GlobalContext Values */ globContext: Record<any, any>
+		/** The Default Headers to add */ headers: Record<string, Buffer>
 	}
 
 	/** The Modified Classes to use for Creation of Contexts */ classContexts: {

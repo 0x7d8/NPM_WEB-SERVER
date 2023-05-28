@@ -35,17 +35,8 @@ export default class RouteContentTypes {
 	 * Internal Method for Generating Headers Object
 	 * @since 6.0.0
 	*/ public async getData() {
-		const parsedHeaders: Record<string, Buffer> = {}
-
-		for (const header in this.defaultHeaders) {
-			try {
-				const value = (await parseContent(this.defaultHeaders[header])).content
-				parsedHeaders[header.toLowerCase()] = value
-			} catch { }
-		}
-
 		return {
-			defaultHeaders: parsedHeaders
+			defaultHeaders: this.defaultHeaders
 		}
 	}
 }
