@@ -2,8 +2,16 @@ import { HttpResponse } from "@rjweb/uws"
 import { CompressTypes } from "./handleCompressType"
 import { GlobalContext } from "../types/context"
 
-const tryEnd = (res: HttpResponse, chunk: ArrayBuffer, totalSize: number) => {
-	const result = res.tryEnd(chunk, totalSize)
+const write = (res: HttpResponse, chunk: ArrayBuffer): boolean => {
+	let result = false
+	res.cork(() => result = res.write(chunk))
+
+	return result
+}
+
+const tryEnd = (res: HttpResponse, chunk: ArrayBuffer, totalSize: number): boolean => {
+	let result = [false, false]
+	res.cork(() => result = res.tryEnd(chunk, totalSize))
 
 	return result[0] || result[1]
 }
@@ -77,5 +85,5 @@ const tryEnd = (res: HttpResponse, chunk: ArrayBuffer, totalSize: number) => {
 		progress++
 	}
 
-	return [highestValue as CompressTypes, highestValue === 'none' ? undefined : highestValue, highestValue !== 'none' ? (chunk) => res.write(chunk) : (chunk) => tryEnd(res, chunk, totalSize)]
+	return [highestValue as CompressTypes, highestValue === 'none' ? undefined : highestValue, highestValue !== 'none' ? (chunk) => write(res, chunk) : (chunk) => tryEnd(res, chunk, totalSize)]
 }

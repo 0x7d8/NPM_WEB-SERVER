@@ -113,11 +113,11 @@ export default class RouteFile<GlobContext extends Record<any, any>, Middlewares
 		/** The Callback to handle the Endpoint */ callback: (path: RouteHTTP<GlobContext, Context, Body, Middlewares, Path>) => RouteHTTP<GlobContext, Context, Body, Middlewares, Path>
 	): this {
 		if (this.routes.some((obj) => isRegExp(obj.path) ? false : obj.path === parsePath(path as string))) return this
-	
+
 		const routeHTTP = new RouteHTTP<GlobContext, Context, Body, Middlewares, Path>(isRegExp(path) ? path : parsePath(path) as any, method, this.validations, this.parsedHeaders)
 		this.externals.push({ object: routeHTTP })
 		callback(routeHTTP)
-	
+
 		return this
 	}
 
@@ -146,7 +146,7 @@ export default class RouteFile<GlobContext extends Record<any, any>, Middlewares
 	): this {
 		if (this.webSockets.some((obj) => isRegExp(obj.path) ? false : obj.path === parsePath(path as string))) return this
 
-		const routeWS = new RouteWS<GlobContext, Context, Message, Middlewares, Path>(isRegExp(path) ? path : parsePath(path) as any, this.validations)
+		const routeWS = new RouteWS<GlobContext, Context, Message, Middlewares, Path>(isRegExp(path) ? path : parsePath(path) as any, this.validations, this.parsedHeaders)
 		this.externals.push({ object: routeWS })
 		callback(routeWS)
 

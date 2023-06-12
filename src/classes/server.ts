@@ -33,7 +33,7 @@ import { isRegExp } from "util/types"
  * const server = new Server(...)
  * ```
  * @since 3.0.0
-*/ export default class Server<GlobContext extends Record<any, any>, Middlewares extends MiddlewareInitted[]> extends RouteList<GlobContext, Middlewares> {
+*/ export default class Server<GlobContext extends Record<any, any> = {}, Middlewares extends MiddlewareInitted[] = []> extends RouteList<GlobContext, Middlewares> {
 	protected globalContext: GlobalContext
 	protected server: uWebsocket.TemplatedApp = uWebsocket.App()
 	protected socket: uWebsocket.us_listen_socket = 0

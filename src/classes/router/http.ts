@@ -23,10 +23,7 @@ export default class RouteHTTP<GlobContext extends Record<any, any> = {}, Contex
 				data: {
 					validations,
 					headers
-				}, context: {
-					data: {},
-					keep: true
-				}
+				}, context: { data: {}, keep: true }
 			}
 		} else {
 			this.data = {
@@ -39,16 +36,19 @@ export default class RouteHTTP<GlobContext extends Record<any, any> = {}, Contex
 				data: {
 					validations,
 					headers
-				}, context: {
-					data: {},
-					keep: true
-				}
+				}, context: { data: {}, keep: true }
 			}
 		}
 	}
 
 	/**
 	 * Add a default State for the Request Context (which stays for the entire requests lifecycle)
+	 * 
+	 * This will set the default context for the request. This applies to all callbacks
+	 * attached to this handler. When `keepForever` is enabled, the context will be shared
+	 * between requests to this callback and therefore will be globally mutable. This may be
+	 * useful for something like a request counter so you dont have to worry about transferring
+	 * it around.
 	 * @example
 	 * ```
 	 * const controller = new Server({ })
@@ -79,15 +79,22 @@ export default class RouteHTTP<GlobContext extends Record<any, any> = {}, Contex
 	): this {
 		const keepForever = options?.keepForever ?? false
 
-		this.data.context.data = context
-		this.data.context.keep = keepForever
+		this.data.context = {
+			data: context,
+			keep: keepForever
+		}
 
 		return this
 	}
 
 	/**
-	 * Add a Context Handler for recieving HTTP Bodies
-	 * @warning when using this, ctr.rawBody & ctr.body will always be empty
+	 * Attach a Callback for when the server recieves a HTTP body chunk
+	 * 
+	 * This will attach a callback for when the server receives an http POST body chunk, the
+	 * request can always be ended by calling the 2nd function argument. Attaching this will
+	 * cause `ctr.body`, `ctr.rawBody` and `ctr.rawBodyBytes` to be empty unless you manually
+	 * assign them by doing `ctr.ctx.body.chunks.push(chunk)`.
+	 * @warning when using this, `ctr.body`, `ctr.rawBody` and `ctr.rawBodyBytes` will always be empty
 	 * @example
 	 * ```
 	 * const controller = new Server({ })
@@ -103,6 +110,10 @@ export default class RouteHTTP<GlobContext extends Record<any, any> = {}, Contex
 	 *       console.log(`Recieved Chunk, isLast: ${isLast}`, chunk)
 	 *       if (ctr["@"].chunkCount > 10) end() // This stops recieving chunks and will continue to http
 	 *     })
+	 *     .onRequest((ctr) => {
+	 *       ctr.print(`I received ${ctr["@"].chunkCount} chunks!`)
+	 *       if (ctr["@"].chunkCount === 10) ctr.printPart(' You reached the maximum allowed!')
+	 *     })
 	 *   )
 	 * )
 	 * ```
@@ -116,7 +127,11 @@ export default class RouteHTTP<GlobContext extends Record<any, any> = {}, Contex
 	}
 
 	/**
-	 * Add an Event when someone makes an HTTP request
+	 * Attach a Callback for when someone makes an HTTP request
+	 * 
+	 * This will attach a callback for when the server recieves a http request and
+	 * finishes parsing it for the user. This Handler should always be set unless you
+	 * are reserving a path for later or something.
 	 * @example
 	 * ```
 	 * const controller = new Server({ })

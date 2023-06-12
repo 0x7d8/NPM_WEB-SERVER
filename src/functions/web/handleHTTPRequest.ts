@@ -80,7 +80,7 @@ export default async function handleHTTPRequest(req: HttpRequest, res: HttpRespo
 			status: 200,
 			statusMessage: undefined,
 			isCompressed: false,
-			content: Buffer.allocUnsafe(0),
+			content: [],
 			contentPrettify: false
 		}
 	}
@@ -228,6 +228,8 @@ export default async function handleHTTPRequest(req: HttpRequest, res: HttpRespo
 
 				try {
 					await Promise.resolve(validate(ctr, () => ctx.executeCode = false))
+
+					if (!ctx.executeCode) break
 				} catch (err) {
 					ctx.handleError(err)
 					break
@@ -336,7 +338,9 @@ export default async function handleHTTPRequest(req: HttpRequest, res: HttpRespo
 
 		// Handle Reponse
 		if (ctx.continueSend) try {
-			const response = await parseContent(ctx.response.content, ctx.response.contentPrettify, ctg.logger)
+			const results = await Promise.all([ ... ctx.response.content.map((c) => parseContent(c, ctx.response.contentPrettify, ctg.logger)) ])
+			const response = { content: Buffer.concat(results.map((r) => r.content)), headers: Object.assign({}, ...results.map((r) => r.headers)) }
+
 			Object.assign(ctx.response.headers, response.headers)
 			const [ compressMethod, compressHeader, compressWrite ] = getCompressMethod(!ctx.response.isCompressed, ctx.headers.get('accept-encoding', ''), res, response.content.byteLength, ctg)
 			ctx.response.headers['content-encoding'] = compressHeader
@@ -405,12 +409,12 @@ export default async function handleHTTPRequest(req: HttpRequest, res: HttpRespo
 								})
 							} else {
 								ctg.data.outgoing.increase(content.byteLength)
-								ctg.logger.debug('sent http body chunk with bytelen', content.byteLength)
+								ctg.logger.debug('sent http body chunk with bytelen', content.byteLength, '(delayed)')
 							}
 						} catch { }
 					}
-				}).once('end', () => {
-					if (compressHeader && !ctx.isAborted) res.end()
+				}).once('close', () => {
+					if (compressHeader && !ctx.isAborted) res.cork(() => res.end())
 					destroyStream()
 
 					ctx.events.unlist('requestAborted', destroyStream)
@@ -648,7 +652,7 @@ export default async function handleHTTPRequest(req: HttpRequest, res: HttpRespo
 	}
 
 	// Add Headers
-	if (ctx.execute.found && ctx.execute.route?.type === 'http') {
+	if (ctx.execute.found && (ctx.execute.route?.type === 'http' || ctx.execute.route?.type === 'websocket')) {
 		for (const [ key, value ] of Object.entries(ctx.execute.route.data.headers)) {
 			ctx.response.headers[key] = value
 		}

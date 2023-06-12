@@ -199,9 +199,9 @@ export type Options = {
 		*/ forceProxy?: boolean
 		/**
 		 * The Header to use for getting the actual IP address
-		 * @default "X-Forwarded-For"
+		 * @default "x-forwarded-for"
 		 * @since 8.0.0
-		*/ header?: string
+		*/ header?: Lowercase<string>
 
 		/**
 		 * The Credentials that the proxy will use
@@ -298,7 +298,7 @@ export type Options = {
       decompressBodies: true
 		}, proxy: {
 			enabled: false,
-			header: 'X-Forwarded-For',
+			header: 'x-forwarded-for',
 			forceProxy: false,
 			credentials: {
 				authenticate: true,

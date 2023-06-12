@@ -8,7 +8,7 @@ export default function handleWSConnect(ws: WebSocket<WebSocketContext>, message
 
 	ctg.logger.debug('WebSocket message with bytelen', message.byteLength, 'recieved')
 
-	ctx.response.content = Buffer.allocUnsafe(0)
+	ctx.response.content = [ Buffer.allocUnsafe(0) ]
 	ctx.body.type = 'unknown'
 	ctx.body.raw = Buffer.from(message)
 	ctx.body.parsed = ''

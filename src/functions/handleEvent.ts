@@ -17,10 +17,10 @@ export default async function handleEvent(event: keyof EventHandlerMap<any, any>
 					if (ctr.type === 'http' || ctr.type === 'upgrade' || ctr.type === 'close') {
 						ctx.response.status = 500
 						ctx.response.statusMessage = undefined
-						ctx.response.content = Buffer.from(`An Error occured:\n${ctx.error}`)
+						ctx.response.content = [ `An Error occured:\n${ctx.error}` ]
 						console.error(`An Error occured:\n`, ctx.error)
 					} else {
-						ctr.print(Buffer.from(`An Error occured:\n${ctx.error}`))
+						ctr.print(`An Error occured:\n${ctx.error}`)
 						ctg.logger.error(`An Error while handling request occured:\n`, ctx.error)
 					}
 				}
@@ -28,10 +28,10 @@ export default async function handleEvent(event: keyof EventHandlerMap<any, any>
 				if (ctr.type === 'http' || ctr.type === 'upgrade' || ctr.type === 'close') {
 					ctx.response.status = 500
 					ctx.response.statusMessage = undefined
-					ctx.response.content = Buffer.from(`An Error occured in the ${event} event:\n${err}`)
+					ctx.response.content = [ `An Error occured in the ${event} event:\n${err}` ]
 					console.error(`An Error occured in the ${event} event:\n`, err)
 				} else {
-					ctr.print(Buffer.from(`An Error occured in the ${event} event:\n${err}`))
+					ctr.print(`An Error occured in the ${event} event:\n${err}`)
 					console.error(`An Error occured in the ${event} event:\n`, err)
 				}
 			}
@@ -43,7 +43,7 @@ export default async function handleEvent(event: keyof EventHandlerMap<any, any>
 			try {
 				ctx.response.status = 404
 				ctx.response.statusMessage = undefined
-				ctx.response.content = Buffer.from(`Cannot ${ctr.url.method} ${ctr.url.path}`)
+				ctx.response.content = [ `Cannot ${ctr.url.method} ${ctr.url.path}` ]
 
 				await ctg.controller.emitSafe(event, ctr as any)
 			} catch (err) {
@@ -72,7 +72,7 @@ export default async function handleEvent(event: keyof EventHandlerMap<any, any>
 				await ctg.controller.emitSafe(event, ctr as any, () => ctx.executeCode = false)
 			} catch (err) {
 				ctx.error = err
-				await handleEvent(event + 'Error' as any, ctr, ctx, ctg)
+				await handleEvent(event.concat('Error') as keyof EventHandlerMap<any, any>, ctr, ctx, ctg)
 			}
 
 			break

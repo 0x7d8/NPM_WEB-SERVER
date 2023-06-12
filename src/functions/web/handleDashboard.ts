@@ -20,10 +20,7 @@ export const dashboardIndexRoute = (ctg: GlobalContext, ctx: LocalContext): HTTP
   data: {
     validations: [],
     headers: {}
-  }, context: {
-    data: {},
-    keep: true
-  }
+  }, context: { data: {}, keep: true }
 })
 
 export const dashboardWsRoute = (ctg: GlobalContext, ctx: LocalContext): WebSocket => ({
@@ -32,11 +29,9 @@ export const dashboardWsRoute = (ctg: GlobalContext, ctx: LocalContext): WebSock
   pathArray: ['', ''],
   onConnect: async(ctr) => await statsRoute(ctr as any, ctg, ctx, 'socket'),
   data: {
-    validations: []
-  }, context: {
-    data: {},
-    keep: true
-  }
+    validations: [],
+    headers: {}
+  }, context: { data: {}, keep: true }
 })
 
 const hashCode = (value: string) => {

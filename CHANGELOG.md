@@ -1,3 +1,12 @@
+## 8.2.0
+
+- Upgrade Dependencies
+- Correctly Cork Responses
+- Add `.printPart()` for partial printing
+- Add better JSDoc explainations for request contexts & handler classes
+- Stop executing more validations if one fails
+- Fix Default Proxy Header being uppercase
+
 ## 8.1.6
 
 - Fix Typescript errors related to generics

@@ -1,4 +1,4 @@
-import { ExternalRouter, LoadPath, HTTPMethods, RoutedValidation, MiddlewareInitted } from "../../types/internal"
+import { ExternalRouter, LoadPath, HTTPMethods, RoutedValidation, MiddlewareInitted, Reserved } from "../../types/internal"
 import Static from "../../types/static"
 import HTTP from "../../types/http"
 import WebSocket from "../../types/webSocket"
@@ -13,7 +13,78 @@ import RouteWS from "./ws"
 import RouteHTTP from "./http"
 import RouteDefaultHeaders from "./defaultHeaders"
 
-export default class RoutePath<GlobContext extends Record<any, any>, Middlewares extends MiddlewareInitted[] = [], Path extends string = '/'> {
+/// TODO: Maybe Finish
+//export class BasePath<PathContext extends Record<any, any>, GlobContext extends Record<any, any>, Middlewares extends MiddlewareInitted[] = [], Path extends string = '/'> {
+//	private contexts: HTTP['context']
+//	private validations: RoutedValidation[]
+//	private headers: Record<string, Content>
+//	private httpPath: string
+//
+//	/**
+//	 * Generate a Base Route Block
+//	 * @since 8.2.0
+//	*/ constructor(
+//		/** The Path of the Routes */ path: Path,
+//		/** The Validations to add */ validations?: RoutedValidation[],
+//		/** The Headers to add */ headers?: Record<string, Content>,
+//		/** The Contexts to add */ contexts?: HTTP['context']
+//	) {
+//		this.httpPath = path
+//		this.validations = validations || []
+//		this.headers = headers || {}
+//		this.contexts = contexts || []
+//	}
+//
+//	/**
+//	 * Add a default State for the Request Context (which stays for the entire requests lifecycle)
+//	 * 
+//	 * This will set the default context for the request. This applies to all callbacks
+//	 * attached to this handler. When `keepForever` is enabled, the context will be shared
+//	 * between requests to this callback and therefore will be globally mutable. This may be
+//	 * useful for something like a request counter so you dont have to worry about transferring
+//	 * it around.
+//	 * 
+//	 * This method is required to generate the full path context.
+//	 * @example
+//	 * ```
+//	 * const controller = new Server({ })
+//	 * 
+//	 * controller.path('/', (path) => path
+//	 *   .context({
+//	 *     text: 'hello world'
+//	 *   }, {
+//	 *     keepForever: true // If enabled this Context will be used & kept for every request on this router, so if you change something in it it will stay for the next time this request runs
+//	 *   })
+//	 *   .http('GET', '/context', (ws) => ws
+//	 *     .onRequest((ctr) => {
+//	 *       ctr.print(ctr["@"].text)
+//	 *     })
+//	 *   )
+//	 * )
+//	 * ```
+//	 * @since 8.2.0
+//	*/ public context<Context extends Record<any, any>>(
+//		/** The Default State of the Request Context */ context: PathContext extends Record<any, Reserved> ? Context : PathContext,
+//		/** The Options for this Function */ options: {
+//			/**
+//			 * Whether to keep the Data for the entirety of the Processes Lifetime
+//			 * @default false
+//			 * @since 7.0.0
+//			*/ keepForever?: boolean
+//		} = {}
+//	): RoutePath<PathContext extends Record<any, Reserved> ? Context : PathContext, GlobContext, Middlewares, Path> {
+//		const keepForever = options?.keepForever ?? false
+//
+//		this.contexts.push({
+//			data: context,
+//			keep: keepForever
+//		})
+//
+//		return new RoutePath<PathContext extends Record<any, Reserved> ? Context : PathContext, GlobContext, Middlewares, any>(this.httpPath, this.validations, this.headers, this.contexts)
+//	}
+//}
+
+export default class RoutePath<PathContext extends Record<any, any>, GlobContext extends Record<any, any>, Middlewares extends MiddlewareInitted[] = [], Path extends string = '/'> {
 	private externals: ExternalRouter[]
 	private validations: RoutedValidation[]
 	private headers: Record<string, Content>
@@ -29,7 +100,8 @@ export default class RoutePath<GlobContext extends Record<any, any>, Middlewares
 	constructor(
 		/** The Path of the Routes */ path: Path,
 		/** The Validations to add */ validations?: RoutedValidation[],
-		/** The Headers to add */ headers?: Record<string, Content>
+		/** The Headers to add */ headers?: Record<string, Content>,
+		/** The Contexts to add */ contexts?: HTTP['context']
 	) {
 		this.httpPath = parsePath(path)
 		this.routes = []
@@ -70,7 +142,7 @@ export default class RoutePath<GlobContext extends Record<any, any>, Middlewares
 	 * ```
 	 * @since 3.2.1
 	*/ public validate<Context extends Record<any, any> = {}, Body = unknown>(
-		/** The Function to Validate the Request */ code: RoutedValidation<GlobContext & Context, Body, Middlewares, Path>
+		/** The Function to Validate the Request */ code: RoutedValidation<PathContext & GlobContext & Context, Body, Middlewares, Path>
 	): this {
 		this.validations.push(code as any)
 
@@ -93,11 +165,11 @@ export default class RoutePath<GlobContext extends Record<any, any>, Middlewares
 	*/ public http<Context extends Record<any, any> = {}, Body = unknown, LPath extends string = '/'>(
     /** The Request Method */ method: HTTPMethods,
 		/** The Path on which this will be available */ path: LPath | RegExp,
-		/** The Callback to handle the Endpoint */ callback: (path: RouteHTTP<GlobContext, Context, Body, Middlewares, `${Path}/${LPath}`>) => RouteHTTP<GlobContext, Context, Body, Middlewares, `${Path}/${LPath}`>
+		/** The Callback to handle the Endpoint */ callback: (path: RouteHTTP<PathContext & GlobContext, Context, Body, Middlewares, `${Path}/${LPath}`>) => RouteHTTP<PathContext & GlobContext, Context, Body, Middlewares, `${Path}/${LPath}`>
 	): this {
 		if (this.routes.some((obj) => isRegExp(obj.path) ? false : obj.path === parsePath(path as string))) return this
 	
-		const routeHTTP = new RouteHTTP<GlobContext, Context, Body, Middlewares, `${Path}/${LPath}`>(isRegExp(path) ? path : parsePath([ this.httpPath, path ]) as any, method, this.validations, this.parsedHeaders)
+		const routeHTTP = new RouteHTTP<PathContext & GlobContext, Context, Body, Middlewares, `${Path}/${LPath}`>(isRegExp(path) ? path : parsePath([ this.httpPath, path ]) as any, method, this.validations, this.parsedHeaders)
 		this.externals.push({ object: routeHTTP, addPrefix: this.httpPath })
 		callback(routeHTTP)
 	
@@ -125,11 +197,11 @@ export default class RoutePath<GlobContext extends Record<any, any>, Middlewares
 	 * @since 5.4.0
 	*/ public ws<Context extends Record<any, any> = {}, Message = unknown, LPath extends string = '/'>(
 		/** The Path on which this will be available */ path: LPath | RegExp,
-		/** The Callback to handle the Endpoint */ callback: (path: RouteWS<GlobContext, Context, Message, Middlewares, `${Path}/${LPath}`>) => RouteWS<GlobContext, Context, Message, Middlewares, `${Path}/${LPath}`>
+		/** The Callback to handle the Endpoint */ callback: (path: RouteWS<PathContext & GlobContext, Context, Message, Middlewares, `${Path}/${LPath}`>) => RouteWS<PathContext & GlobContext, Context, Message, Middlewares, `${Path}/${LPath}`>
 	): this {
 		if (this.webSockets.some((obj) => isRegExp(obj.path) ? false : obj.path === parsePath(path as string))) return this
 
-		const routeWS = new RouteWS<GlobContext, Context, Message, Middlewares, `${Path}/${LPath}`>(isRegExp(path) ? path : parsePath([ this.httpPath, path ]) as any, this.validations)
+		const routeWS = new RouteWS<GlobContext, Context, Message, Middlewares, `${Path}/${LPath}`>(isRegExp(path) ? path : parsePath([ this.httpPath, path ]) as any, this.validations, this.parsedHeaders)
 		this.externals.push({ object: routeWS, addPrefix: this.httpPath })
 		callback(routeWS)
 
@@ -186,10 +258,7 @@ export default class RoutePath<GlobContext extends Record<any, any>, Middlewares
 			data: {
 				validations: this.validations,
 				headers: this.parsedHeaders
-			}, context: {
-				data: {},
-				keep: true
-			}
+			}, context: { data: {}, keep: true }
 		})
 
 		return this
@@ -339,23 +408,26 @@ export default class RoutePath<GlobContext extends Record<any, any>, Middlewares
 	 *     })
 	 *   )
 	 *   .path('/api', (path) => path
+	 *     .context({
+	 *       version: '1.0.0'
+	 *     })
 	 *     .http('GET', '/', (http) => http
 	 *       .onRequest((ctr) => {
-	 *         ctr.print('Welcome to the API!')
+	 *         ctr.print(`Welcome to the API!, Version ${ctr["@"].version}`)
 	 *       })
 	 *     )
 	 *   )
 	 * )
 	 * ```
 	 * @since 5.0.0
-	*/ public path<LPath extends string>(
+	*/ public path<LPathContext extends Record<any, any> = Record<any, Reserved>, LPath extends string = `/${string}`>(
 		/** The Path Prefix */ prefix: LPath,
-		/** The Callback to handle the Prefix */ router: ((path: RoutePath<GlobContext, Middlewares, `${Path}/${LPath}`>) => RoutePath<GlobContext, Middlewares, `${Path}/${LPath}`>) | RoutePath<GlobContext>
+		/** The Callback to handle the Prefix */ router: ((path: RoutePath<LPathContext, PathContext & GlobContext, Middlewares, `${Path}/${LPath}`>) => RoutePath<LPathContext, PathContext & GlobContext, Middlewares, `${Path}/${LPath}`>) | RoutePath<any, any>
 	): this {
 		if ('getData' in router) {
 			this.externals.push({ object: router, addPrefix: parsePath([ this.httpPath, prefix ]) })
 		} else {
-			const routePath = new RoutePath<GlobContext, Middlewares, `${Path}/${LPath}`>(parsePath([ this.httpPath, prefix ]) as any, [...this.validations], Object.assign({}, this.headers))
+			const routePath = new RoutePath<LPathContext, PathContext & GlobContext, Middlewares, `${Path}/${LPath}`>(parsePath([ this.httpPath, prefix ]) as any, [...this.validations], Object.assign({}, this.headers))
 			this.externals.push({ object: routePath as any })
 			router(routePath)
 		}

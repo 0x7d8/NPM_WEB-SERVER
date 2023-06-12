@@ -31,6 +31,10 @@ export default class WSConnect<Context extends Record<any, any> = {}, Type = 'co
 
 	/**
 	 * Close the Socket and send a Code + Message to the Client (automatically Formatted)
+	 * 
+	 * This will instantly close the socket connection with a status code and
+	 * message of choice, after calling and successfully closing the `.onClose()`
+	 * callback will be called to finish the task.
 	 * @example
 	 * ```
 	 * ctr.close(401, {
@@ -68,6 +72,10 @@ export default class WSConnect<Context extends Record<any, any> = {}, Type = 'co
 
 	/**
 	 * Print a Message to the Client (automatically Formatted)
+	 * 
+	 * This will send a new websocket message to the client as soon
+	 * as the event loop allows it to execute the async task of parsing
+	 * the message content.
 	 * @example
 	 * ```
 	 * ctr.print({
@@ -88,7 +96,7 @@ export default class WSConnect<Context extends Record<any, any> = {}, Type = 'co
 	} = {}): this {
 		const prettify = options?.prettify ?? false
 
-		this.ctx.setExecuteSelf(async() => {
+		{(async() => {
 			let result: ParseContentReturns
 			try {
 				result = await parseContent(message, prettify, this.ctg.logger)
@@ -98,19 +106,22 @@ export default class WSConnect<Context extends Record<any, any> = {}, Type = 'co
 			}
 
 			try {
-				this.rawWs.send(result.content)
+				this.rawWs.cork(() => this.rawWs.send(result.content))
 				this.ctg.webSockets.messages.outgoing.increase()
 				this.ctg.data.outgoing.increase(result.content.byteLength)
 			} catch { }
 
 			return true
-		})
+		}) ()}
 
 		return this
 	}
 
 	/**
 	 * Print a references value every time it changes
+	 * 
+	 * This will print when the provided reference changes state similarly
+	 * to the `.printStream()` method which listen to a streams `data` event.
 	 * @example
 	 * ```
 	 * const ref = new Reference('Hello')
@@ -163,6 +174,10 @@ export default class WSConnect<Context extends Record<any, any> = {}, Type = 'co
 
 	/**
 	 * Remove a reference subscription
+	 * 
+	 * This will remove the listener of a reference from the
+	 * current socket. May be slow when having many references
+	 * attached to the socket.
 	 * @example
 	 * ```
 	 * const ref = new Reference('Hello')
@@ -187,7 +202,12 @@ export default class WSConnect<Context extends Record<any, any> = {}, Type = 'co
 	}
 
 	/**
-	 * Print the data event of a Stream to the Client
+	 * Print the `data` event of a Stream to the Client
+	 * 
+	 * This will print the `data` event of a stream to the client
+	 * in real time. This shouldnt be used over `.printRef()` but is
+	 * useful when working with something like a `fs.ReadStream` for
+	 * some reason.
 	 * @example
 	 * ```
 	 * const fileStream = fs.createReadStream('./profile.png')

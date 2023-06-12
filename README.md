@@ -110,8 +110,9 @@ const server = new Server({
   bind: '0.0.0.0', // The IP thats bound to
   cors: false, // If Cors Headers will be added
   port: 5000, // The Port which the Server runs on
-  proxy: true, // If enabled, alternate IPs will be shown
-  body: {
+  proxy: {
+    enabled: true // If enabled, alternate IPs will be shown
+  }, body: {
     enabled: true, // Whether to enable recieving POST Bodies
     maxSize: size(10).mb(), // Use Size helper to easily get byte count
     message: 'Payload too large' // Message that gets sent if the Limit is exceeded
@@ -214,7 +215,6 @@ const server = new Server({
   bind: '0.0.0.0', // The IP thats bound to
   cors: false, // If Cors Headers will be added
   port: 5000, // The Port which the Server runs on
-  proxy: true // If enabled, alternate IPs will be shown
 })
 
 server.path('/', (path) => path
@@ -237,7 +237,6 @@ const server = new Server({
   bind: '0.0.0.0', // The IP thats bound to
   cors: false, // If Cors Headers will be added
   port: 5000, // The Port which the Server runs on
-  proxy: true // If enabled, alternate IPs will be shown
 })
 
 // this request will load for 5 seconds and send the returned value
@@ -278,7 +277,6 @@ const server = new Server({
   bind: '0.0.0.0', // The IP thats bound to
   cors: false, // If Cors Headers will be added
   port: 5000, // The Port which the Server runs on
-  proxy: true // If enabled, alternate IPs will be shown
 })
 
 server.path('/account', (path) => path
@@ -311,7 +309,6 @@ const server = new Server({
   bind: '0.0.0.0', // The IP thats bound to
   cors: false, // If Cors Headers will be added
   port: 5000, // The Port which the Server runs on
-  proxy: true // If enabled, alternate IPs will be shown
 }, [
   someMiddleware.config({}),
   someOtherMiddleware.config({})
@@ -334,7 +331,6 @@ const server = new Server({
   bind: '0.0.0.0', // The IP thats bound to
   cors: false, // If Cors Headers will be added
   port: 5000, // The Port which the Server runs on
-  proxy: true // If enabled, alternate IPs will be shown
 })
 
 server.path('/', (path) => path
@@ -360,7 +356,6 @@ const server = new Server({
   bind: '0.0.0.0', // The IP thats bound to
   cors: false, // If Cors Headers will be added
   port: 5000, // The Port which the Server runs on
-  proxy: true // If enabled, alternate IPs will be shown
 })
 
 server.defaultHeaders((dH) => dH
@@ -384,7 +379,6 @@ const server = new Server({
   bind: '0.0.0.0', // The IP thats bound to
   cors: false, // If Cors Headers will be added
   port: 5000, // The Port which the Server runs on
-  proxy: true // If enabled, alternate IPs will be shown
 })
 
 server.contentTypes((ct) => cT
@@ -433,7 +427,6 @@ const server = new Server({
   bind: '0.0.0.0',
   cors: false,
   port: 5000,
-  proxy: true
 })
 
 server.on('route404', async(ctr) => {
@@ -464,7 +457,6 @@ const server = new Server({
   bind: '0.0.0.0',
   cors: false,
   port: 5000,
-  proxy: true
 })
 
 server.on('httpRequest', async(ctr, end) => {
@@ -490,7 +482,6 @@ const server = new Server({
   bind: '0.0.0.0',
   cors: false,
   port: 5000,
-  proxy: true
 })
 
 module.exports.server = server // Important! Needed to make route Files

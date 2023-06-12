@@ -50,13 +50,15 @@ export type DeepPartial<T> = T extends object ? {
 	[P in keyof T]?: DeepPartial<T[P]>
 } : T
 
+export type Reserved = [853877446, 528247296]
+
 export type LoadPath = {
 	path: string
 	prefix: string
 	type: 'cjs' | 'esm'
-	fileBasedRouting: boolean
 	validations: RoutedValidation[]
 	headers: Record<string, Buffer>
+	fileBasedRouting: boolean
 }
 
 export type HTTPMethods =
@@ -76,7 +78,7 @@ export type ExternalRouter = {
 	addPrefix?: string
 }
 
-export type AnyRouter = RouteWS<any, any, any, any> | RouteHTTP<any, any, any, any> | RoutePath<any> | RouteIndex<any> | RouteContentTypes | RouteDefaultHeaders
+export type AnyRouter = RouteWS<any, any, any, any> | RouteHTTP<any, any, any, any> | RoutePath<any, any> | RouteIndex<any> | RouteContentTypes | RouteDefaultHeaders
 
 export type MiddlewareInitted = ReturnType<MiddlewareLoader<any, any, any, any, any, any>['config']>
 

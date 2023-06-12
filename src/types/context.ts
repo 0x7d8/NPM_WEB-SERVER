@@ -86,7 +86,7 @@ export type LocalContext = {
 		/** The HTTP Status Message to concat to the Code */ statusMessage: string | undefined
 		/** Whether the Current Content is Compressed */ isCompressed: boolean
 
-		/** The Raw Content to Send */ content: Content
+		/** The Raw Content to Send */ content: Content[]
 		/** Whether to prettify Content */ contentPrettify: boolean
 	}
 }

@@ -139,6 +139,12 @@ export default class HTTPRequest<Context extends Record<any, any> = {}, Body = u
 
 	/**
 	 * HTTP WWW-Authentication Checker
+	 * 
+	 * This will validate the Authorization Header using the WWW-Authentication Standard,
+	 * you can choose between `basic` and `digest` authentication, in most cases `digest`
+	 * should be used unless you are using an outdated client or want to test easily.
+	 * When not matching any user the method will return `null` and the request should be
+	 * ended with a `Status.UNAUTHORIZED` (401) status code.
 	 * @example
 	 * ```
 	 * const user = ctr.wwwAuth('basic', 'Access this Page.', { // Automatically adds www-authenticate header
@@ -196,6 +202,12 @@ export default class HTTPRequest<Context extends Record<any, any> = {}, Body = u
 
 	/**
 	 * The Request Status to Send
+	 * 
+	 * This will set the status of the request that the client will recieve, by default
+	 * the status will be `200`, the server will not change this value unless calling the
+	 * `.redirect()` method. If you want to add a custom message to the status you can provide
+	 * a second argument that sets that, for RFC documented codes this will automatically be
+	 * set but can be overridden, the mapping is provided by `http.STATUS_CODES`
 	 * @example
 	 * ```
 	 * ctr.status(401).print('Unauthorized')
@@ -218,6 +230,11 @@ export default class HTTPRequest<Context extends Record<any, any> = {}, Body = u
 
 	/**
 	 * Redirect a Client to another URL
+	 * 
+	 * This will set the location header and the status to either to 301 or 302 depending
+	 * on whether the server should tell the browser that the page has permanently moved
+	 * or temporarily. Obviously this will only work correctly if the client supports the
+	 * 30x Statuses combined with the location header.
 	 * @example
 	 * ```
 	 * ctr.redirect('https://example.com', 'permanent') // Will redirect to that URL
@@ -236,15 +253,32 @@ export default class HTTPRequest<Context extends Record<any, any> = {}, Body = u
 
 	/**
 	 * Print a Message to the Client (automatically Formatted)
+	 * 
+	 * This Message will be the one actually sent to the client, nothing
+	 * can be "added" to the content using this function, it can only be replaced using `.print()`
+	 * To add content to the response body, use `.printPart()` instead.
 	 * @example
 	 * ```
 	 * ctr.print({
 	 *   message: 'this is json!'
 	 * })
 	 * 
-	 * // or
+	 * // content will be `{"message":"this is json!"}`
+	 * 
+	 * /// or
+	 * 
+	 * ctr.print({
+	 *   message: 'this is json!'
+	 * }, {
+	 *   prettify: true
+	 * })
+	 * 
+	 * // content will be `{\n  "message": "this is json!"\n}`
+	 * 
+	 * /// or
 	 * 
 	 * ctr.print('this is text!')
+	 * // content will be `this is text!`
 	 * ```
 	 * @since 0.0.2
 	*/ public print(content: Content, options: {
@@ -256,7 +290,39 @@ export default class HTTPRequest<Context extends Record<any, any> = {}, Body = u
 	} = {}): this {
 		const prettify = options?.prettify ?? false
 
-		this.ctx.response.content = content
+		this.ctx.response.content = [ content ]
+		this.ctx.response.contentPrettify = prettify
+
+		return this
+	}
+
+	/**
+	 * Print a Message to the client (without resetting the previous message state)
+	 * 
+	 * This will add content to the current response body, if being called without `.print()`
+	 * before, the response body will be only this, basically the first call is the same as `.print()`.
+	 * this could be used when for example you want to loop over an array asynchronously without some
+	 * `await Promise.all(array.map(async() => ...))` voodo magic. Basically just call `.printPart()`
+	 * after finishing an iteration.
+	 * @example
+	 * ```
+	 * ctr.printPart('hi')
+	 * ctr.printPart(' ')
+	 * ctr.printPart('mate')
+	 * 
+	 * // content will be `hi mate`
+	 * ```
+	 * @since 8.2.0
+	*/ public printPart(content: Content, options: {
+		/**
+		 * Whether to prettify end output (currently just JSONs)
+		 * @default false
+		 * @since 8.2.0
+		*/ prettify?: boolean
+	} = {}): this {
+		const prettify = options?.prettify ?? false
+
+		this.ctx.response.content.push(content)
 		this.ctx.response.contentPrettify = prettify
 
 		return this
@@ -264,6 +330,11 @@ export default class HTTPRequest<Context extends Record<any, any> = {}, Body = u
 
 	/**
 	 * Print a Message made using the HTML Builder & Formatter
+	 * 
+	 * This will set the http response body to an automatically generated html template
+	 * defined by the callback function. This also allows some quality of life features such
+	 * as `.every()` to change your html every x miliseconds without writing the frontend js
+	 * manually.
 	 * @example
 	 * ```
 	 * const userInput = '<script>alert("xss!!!!")</script>'
@@ -298,7 +369,7 @@ export default class HTTPRequest<Context extends Record<any, any> = {}, Body = u
 		callback(builder)
 
 		this.ctx.response.headers['content-type'] = 'text/html'
-		this.ctx.response.content = `<!DOCTYPE html><html ${parseAttributes({ lang: htmlLanguage }, [])}>${builder['html']}</html>`
+		this.ctx.response.content = [ `<!DOCTYPE html><html ${parseAttributes({ lang: htmlLanguage }, [])}>${builder['html']}</html>` ]
 
 		const path = this.ctx.url.path
 		if (!this.ctg.routes.htmlBuilder.some((h) => h.path === path)) {
@@ -320,14 +391,11 @@ export default class HTTPRequest<Context extends Record<any, any> = {}, Body = u
 					data: {
 						headers: (this.ctx.execute.route as any)?.data.headers!,
 						validations: this.ctx.execute.route?.data.validations!
-					}, context: {
-						data: {},
-						keep: true
-					}
+					}, context: { data: {}, keep: true }
 				}
 
 				this.ctg.routes.htmlBuilder.push(route)
-				this.ctg.cache.routes.set(`/___rjweb-html-auto/${getEvery.id}`, undefined as any)
+				this.ctg.cache.routes.delete(`/___rjweb-html-auto/${getEvery.id}`)
 			}
 		}
 
@@ -336,6 +404,12 @@ export default class HTTPRequest<Context extends Record<any, any> = {}, Body = u
 
 	/**
 	 * Print the Content of a File to the Client
+	 * 
+	 * This will print a file to the client using transfer encoding chunked and
+	 * if `addTypes` is enabled automatically add some content types based on the
+	 * file extension. This function wont respect any other http response body set by
+	 * `.print()` or any other normal print as this overwrites the custom ctx execution
+	 * function.
 	 * @example
 	 * ```
 	 * ctr.printFile('./profile.png', {
@@ -353,7 +427,7 @@ export default class HTTPRequest<Context extends Record<any, any> = {}, Body = u
 		 * Whether to compress this File
 		 * @default true
 		 * @since 7.9.0
-		 */ compress?: boolean
+		*/ compress?: boolean
 		/**
 		 * Whether to Cache the sent Files after accessed once (only renew after restart)
 		 * @default false
@@ -392,7 +466,7 @@ export default class HTTPRequest<Context extends Record<any, any> = {}, Body = u
 					this.ctx.response.status = Status.RANGE_NOT_SATISFIABLE
 					this.ctx.response.statusMessage = undefined
 					endEarly = true
-				} else if (start < 0 || start > end || start > fileStat.size) {
+				} else if (start < 0 || start > end || start > fileStat.size || start > Number.MAX_SAFE_INTEGER || end > Number.MAX_SAFE_INTEGER) {
 					this.ctx.response.status = Status.RANGE_NOT_SATISFIABLE
 					this.ctx.response.statusMessage = undefined
 					endEarly = true
@@ -424,13 +498,13 @@ export default class HTTPRequest<Context extends Record<any, any> = {}, Body = u
 
 			// Check Cache
 			if (this.ctg.cache.files.has(`file::${file}`)) {
-				this.ctx.response.content = this.ctg.cache.files.get(`file::${file}`)!
+				this.ctx.response.content = [ this.ctg.cache.files.get(`file::${file}`)! ]
 				this.ctx.response.headers['accept-range'] = undefined
 
 				return resolve(true)
 			} else if (this.ctg.cache.files.has(`file::${this.ctg.options.httpCompression}::${file}`)) {
 				this.ctx.response.isCompressed = true
-				this.ctx.response.content = this.ctg.cache.files.get(`file::${this.ctg.options.httpCompression}::${file}`)!
+				this.ctx.response.content = [ this.ctg.cache.files.get(`file::${this.ctg.options.httpCompression}::${file}`)! ]
 				this.ctx.response.headers['accept-range'] = undefined
 
 				return resolve(true)
@@ -467,6 +541,7 @@ export default class HTTPRequest<Context extends Record<any, any> = {}, Body = u
 
 				// Get File Content
 				if (compressHeader) this.ctg.logger.debug('negotiated to use', compressHeader)
+				const stream = createReadStream(pathResolve(file), { start, end })
 				const compression = handleCompressType(compressMethod)
 				const destroyStreams = () => {
 					compression.destroy()
@@ -476,7 +551,6 @@ export default class HTTPRequest<Context extends Record<any, any> = {}, Body = u
 				// Handle Compression
 				compression.on('data', (content: Buffer) => {
 					this.rawRes.content = toArrayBuffer(content)
-
 					if (!this.ctx.isAborted) {
 						try {
 							this.rawRes.contentOffset = this.rawRes.getWriteOffset()
@@ -491,7 +565,7 @@ export default class HTTPRequest<Context extends Record<any, any> = {}, Body = u
 									const ok = compressWrite(sliced)
 									if (ok) {
 										this.ctg.data.outgoing.increase(sliced.byteLength)
-										this.ctg.logger.debug('sent http body chunk with bytelen', sliced.byteLength)
+										this.ctg.logger.debug('sent http body chunk with bytelen', sliced.byteLength, '(delayed)')
 										stream.resume()
 									}
 
@@ -509,15 +583,13 @@ export default class HTTPRequest<Context extends Record<any, any> = {}, Body = u
 						const oldData = this.ctg.cache.files.get(`file::${this.ctg.options.httpCompression}::${file}`, Buffer.allocUnsafe(0))
 						this.ctg.cache.files.set(`file::${this.ctg.options.httpCompression}::${file}`, Buffer.concat([ oldData, content ]))
 					}
-				}).once('close', () => {
-					if (compressHeader && !this.ctx.isAborted) this.rawRes.end()
+				}).once('end', () => {
+					if (compressHeader && !this.ctx.isAborted) this.rawRes.cork(() => this.rawRes.end())
 					destroyStreams()
 
 					this.ctx.events.unlist('requestAborted', destroyStreams)
 					resolve(false)
 				})
-
-				const stream = createReadStream(pathResolve(file), { start, end })
 
 				// Handle Errors
 				stream.once('error', (err) => {
@@ -526,7 +598,7 @@ export default class HTTPRequest<Context extends Record<any, any> = {}, Body = u
 				})
 
 				// Handle Data
-				stream.pipe(compression, { end: true })
+				stream.pipe(compression)
 
 				// Destroy if required
 				this.ctx.events.listen('requestAborted', destroyStreams)
@@ -538,7 +610,12 @@ export default class HTTPRequest<Context extends Record<any, any> = {}, Body = u
 	}
 
 	/**
-	 * Print the data event of a Stream to the Client
+	 * Print the `data` event of a Stream to the Client
+	 * 
+	 * This will print the `data` event of a stream to the client and makes the connection
+	 * stay alive until the stream is closed or the client disconnects. Best usecase of this is
+	 * probably Server Side Events for something like a front page as websockets can be quite
+	 * expensive. Remember to set the correct content type header when doing that.
 	 * @example
 	 * ```
 	 * const fileStream = fs.createReadStream('./profile.png')
@@ -568,6 +645,8 @@ export default class HTTPRequest<Context extends Record<any, any> = {}, Body = u
 		const prettify = options?.prettify ?? false
 		const destroyAbort = options?.destroyAbort ?? true
 
+		this.headers.set('connection', 'keep-alive')
+
 		this.ctx.setExecuteSelf(() => new Promise(async(resolve) => {
 			const parsedHeaders = await parseHeaders(this.ctx.response.headers, this.ctg.logger)
 
@@ -590,7 +669,7 @@ export default class HTTPRequest<Context extends Record<any, any> = {}, Body = u
 							return this.ctx.handleError(err)
 						}
 
-						if (!this.ctx.isAborted) this.rawRes.write(data)
+						if (!this.ctx.isAborted) this.rawRes.cork(() => this.rawRes.write(data))
 
 						this.ctg.logger.debug('sent http body chunk with bytelen', data.byteLength)
 						this.ctg.data.outgoing.increase(data.byteLength)
@@ -599,7 +678,7 @@ export default class HTTPRequest<Context extends Record<any, any> = {}, Body = u
 					if (destroyAbort) this.ctx.events.unlist('requestAborted', destroyStream)
 					if (endRequest) {
 						resolve(false)
-						if (!this.ctx.isAborted) this.rawRes.end()
+						if (!this.ctx.isAborted) this.rawRes.cork(() => this.rawRes.end())
 					}
 				}, errorListener = (error: Error) => {
 					this.ctx.handleError(error)

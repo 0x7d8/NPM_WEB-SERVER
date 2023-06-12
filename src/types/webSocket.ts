@@ -16,6 +16,7 @@ interface RouteGeneral<Context extends Record<any, any> = {}, Message = unknown,
 
 	/** Additional Route Data */ data: {
 		/** The Validations to run on this route */ validations: RoutedValidation[]
+		/** The Headers to add to this route */ headers: Record<string, Buffer>
 	}
 
 	/** Context Data */ context: {

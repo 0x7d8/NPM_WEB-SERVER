@@ -8,7 +8,7 @@ export default function handleWSOpen(ws: WebSocket<WebSocketContext>, ctg: Globa
 
 	ctg.logger.debug('WebSocket connection established')
 
-	ctx.response.content = Buffer.allocUnsafe(0)
+	ctx.response.content = [ Buffer.allocUnsafe(0) ]
 	ctx.continueSend = true
 	ctx.executeSelf = () => true
 	ctx.executeCode = true
