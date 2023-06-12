@@ -1,4 +1,4 @@
-import { ExternalRouter, LoadPath, MiddlewareInitted, Reserved } from "../../types/internal"
+import { ExternalRouter, LoadPath, MiddlewareInitted } from "../../types/internal"
 import SafeServerEventEmitter from "../safeEventEmitter"
 import HTTP from "../../types/http"
 import Websocket from "../../types/webSocket"
@@ -45,12 +45,12 @@ export default class RouteIndex<GlobContext extends Record<any, any>, Middleware
 	 * @since 5.0.0
 	*/ public path<Path extends string>(
 		/** The Path Prefix */ prefix: Path,
-		/** The Code to handle the Prefix */ router: ((path: RoutePath<{}, GlobContext, Middlewares, Path>) => RoutePath<{}, GlobContext, Middlewares, Path>) | RoutePath<any, any>
+		/** The Code to handle the Prefix */ router: ((path: RoutePath<GlobContext, Middlewares, Path>) => RoutePath<GlobContext, Middlewares, Path>) | RoutePath<any, any>
 	): this {
 		if ('getData' in router) {
 			this.externals.push({ object: router, addPrefix: prefix })
 		} else {
-			const routePath = new RoutePath<{}, GlobContext, Middlewares, Path>(prefix as any)
+			const routePath = new RoutePath<GlobContext, Middlewares, Path>(prefix as any)
 			this.externals.push({ object: routePath as any })
 			router(routePath)
 		}

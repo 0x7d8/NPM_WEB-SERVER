@@ -50,8 +50,6 @@ export type DeepPartial<T> = T extends object ? {
 	[P in keyof T]?: DeepPartial<T[P]>
 } : T
 
-export type Reserved = [853877446, 528247296]
-
 export type LoadPath = {
 	path: string
 	prefix: string

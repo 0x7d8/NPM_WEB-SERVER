@@ -1,4 +1,4 @@
-import { ExternalRouter, LoadPath, HTTPMethods, RoutedValidation, MiddlewareInitted, Reserved } from "../../types/internal"
+import { ExternalRouter, LoadPath, HTTPMethods, RoutedValidation, MiddlewareInitted } from "../../types/internal"
 import Static from "../../types/static"
 import HTTP from "../../types/http"
 import WebSocket from "../../types/webSocket"
@@ -84,7 +84,7 @@ import RouteDefaultHeaders from "./defaultHeaders"
 //	}
 //}
 
-export default class RoutePath<PathContext extends Record<any, any>, GlobContext extends Record<any, any>, Middlewares extends MiddlewareInitted[] = [], Path extends string = '/'> {
+export default class RoutePath<GlobContext extends Record<any, any>, Middlewares extends MiddlewareInitted[] = [], Path extends string = '/'> {
 	private externals: ExternalRouter[]
 	private validations: RoutedValidation[]
 	private headers: Record<string, Content>
@@ -142,7 +142,7 @@ export default class RoutePath<PathContext extends Record<any, any>, GlobContext
 	 * ```
 	 * @since 3.2.1
 	*/ public validate<Context extends Record<any, any> = {}, Body = unknown>(
-		/** The Function to Validate the Request */ code: RoutedValidation<PathContext & GlobContext & Context, Body, Middlewares, Path>
+		/** The Function to Validate the Request */ code: RoutedValidation<GlobContext & Context, Body, Middlewares, Path>
 	): this {
 		this.validations.push(code as any)
 
@@ -165,11 +165,11 @@ export default class RoutePath<PathContext extends Record<any, any>, GlobContext
 	*/ public http<Context extends Record<any, any> = {}, Body = unknown, LPath extends string = '/'>(
     /** The Request Method */ method: HTTPMethods,
 		/** The Path on which this will be available */ path: LPath | RegExp,
-		/** The Callback to handle the Endpoint */ callback: (path: RouteHTTP<PathContext & GlobContext, Context, Body, Middlewares, `${Path}/${LPath}`>) => RouteHTTP<PathContext & GlobContext, Context, Body, Middlewares, `${Path}/${LPath}`>
+		/** The Callback to handle the Endpoint */ callback: (path: RouteHTTP<GlobContext, Context, Body, Middlewares, `${Path}/${LPath}`>) => RouteHTTP<GlobContext, Context, Body, Middlewares, `${Path}/${LPath}`>
 	): this {
 		if (this.routes.some((obj) => isRegExp(obj.path) ? false : obj.path === parsePath(path as string))) return this
 	
-		const routeHTTP = new RouteHTTP<PathContext & GlobContext, Context, Body, Middlewares, `${Path}/${LPath}`>(isRegExp(path) ? path : parsePath([ this.httpPath, path ]) as any, method, this.validations, this.parsedHeaders)
+		const routeHTTP = new RouteHTTP<GlobContext, Context, Body, Middlewares, `${Path}/${LPath}`>(isRegExp(path) ? path : parsePath([ this.httpPath, path ]) as any, method, this.validations, this.parsedHeaders)
 		this.externals.push({ object: routeHTTP, addPrefix: this.httpPath })
 		callback(routeHTTP)
 	
@@ -197,7 +197,7 @@ export default class RoutePath<PathContext extends Record<any, any>, GlobContext
 	 * @since 5.4.0
 	*/ public ws<Context extends Record<any, any> = {}, Message = unknown, LPath extends string = '/'>(
 		/** The Path on which this will be available */ path: LPath | RegExp,
-		/** The Callback to handle the Endpoint */ callback: (path: RouteWS<PathContext & GlobContext, Context, Message, Middlewares, `${Path}/${LPath}`>) => RouteWS<PathContext & GlobContext, Context, Message, Middlewares, `${Path}/${LPath}`>
+		/** The Callback to handle the Endpoint */ callback: (path: RouteWS<GlobContext, Context, Message, Middlewares, `${Path}/${LPath}`>) => RouteWS<GlobContext, Context, Message, Middlewares, `${Path}/${LPath}`>
 	): this {
 		if (this.webSockets.some((obj) => isRegExp(obj.path) ? false : obj.path === parsePath(path as string))) return this
 
@@ -420,14 +420,14 @@ export default class RoutePath<PathContext extends Record<any, any>, GlobContext
 	 * )
 	 * ```
 	 * @since 5.0.0
-	*/ public path<LPathContext extends Record<any, any> = Record<any, Reserved>, LPath extends string = `/${string}`>(
+	*/ public path<LPath extends string = `/${string}`>(
 		/** The Path Prefix */ prefix: LPath,
-		/** The Callback to handle the Prefix */ router: ((path: RoutePath<LPathContext, PathContext & GlobContext, Middlewares, `${Path}/${LPath}`>) => RoutePath<LPathContext, PathContext & GlobContext, Middlewares, `${Path}/${LPath}`>) | RoutePath<any, any>
+		/** The Callback to handle the Prefix */ router: ((path: RoutePath<GlobContext, Middlewares, `${Path}/${LPath}`>) => RoutePath<GlobContext, Middlewares, `${Path}/${LPath}`>) | RoutePath<any, any>
 	): this {
 		if ('getData' in router) {
 			this.externals.push({ object: router, addPrefix: parsePath([ this.httpPath, prefix ]) })
 		} else {
-			const routePath = new RoutePath<LPathContext, PathContext & GlobContext, Middlewares, `${Path}/${LPath}`>(parsePath([ this.httpPath, prefix ]) as any, [...this.validations], Object.assign({}, this.headers))
+			const routePath = new RoutePath<GlobContext, Middlewares, `${Path}/${LPath}`>(parsePath([ this.httpPath, prefix ]) as any, [...this.validations], Object.assign({}, this.headers))
 			this.externals.push({ object: routePath as any })
 			router(routePath)
 		}

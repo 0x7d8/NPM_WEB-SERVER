@@ -1,3 +1,7 @@
+## 8.2.1
+
+- Remove Funky `Reserved` Type
+
 ## 8.2.0
 
 - Upgrade Dependencies
