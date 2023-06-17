@@ -5,7 +5,7 @@
   [<img src="https://img.rjansen.de/rjweb/docs.svg" height="75px" style="margin-top:0px;">](https://docs.rjweb.rjansen.de)
   [<img src="https://img.rjansen.de/rjweb/types.svg" height="75px" style="margin-top:0px;margin-left:-15px;">](https://types.rjweb.rjansen.de)
 
-  [<img src="https://img.rjansen.de/rjweb/changelog.svg" height="75px" style="margin-top:-25px;">](https://github.com/rotvproHD/NPM_WEB-SERVER/blob/main/CHANGELOG.md)
+  [<img src="https://img.rjansen.de/rjweb/changelog.svg" height="75px" style="margin-top:-25px;">](https://github.com/0x7d8/NPM_WEB-SERVER/blob/main/CHANGELOG.md)
 
   [![install size](https://packagephobia.com/badge?p=rjweb-server)](https://packagephobia.com/result?p=rjweb-server)
   [![Socket Badge](https://socket.dev/api/badge/npm/package/rjweb-server)](https://socket.dev/npm/package/rjweb-server)
@@ -552,7 +552,7 @@ rjweb --help
 ## 🤝 Contributing
 
 Contributions, issues and feature requests are welcome!<br>
-Feel free to check [issues page](https://github.com/rotvproHD/NPM_WEB-SERVER/issues). 
+Feel free to check [issues page](https://github.com/0x7d8/NPM_WEB-SERVER/issues). 
 
 ## Show your support
 
@@ -560,5 +560,5 @@ Give a Star if this project helped you!
 
 ## 📝 License
 
-Copyright © [0x4096](https://github.com/rotvproHD).<br>
+Copyright © [0x7d8](https://github.com/0x7d8).<br>
 This project is MIT licensed.

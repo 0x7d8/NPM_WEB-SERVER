@@ -202,7 +202,7 @@ yargs
 			;(JSON.parse((await new Promise<Buffer>((resolve, reject) => {
 				const chunks: Buffer[] = []
 				https.get({
-					path: '/repos/rotvproHD/NPM_WEB-SERVER/contents/templates',
+					path: '/repos/0x7d8/NPM_WEB-SERVER/contents/templates',
 					host: 'api.github.com',
 					port: 443,
 					headers: {

@@ -1,6 +1,6 @@
 {
   "name": "rjweb-server",
-  "version": "8.3.1",
+  "version": "8.3.2",
   "description": "Easy and Robust Way to create a Web Server with Many Easy-to-use Features in NodeJS",
   "main": "./lib/cjs/index.js",
   "module": "./lib/esm/index.js",
@@ -19,7 +19,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/rotvproHD/NPM_WEB-SERVER.git"
+    "url": "git+https://github.com/0x7d8/NPM_WEB-SERVER.git"
   },
   "bin": {
     "rjweb": "lib/cjs/cli.js"
@@ -38,12 +38,12 @@
     "web",
     "backend"
   ],
-  "author": "0x4096 (Robert Jansen)",
+  "author": "0x7d8 (0x4096 / Robert Jansen)",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/rotvproHD/NPM_WEB-SERVER/issues"
+    "url": "https://github.com/0x7d8/NPM_WEB-SERVER/issues"
   },
-  "homepage": "https://github.com/rotvproHD/NPM_WEB-SERVER#readme",
+  "homepage": "https://github.com/0x7d8/NPM_WEB-SERVER#readme",
   "devDependencies": {
     "@types/inquirer": "^9.0.3",
     "@types/jest": "^29.5.1",
