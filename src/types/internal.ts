@@ -59,7 +59,7 @@ export type LoadPath = {
 	fileBasedRouting: boolean
 }
 
-export type CookieSettings = {
+type BaseCookie = {
 	/**
 	 * The Domain this Cookie will be assigned to.
 	 * 
@@ -67,13 +67,6 @@ export type CookieSettings = {
 	 * @default undefined
 	 * @since 8.3.0
 	*/ domain?: string
-	/**
-	 * The Date the Cookie will expire
-	 * 
-	 * If not provided will create a "Session Cookie".
-	 * @default undefined
-	 * @since 8.3.0
-	*/ expires?: Date
 	/**
 	 * Whether the Cookie should be HTTP only
 	 * @default false
@@ -101,6 +94,28 @@ export type CookieSettings = {
 	 * @since 8.3.0
 	*/ value: Content
 }
+
+type ExpiresCookie = {
+	/**
+	 * The Date the Cookie will expire
+	 * 
+	 * If not provided will create a "Session Cookie".
+	 * @default undefined
+	 * @since 8.3.0
+	*/ expires?: Date
+} & BaseCookie
+
+type MaxAgeCookie = {
+	/**
+	 * The Age after Cookie will expire
+	 * 
+	 * If not provided will create a "Session Cookie".
+	 * @default undefined
+	 * @since 8.3.1
+	*/ maxAge?: number
+} & BaseCookie
+
+export type CookieSettings = ExpiresCookie | MaxAgeCookie
 
 export type HTTPMethods =
 	| 'CONNECT'

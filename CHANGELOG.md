@@ -1,3 +1,7 @@
+## 8.3.1
+
+- Implement `ctr.cookies.delete` and `ctr.cookies.clear`
+
 ## 8.3.0
 
 - Correctly Support Custom Status Messages everywhere

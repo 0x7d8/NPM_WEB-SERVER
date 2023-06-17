@@ -37,7 +37,7 @@ export default class Base<Context extends Record<any, any> = {}, Path extends st
 				}
 
 				case "delete": {
-					delete localContext.response.headers[key]
+					localContext.response.headers[key] = undefined
 					return
 				}
 
@@ -63,15 +63,23 @@ export default class Base<Context extends Record<any, any> = {}, Path extends st
 				}
 
 				case "delete": {
-					delete localContext.response.cookies[key]
+					localContext.response.cookies[key] = {
+						value: 'r',
+						maxAge: 0
+					}
+
 					return
 				}
 
 				case "clear": {
 					let keys = 0
-					for (const cKey in localContext.response.cookies) {
+					for (const [ cKey ] of localContext.cookies) {
 						if (!key.includes(cKey)) {
-							localContext.response.cookies[key] = undefined as any
+							localContext.response.cookies[cKey] = {
+								value: 'r',
+								maxAge: 0
+							}
+
 							keys++
 						}
 					}

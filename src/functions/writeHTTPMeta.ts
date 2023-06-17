@@ -28,7 +28,8 @@ import parseContent from "./parseContent";
 
 		// Build Cookie String
 		if (infos.domain) cookieString += `;Domain=${infos.domain}`
-		if (infos.expires) cookieString += `;Expires=${infos.expires.toUTCString()}`
+		if ('expires' in infos && infos.expires) cookieString += `;Expires=${infos.expires.toUTCString()}`
+		if ('maxAge' in infos && infos.maxAge !== undefined) cookieString += `;Max-Age=${infos.maxAge}`
 		if (infos.httpOnly) cookieString += `;HttpOnly`
 		if (infos.path) cookieString += `;Path=${infos.path}`
 		if (infos.sameSite) cookieString += `;SameSite=${infos.sameSite[0].toUpperCase() + infos.sameSite.slice(1)}`
