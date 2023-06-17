@@ -59,6 +59,49 @@ export type LoadPath = {
 	fileBasedRouting: boolean
 }
 
+export type CookieSettings = {
+	/**
+	 * The Domain this Cookie will be assigned to.
+	 * 
+	 * If not provided will not be used in the Cookie Header.
+	 * @default undefined
+	 * @since 8.3.0
+	*/ domain?: string
+	/**
+	 * The Date the Cookie will expire
+	 * 
+	 * If not provided will create a "Session Cookie".
+	 * @default undefined
+	 * @since 8.3.0
+	*/ expires?: Date
+	/**
+	 * Whether the Cookie should be HTTP only
+	 * @default false
+	 * @since 8.3.0
+	*/ httpOnly?: boolean
+	/**
+	 * Whether the Cookie should be Secure (HTTPS only)
+	 * @default false
+	 * @since 8.3.0
+	*/ secure?: boolean
+	/**
+	 * The Path under which to save the Cookie
+	 * @default "/"
+	 * @since 8.3.0
+	*/ path?: string
+	/**
+	 * The SameSite Attribute of the Cookie
+	 * @see https://datatracker.ietf.org/doc/html/draft-ietf-httpbis-cookie-same-site-00#section-4.1.1
+	 * @default false
+	 * @since 8.3.0
+	*/ sameSite?: false | 'strict' | 'lax' | 'none'
+
+	/**
+	 * The Value of the Cookie
+	 * @since 8.3.0
+	*/ value: Content
+}
+
 export type HTTPMethods =
 	| 'CONNECT'
 	| 'TRACE'

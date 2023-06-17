@@ -1,7 +1,7 @@
 import { RealAny } from "../types/internal"
 
 export class BaseCollection<Key extends PropertyKey = PropertyKey, Value = any> {
-	protected modifyObject: Record<Key, any> | null = null
+	protected modifyFn: ((event: 'set' | 'delete' | 'clear', key: any, value: any) => any) | null = null
 	protected data: Map<Key, Value> = new Map()
 	protected maxElements: number
 	protected allowModify: boolean
@@ -186,7 +186,7 @@ export class BaseCollection<Key extends PropertyKey = PropertyKey, Value = any> 
 
 		if (this.objectCount > this.maxElements) this.clear()
 
-		if (this.modifyObject) this.modifyObject[key] = value
+		if (this.modifyFn) this.modifyFn('set', key, value)
 		else this.data.set(key, value as any)
 
 		return this
@@ -202,7 +202,7 @@ export class BaseCollection<Key extends PropertyKey = PropertyKey, Value = any> 
 
 		if (this.objectCount > this.maxElements) this.clear()
 
-		if (this.modifyObject) delete this.modifyObject[key]
+		if (this.modifyFn) this.modifyFn('delete', key, null)
 		else this.data.delete(key)
 
 		return this
@@ -217,11 +217,7 @@ export class BaseCollection<Key extends PropertyKey = PropertyKey, Value = any> 
 		if (!this.allowModify) return 0
 
 		let keys = 0
-		if (this.modifyObject) for (const key in this.modifyObject) {
-			if (excluded.includes(key)) continue
-			delete this.modifyObject[key]
-			keys++
-		}
+		if (this.modifyFn) keys = this.modifyFn('clear', excluded, null)
 		else for (const [key] of this.data) {
 			if (excluded.includes(key)) continue
 			this.data.delete(key)

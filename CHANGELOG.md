@@ -1,3 +1,8 @@
+## 8.3.0
+
+- Correctly Support Custom Status Messages everywhere
+- Add `ctr.cookies.set` Support
+
 ## 8.2.1
 
 - Remove Funky `Reserved` Type

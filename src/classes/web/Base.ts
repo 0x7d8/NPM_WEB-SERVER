@@ -2,7 +2,7 @@ import { GlobalContext, LocalContext } from "../../types/context"
 import URLObject from "../URLObject"
 import ValueCollection, { BaseCollection } from "../valueCollection"
 import Server from "../server"
-import { ExtractParameters } from "../../types/internal"
+import { CookieSettings, ExtractParameters } from "../../types/internal"
 import { Content } from "../../functions/parseContent"
 
 export default class Base<Context extends Record<any, any> = {}, Path extends string = '/'> {
@@ -29,7 +29,57 @@ export default class Base<Context extends Record<any, any> = {}, Path extends st
 		this.queries = localContext.queries
 		this.fragments = localContext.fragments
 
-		this.headers['modifyObject'] = localContext.response.headers
+		this.headers['modifyFn'] = (event, key, data) => {
+			switch (event) {
+				case "set": {
+					localContext.response.headers[key] = data
+					return
+				}
+
+				case "delete": {
+					delete localContext.response.headers[key]
+					return
+				}
+
+				case "clear": {
+					let keys = 0
+					for (const cKey in localContext.response.headers) {
+						if (!key.includes(cKey)) {
+							localContext.response.headers[key] = undefined
+							keys++
+						}
+					}
+
+					return keys
+				}
+			}
+		}
+
+		this.cookies['modifyFn'] = (event, key, data) => {
+			switch (event) {
+				case "set": {
+					localContext.response.cookies[key] = data
+					return
+				}
+
+				case "delete": {
+					delete localContext.response.cookies[key]
+					return
+				}
+
+				case "clear": {
+					let keys = 0
+					for (const cKey in localContext.response.cookies) {
+						if (!key.includes(cKey)) {
+							localContext.response.cookies[key] = undefined as any
+							keys++
+						}
+					}
+
+					return keys
+				}
+			}
+		}
 
 		let hostIp: string
 		if (this.ctx.isProxy && this.ctx.headers.has(this.ctg.options.proxy.header)) hostIp = this.ctx.headers.get(this.ctg.options.proxy.header, '').split(',')[0].trim()
@@ -78,7 +128,7 @@ export default class Base<Context extends Record<any, any> = {}, Path extends st
 	 * console.log(ctr.cookies.get('theme', 'light')) // Will print 'light' if not present
 	 * ```
 	 * @since 2.0.0
-	*/ public readonly cookies: BaseCollection<string, string>
+	*/ public readonly cookies: ValueCollection<string, string, CookieSettings>
 	/**
 	 * A Collection of all Path Parameters
 	 * @example
@@ -120,7 +170,9 @@ export default class Base<Context extends Record<any, any> = {}, Path extends st
 		 * @since 3.0.0
 		*/ readonly port: number
 		/**
-		 * The Ip that the Client is using
+		 * The IP Address that the Client is using
+		 * 
+		 * When a valid Proxy Request is made will be the proper IP
 		 * @since 3.0.0
 		*/ readonly ip: string
 	}

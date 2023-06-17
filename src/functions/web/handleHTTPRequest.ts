@@ -20,7 +20,7 @@ import toETag from "../toETag"
 import parseStatus from "../parseStatus"
 import { isRegExp } from "util/types"
 import parseKV from "../parseKV"
-import parseHeaders from "../parseHeaders"
+import writeHTTPMeta from "../writeHTTPMeta"
 import getCompressMethod from "../getCompressMethod"
 
 const fileExists = async(location: string) => {
@@ -57,7 +57,7 @@ export default async function handleHTTPRequest(req: HttpRequest, res: HttpRespo
 		remoteAddress: Buffer.from(res.getRemoteAddressAsText()).toString(),
 		error: null,
 		headers: new ValueCollection(),
-		cookies: parseKV(req.getHeader('cookie'), '=', ';'),
+		cookies: parseKV(req.getHeader('cookie'), '=', ';') as any,
 		params: new ValueCollection(),
 		queries: parseKV(url.query),
 		fragments: parseKV(url.fragments),
@@ -77,6 +77,7 @@ export default async function handleHTTPRequest(req: HttpRequest, res: HttpRespo
 			event: 'none'
 		}, response: {
 			headers: { ...ctg.defaults.headers },
+			cookies: {},
 			status: 200,
 			statusMessage: undefined,
 			isCompressed: false,
@@ -100,14 +101,12 @@ export default async function handleHTTPRequest(req: HttpRequest, res: HttpRespo
 
 		if (ctg.options.proxy.forceProxy) {
 			if (!ctx.headers.has('proxy-authorization')) {
-				const parsedHeaders = await parseHeaders(ctx.response.headers, ctg.logger)
+				const meta = await writeHTTPMeta(res, ctx)
 
 				if (!ctx.isAborted) return res.cork(() => {
-					// Write Status & Headers
-					if (!ctx.isAborted) res.writeStatus(parseStatus(Status.PROXY_AUTHENTICATION_REQUIRED))
-					for (const header in parsedHeaders) {
-						if (!ctx.isAborted) res.writeHeader(header, parsedHeaders[header])
-					}
+					ctx.response.status = Status.PROXY_AUTHENTICATION_REQUIRED
+					ctx.response.statusMessage = undefined
+					meta()
 
 					if (!ctx.isAborted) res.end('No Proxy Authentication Provided')
 				})
@@ -118,14 +117,12 @@ export default async function handleHTTPRequest(req: HttpRequest, res: HttpRespo
 		if (ctx.headers.has('proxy-authorization')) {
 			if (!ctg.options.proxy.credentials.authenticate) ctx.isProxy = true
 			else if (ctx.headers.get('proxy-authorization') !== 'Basic '.concat(Buffer.from(`${ctg.options.proxy.credentials.username}:${ctg.options.proxy.credentials.password}`).toString('base64'))) {
-				const parsedHeaders = await parseHeaders(ctx.response.headers, ctg.logger)
+				const meta = await writeHTTPMeta(res, ctx)
 
 				if (!ctx.isAborted) return res.cork(() => {
-					// Write Status & Headers
-					if (!ctx.isAborted) res.writeStatus(parseStatus(Status.PROXY_AUTHENTICATION_REQUIRED))
-					for (const header in parsedHeaders) {
-						if (!ctx.isAborted) res.writeHeader(header, parsedHeaders[header])
-					}
+					ctx.response.status = Status.PROXY_AUTHENTICATION_REQUIRED
+					ctx.response.statusMessage = undefined
+					meta()
 
 					if (!ctx.isAborted) res.end('Invalid Proxy Authentication Provided')
 				})
@@ -136,28 +133,24 @@ export default async function handleHTTPRequest(req: HttpRequest, res: HttpRespo
 
 	// Check for Content-Length Header
 	if (ctx.headers.has('content-length') && isNaN(parseInt(ctx.headers.get('content-length')))) {
-		const parsedHeaders = await parseHeaders(ctx.response.headers, ctg.logger)
+		const meta = await writeHTTPMeta(res, ctx)
 
 		if (!ctx.isAborted) return res.cork(() => {
-			// Write Status & Headers
-			if (!ctx.isAborted) res.writeStatus(parseStatus(Status.LENGTH_REQUIRED))
-			for (const header in parsedHeaders) {
-				if (!ctx.isAborted) res.writeHeader(header, parsedHeaders[header])
-			}
+			ctx.response.status = Status.LENGTH_REQUIRED
+			ctx.response.statusMessage = undefined
+			meta()
 
 			if (!ctx.isAborted) res.end()
 		})
 		else return
 	} else if (ctx.headers.has('content-length') && parseInt(ctx.headers.get('content-length')) > ctg.options.body.maxSize) {
-		const parsedHeaders = await parseHeaders(ctx.response.headers, ctg.logger)
 		const result = await parseContent(ctg.options.body.message, false, ctg.logger)
+		const meta = await writeHTTPMeta(res, ctx)
 
 		if (!ctx.isAborted) return res.cork(() => {
-			// Write Headers & Status
-			if (!ctx.isAborted) res.writeStatus(parseStatus(Status.PAYLOAD_TOO_LARGE))
-			for (const header in parsedHeaders) {
-				if (!ctx.isAborted) res.writeHeader(header, parsedHeaders[header])
-			}
+			ctx.response.status = Status.PAYLOAD_TOO_LARGE
+			ctx.response.statusMessage = undefined
+			meta()
 
 			if (!ctx.isAborted) res.end(result.content)
 		})
@@ -180,13 +173,10 @@ export default async function handleHTTPRequest(req: HttpRequest, res: HttpRespo
 		if (ctx.url.method === 'OPTIONS') {
 			ctg.logger.debug('OPTIONS CORS Early End Request succeeded')
 
-			const parsedHeaders = await parseHeaders(ctx.response.headers, ctg.logger)
+			const meta = await writeHTTPMeta(res, ctx)
 
 			if (!ctx.isAborted) return res.cork(() => {
-				// Write Headers
-				for (const header in parsedHeaders) {
-					if (!ctx.isAborted) res.writeHeader(header, parsedHeaders[header])
-				}
+				meta()
 
 				if (!ctx.isAborted) res.end()
 			})
@@ -265,22 +255,17 @@ export default async function handleHTTPRequest(req: HttpRequest, res: HttpRespo
 			if (ctx.execute.route.type === 'websocket' && ctx.executeCode) {
 				try {
 					ctx.continueSend = false
-
           ctg.webSockets.opened.increase()
-
 					resolve(true)
 
-					// Parse Headers
-					const parsedHeaders = await parseHeaders(ctx.response.headers, ctg.logger)
+					const meta = await writeHTTPMeta(res, ctx)
 
           if (!ctx.isAborted) return res.cork(() => {
 						ctg.logger.debug('Upgraded http request to websocket')
 
-						// Write Status & Headers
-						if (!ctx.isAborted) res.writeStatus(parseStatus(Status.SWITCHING_PROTOCOLS))
-						for (const header in parsedHeaders) {
-							if (!ctx.isAborted) res.writeHeader(header, parsedHeaders[header])
-						}
+						ctx.response.status = Status.SWITCHING_PROTOCOLS
+						ctx.response.statusMessage = undefined
+						meta()
 
 						// Upgrade Request to WebSocket
             if (!ctx.isAborted) return res.upgrade(
@@ -346,14 +331,14 @@ export default async function handleHTTPRequest(req: HttpRequest, res: HttpRespo
 			ctx.response.headers['content-encoding'] = compressHeader
 			if (compressHeader) ctx.response.headers['vary'] = 'accept-encoding'
 
-			const parsedHeaders = await parseHeaders(ctx.response.headers, ctg.logger)
-
 			let eTag: string | null
 			if (ctg.options.performance.eTag) {
-				eTag = toETag(response.content, parsedHeaders, ctx.response.status)
+				eTag = toETag(response.content, ctx.response.headers, ctx.response.cookies, ctx.response.status)
 				ctg.logger.debug('generated etag for content of bytelen', response.content.byteLength)
-				if (eTag) parsedHeaders['etag'] = Buffer.from(`W/"${eTag}"`)
+				if (eTag) ctx.response.headers['etag'] = Buffer.from(`W/"${eTag}"`)
 			}
+
+			const meta = await writeHTTPMeta(res, ctx)
 
 			if (!ctx.isAborted) return res.cork(() => {
 				let endEarly = false
@@ -365,11 +350,7 @@ export default async function handleHTTPRequest(req: HttpRequest, res: HttpRespo
 					endEarly = true
 				}
 
-				// Write Headers & Status
-				if (!ctx.isAborted) res.writeStatus(parseStatus(ctx.response.status))
-				for (const header in parsedHeaders) {
-					if (!ctx.isAborted) res.writeHeader(header, parsedHeaders[header])
-				}
+				meta()
 
 				if (endEarly) {
 					if (!ctx.isAborted) res.end()
@@ -660,7 +641,7 @@ export default async function handleHTTPRequest(req: HttpRequest, res: HttpRespo
 
 	// Handle Incoming Data
 	if (ctx.executeCode && requestType === 'http' && ctx.url.method !== 'GET') {
-		const parsedHeaders = await parseHeaders(ctx.response.headers, ctg.logger)
+		const meta = await writeHTTPMeta(res, ctx)
 
 		// Create Decompressor
 		const deCompression = handleDecompressType(ctg.options.performance.decompressBodies ? DecompressMapping[ctx.headers.get('content-encoding', 'none')] : 'none')
@@ -673,11 +654,9 @@ export default async function handleHTTPRequest(req: HttpRequest, res: HttpRespo
 		}).once('error', () => {
 			deCompression.destroy()
 			if (!ctx.isAborted) return res.cork(() => {
-				// Write Headers & Status
-				if (!ctx.isAborted) res.writeStatus(parseStatus(Status.BAD_REQUEST))
-				for (const header in parsedHeaders) {
-					if (!ctx.isAborted) res.writeHeader(header, parsedHeaders[header])
-				}
+				ctx.response.status = Status.BAD_REQUEST
+				ctx.response.statusMessage = undefined
+				meta()
 
 				if (!ctx.isAborted) res.end('Invalid Content-Encoding Header or Content')
 			})
@@ -721,12 +700,10 @@ export default async function handleHTTPRequest(req: HttpRequest, res: HttpRespo
 						deCompression.destroy()
 		
 						if (!ctx.isAborted) return res.cork(() => {
-							// Write Headers & Status
-							if (!ctx.isAborted) res.writeStatus(parseStatus(Status.PAYLOAD_TOO_LARGE))
-							for (const header in parsedHeaders) {
-								if (!ctx.isAborted) res.writeHeader(header, parsedHeaders[header])
-							}
-		
+							ctx.response.status = Status.PAYLOAD_TOO_LARGE
+							ctx.response.statusMessage = undefined
+							meta()
+
 							if (!ctx.isAborted) res.end(result.content)
 						})
 						else return
@@ -735,11 +712,9 @@ export default async function handleHTTPRequest(req: HttpRequest, res: HttpRespo
 						deCompression.destroy()
 
 						if (!ctx.isAborted) return res.cork(() => {
-							// Write Headers & Status
-							if (!ctx.isAborted) res.writeStatus(parseStatus(Status.BAD_REQUEST))
-							for (const header in parsedHeaders) {
-								if (!ctx.isAborted) res.writeHeader(header, parsedHeaders[header])
-							}
+							ctx.response.status = Status.BAD_REQUEST
+							ctx.response.statusMessage = undefined
+							meta()
 		
 							if (!ctx.isAborted) res.end('Invalid Content-Length Header')
 						})

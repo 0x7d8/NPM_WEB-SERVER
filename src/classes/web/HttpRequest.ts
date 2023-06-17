@@ -13,7 +13,7 @@ import { getParts } from "@rjweb/uws"
 import { promises as fs, Stats, createReadStream } from "fs"
 import parseContentType from "../../functions/parseContentType"
 import parseStatus from "../../functions/parseStatus"
-import parseHeaders from "../../functions/parseHeaders"
+import writeHTTPMeta from "../../functions/writeHTTPMeta"
 import parseKV from "../../functions/parseKV"
 import getCompressMethod from "../../functions/getCompressMethod"
 import { createHash } from "crypto"
@@ -511,7 +511,7 @@ export default class HTTPRequest<Context extends Record<any, any> = {}, Body = u
 			}
 
 			// Parse Headers
-			const parsedHeaders = await parseHeaders(this.ctx.response.headers, this.ctg.logger)
+			const meta = await writeHTTPMeta(this.rawRes, this.ctx)
 
 			if (!this.ctx.isAborted) this.rawRes.cork(() => {
 				if (!endEarly && (start !== 0 || end !== fileStat.size) && this.ctx.headers.get('if-unmodified-since') !== this.ctx.response.headers['last-modified']) {
@@ -528,11 +528,7 @@ export default class HTTPRequest<Context extends Record<any, any> = {}, Body = u
 					endEarly = true
 				}
 
-				// Write Headers & Status
-				if (!this.ctx.isAborted) this.rawRes.writeStatus(parseStatus(this.ctx.response.status))
-				for (const header in parsedHeaders) {
-					if (!this.ctx.isAborted) this.rawRes.writeHeader(header, parsedHeaders[header])
-				}
+				meta()
 
 				if (endEarly) {
 					if (!this.ctx.isAborted) this.rawRes.end()
@@ -648,14 +644,10 @@ export default class HTTPRequest<Context extends Record<any, any> = {}, Body = u
 		this.headers.set('connection', 'keep-alive')
 
 		this.ctx.setExecuteSelf(() => new Promise(async(resolve) => {
-			const parsedHeaders = await parseHeaders(this.ctx.response.headers, this.ctg.logger)
+			const meta = await writeHTTPMeta(this.rawRes, this.ctx)
 
 			if (!this.ctx.isAborted) this.rawRes.cork(() => {
-				// Write Headers & Status
-				if (!this.ctx.isAborted) this.rawRes.writeStatus(parseStatus(this.ctx.response.status, this.ctx.response.statusMessage))
-				for (const header in parsedHeaders) {
-					if (!this.ctx.isAborted) this.rawRes.writeHeader(header, parsedHeaders[header])
-				}
+				meta()
 
 				const destroyStream = () => {
 					stream.destroy()

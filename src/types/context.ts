@@ -1,7 +1,7 @@
 import ValueCollection from "../classes/valueCollection"
 import Server from "../classes/server"
 import Base from "../classes/web/Base"
-import { MiddlewareInitted } from "./internal"
+import { CookieSettings, MiddlewareInitted } from "./internal"
 import HTTP from "./http"
 import URLObject from "../classes/URLObject"
 import { Options } from "../functions/parseOptions"
@@ -59,7 +59,7 @@ export type LocalContext = {
 	/** The Clients Remote IP Address */ remoteAddress: string
 	/** The Error that occured while executing HTTP Logic */ error: unknown
 	/** The List of Headers that the Client sent */ headers: Base['headers']
-	/** The List of Cookies that the Client sent */ cookies: ValueCollection<string, string>
+	/** The List of Cookies that the Client sent */ cookies: Base['cookies']
 	/** The List of Parameters used by the URL */ params: ValueCollection<string, string>
 	/** The List of Query Parameters used by the URL */ queries: ValueCollection<string, string>
 	/** The List of Fragments used by the URL */ fragments: ValueCollection<string, string>
@@ -82,6 +82,7 @@ export type LocalContext = {
 
 	/** The Response Object */ response: {
 		/** The Headers to Respond with */ headers: Record<string, Content>
+		/** The Cookies to Add to the Set-Cookie Header */ cookies: Record<string, CookieSettings>
 		/** The HTTP Status to Respond with */ status: number
 		/** The HTTP Status Message to concat to the Code */ statusMessage: string | undefined
 		/** Whether the Current Content is Compressed */ isCompressed: boolean
