@@ -49,9 +49,7 @@ export default class WSConnect<Context extends Record<any, any> = {}, Type = 'co
 	*/ public close(code: number, message?: Content): this {
 		this.ctx.continueSend = false
 
-		this.ctx.setExecuteSelf(async() => {
-			this.ctx.events.send('requestAborted')
-
+		setImmediate(async() => {
 			let result: ParseContentReturns
 			try {
 				result = await parseContent(message, false, this.ctg.logger)
@@ -61,7 +59,7 @@ export default class WSConnect<Context extends Record<any, any> = {}, Type = 'co
 			}
 
 			try {
-				this.rawWs.end(code, result.content)
+				this.rawWs.cork(() => this.rawWs.end(code, result.content))
 			} catch { }
 
 			return true
@@ -96,7 +94,7 @@ export default class WSConnect<Context extends Record<any, any> = {}, Type = 'co
 	} = {}): this {
 		const prettify = options?.prettify ?? false
 
-		{(async() => {
+		setImmediate(async() => {
 			let result: ParseContentReturns
 			try {
 				result = await parseContent(message, prettify, this.ctg.logger)
@@ -112,7 +110,7 @@ export default class WSConnect<Context extends Record<any, any> = {}, Type = 'co
 			} catch { }
 
 			return true
-		}) ()}
+		})
 
 		return this
 	}
@@ -140,34 +138,28 @@ export default class WSConnect<Context extends Record<any, any> = {}, Type = 'co
 	} = {}): this {
 		const prettify = options?.prettify ?? false
 
-		this.ctx.setExecuteSelf(() => new Promise((resolve) => {
+		const ref = reference['onChange'](async(value) => {
+			let data: Buffer
+
 			try {
-				const ref = reference['onChange'](async(value) => {
-					let data: Buffer
+				data = (await parseContent(value, prettify, this.ctg.logger)).content
+			} catch (err) {
+				return this.ctx.handleError(err)
+			}
 
-					try {
-						data = (await parseContent(value, prettify, this.ctg.logger)).content
-					} catch (err) {
-						return this.ctx.handleError(err)
-					}
-
-					try {
-						this.rawWs.send(data)
-						this.ctg.webSockets.messages.outgoing.increase()
-						this.ctg.data.outgoing.increase(data.byteLength)
-					} catch {
-						this.ctx.events.send('requestAborted')
-					}
-				})
+			try {
+				this.rawWs.send(data)
+				this.ctg.webSockets.messages.outgoing.increase()
+				this.ctg.data.outgoing.increase(data.byteLength)
+			} catch {
+				this.ctx.events.send('requestAborted')
+			}
+		})
 				
-				this.ctx.refListeners.push({
-					ref: reference,
-					refListener: ref
-				})
-
-				return resolve(true)
-			} catch { }
-		}))
+		this.ctx.refListeners.push({
+			ref: reference,
+			refListener: ref
+		})
 
 		return this
 	}
@@ -229,52 +221,46 @@ export default class WSConnect<Context extends Record<any, any> = {}, Type = 'co
 		const prettify = options?.prettify ?? false
 		const destroyAbort = options?.destroyAbort ?? true
 
-		this.ctx.setExecuteSelf(() => new Promise((resolve) => {
+		const destroyStream = () => {
+			stream.destroy()
+		}
+
+		const dataListener = async(data: Buffer) => {
 			try {
-				const destroyStream = () => {
-					stream.destroy()
-				}
+				data = (await parseContent(data, prettify, this.ctg.logger)).content
+			} catch (err) {
+				return this.ctx.handleError(err)
+			}
 
-				const dataListener = async(data: Buffer) => {
-					try {
-						data = (await parseContent(data, prettify, this.ctg.logger)).content
-					} catch (err) {
-						return this.ctx.handleError(err)
-					}
+			try {
+				this.rawWs.send(data)
+				this.ctg.webSockets.messages.outgoing.increase()
+				this.ctg.data.outgoing.increase(data.byteLength)
+			} catch {
+				this.ctx.events.send('requestAborted')
+			}
+		}, closeListener = () => {
+			if (destroyAbort) this.ctx.events.unlist('requestAborted', destroyStream)
+		}, errorListener = (error: Error) => {
+			this.ctx.handleError(error)
+			stream
+				.removeListener('data', dataListener)
+				.removeListener('close', closeListener)
+				.removeListener('error', errorListener)
+		}
 
-					try {
-						this.rawWs.send(data)
-						this.ctg.webSockets.messages.outgoing.increase()
-						this.ctg.data.outgoing.increase(data.byteLength)
-					} catch {
-						this.ctx.events.send('requestAborted')
-					}
-				}, closeListener = () => {
-					if (destroyAbort) this.ctx.events.unlist('requestAborted', destroyStream)
-				}, errorListener = (error: Error) => {
-					this.ctx.handleError(error)
-					stream
-						.removeListener('data', dataListener)
-						.removeListener('close', closeListener)
-						.removeListener('error', errorListener)
-				}
-
-				if (destroyAbort) this.ctx.events.listen('requestAborted', destroyStream)
+		if (destroyAbort) this.ctx.events.listen('requestAborted', destroyStream)
 	
-				stream
-					.on('data', dataListener)
-					.once('close', closeListener)
-					.once('error', errorListener)
+		stream
+			.on('data', dataListener)
+			.once('close', closeListener)
+			.once('error', errorListener)
 
-				this.ctx.events.listen('requestAborted', () => stream
-					.removeListener('data', dataListener)
-					.removeListener('close', closeListener)
-					.removeListener('error', errorListener)
-				)
-
-				return resolve(true)
-			} catch { }
-		}))
+		this.ctx.events.listen('requestAborted', () => stream
+			.removeListener('data', dataListener)
+			.removeListener('close', closeListener)
+			.removeListener('error', errorListener)
+		)
 
 		return this
 	}

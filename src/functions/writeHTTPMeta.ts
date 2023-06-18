@@ -1,7 +1,7 @@
-import { HttpResponse } from "@rjweb/uws";
+import { HttpResponse } from "@rjweb/uws"
 import { LocalContext } from "../types/context"
 import parseStatus from "./parseStatus"
-import parseContent from "./parseContent";
+import parseContent from "./parseContent"
 
 /**
  * Write Important HTTP Meta like Status, Headers and Cookies

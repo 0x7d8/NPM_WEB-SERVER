@@ -21,7 +21,7 @@ const hashCode = (value: string) => {
 import "@/css/tailwind.css"
 
 const StatNumBox = ({ title, stat }: { title: string; stat: string | number }) => (
-	<div className={'relative mb-3 text-center items-center w-full h-auto flex flex-col justify-center px-2 py-1 bg-gray-800 bg-opacity-70 rounded-lg'}>
+	<div className={'relative mb-3 text-center items-center w-full h-auto flex flex-col justify-center px-2 py-1 bg-gray-800 bg-opacity-80 rounded-lg'}>
 		<p className={'font-semibold text-[#5E5E60]'}>{title}</p>
 		<p className={'text-[#5E5E60] opacity-70'}>{stat}</p>
 	</div>
@@ -30,7 +30,7 @@ const StatNumBox = ({ title, stat }: { title: string; stat: string | number }) =
 const StatBox = ({ title, stat, lineMode, dataSets, labels, format }: { lineMode: boolean; format?: (value: number) => string | number; labels: (number | string)[]; dataSets: ChartDataset<'line'>[]; title: string; stat: string | number }) => (
 	<div className={'flex flex-col w-96 h-64 text-center mx-2 my-4'}>
 		<StatNumBox title={title} stat={stat} />
-		<div className={'relative text-center items-center w-full h-full flex flex-col px-2 py-1 bg-gray-800 bg-opacity-70 rounded-lg'}>
+		<div className={'relative text-center items-center w-full h-full flex flex-col px-2 py-1 bg-gray-800 bg-opacity-80 rounded-lg'}>
 			{lineMode && <Line
 				height={'100%'}
 				data={{
@@ -81,9 +81,9 @@ export default function Index() {
 	const [ cookies, setCookie, deleteCookie ] = useCookies<'rjweb_password', Record<'rjweb_password', string>>()
 	const toast = useToast({
 		duration: 3000,
-		position: 'top-right',
+		position: 'top-left',
 		isClosable: true,
-		variant: 'subtle'
+		variant: 'left-accent'
 	})
 
 	const websocket = useWebSocket<DashboardStats>(`${window.location.protocol === 'https:' ? 'wss' : 'ws'}://${window.location.host}/rjweb-dashboard/ws`, {
@@ -120,17 +120,17 @@ export default function Index() {
 	})
 
 	return (
-		<div className={'flex flex-col flex-wrap top-0 left-0 w-[100vw] h-[100vh] items-center'}>
+		<div className={'flex flex-col flex-wrap top-0 left-0 w-full h-[100vh] items-center'}>
 			{websocket.readyState === ReadyState.CONNECTING || (websocket.readyState === ReadyState.OPEN && !websocket.lastJsonMessage) && (
 				<>
-					<div className={'absolute z-40 bg-gray-900 opacity-50 top-0 left-0 w-[100vw] h-[100vh]'} />
+					<div className={'absolute z-40 bg-gray-900 opacity-50 top-0 left-0 w-full h-[100vh]'} />
 					<Spinner size={'xl'} className={'absolute z-50 top-[50vh] left-[50vw]'} />
 				</>
 			)}
 
 			{websocket.readyState === ReadyState.OPEN && websocket.lastJsonMessage ? (
 				<>
-					<nav className={'flex flex-row p-2 items-center justify-between absolute w-[100vw] top-0 left-0 h-16 bg-gray-900 bg-opacity-30 backdrop-filter backdrop-blur-lg'}>
+					<nav className={'flex flex-row p-2 items-center justify-between absolute w-full top-0 left-0 h-16 bg-gray-900 bg-opacity-30 backdrop-filter backdrop-blur-lg'}>
 						<div className={'flex flex-row justify-start w-auto h-full'}>
 							<Image className={'px-2 hover:opacity-50 hover:cursor-pointer'} src={'https://img.rjansen.de/rjweb/icon.svg'} onClick={() => {
 								setPassword('')

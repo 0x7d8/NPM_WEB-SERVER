@@ -1,3 +1,16 @@
+## 8.3.3
+
+- Use `setImmediate()` to schedule instant tasks for web sockets
+- Change Dashboard Toast Style
+- Scrap custom execution functions for web sockets
+- Change Dashboard Color Scheme
+- Fix Dashboard Scroll Bars on Browsers with Sidebars
+- Clean up some internal code
+
+## 8.3.2
+
+- Update Github Links
+
 ## 8.3.1
 
 - Implement `ctr.cookies.delete` and `ctr.cookies.clear`

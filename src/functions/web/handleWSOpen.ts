@@ -20,7 +20,7 @@ export default function handleWSOpen(ws: WebSocket<WebSocketContext>, ctg: Globa
 		ctx.execute.event = 'wsConnectError'
 	}
 
-  {(async() => {
+  setImmediate(async() => {
     // Create Context Response Object
 		const ctr = new ctg.classContexts.wsConnect(ctg.controller, ctx, ws)
 		ctr["@"] = custom
@@ -29,10 +29,10 @@ export default function handleWSOpen(ws: WebSocket<WebSocketContext>, ctg: Globa
 		if (ctg.middlewares.length > 0 && !ctx.error) {
 			for (let middlewareIndex = 0; middlewareIndex < ctg.middlewares.length; middlewareIndex++) {
 				const middleware = ctg.middlewares[middlewareIndex]
-				if (!('wsConnectEvent' in middleware.data)) continue
+				if (!middleware.data.wsConnectEvent) continue
 
 				try {
-					await Promise.resolve(middleware.data.wsConnectEvent!(middleware.localContext, () => ctx.executeCode = false, ctr, ctx, ctg))
+					await Promise.resolve(middleware.data.wsConnectEvent(middleware.localContext, () => ctx.executeCode = false, ctr, ctx, ctg))
 					if (ctx.error) throw ctx.error
 				} catch (err) {
 					ctx.handleError(err)
@@ -54,9 +54,9 @@ export default function handleWSOpen(ws: WebSocket<WebSocketContext>, ctg: Globa
 			if (!ctx.execute.route) return
 
 			// Execute Normal Route
-			if ('onConnect' in ctx.execute.route && ctx.execute.route.type === 'websocket' && ctx.executeCode) {
+			if (ctx.executeCode && ctx.execute.route.type === 'websocket' && ctx.execute.route.onConnect) {
 				try {
-					await Promise.resolve(ctx.execute.route.onConnect!(ctr as any))
+					await Promise.resolve(ctx.execute.route.onConnect(ctr))
 				} catch (err) {
 					ctx.error = err
 					ctx.execute.event = 'wsConnectError'
@@ -68,16 +68,5 @@ export default function handleWSOpen(ws: WebSocket<WebSocketContext>, ctg: Globa
 
 			return resolve()
 		}); await runPageLogic()
-
-		// Execute Self Sufficient Script
-		try {
-			const result = await Promise.resolve(ctx.executeSelf())
-			ctx.continueSend = result
-
-			if (result) await runPageLogic(true)
-		} catch (err) {
-			ctx.handleError(err)
-			await runPageLogic(true)
-		}
-  }) ()}
+  })
 }

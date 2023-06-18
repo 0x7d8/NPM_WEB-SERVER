@@ -359,7 +359,7 @@ export default class HTTPRequest<Context extends Record<any, any> = {}, Body = u
 	*/ public printHTML(callback: (html: HTMLBuilder) => HTMLBuilder, options: {
 		/**
 		 * The HTML Language to show at the top html tag
-		 * @default 'en'
+		 * @default "en"
 		 * @since 6.6.0
 		*/ htmlLanguage?: string
 	} = {}): this {

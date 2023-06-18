@@ -84,7 +84,7 @@ export type URL = {
 		}
 	}
 
-	returns.path = decodeURIComponent(returns.path)
+	returns.path = decodeURI(returns.path)
 	returns.href = decodeURI(returns.href)
 
 	return returns

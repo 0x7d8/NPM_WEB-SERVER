@@ -26,7 +26,7 @@ export default function handleWSConnect(ws: WebSocket<WebSocketContext>, message
 		ctx.execute.event = 'wsMessageError'
 	}
 
-  {(async() => {
+  setImmediate(async() => {
     // Create Context Response Object
 		const ctr = new ctg.classContexts.wsMessage(ctg.controller, ctx, ws)
 		ctr["@"] = custom
@@ -35,7 +35,7 @@ export default function handleWSConnect(ws: WebSocket<WebSocketContext>, message
 		if (ctg.middlewares.length > 0 && !ctx.error) {
 			for (let middlewareIndex = 0; middlewareIndex < ctg.middlewares.length; middlewareIndex++) {
 				const middleware = ctg.middlewares[middlewareIndex]
-				if (!('wsMessageEvent' in middleware.data)) continue
+				if (!middleware.data.wsMessageEvent) continue
 
 				try {
 					await Promise.resolve(middleware.data.wsMessageEvent!(middleware.localContext, () => ctx.executeCode = false, ctr, ctx, ctg))
@@ -60,9 +60,9 @@ export default function handleWSConnect(ws: WebSocket<WebSocketContext>, message
 			if (!ctx.execute.route) return
 
 			// Execute Normal Route
-			if ('onMessage' in ctx.execute.route && ctx.execute.route.type === 'websocket' && ctx.executeCode) {
+			if (ctx.executeCode && ctx.execute.route.type === 'websocket' && ctx.execute.route.onMessage) {
 				try {
-					await Promise.resolve(ctx.execute.route.onMessage!(ctr as any))
+					await Promise.resolve(ctx.execute.route.onMessage(ctr))
 				} catch (err) {
 					ctx.error = err
 					ctx.execute.event = 'wsMessageError'
@@ -74,16 +74,5 @@ export default function handleWSConnect(ws: WebSocket<WebSocketContext>, message
 
 			return resolve()
 		}); await runPageLogic()
-
-		// Execute Self Sufficient Script
-		try {
-			const result = await Promise.resolve(ctx.executeSelf())
-			ctx.continueSend = result
-
-			if (result) await runPageLogic(true)
-		} catch (err) {
-			ctx.handleError(err)
-			await runPageLogic(true)
-		}; ctx.executeSelf = () => false
-  }) ()}
+  })
 }

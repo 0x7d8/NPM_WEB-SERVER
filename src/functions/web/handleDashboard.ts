@@ -11,23 +11,23 @@ import { Version } from "../../index"
 import fs from "fs/promises"
 import os from "os"
 
-export const dashboardIndexRoute = (ctg: GlobalContext, ctx: LocalContext): HTTP => ({
+export const dashboardIndexRoute = (ctg: GlobalContext): HTTP => ({
   type: 'http',
   method: 'GET',
   path: '/',
   pathArray: ['', ''],
-  onRequest: async(ctr) => await statsRoute(ctr as any, ctg, ctx, 'http'),
+  onRequest: async(ctr) => await statsRoute(ctr, ctg, 'http'),
   data: {
     validations: [],
     headers: {}
   }, context: { data: {}, keep: true }
 })
 
-export const dashboardWsRoute = (ctg: GlobalContext, ctx: LocalContext): WebSocket => ({
+export const dashboardWsRoute = (ctg: GlobalContext): WebSocket => ({
   type: 'websocket',
   path: '/',
   pathArray: ['', ''],
-  onConnect: async(ctr) => await statsRoute(ctr as any, ctg, ctx, 'socket'),
+  onConnect: async(ctr) => await statsRoute(ctr, ctg, 'socket'),
   data: {
     validations: [],
     headers: {}
@@ -136,7 +136,7 @@ export type DashboardStats = Awaited<ReturnType<typeof runStats>>
 
 const coreCount = os.cpus().length
 
-export default async function statsRoute(ctr: RequestContext, ctg: GlobalContext, ctx: LocalContext, type: 'http' | 'socket') {
+export default async function statsRoute(ctr: RequestContext, ctg: GlobalContext, type: 'http' | 'socket') {
   switch (type) {
     case "http": {
       if (ctr.type !== 'http') return
@@ -167,7 +167,7 @@ export default async function statsRoute(ctr: RequestContext, ctg: GlobalContext
         })
 
         interval = setInterval(() => readable.push(runStats(ctg)), ctg.options.dashboard.updateInterval)
-        process.nextTick(() => readable.push(runStats(ctg)))
+        setImmediate(() => readable.push(runStats(ctg)))
 
         return readable
       }) ())

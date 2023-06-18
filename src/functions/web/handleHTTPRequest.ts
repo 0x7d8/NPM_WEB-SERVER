@@ -17,7 +17,6 @@ import { toArrayBuffer } from "../../classes/web/HttpRequest"
 import Static from "../../types/static"
 import { WebSocketContext } from "../../types/webSocket"
 import toETag from "../toETag"
-import parseStatus from "../parseStatus"
 import { isRegExp } from "util/types"
 import parseKV from "../parseKV"
 import writeHTTPMeta from "../writeHTTPMeta"
@@ -196,10 +195,10 @@ export default async function handleHTTPRequest(req: HttpRequest, res: HttpRespo
 		if (ctx.executeCode && ctg.middlewares.length > 0 && !ctx.error) {
 			for (let middlewareIndex = 0; middlewareIndex < ctg.middlewares.length; middlewareIndex++) {
 				const middleware = ctg.middlewares[middlewareIndex]
-				if (!('httpEvent' in middleware.data)) continue
+				if (!middleware.data.httpEvent) continue
 
 				try {
-					await Promise.resolve(middleware.data.httpEvent!(middleware.localContext, () => ctx.executeCode = false, ctr, ctx, ctg))
+					await Promise.resolve(middleware.data.httpEvent(middleware.localContext, () => ctx.executeCode = false, ctr, ctx, ctg))
 					if (ctx.error) throw ctx.error
 				} catch (err) {
 					ctx.handleError(err)
@@ -212,9 +211,9 @@ export default async function handleHTTPRequest(req: HttpRequest, res: HttpRespo
 		await handleEvent('httpRequest', ctr, ctx, ctg)
 
 		// Execute Validations
-		if (ctx.executeCode && ctx.execute.found && ctx.execute.route!.data.validations.length > 0 && !ctx.error) {
+		if (ctx.executeCode && ctx.execute.found && ctx.execute.route.data.validations.length > 0 && !ctx.error) {
 			for (let validateIndex = 0; validateIndex < ctx.execute.route!.data.validations.length; validateIndex++) {
-				const validate = ctx.execute.route!.data.validations[validateIndex]
+				const validate = ctx.execute.route.data.validations[validateIndex]
 
 				try {
 					await Promise.resolve(validate(ctr, () => ctx.executeCode = false))
@@ -228,9 +227,9 @@ export default async function handleHTTPRequest(req: HttpRequest, res: HttpRespo
 		}
 
 		// Handle Websocket onUpgrade
-		if (ctx.executeCode && requestType === 'upgrade' && ctx.execute.found && ctx.execute.route!.type === 'websocket' && 'onUpgrade' in ctx.execute.route!) {
+		if (ctx.executeCode && requestType === 'upgrade' && ctx.execute.found && ctx.execute.route.type === 'websocket' && ctx.execute.route.onUpgrade) {
 			try {
-				await Promise.resolve(ctx.execute.route.onUpgrade!(ctr as any, () => ctx.executeCode = false))
+				await Promise.resolve(ctx.execute.route.onUpgrade(ctr as any, () => ctx.executeCode = false))
 			} catch (err) {
 				ctx.handleError(err)
 			}
@@ -294,7 +293,7 @@ export default async function handleHTTPRequest(req: HttpRequest, res: HttpRespo
 			// Execute HTTP Route
 			if (ctx.execute.route.type === 'http' && ctx.executeCode) {
 				try {
-					await Promise.resolve(ctx.execute.route.onRequest(ctr as any))
+					await Promise.resolve(ctx.execute.route.onRequest(ctr))
 				} catch (err) {
 					ctx.error = err
 					ctx.execute.event = 'httpError'
@@ -533,7 +532,7 @@ export default async function handleHTTPRequest(req: HttpRequest, res: HttpRespo
 
 			// Check Dashboard Path
 			if (ctg.options.dashboard.enabled && ctx.url.path === parsePath(ctg.options.dashboard.path)) {
-				ctx.execute.route = dashboardIndexRoute(ctg, ctx)
+				ctx.execute.route = dashboardIndexRoute(ctg)
 				ctx.execute.found = true
 			}
 
@@ -547,7 +546,7 @@ export default async function handleHTTPRequest(req: HttpRequest, res: HttpRespo
 	} else {
 		// Check Dashboard Path
 		if (ctg.options.dashboard.enabled && ctx.url.path === parsePath([ ctg.options.dashboard.path, '/ws' ])) {
-			ctx.execute.route = dashboardWsRoute(ctg, ctx)
+			ctx.execute.route = dashboardWsRoute(ctg)
 
 			ctx.execute.found = true
 		}
