@@ -6,7 +6,7 @@
     "start": "tsc && cd lib && node index && cd .."
   },
   "dependencies": {
-    "rjweb-server": "^7.0.0"
+    "rjweb-server": "^8.0.0"
   },
   "devDependencies": {
     "@types/node": "^18.15.12",

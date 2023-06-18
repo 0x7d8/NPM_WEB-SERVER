@@ -49,7 +49,7 @@ export default class WSConnect<Context extends Record<any, any> = {}, Type = 'co
 	*/ public close(code: number, message?: Content): this {
 		this.ctx.continueSend = false
 
-		setImmediate(async() => {
+		{(async() => {
 			let result: ParseContentReturns
 			try {
 				result = await parseContent(message, false, this.ctg.logger)
@@ -63,7 +63,7 @@ export default class WSConnect<Context extends Record<any, any> = {}, Type = 'co
 			} catch { }
 
 			return true
-		})
+		}) ()}
 
 		return this
 	}
@@ -94,7 +94,7 @@ export default class WSConnect<Context extends Record<any, any> = {}, Type = 'co
 	} = {}): this {
 		const prettify = options?.prettify ?? false
 
-		setImmediate(async() => {
+		{(async() => {
 			let result: ParseContentReturns
 			try {
 				result = await parseContent(message, prettify, this.ctg.logger)
@@ -110,7 +110,7 @@ export default class WSConnect<Context extends Record<any, any> = {}, Type = 'co
 			} catch { }
 
 			return true
-		})
+		}) ()}
 
 		return this
 	}

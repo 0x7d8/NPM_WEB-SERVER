@@ -20,7 +20,7 @@ export default function handleWSOpen(ws: WebSocket<WebSocketContext>, ctg: Globa
 		ctx.execute.event = 'wsConnectError'
 	}
 
-  setImmediate(async() => {
+  {(async() => {
     // Create Context Response Object
 		const ctr = new ctg.classContexts.wsConnect(ctg.controller, ctx, ws)
 		ctr["@"] = custom
@@ -68,5 +68,5 @@ export default function handleWSOpen(ws: WebSocket<WebSocketContext>, ctg: Globa
 
 			return resolve()
 		}); await runPageLogic()
-  })
+  }) ()}
 }

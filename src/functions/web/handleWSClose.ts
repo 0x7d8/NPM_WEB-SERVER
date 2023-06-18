@@ -29,7 +29,7 @@ export default function handleWSClose(ws: WebSocket<WebSocketContext>, message: 
 		ref['removeOnChange'](refListener)
 	}
 
-  setImmediate(async() => {
+  {(async() => {
 		// Create Context Response Object
 		const ctr = new ctg.classContexts.wsClose(ctg.controller, ctx, ws)
 		ctr["@"] = custom
@@ -77,5 +77,5 @@ export default function handleWSClose(ws: WebSocket<WebSocketContext>, message: 
 
 			return resolve()
 		}); await runPageLogic()
-  })
+  }) ()}
 }

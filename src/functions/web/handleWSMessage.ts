@@ -26,7 +26,7 @@ export default function handleWSConnect(ws: WebSocket<WebSocketContext>, message
 		ctx.execute.event = 'wsMessageError'
 	}
 
-  setImmediate(async() => {
+  {(async() => {
     // Create Context Response Object
 		const ctr = new ctg.classContexts.wsMessage(ctg.controller, ctx, ws)
 		ctr["@"] = custom
@@ -38,7 +38,7 @@ export default function handleWSConnect(ws: WebSocket<WebSocketContext>, message
 				if (!middleware.data.wsMessageEvent) continue
 
 				try {
-					await Promise.resolve(middleware.data.wsMessageEvent!(middleware.localContext, () => ctx.executeCode = false, ctr, ctx, ctg))
+					await Promise.resolve(middleware.data.wsMessageEvent(middleware.localContext, () => ctx.executeCode = false, ctr, ctx, ctg))
 					if (ctx.error) throw ctx.error
 				} catch (err) {
 					ctx.handleError(err)
@@ -74,5 +74,5 @@ export default function handleWSConnect(ws: WebSocket<WebSocketContext>, message
 
 			return resolve()
 		}); await runPageLogic()
-  })
+  }) ()}
 }
