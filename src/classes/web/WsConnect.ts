@@ -151,9 +151,7 @@ export default class WSConnect<Context extends Record<any, any> = {}, Type = 'co
 				this.rawWs.send(data)
 				this.ctg.webSockets.messages.outgoing.increase()
 				this.ctg.data.outgoing.increase(data.byteLength)
-			} catch {
-				this.ctx.events.send('requestAborted')
-			}
+			} catch { }
 		})
 				
 		this.ctx.refListeners.push({
@@ -236,9 +234,7 @@ export default class WSConnect<Context extends Record<any, any> = {}, Type = 'co
 				this.rawWs.send(data)
 				this.ctg.webSockets.messages.outgoing.increase()
 				this.ctg.data.outgoing.increase(data.byteLength)
-			} catch {
-				this.ctx.events.send('requestAborted')
-			}
+			} catch { }
 		}, closeListener = () => {
 			if (destroyAbort) this.ctx.events.unlist('requestAborted', destroyStream)
 		}, errorListener = (error: Error) => {

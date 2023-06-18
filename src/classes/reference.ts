@@ -122,7 +122,8 @@ export type RefListener = { index: Listener }
 	 * Remove a Listener by index
 	 * @since 7.2.0
 	*/ protected removeOnChange(listener: RefListener): this {
-		this.listeners.splice(this.listeners.findIndex((l) => Object.is(l, listener)), 1)
+		const index = this.listeners.findIndex((l) => Object.is(l, listener))
+		if (index !== -1) this.listeners.splice(index, 1)
 
 		return this
 	}

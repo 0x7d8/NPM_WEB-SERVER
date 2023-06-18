@@ -1,3 +1,7 @@
+## 8.3.5
+
+- Add a Check for negative Indexes when removing reference listeners
+
 ## 8.3.4
 
 - Fix Empty web socket messages
