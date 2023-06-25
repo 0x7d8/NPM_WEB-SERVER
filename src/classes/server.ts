@@ -335,17 +335,17 @@ import os from "os"
 						!(route instanceof RouteFile)
 					) throw new Error(`Invalid Route @ ${file}`)
 
-					const routeInfos = await route.getData(loadPath.prefix)
+					const routeInfos = await route.getData(path.posix.normalize(path.posix.normalize(file).replace(path.posix.normalize(loadPath.path), '').replaceAll('\\', '/')).replace(/index|\.(js|ts|cjs|cts|mjs|mts)/g, ''))
 
 					for (const routeInfo of routeInfos.routes) {
-						if (loadPath.fileBasedRouting) routeInfo.path.addSuffix(path.posix.normalize(path.posix.normalize(file).replace(path.posix.normalize(loadPath.path), '').replaceAll('\\', '/')).replace(/index|\.(js|ts|cjs|cts|mjs|mts)/g, ''))
+						if (loadPath.fileBasedRouting) routeInfo.path.addPrefix(loadPath.prefix)
 
 						routeInfo.data.validations.push(...loadPath.validations)
 						routeInfo.data.headers = Object.assign(routeInfo.data.headers, loadPath.headers)
 					}
 
 					for (const routeInfo of routeInfos.webSockets) {
-						if (loadPath.fileBasedRouting) routeInfo.path.addSuffix(path.posix.normalize(path.posix.normalize(file).replace(path.posix.normalize(loadPath.path), '').replaceAll('\\', '/')).replace(/index|\.(js|ts|cjs|cts|mjs|mts)/g, ''))
+						if (loadPath.fileBasedRouting) routeInfo.path.addPrefix(loadPath.prefix)
 
 						routeInfo.data.validations.push(...loadPath.validations)
 					}
@@ -368,17 +368,17 @@ import os from "os"
 						!(route instanceof RouteFile)
 					) throw new Error(`Invalid Route @ ${file}`)
 
-					const routeInfos = await route.getData(loadPath.prefix)
+					const routeInfos = await route.getData(path.posix.normalize(path.posix.normalize(file).replace(path.posix.normalize(loadPath.path), '').replaceAll('\\', '/')).replace(/index|\.(js|ts|cjs|cts|mjs|mts)/g, ''))
 
 					for (const routeInfo of routeInfos.routes) {
-						if (loadPath.fileBasedRouting) routeInfo.path.addSuffix(path.posix.normalize(path.posix.normalize(file).replace(path.posix.normalize(loadPath.path), '').replaceAll('\\', '/')).replace(/index|\.(js|ts|cjs|cts|mjs|mts)/g, ''))
+						if (loadPath.fileBasedRouting) routeInfo.path.addPrefix(loadPath.prefix)
 
 						routeInfo.data.validations.push(...loadPath.validations)
 						routeInfo.data.headers = Object.assign(routeInfo.data.headers, loadPath.headers)
 					}
 
 					for (const routeInfo of routeInfos.webSockets) {
-						if (loadPath.fileBasedRouting) routeInfo.path.addSuffix(path.posix.normalize(path.posix.normalize(file).replace(path.posix.normalize(loadPath.path), '').replaceAll('\\', '/')).replace(/index|\.(js|ts|cjs|cts|mjs|mts)/g, ''))
+						if (loadPath.fileBasedRouting) routeInfo.path.addPrefix(loadPath.prefix)
 
 						routeInfo.data.validations.push(...loadPath.validations)
 					}

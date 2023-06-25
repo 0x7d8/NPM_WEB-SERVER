@@ -113,7 +113,7 @@ export default class RouteFile<GlobContext extends Record<any, any>, Middlewares
 	): this {
 		if (this.routes.some((obj) => isRegExp(obj.path) ? false : obj.path.path === parsePath(path as string))) return this
 
-		const routeHTTP = new RouteHTTP<GlobContext, Context, Body, Middlewares, Path>(isRegExp(path) ? path : parsePath(path) as any, method, this.validations, this.parsedHeaders)
+		const routeHTTP = new RouteHTTP<GlobContext, Context, Body, Middlewares, Path>(path as any, method, this.validations, this.parsedHeaders)
 		this.externals.push({ object: routeHTTP })
 		callback(routeHTTP)
 
@@ -145,7 +145,7 @@ export default class RouteFile<GlobContext extends Record<any, any>, Middlewares
 	): this {
 		if (this.webSockets.some((obj) => isRegExp(obj.path) ? false : obj.path.path === parsePath(path as string))) return this
 
-		const routeWS = new RouteWS<GlobContext, Context, Message, Middlewares, Path>(isRegExp(path) ? path : parsePath(path) as any, this.validations, this.parsedHeaders)
+		const routeWS = new RouteWS<GlobContext, Context, Message, Middlewares, Path>(path as any, this.validations, this.parsedHeaders)
 		this.externals.push({ object: routeWS })
 		callback(routeWS)
 

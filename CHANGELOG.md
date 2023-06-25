@@ -1,3 +1,7 @@
+## 8.4.3
+
+- Respect File Prefixes when loading Routes
+
 ## 8.4.2
 
 - Fix Static Files randomizing
