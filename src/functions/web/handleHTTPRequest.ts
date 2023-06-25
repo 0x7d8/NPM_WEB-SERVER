@@ -465,7 +465,6 @@ export default async function handleHTTPRequest(req: HttpRequest, res: HttpRespo
 
 				// Skip if not related
 				if (url.path.data.type !== 'normal') continue
-				if (url.path.data.segments.length !== actualUrl.length) continue
 				if (!ctx.url.path.startsWith(url.path.data.value)) continue
 
 				// Find File

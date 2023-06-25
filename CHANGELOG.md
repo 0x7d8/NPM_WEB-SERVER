@@ -1,3 +1,7 @@
+## 8.4.2
+
+- Fix Static Files randomizing
+
 ## 8.4.1
 
 - Remove accidentally included debug logs
