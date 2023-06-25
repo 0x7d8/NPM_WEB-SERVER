@@ -1,3 +1,7 @@
+## 8.4.1
+
+- Remove accidentally included debug logs
+
 ## 8.4.0
 
 - Allow putting parameters anywhere (e.g. `/@{username}/{file}-{version}/download`)

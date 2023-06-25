@@ -443,8 +443,6 @@ export default class RoutePath<GlobContext extends Record<any, any>, Middlewares
 		if (!this.hasCalledGet) for (const external of this.externals) {
 			const result = await external.object.getData(external.addPrefix ?? '/')
 
-			console.dir(result, { depth: null })
-
 			if ('routes' in result && result.routes.length > 0) this.routes.push(...result.routes)
 			if ('webSockets' in result && result.webSockets.length > 0) this.webSockets.push(...result.webSockets)
 			if ('statics' in result && result.statics.length > 0) this.statics.push(...result.statics)
