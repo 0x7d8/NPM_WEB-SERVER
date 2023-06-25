@@ -1,3 +1,10 @@
+## 8.4.0
+
+- Allow putting parameters anywhere (e.g. `/@{username}/{file}-{version}/download`)
+- Use `<Array>.find()` instead of a for .. break loop for searching routes
+- Remove Warn Messages relating to old parameters (<...>)
+- Update README
+
 ## 8.3.5
 
 - Add a Check for negative Indexes when removing reference listeners

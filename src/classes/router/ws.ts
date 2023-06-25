@@ -1,5 +1,6 @@
 import { isRegExp } from "util/types"
 import { MiddlewareInitted, RoutedValidation } from "../../types/internal"
+import RPath from "../path"
 import WebSocket from "../../types/webSocket"
 
 export default class RouteWS<GlobContext extends Record<any, any> = {}, Context extends Record<any, any> = {}, Message = unknown, Middlewares extends MiddlewareInitted[] = [], Path extends string = '/'> {
@@ -11,28 +12,14 @@ export default class RouteWS<GlobContext extends Record<any, any> = {}, Context 
 		/** The Validations to add */ validations: RoutedValidation[] = [],
 		/** The Headers to add */ headers: Record<string, Buffer> = {}
 	) {
-		if (isRegExp(path)) {
-			this.data = {
-				type: 'websocket',
+		this.data = {
+			type: 'websocket',
 
-				path,
-				pathStartWith: '/',
-				data: {
-					validations,
-					headers
-				}, context: { data: {}, keep: true }
-			}
-		} else {
-			this.data = {
-				type: 'websocket',
-	
-				path,
-				pathArray: path.split('/'),
-				data: {
-					validations,
-					headers
-				}, context: { data: {}, keep: true }
-			}	
+			path: new RPath('GET', path),
+			data: {
+				validations,
+				headers
+			}, context: { data: {}, keep: true }
 		}
 	}
 
@@ -199,7 +186,7 @@ export default class RouteWS<GlobContext extends Record<any, any> = {}, Context 
 	 * Internal Method for Generating WebSocket Object
 	 * @since 6.0.0
 	*/ public getData(prefix: string) {
-		if (isRegExp(this.data.path) && 'pathStartWith' in this.data) this.data.pathStartWith = prefix
+		this.data.path.addPrefix(prefix)
 
 		return {
 			webSockets: [this.data]

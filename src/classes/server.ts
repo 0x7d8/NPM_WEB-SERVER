@@ -14,7 +14,6 @@ import { MiddlewareInitted } from "../types/internal"
 import RouteFile from "./router/file"
 import { getFilesRecursively } from "rjutils-collection"
 import { HttpRequest, WsClose, WsConnect, WsMessage } from "../types/external"
-import { addPathsToLoadedRouter } from "../functions/routeFileParsing"
 import mergeClasses from "../functions/mergeClasses"
 import generateOpenAPI3 from "../functions/generateOpenAPI3"
 import DataStat from "./dataStat"
@@ -24,7 +23,6 @@ import { promises as fs } from "fs"
 import uWebsocket from "@rjweb/uws"
 import path from "path"
 import os from "os"
-import { isRegExp } from "util/types"
 
 /**
  * A Server Instance containing a built in router and http modules
@@ -245,21 +243,6 @@ import { isRegExp } from "util/types"
 			this.globalContext.routes.normal.push(...externalPaths.routes)
 			this.globalContext.routes.websocket.push(...externalPaths.webSockets)
 
-			for (const routes of [ this.globalContext.routes.normal, this.globalContext.routes.websocket ]) {
-				for (const route of routes) {
-					if (isRegExp(route.path)) for (const part of (route as any).pathStartWith) {
-						if (/^<.*>$/.test(part)) {
-							this.globalContext.logger.warn(`Params dont use <...> syntax anymore, switch to {...}`)
-						}
-					}
-					else for (const part of (route as any).pathArray as string[]) {
-						if (/^<.*>$/.test(part)) {
-							this.globalContext.logger.warn(`Params dont use <...> syntax anymore, switch to {...}`)
-						}
-					}
-				}
-			}
-
 			this.server.listen(this.globalContext.options.bind, this.globalContext.options.port, (listen) => {
 				if (!listen) return reject(new Error(`Failed to start server on port ${this.globalContext.options.port}.`))
 
@@ -352,22 +335,23 @@ import { isRegExp } from "util/types"
 						!(route instanceof RouteFile)
 					) throw new Error(`Invalid Route @ ${file}`)
 
-					const routeInfos = await route.getData(loadPath.fileBasedRouting ? '/' : loadPath.prefix)
+					const routeInfos = await route.getData(loadPath.prefix)
 
-					let realRoutes = Object.assign({}, routeInfos)
-					if (loadPath.fileBasedRouting) realRoutes = await addPathsToLoadedRouter(loadPath, route, path.posix.normalize(path.posix.normalize(file).replace(path.posix.normalize(loadPath.path), '').replaceAll('\\', '/')).replace(/index|\.(js|ts|cjs|cts|mjs|mts)/g, ''), this.globalContext.logger)
+					for (const routeInfo of routeInfos.routes) {
+						if (loadPath.fileBasedRouting) routeInfo.path.addSuffix(path.posix.normalize(path.posix.normalize(file).replace(path.posix.normalize(loadPath.path), '').replaceAll('\\', '/')).replace(/index|\.(js|ts|cjs|cts|mjs|mts)/g, ''))
 
-					for (const routeInfo of realRoutes.routes) {
 						routeInfo.data.validations.push(...loadPath.validations)
 						routeInfo.data.headers = Object.assign(routeInfo.data.headers, loadPath.headers)
 					}
 
-					for (const routeInfo of realRoutes.webSockets) {
+					for (const routeInfo of routeInfos.webSockets) {
+						if (loadPath.fileBasedRouting) routeInfo.path.addSuffix(path.posix.normalize(path.posix.normalize(file).replace(path.posix.normalize(loadPath.path), '').replaceAll('\\', '/')).replace(/index|\.(js|ts|cjs|cts|mjs|mts)/g, ''))
+
 						routeInfo.data.validations.push(...loadPath.validations)
 					}
 
-					loadedRoutes.routes.push(...realRoutes.routes)
-					loadedRoutes.webSockets.push(...realRoutes.webSockets)
+					loadedRoutes.routes.push(...routeInfos.routes)
+					loadedRoutes.webSockets.push(...routeInfos.webSockets)
 				}
 			} else {
 				for (const file of (await getFilesRecursively(loadPath.path, true)).filter((f) => f.endsWith('js'))) {
@@ -384,22 +368,23 @@ import { isRegExp } from "util/types"
 						!(route instanceof RouteFile)
 					) throw new Error(`Invalid Route @ ${file}`)
 
-					const routeInfos = await route.getData(loadPath.fileBasedRouting ? '/' : loadPath.prefix)
+					const routeInfos = await route.getData(loadPath.prefix)
 
-					let realRoutes = Object.assign({}, routeInfos)
-					if (loadPath.fileBasedRouting) realRoutes = await addPathsToLoadedRouter(loadPath, route, path.posix.normalize(path.posix.normalize(file).replace(path.posix.normalize(loadPath.path), '').replaceAll('\\', '/')).replace(/index|\.(js|ts|cjs|cts|mjs|mts)/g, ''), this.globalContext.logger)
+					for (const routeInfo of routeInfos.routes) {
+						if (loadPath.fileBasedRouting) routeInfo.path.addSuffix(path.posix.normalize(path.posix.normalize(file).replace(path.posix.normalize(loadPath.path), '').replaceAll('\\', '/')).replace(/index|\.(js|ts|cjs|cts|mjs|mts)/g, ''))
 
-					for (const routeInfo of realRoutes.routes) {
 						routeInfo.data.validations.push(...loadPath.validations)
 						routeInfo.data.headers = Object.assign(routeInfo.data.headers, loadPath.headers)
 					}
 
-					for (const routeInfo of realRoutes.webSockets) {
+					for (const routeInfo of routeInfos.webSockets) {
+						if (loadPath.fileBasedRouting) routeInfo.path.addSuffix(path.posix.normalize(path.posix.normalize(file).replace(path.posix.normalize(loadPath.path), '').replaceAll('\\', '/')).replace(/index|\.(js|ts|cjs|cts|mjs|mts)/g, ''))
+
 						routeInfo.data.validations.push(...loadPath.validations)
 					}
 
-					loadedRoutes.routes.push(...realRoutes.routes)
-					loadedRoutes.webSockets.push(...realRoutes.webSockets)
+					loadedRoutes.routes.push(...routeInfos.routes)
+					loadedRoutes.webSockets.push(...routeInfos.webSockets)
 				}
 			}
 		}

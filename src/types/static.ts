@@ -1,9 +1,11 @@
 import { RoutedValidation } from "./internal"
+import RPath from "../classes/path"
 
 export default interface Static {
 	/** The Type of this Object */ type: 'static'
 
-	/** The URL as normal String */ path: string
+	/** The Path Class related to the Route */ path: RPath
+
 	/** The Location of the Folder */ location: string
 	/** Additional Route Data */ data: {
 		/** Whether to enable compression for files */ doCompress: boolean

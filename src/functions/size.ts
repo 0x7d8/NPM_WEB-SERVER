@@ -5,7 +5,7 @@ class Size<Amount extends number> {
 
 	/**
 	 * Initialize a new Size Class
-	 * @since 1.5.0
+	 * @since 8.0.0
 	*/ constructor(amount: Amount) {
 		this.amount = amount
 	}

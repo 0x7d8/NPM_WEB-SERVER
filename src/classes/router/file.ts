@@ -1,14 +1,13 @@
 import WebSocket from "../../types/webSocket"
 import HTTP from "../../types/http"
 import { ExternalRouter, HTTPMethods, MiddlewareInitted, RoutedValidation } from "../../types/internal"
-import addPrefixes from "../../functions/addPrefixes"
+import { isRegExp } from "util/types"
 import { Content } from "../../functions/parseContent"
 import parsePath from "../../functions/parsePath"
 
 import RouteWS from "./ws"
 import RouteHTTP from "./http"
 import RouteDefaultHeaders from "./defaultHeaders"
-import { isRegExp } from "util/types"
 
 export default class RouteFile<GlobContext extends Record<any, any>, Middlewares extends MiddlewareInitted[]> {
 	private routes: HTTP[] = []
@@ -112,7 +111,7 @@ export default class RouteFile<GlobContext extends Record<any, any>, Middlewares
 		/** The Path on which this will be available */ path: Path | RegExp,
 		/** The Callback to handle the Endpoint */ callback: (path: RouteHTTP<GlobContext, Context, Body, Middlewares, Path>) => RouteHTTP<GlobContext, Context, Body, Middlewares, Path>
 	): this {
-		if (this.routes.some((obj) => isRegExp(obj.path) ? false : obj.path === parsePath(path as string))) return this
+		if (this.routes.some((obj) => isRegExp(obj.path) ? false : obj.path.path === parsePath(path as string))) return this
 
 		const routeHTTP = new RouteHTTP<GlobContext, Context, Body, Middlewares, Path>(isRegExp(path) ? path : parsePath(path) as any, method, this.validations, this.parsedHeaders)
 		this.externals.push({ object: routeHTTP })
@@ -144,7 +143,7 @@ export default class RouteFile<GlobContext extends Record<any, any>, Middlewares
 		/** The Path on which this will be available */ path: Path | RegExp,
 		/** The Callback to handle the Endpoint */ callback: (path: RouteWS<GlobContext, Context, Message, Middlewares, Path>) => RouteWS<GlobContext, Context, Message, Middlewares, Path>
 	): this {
-		if (this.webSockets.some((obj) => isRegExp(obj.path) ? false : obj.path === parsePath(path as string))) return this
+		if (this.webSockets.some((obj) => isRegExp(obj.path) ? false : obj.path.path === parsePath(path as string))) return this
 
 		const routeWS = new RouteWS<GlobContext, Context, Message, Middlewares, Path>(isRegExp(path) ? path : parsePath(path) as any, this.validations, this.parsedHeaders)
 		this.externals.push({ object: routeWS })
@@ -161,8 +160,8 @@ export default class RouteFile<GlobContext extends Record<any, any>, Middlewares
 		if (!this.hasCalledGet) for (const external of this.externals) {
 			const result = await external.object.getData(external.addPrefix ?? '/')
 
-			if ('routes' in result && result.routes.length > 0) this.routes.push(...addPrefixes(result.routes, 'path', 'pathArray' as any, prefix))
-			if ('webSockets' in result && result.webSockets.length > 0) this.webSockets.push(...addPrefixes(result.webSockets, 'path', 'pathArray' as any, prefix))
+			if ('routes' in result && result.routes.length > 0) this.routes.push(...result.routes.map((r) => { r.path.addPrefix(prefix); return r }))
+			if ('webSockets' in result && result.webSockets.length > 0) this.webSockets.push(...result.webSockets.map((r) => { r.path.addPrefix(prefix); return r }))
 			if ('defaultHeaders' in result) this.parsedHeaders = Object.assign(this.parsedHeaders, result.defaultHeaders)
 		}
 

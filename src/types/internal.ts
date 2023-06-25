@@ -17,11 +17,12 @@ export type AnyClass = new (...args: any[]) => any
 export type UnionToIntersection<U> =
   (U extends any ? (k: U) => void : never) extends ((k: infer I) => void) ? I : never
 
-type ExtractParametersRecord<Path extends string> = Path extends `${infer Segment}/${infer Rest}`
-  ? Segment extends `{${infer Param}}` ? Record<Param, string> & ExtractParametersRecord<Rest> : ExtractParametersRecord<Rest>
-  : Path extends `{${infer Param}}` ? Record<Param, string> : {}
-
-export type ExtractParameters<Path extends string> = keyof ExtractParametersRecord<Path> extends never ? string : keyof ExtractParametersRecord<Path>
+type ExtractParametersArray<S extends string> = 
+  S extends `${string}{${infer W}}${infer RE}`
+    ? [W, ...ExtractParametersArray<RE>]
+    : []
+	
+export type ExtractParameters<S extends string> = ExtractParametersArray<S>[number] extends never ? string : ExtractParametersArray<S>[number]
 
 export type MergeObjects<T extends object[]> = {
   [K in keyof UnionToIntersection<T[number]>]:

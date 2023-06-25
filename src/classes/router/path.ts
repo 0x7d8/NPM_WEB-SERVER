@@ -2,6 +2,7 @@ import { ExternalRouter, LoadPath, HTTPMethods, RoutedValidation, MiddlewareInit
 import Static from "../../types/static"
 import HTTP from "../../types/http"
 import WebSocket from "../../types/webSocket"
+import RPath from "../path"
 import { isRegExp } from "util/types"
 import parsePath from "../../functions/parsePath"
 import { Content } from "../.."
@@ -167,9 +168,9 @@ export default class RoutePath<GlobContext extends Record<any, any>, Middlewares
 		/** The Path on which this will be available */ path: LPath | RegExp,
 		/** The Callback to handle the Endpoint */ callback: (path: RouteHTTP<GlobContext, Context, Body, Middlewares, `${Path}/${LPath}`>) => RouteHTTP<GlobContext, Context, Body, Middlewares, `${Path}/${LPath}`>
 	): this {
-		if (this.routes.some((obj) => isRegExp(obj.path) ? false : obj.path === parsePath(path as string))) return this
+		if (this.routes.some((obj) => isRegExp(obj.path) ? false : obj.path.path === parsePath(path as string))) return this
 	
-		const routeHTTP = new RouteHTTP<GlobContext, Context, Body, Middlewares, `${Path}/${LPath}`>(isRegExp(path) ? path : parsePath([ this.httpPath, path ]) as any, method, this.validations, this.parsedHeaders)
+		const routeHTTP = new RouteHTTP<GlobContext, Context, Body, Middlewares, `${Path}/${LPath}`>(path as any, method, this.validations, this.parsedHeaders)
 		this.externals.push({ object: routeHTTP, addPrefix: this.httpPath })
 		callback(routeHTTP)
 	
@@ -199,9 +200,9 @@ export default class RoutePath<GlobContext extends Record<any, any>, Middlewares
 		/** The Path on which this will be available */ path: LPath | RegExp,
 		/** The Callback to handle the Endpoint */ callback: (path: RouteWS<GlobContext, Context, Message, Middlewares, `${Path}/${LPath}`>) => RouteWS<GlobContext, Context, Message, Middlewares, `${Path}/${LPath}`>
 	): this {
-		if (this.webSockets.some((obj) => isRegExp(obj.path) ? false : obj.path === parsePath(path as string))) return this
+		if (this.webSockets.some((obj) => isRegExp(obj.path) ? false : obj.path.path === parsePath(path as string))) return this
 
-		const routeWS = new RouteWS<GlobContext, Context, Message, Middlewares, `${Path}/${LPath}`>(isRegExp(path) ? path : parsePath([ this.httpPath, path ]) as any, this.validations, this.parsedHeaders)
+		const routeWS = new RouteWS<GlobContext, Context, Message, Middlewares, `${Path}/${LPath}`>(path as any, this.validations, this.parsedHeaders)
 		this.externals.push({ object: routeWS, addPrefix: this.httpPath })
 		callback(routeWS)
 
@@ -252,8 +253,7 @@ export default class RoutePath<GlobContext extends Record<any, any>, Middlewares
 		this.routes.push({
 			type: 'http',
 			method: 'GET',
-			path: parsePath([ this.httpPath, request ]),
-			pathArray: parsePath([ this.httpPath, request ]).split('/'),
+			path: new RPath('GET', parsePath([ this.httpPath, request ])),
 			onRequest: (ctr) => ctr.redirect(redirect),
 			data: {
 				validations: this.validations,
@@ -306,7 +306,7 @@ export default class RoutePath<GlobContext extends Record<any, any>, Middlewares
 
 		this.statics.push({
 			type: 'static',
-			path: parsePath(this.httpPath),
+			path: new RPath('GET', parsePath(this.httpPath)),
 			location: folder,
 			data: {
 				doCompress: compress,
@@ -439,12 +439,11 @@ export default class RoutePath<GlobContext extends Record<any, any>, Middlewares
 	/**
 	 * Internal Method for Generating Routes Object
 	 * @since 6.0.0
-	*/ public async getData(prefix: string) {
+	*/ public async getData() {
 		if (!this.hasCalledGet) for (const external of this.externals) {
 			const result = await external.object.getData(external.addPrefix ?? '/')
 
-			this.routes = this.routes.map((r) => 'pathStartWith' in r ? { ...r, pathStartWith: prefix } : r)
-			this.webSockets = this.webSockets.map((r) => 'pathStartWith' in r ? { ...r, pathStartWith: prefix } : r)
+			console.dir(result, { depth: null })
 
 			if ('routes' in result && result.routes.length > 0) this.routes.push(...result.routes)
 			if ('webSockets' in result && result.webSockets.length > 0) this.webSockets.push(...result.webSockets)

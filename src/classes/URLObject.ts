@@ -2,7 +2,7 @@ import { HTTPMethods } from ".."
 import parseURL from "../functions/parseURL"
 
 /**
- * A Utility to make output of `url.parse()` safer
+ * A Utility to wrap a parsed URL
  * @example
  * ```
  * const url = new URLObject(...)

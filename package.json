@@ -1,6 +1,6 @@
 {
   "name": "rjweb-server",
-  "version": "8.3.5",
+  "version": "8.4.0",
   "description": "Easy and Robust Way to create a Web Server with Many Easy-to-use Features in NodeJS",
   "main": "./lib/cjs/index.js",
   "module": "./lib/esm/index.js",
@@ -59,7 +59,7 @@
   "dependencies": {
     "@rjweb/uws": "1.5.0",
     "inquirer": "^9.2.5",
-    "rjutils-collection": "^1.5.0",
+    "rjutils-collection": "^1.7.0",
     "ts-arithmetic": "^0.1.1",
     "yargs": "^17.7.2"
   }

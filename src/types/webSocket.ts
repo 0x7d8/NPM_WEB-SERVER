@@ -1,4 +1,5 @@
 import HTTPRequest from "../classes/web/HttpRequest"
+import RPath from "../classes/path"
 import { MergeObjects, MiddlewareInitted, RealAny, RoutedValidation } from "./internal"
 import { LocalContext } from "./context"
 
@@ -6,8 +7,10 @@ import WSConnect from "../classes/web/WsConnect"
 import WSMessage from "../classes/web/WsMessage"
 import WSClose from "../classes/web/WsClose"
 
-interface RouteGeneral<Context extends Record<any, any> = {}, Message = unknown, Middlewares extends MiddlewareInitted[] = [], Path extends string = '/'> {
+type Route<Context extends Record<any, any> = {}, Message = unknown, Middlewares extends MiddlewareInitted[] = [], Path extends string = '/'> = {
 	/** The Type of this Object */ type: 'websocket'
+
+	/** The Path Class related to the Route */ path: RPath
 
 	/** The Async Code to run when the Socket gets an Upgrade HTTP Request */ onUpgrade?(ctr: MergeObjects<[ HTTPRequest<Context, '', Path>, InstanceType<Middlewares[number]['data']['classModifications']['http']> ]>, end: (...args: any[]) => void): Promise<any> |any
 	/** The Async Code to run when the Socket Connects */ onConnect?(ctr: MergeObjects<[ WSConnect<Context, 'connect', Path>, InstanceType<Middlewares[number]['data']['classModifications']['wsConnect']> ]>): RealAny
@@ -25,17 +28,6 @@ interface RouteGeneral<Context extends Record<any, any> = {}, Message = unknown,
 	}
 }
 
-interface RouteString<Context extends Record<any, any> = {}, Message = unknown, Middlewares extends MiddlewareInitted[] = [], Path extends string = '/'> extends RouteGeneral<Context, Message, Middlewares, Path> {
-	/** The URL as normal String */ path: string
-	/** An Array of Path Sections split by slashes */ pathArray: string[]
-}
-
-interface RouteRegExp<Context extends Record<any, any> = {}, Message = unknown, Middlewares extends MiddlewareInitted[] = [], Path extends string = '/'> extends RouteGeneral<Context, Message, Middlewares, Path> {
-	/** The URL as Regular Expression */ path: RegExp
-	/** The Path that the URL has to start with */ pathStartWith: string
-}
-
-type Route<Context extends Record<any, any> = {}, Message = unknown, Middlewares extends MiddlewareInitted[] = [], Path extends string = '/'> = RouteString<Context, Message, Middlewares, Path> | RouteRegExp<Context, Message, Middlewares, Path>
 export default Route
 
 

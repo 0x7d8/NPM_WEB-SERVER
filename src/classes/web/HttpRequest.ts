@@ -12,11 +12,11 @@ import { resolve as pathResolve } from "path"
 import { getParts } from "@rjweb/uws"
 import { promises as fs, Stats, createReadStream } from "fs"
 import parseContentType from "../../functions/parseContentType"
-import parseStatus from "../../functions/parseStatus"
 import writeHTTPMeta from "../../functions/writeHTTPMeta"
 import parseKV from "../../functions/parseKV"
 import getCompressMethod from "../../functions/getCompressMethod"
 import { createHash } from "crypto"
+import Path from "../path"
 
 export const toArrayBuffer = (buffer: Buffer): ArrayBuffer => {
   return buffer.buffer.slice(buffer.byteOffset, buffer.byteOffset + buffer.byteLength)
@@ -372,12 +372,11 @@ export default class HTTPRequest<Context extends Record<any, any> = {}, Body = u
 		this.ctx.response.content = [ `<!DOCTYPE html><html ${parseAttributes({ lang: htmlLanguage }, [])}>${builder['html']}</html>` ]
 
 		const path = this.ctx.url.path
-		if (!this.ctg.routes.htmlBuilder.some((h) => h.path === path)) {
+		if (!this.ctg.routes.htmlBuilder.some((h) => h.path.path === path)) {
 			for (const getEvery of builder['getEveries']) {
 				const route: Route = {
 					method: 'GET',
-					path: `/___rjweb-html-auto/${getEvery.id}`,
-					pathArray: `/___rjweb-html-auto/${getEvery.id}`.split('/'),
+					path: new Path('GET', `/___rjweb-html-auto/${getEvery.id}`),
 					async onRequest(ctr) {
 						const res = await Promise.resolve(getEvery.getter(ctr as any))
 

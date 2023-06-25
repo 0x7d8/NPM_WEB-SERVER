@@ -1,9 +1,10 @@
-import { GlobalContext, LocalContext } from "../../types/context"
+import { GlobalContext } from "../../types/context"
 import parseURL from "../parseURL"
 import { getFilesRecursively } from "rjutils-collection"
 import { getPreviousHours } from "../../classes/dataStat"
 import { RequestContext } from "../../types/external"
 import WebSocket from "../../types/webSocket"
+import Path from "../../classes/path"
 import HTTP from "../../types/http"
 import { Readable } from "stream"
 import { Version } from "../../index"
@@ -14,8 +15,7 @@ import os from "os"
 export const dashboardIndexRoute = (ctg: GlobalContext): HTTP => ({
   type: 'http',
   method: 'GET',
-  path: '/',
-  pathArray: ['', ''],
+  path: new Path('GET', '/'),
   onRequest: async(ctr) => await statsRoute(ctr, ctg, 'http'),
   data: {
     validations: [],
@@ -25,8 +25,7 @@ export const dashboardIndexRoute = (ctg: GlobalContext): HTTP => ({
 
 export const dashboardWsRoute = (ctg: GlobalContext): WebSocket => ({
   type: 'websocket',
-  path: '/',
-  pathArray: ['', ''],
+  path: new Path('GET', '/'),
   onConnect: async(ctr) => await statsRoute(ctr, ctg, 'socket'),
   data: {
     validations: [],

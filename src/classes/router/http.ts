@@ -1,6 +1,7 @@
 import { isRegExp } from "util/types"
 import { HTTPMethods, MiddlewareInitted, RoutedValidation } from "../../types/internal"
 import HTTP from "../../types/http"
+import RPath from "../path"
 
 export default class RouteHTTP<GlobContext extends Record<any, any> = {}, Context extends Record<any, any> = {}, Body = unknown, Middlewares extends MiddlewareInitted[] = [], Path extends string = '/'> {
 	private data: HTTP
@@ -12,32 +13,16 @@ export default class RouteHTTP<GlobContext extends Record<any, any> = {}, Contex
 		/** The Validations to add */ validations: RoutedValidation[] = [],
 		/** The Headers to add */ headers: Record<string, Buffer> = {}
 	) {
-		if (isRegExp(path)) {
-			this.data = {
-				type: 'http',
-				method,
+		this.data = {
+			type: 'http',
+			method,
 	
-				path,
-				pathStartWith: '/',
-				onRequest: () => null,
-				data: {
-					validations,
-					headers
-				}, context: { data: {}, keep: true }
-			}
-		} else {
-			this.data = {
-				type: 'http',
-				method,
-	
-				path,
-				pathArray: path.split('/'),
-				onRequest: () => null,
-				data: {
-					validations,
-					headers
-				}, context: { data: {}, keep: true }
-			}
+			path: new RPath(method, path),
+			onRequest: () => null,
+			data: {
+				validations,
+				headers
+			}, context: { data: {}, keep: true }
 		}
 	}
 
@@ -158,7 +143,7 @@ export default class RouteHTTP<GlobContext extends Record<any, any> = {}, Contex
 	 * Internal Method for Generating Route Object
 	 * @since 6.0.0
 	*/ public getData(prefix: string) {
-		if (isRegExp(this.data.path) && 'pathStartWith' in this.data) this.data.pathStartWith = prefix
+		this.data.path.addPrefix(prefix)
 
 		return {
 			routes: [this.data]

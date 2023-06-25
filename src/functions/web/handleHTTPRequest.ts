@@ -431,75 +431,20 @@ export default async function handleHTTPRequest(req: HttpRequest, res: HttpRespo
 		}
 
 		// Check Defined Paths
-		if (!ctx.execute.found) for (let urlNumber = 0; urlNumber < ctg.routes.normal.length; urlNumber++) {
-			if (ctx.execute.found) break
-
-			const url = ctg.routes.normal[urlNumber]
-
-			// Check Regex Paths
-			if (isRegExp(url.path) && 'pathStartWith' in url && ctx.url.path.startsWith(url.pathStartWith) && url.path.test(ctx.url.path)) {
+		if (!ctx.execute.found) {
+			const route = ctg.routes.normal.find((r) => r.path.matches(ctx.url.method, ctx.params, ctx.url.path, actualUrl))
+			if (route) {
 				ctx.execute = {
 					found: true,
-					route: url,
-					file: null,
-					event: ctx.execute.event
+					event: ctx.execute.event,
+					route,
+					file: null
 				}
 
-				// Set Cache
-				ctg.cache.routes.set(`route::normal::${ctx.url.path}::${ctx.url.method}`, { route: url, params: ctx.params })
-
-				break
+				ctg.cache.routes.set(`route::normal::${ctx.url.path}::${ctx.url.method}`, {
+					route, params: ctx.params
+				})
 			}
-
-			// Skip if not related
-			if (!('pathArray' in url)) continue
-			if (url.method !== ctx.url.method) continue
-			if (url.pathArray.length !== actualUrl.length) continue
-
-			// Check for Static Paths
-			if (url.path === ctx.url.path && url.method === ctx.url.method) {
-				ctx.execute = {
-					found: true,
-					route: url,
-					file: null,
-					event: ctx.execute.event
-				}
-
-				// Set Cache
-				ctg.cache.routes.set(`route::normal::${ctx.url.path}::${ctx.url.method}`, { route: url, params: ctx.params })
-
-				break
-			}
-
-			// Check Parameters
-			for (let partNumber = 0; partNumber < url.pathArray.length; partNumber++) {
-				const urlParam = url.pathArray[partNumber]
-				const reqParam = actualUrl[partNumber]
-
-				if (!/^{.*}$/.test(urlParam) && reqParam !== urlParam) {
-					ctx.execute.found = false
-
-					break
-				} else if (urlParam === reqParam) continue
-				else if (/^{.*}$/.test(urlParam)) {
-					ctx.params.set(urlParam.substring(1, urlParam.length - 1), reqParam)
-					ctx.execute = {
-						found: true,
-						route: url,
-						file: null,
-						event: ctx.execute.event
-					}
-
-					continue
-				}; continue
-			}; if (ctx.execute.found) {
-				// Set Cache
-				ctg.cache.routes.set(`route::normal::${ctx.url.path}::${ctx.url.method}`, { route: url, params: ctx.params })
-
-				break
-			}
-
-			continue
 		}
 
 		if (ctx.url.method === 'GET') {
@@ -519,10 +464,12 @@ export default async function handleHTTPRequest(req: HttpRequest, res: HttpRespo
 				const url = ctg.routes.static[staticNumber]
 
 				// Skip if not related
-				if (!ctx.url.path.startsWith(url.path)) continue
+				if (url.path.data.type !== 'normal') continue
+				if (url.path.data.segments.length !== actualUrl.length) continue
+				if (!ctx.url.path.startsWith(url.path.data.value)) continue
 
 				// Find File
-				const urlPath = parsePath(ctx.url.path.replace(url.path, '')).substring(1)
+				const urlPath = parsePath(ctx.url.path.replace(url.path.path, '')).substring(1)
 				if (url.data.hideHTML) {
 					if (await fileExists(url.location + '/' + urlPath + '/index.html')) foundStatic(pathResolve(url.location + '/' + urlPath + '/index.html'), url)
 					else if (await fileExists(url.location + '/' + urlPath + '.html')) foundStatic(pathResolve(url.location + '/' + urlPath + '.html'), url)
@@ -537,7 +484,7 @@ export default async function handleHTTPRequest(req: HttpRequest, res: HttpRespo
 			}
 
 			// Check HTMLBuilder Paths
-			const htmlBuilderRoute = ctg.routes.htmlBuilder.find((h) => h.path === ctx.url.path)
+			const htmlBuilderRoute = ctg.routes.htmlBuilder.find((h) => h.path.path === ctx.url.path)
 			if (htmlBuilderRoute) {
 				ctx.execute.route = htmlBuilderRoute
 				ctx.execute.found = true
@@ -560,74 +507,21 @@ export default async function handleHTTPRequest(req: HttpRequest, res: HttpRespo
 			ctx.execute.found = true
 		}
 
-		// Check Websocket Paths
-		if (!ctx.execute.found) for (let urlNumber = 0; urlNumber < ctg.routes.websocket.length; urlNumber++) {
-			if (ctx.execute.found) break
-
-			const url = ctg.routes.websocket[urlNumber]
-
-			// Check Regex Paths
-			if (isRegExp(url.path) && 'pathStartWith' in url && ctx.url.path.startsWith(url.pathStartWith) && url.path.test(ctx.url.path)) {
+		// Check Defined Paths
+		if (!ctx.execute.found) {
+			const route = ctg.routes.websocket.find((r) => r.path.matches(ctx.url.method, ctx.params, ctx.url.path, actualUrl))
+			if (route) {
 				ctx.execute = {
 					found: true,
-					route: url,
-					file: null,
-					event: ctx.execute.event
+					event: ctx.execute.event,
+					route,
+					file: null
 				}
 
-				// Set Cache
-				ctg.cache.routes.set(`route::ws::${ctx.url.path}`, { route: url, params: ctx.params })
-
-				break
+				ctg.cache.routes.set(`route::ws::${ctx.url.path}`, {
+					route, params: ctx.params
+				})
 			}
-
-			// Skip if not related
-			if (!('pathArray' in url)) continue
-			if (url.pathArray.length !== actualUrl.length) continue
-
-			// Check for Static Paths
-			if (url.path === ctx.url.path) {
-				ctx.execute = {
-					found: true,
-					route: url,
-					file: null,
-					event: ctx.execute.event
-				}
-
-				// Set Cache
-				ctg.cache.routes.set(`route::ws::${ctx.url.path}`, { route: url, params: ctx.params })
-
-				break
-			}
-
-			// Check Parameters
-			for (let partNumber = 0; partNumber < url.pathArray.length; partNumber++) {
-				const urlParam = url.pathArray[partNumber]
-				const reqParam = actualUrl[partNumber]
-
-				if (!/^{.*}$/.test(urlParam) && reqParam !== urlParam) {
-					ctx.execute.found = false
-					break
-				} else if (urlParam === reqParam) continue
-				else if (/^{.*}$/.test(urlParam)) {
-					ctx.params.set(urlParam.substring(1, urlParam.length - 1), reqParam)
-					ctx.execute = {
-						found: true,
-						route: url,
-						file: null,
-						event: ctx.execute.event
-					}
-
-					continue
-				}; continue
-			}; if (ctx.execute.found) {
-				// Set Cache
-				ctg.cache.routes.set(`route::ws::${ctx.url.path}`, { route: url, params: ctx.params })
-
-				break
-			}
-
-			continue
 		}
 	}
 

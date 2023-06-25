@@ -109,7 +109,7 @@ export default class RouteIndex<GlobContext extends Record<any, any>, Middleware
 		let contentTypes = {}, defaultHeaders = {}
 
 		for (const external of this.externals) {
-			const result = await external.object.getData(external.addPrefix || '/')
+			const result = await external.object.getData(external.addPrefix ?? '/')
 
 			if ('routes' in result) routes.push(...result.routes)
 			if ('webSockets' in result) webSockets.push(...result.webSockets)

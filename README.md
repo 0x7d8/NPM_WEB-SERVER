@@ -43,7 +43,7 @@ pnpm add rjweb-server
 - 4.X | Deprecated
 - 5.X | Deprecated
 - 6.X | Deprecated
-- 7.X | Patches
+- 7.X | Security Patches
 - 8.X | Patches & Features
 
 ## Typescript
@@ -62,14 +62,14 @@ const server = new Server({
 })
 
 server.path('/', (path) => path
-  .http<Custom>('GET', '/hello', (http) => http
+  .http<Custom, _, _>('GET', '/hello', (http) => http
     .onRequest(async(ctr) => {
       if (!ctr.queries.has("name")) return ctr.print('please supply the name queries!!')
 
       return ctr.print(`Hello, ${ctr.queries.get("name")}! You are Visit nr.${ctr['@'].count}`)
     })
   )
-  .http<Custom, { name: string }>('POST', '/hello', (http) => http
+  .http<Custom, { name: string }, _>('POST', '/hello', (http) => http
     .onRequest(async(ctr) => {
       if (!('name' in ctr.body)) return ctr.print('please supply the name property!!')
 
@@ -79,12 +79,12 @@ server.path('/', (path) => path
 )
 
 let count = 0
-server.on('httpRequest', async(ctr: Ctr) => {
+server.on('httpRequest', async(ctr: HTTPRequestContext<Custom>) => {
   ctr.setCustom('count', ++count) 
 
-  console.log(`request made to ${decodeURI(ctr.url.pathname)} by ${ctr.client.ip}`)
-}).on('httpError', async(ctr: Ctr, error) => {
-  console.log(`error on path ${decodeURI(ctr.url.pathname)}!!!`)
+  console.log(`request made to ${ctr.url.path} by ${ctr.client.ip}`)
+}).on('httpError', async(ctr: HTTPRequestContext<Custom>, error) => {
+  console.log(`error on path ${ctr.url.path}!!!`)
   console.error(error)
 
   ctr.status(Status.INTERNAL_SERVER_ERROR)
@@ -129,7 +129,7 @@ server.path('/', (path) => path // The / is the Path Prefix for all children pat
       return ctr.print(`Hello, ${ctr.body}! How are you doing?`)
     })
   )
-  .http('GET', '/profile/<user>', (http) => http
+  .http('GET', '/@{user}', (http) => http
     .onRequest(async(ctr) => {
       return ctr.printFile(`../images/profile/${ctr.params.get('user')}.png`, { addTypes: true })
     })
@@ -143,7 +143,7 @@ server.path('/', (path) => path // The / is the Path Prefix for all children pat
       return ctr.print('server reloaded')
     })
   )
-  .http('GET', '/redirect/<website>', (http) => http
+  .http('GET', '/redirect/{website}', (http) => http
     .onRequest(async(ctr) => {
       switch (ctr.params.get('website')) {
         case "google":
@@ -460,7 +460,7 @@ const server = new Server({
 })
 
 server.on('httpRequest', async(ctr, end) => {
-  return console.log(`request made to ${decodeURI(ctr.url.href)} by ${ctr.client.ip}`)
+  return console.log(`request made to ${ctr.url.href} by ${ctr.client.ip}`)
   // you can also end the request here like in validations
 })
 
@@ -505,7 +505,7 @@ Making a route File
 const { server } = require('../index.js')
 
 module.exports = new server.routeFile((file) => file
-  .http('GET', '/say/<word>', (http) => http
+  .http('GET', '/say/{word}', (http) => http
     .onRequest((ctr) => {
       const word = ctr.params.get('word')
 
