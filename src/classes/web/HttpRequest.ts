@@ -648,6 +648,8 @@ export default class HTTPRequest<Context extends Record<any, any> = {}, Body = u
 
 		this.headers.set('connection', 'keep-alive')
 
+		stream.setMaxListeners(Infinity)
+
 		this.ctx.setExecuteSelf(() => new Promise(async(resolve) => {
 			const meta = await writeHTTPMeta(this.rawRes, this.ctx)
 
@@ -659,24 +661,23 @@ export default class HTTPRequest<Context extends Record<any, any> = {}, Body = u
 				}
 
 				const dataListener = async(data: Buffer) => {
-					if (!await Promise.resolve(validate(data))) return
-
-					try {
+					if (await Promise.resolve(validate(data))) {
 						try {
-							data = (await parseContent(data, prettify, this.ctg.logger)).content
-						} catch (err) {
-							return this.ctx.handleError(err)
-						}
+							try {
+								data = (await parseContent(data, prettify, this.ctg.logger)).content
+							} catch (err) {
+								return this.ctx.handleError(err)
+							}
 
-						if (!this.ctx.isAborted) this.rawRes.cork(() => this.rawRes.write(data))
+							if (!this.ctx.isAborted) this.rawRes.cork(() => this.rawRes.write(data))
 
-						this.ctg.logger.debug('sent http body chunk with bytelen', data.byteLength)
-						this.ctg.data.outgoing.increase(data.byteLength)
-					} catch { }
+							this.ctg.logger.debug('sent http body chunk with bytelen', data.byteLength)
+							this.ctg.data.outgoing.increase(data.byteLength)
+						} catch { }
+					}
 				}, closeListener = () => {
 					if (destroyAbort) this.ctx.events.unlist('requestAborted', destroyStream)
 					if (endRequest) {
-						resolve(false)
 						if (!this.ctx.isAborted) this.rawRes.cork(() => this.rawRes.end())
 					}
 				}, errorListener = (error: Error) => {
@@ -685,8 +686,6 @@ export default class HTTPRequest<Context extends Record<any, any> = {}, Body = u
 						.removeListener('data', dataListener)
 						.removeListener('close', closeListener)
 						.removeListener('error', errorListener)
-
-					return resolve(false)
 				}
 
 				if (destroyAbort) this.ctx.events.listen('requestAborted', destroyStream)
@@ -702,6 +701,8 @@ export default class HTTPRequest<Context extends Record<any, any> = {}, Body = u
 					.removeListener('error', errorListener)
 				)
 			})
+
+			resolve(false)
 		}))
 
 		return this

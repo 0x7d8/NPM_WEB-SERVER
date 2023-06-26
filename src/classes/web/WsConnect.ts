@@ -233,6 +233,8 @@ export default class WSConnect<Context extends Record<any, any> = {}, Type = 'co
 		const destroyAbort = options?.destroyAbort ?? true
 		const validate = options?.validate?? (() => true)
 
+		stream.setMaxListeners(Infinity)
+
 		const destroyStream = () => {
 			stream.destroy()
 		}

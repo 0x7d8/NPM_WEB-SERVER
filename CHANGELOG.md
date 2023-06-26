@@ -1,3 +1,7 @@
+## 8.4.5
+
+- Correctly Match Routes ending with a param
+
 ## 8.4.4
 
 - Allow validating `.printStream()` and `.printRef()` messages

@@ -199,7 +199,7 @@ type Data = {
 
 			const params = reqSegment.match(segment.paramsRegExp)
 			if (params) {
-				if (i === requestPathSplit.length) found = true
+				if (i === requestPathSplit.length - 1) found = true
 
 				for (let i = 0; i < segment.params.length; i++) {
 					collection.set(segment.params[i], params[i + 1])
