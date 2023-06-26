@@ -635,10 +635,16 @@ export default class HTTPRequest<Context extends Record<any, any> = {}, Body = u
 		 * @default true
 		 * @since 4.3.5
 		*/ destroyAbort?: boolean
+		/**
+		 * Validate Function to determine whether a message should be sent
+		 * @default () => true
+		 * @since 8.4.4
+		*/ validate?: (message: any) => Promise<boolean> | boolean
 	} = {}): this {
 		const endRequest = options?.endRequest ?? true
 		const prettify = options?.prettify ?? false
 		const destroyAbort = options?.destroyAbort ?? true
+		const validate = options?.validate ?? (() => true)
 
 		this.headers.set('connection', 'keep-alive')
 
@@ -653,6 +659,8 @@ export default class HTTPRequest<Context extends Record<any, any> = {}, Body = u
 				}
 
 				const dataListener = async(data: Buffer) => {
+					if (!await Promise.resolve(validate(data))) return
+
 					try {
 						try {
 							data = (await parseContent(data, prettify, this.ctg.logger)).content

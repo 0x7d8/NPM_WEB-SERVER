@@ -129,16 +129,24 @@ export default class WSConnect<Context extends Record<any, any> = {}, Type = 'co
 	 * ref.set('Ok')
 	 * ```
 	 * @since 7.2.0
-	*/ public printRef(reference: Reference, options: {
+	*/ public printRef<Ref extends Reference>(reference: Ref, options: {
 		/**
 		 * Whether to prettify output (currently just JSONs)
 		 * @default false
 		 * @since 7.4.0
 		*/ prettify?: boolean
+		/**
+		 * Validate Function to determine whether a message should be sent
+		 * @default () => true
+		 * @since 8.4.4
+		*/ validate?: (message: Ref extends Reference<infer T> ? T : never) => Promise<boolean> | boolean
 	} = {}): this {
 		const prettify = options?.prettify ?? false
+		const validate = options?.validate?? (() => true)
 
 		const ref = reference['onChange'](async(value) => {
+			if (!await Promise.resolve(validate(value as any))) return
+
 			let data: Buffer
 
 			try {
@@ -215,15 +223,23 @@ export default class WSConnect<Context extends Record<any, any> = {}, Type = 'co
 		 * @default true
 		 * @since 5.4.0
 		*/ destroyAbort?: boolean
+		/**
+		 * Validate Function to determine whether a message should be sent
+		 * @default () => true
+		 * @since 8.4.4
+		*/ validate?: (message: any) => Promise<boolean> | boolean
 	} = {}): this {
 		const prettify = options?.prettify ?? false
 		const destroyAbort = options?.destroyAbort ?? true
+		const validate = options?.validate?? (() => true)
 
 		const destroyStream = () => {
 			stream.destroy()
 		}
 
 		const dataListener = async(data: Buffer) => {
+			if (!await Promise.resolve(validate(data))) return
+
 			try {
 				data = (await parseContent(data, prettify, this.ctg.logger)).content
 			} catch (err) {

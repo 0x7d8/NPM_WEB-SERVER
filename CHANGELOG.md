@@ -1,3 +1,7 @@
+## 8.4.4
+
+- Allow validating `.printStream()` and `.printRef()` messages
+
 ## 8.4.3
 
 - Respect File Prefixes when loading Routes
