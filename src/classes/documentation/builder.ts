@@ -38,9 +38,12 @@ export default class DocumentationBuilder<Excluded extends (keyof DocumentationB
 	/**
 	 * Add Documentation for Headers
 	 * @since 8.5.0
-	*/ @zValidate([ (z) => z.function().returns(z.instanceof(ParamsDefiner)) ])
-	public headers(callback: (builder: ParamsDefiner) => ParamsDefiner): ExcludeFrom<DocumentationBuilder<[...Excluded, 'headers']>, [...Excluded, 'headers']> {
-		Object.assign(this.data.headers, callback(new ParamsDefiner())['data'])
+	*/ @zValidate([ (z) => z.function() ])
+	public headers(callback: (builder: ParamsDefiner) => any): ExcludeFrom<DocumentationBuilder<[...Excluded, 'headers']>, [...Excluded, 'headers']> {
+		const definer = new ParamsDefiner()
+		callback(definer)
+
+		Object.assign(this.data.headers, definer['data'])
 
 		return as<any>(this)
 	}
@@ -48,9 +51,12 @@ export default class DocumentationBuilder<Excluded extends (keyof DocumentationB
 	/**
 	 * Add Documentation for Queries
 	 * @since 8.5.0
-	*/ @zValidate([ (z) => z.function().returns(z.instanceof(ParamsDefiner)) ])
-	public queries(callback: (builder: ParamsDefiner) => ParamsDefiner): ExcludeFrom<DocumentationBuilder<[...Excluded, 'queries']>, [...Excluded, 'queries']> {
-		Object.assign(this.data.queries, callback(new ParamsDefiner())['data'])
+	*/ @zValidate([ (z) => z.function() ])
+	public queries(callback: (builder: ParamsDefiner) => any): ExcludeFrom<DocumentationBuilder<[...Excluded, 'queries']>, [...Excluded, 'queries']> {
+		const definer = new ParamsDefiner()
+		callback(definer)
+
+		Object.assign(this.data.queries, definer['data'])
 
 		return as<any>(this)
 	}

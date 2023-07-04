@@ -109,7 +109,7 @@ export default class RouteFile<GlobContext extends Record<any, any>, Middlewares
 	*/ public http<Context extends Record<any, any> = {}, Body = unknown, Path extends string = '/'>(
     /** The Request Method */ method: HTTPMethods,
 		/** The Path on which this will be available */ path: Path | RegExp,
-		/** The Callback to handle the Endpoint */ callback: (path: RouteHTTP<GlobContext, Context, Body, Middlewares, Path>) => RouteHTTP<GlobContext, Context, Body, Middlewares, Path>
+		/** The Callback to handle the Endpoint */ callback: (path: RouteHTTP<GlobContext, Context, Body, Middlewares, Path>) => any
 	): this {
 		if (this.routes.some((obj) => isRegExp(obj.path) ? false : obj.path.path === parsePath(path as string))) return this
 
@@ -141,7 +141,7 @@ export default class RouteFile<GlobContext extends Record<any, any>, Middlewares
 	 * @since 5.4.0
 	*/ public ws<Context extends Record<any, any> = {}, Message = unknown, Path extends string = '/'>(
 		/** The Path on which this will be available */ path: Path | RegExp,
-		/** The Callback to handle the Endpoint */ callback: (path: RouteWS<GlobContext, Context, Message, Middlewares, Path>) => RouteWS<GlobContext, Context, Message, Middlewares, Path>
+		/** The Callback to handle the Endpoint */ callback: (path: RouteWS<GlobContext, Context, Message, Middlewares, Path>) => any
 	): this {
 		if (this.webSockets.some((obj) => isRegExp(obj.path) ? false : obj.path.path === parsePath(path as string))) return this
 

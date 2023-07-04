@@ -1,3 +1,7 @@
+## 5.5.1
+
+- Fix some typescript related issues
+
 ## 8.5.0
 
 - Add basic ability to document Endpoints

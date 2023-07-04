@@ -167,7 +167,7 @@ export default class RoutePath<GlobContext extends Record<any, any>, Middlewares
 	*/ public http<Context extends Record<any, any> = {}, Body = unknown, LPath extends string = '/'>(
     /** The Request Method */ method: HTTPMethods,
 		/** The Path on which this will be available */ path: LPath | RegExp,
-		/** The Callback to handle the Endpoint */ callback: (path: RouteHTTP<GlobContext, Context, Body, Middlewares, `${Path}/${LPath}`>) => RouteHTTP<GlobContext, Context, Body, Middlewares, `${Path}/${LPath}`>
+		/** The Callback to handle the Endpoint */ callback: (path: RouteHTTP<GlobContext, Context, Body, Middlewares, `${Path}/${LPath}`>) => any
 	): this {
 		if (this.routes.some((obj) => isRegExp(obj.path) ? false : obj.path.path === parsePath(path as string))) return this
 	
@@ -199,7 +199,7 @@ export default class RoutePath<GlobContext extends Record<any, any>, Middlewares
 	 * @since 5.4.0
 	*/ public ws<Context extends Record<any, any> = {}, Message = unknown, LPath extends string = '/'>(
 		/** The Path on which this will be available */ path: LPath | RegExp,
-		/** The Callback to handle the Endpoint */ callback: (path: RouteWS<GlobContext, Context, Message, Middlewares, `${Path}/${LPath}`>) => RouteWS<GlobContext, Context, Message, Middlewares, `${Path}/${LPath}`>
+		/** The Callback to handle the Endpoint */ callback: (path: RouteWS<GlobContext, Context, Message, Middlewares, `${Path}/${LPath}`>) => any
 	): this {
 		if (this.webSockets.some((obj) => isRegExp(obj.path) ? false : obj.path.path === parsePath(path as string))) return this
 

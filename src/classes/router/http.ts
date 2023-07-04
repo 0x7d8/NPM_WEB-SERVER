@@ -106,7 +106,7 @@ export default class RouteHTTP<GlobContext extends Record<any, any> = {}, Contex
 	 * ```
 	 * @since 8.5.0
 	*/ public document(
-		/** The Callback to handle defining the Documentation */ callback: (builder: DocumentationBuilder) => DocumentationBuilder
+		/** The Callback to handle defining the Documentation */ callback: (builder: DocumentationBuilder) => any
 	): ExcludeFrom<RouteHTTP<GlobContext, Context, Body, Middlewares, Path, [...Excluded, 'document']>, [...Excluded, 'document']> {
 		callback(this.data.documentation)
 

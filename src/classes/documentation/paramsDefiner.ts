@@ -71,9 +71,12 @@ export default class ParamsDefiner {
 	 * )
 	 * ```
 	 * @since 8.5.0
-	*/ @zValidate([ (z) => z.string(), (z) => z.function().returns(z.instanceof(ParamDefiner)) ])
-	public add(key: string, callback: (definer: ParamDefiner) => ParamDefiner): this {
-		this.data[key] = callback(new ParamDefiner())['data']
+	*/ @zValidate([ (z) => z.string(), (z) => z.function() ])
+	public add(key: string, callback: (definer: ParamDefiner) => any): this {
+		const definer = new ParamDefiner()
+		callback(definer)
+
+		this.data[key] = definer['data']
 
 		return this
 	}
