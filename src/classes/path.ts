@@ -57,7 +57,7 @@ type Data = {
 			for (const segment of segments) {
 				this.data.segments.push({
 					raw: segment,
-          paramsRegExp: new RegExp(segment.replace(/{([^}]+)}/g, '(.*)')),
+          paramsRegExp: new RegExp(segment.replace(/{([^}]+)}/g, '(.*\\S)')),
           params: (segment.match(/{([^}]+)}/g) ?? []).map((m) => m.slice(1, -1))
 				})
 			}
@@ -84,7 +84,7 @@ type Data = {
 				for (const segment of segments) {
 					this.data.segments.push({
 						raw: segment,
-						paramsRegExp: new RegExp(segment.replace(/{([^}]+)}/g, '(.*)')),
+						paramsRegExp: new RegExp(segment.replace(/{([^}]+)}/g, '(.*\\S)')),
 						params: (segment.match(/{([^}]+)}/g) ?? []).map((m) => m.slice(1, -1))
 					})
 				}
@@ -105,7 +105,7 @@ type Data = {
 				for (const segment of segments) {
 					this.data.segments.push({
 						raw: segment,
-						paramsRegExp: new RegExp(segment.replace(/{([^}]+)}/g, '(.*)')),
+						paramsRegExp: new RegExp(segment.replace(/{([^}]+)}/g, '(.*\\S)')),
 						params: (segment.match(/{([^}]+)}/g) ?? []).map((m) => m.slice(1, -1))
 					})
 				}
@@ -135,7 +135,7 @@ type Data = {
 				for (const segment of segments) {
 					this.data.segments.push({
 						raw: segment,
-						paramsRegExp: new RegExp(segment.replace(/{([^}]+)}/g, '(.*)')),
+						paramsRegExp: new RegExp(segment.replace(/{([^}]+)}/g, '(.*\\S)')),
 						params: (segment.match(/{([^}]+)}/g) ?? []).map((m) => m.slice(1, -1))
 					})
 				}
@@ -156,7 +156,7 @@ type Data = {
 				for (const segment of segments) {
 					this.data.segments.push({
 						raw: segment,
-						paramsRegExp: new RegExp(segment.replace(/{([^}]+)}/g, '(.*)')),
+						paramsRegExp: new RegExp(segment.replace(/{([^}]+)}/g, '(.*\\S)')),
 						params: (segment.match(/{([^}]+)}/g) ?? []).map((m) => m.slice(1, -1))
 					})
 				}

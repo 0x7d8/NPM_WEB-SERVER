@@ -1,9 +1,9 @@
-import { isRegExp } from "util/types"
-import { MiddlewareInitted, RoutedValidation } from "../../types/internal"
+import { MiddlewareInitted, RoutedValidation, ExcludeFrom } from "../../types/internal"
 import RPath from "../path"
 import WebSocket from "../../types/webSocket"
+import { as } from "rjutils-collection"
 
-export default class RouteWS<GlobContext extends Record<any, any> = {}, Context extends Record<any, any> = {}, Message = unknown, Middlewares extends MiddlewareInitted[] = [], Path extends string = '/'> {
+export default class RouteWS<GlobContext extends Record<any, any> = {}, Context extends Record<any, any> = {}, Message = unknown, Middlewares extends MiddlewareInitted[] = [], Path extends string = '/', Excluded extends (keyof RouteWS)[] = []> {
 	private data: WebSocket
 
 	/** Generate WS Endpoint */
@@ -58,7 +58,7 @@ export default class RouteWS<GlobContext extends Record<any, any> = {}, Context 
 			 * @since 7.0.0
 			*/ keepForever?: boolean
 		} = {}
-	): this {
+	): ExcludeFrom<RouteWS<GlobContext, Context, Message, Middlewares, Path, [...Excluded, 'context']>, [...Excluded, 'context']> {
 		const keepForever = options?.keepForever ?? false
 
 		this.data.context = {
@@ -66,7 +66,7 @@ export default class RouteWS<GlobContext extends Record<any, any> = {}, Context 
 			keep: keepForever
 		}
 
-		return this
+		return as<any>(this)
 	}
 
 	/**
@@ -93,10 +93,10 @@ export default class RouteWS<GlobContext extends Record<any, any> = {}, Context 
 	 * @since 5.10.0
 	*/ public onUpgrade(
 		/** The Async Code to run when the Socket gets an Upgrade HTTP Request */ code: WebSocket<GlobContext & Context, never, Middlewares, Path>['onUpgrade']
-	): this {
+	): ExcludeFrom<RouteWS<GlobContext, Context, Message, Middlewares, Path, [...Excluded, 'onUpgrade']>, [...Excluded, 'onUpgrade']> {
 		this.data.onUpgrade = code as any
 
-		return this
+		return as<any>(this)
 	}
 
 	/**
@@ -120,10 +120,10 @@ export default class RouteWS<GlobContext extends Record<any, any> = {}, Context 
 	 * @since 5.4.0
 	*/ public onConnect(
 		/** The Async Code to run when the Socket is Established */ code: WebSocket<GlobContext & Context, never, Middlewares, Path>['onConnect']
-	): this {
+	): ExcludeFrom<RouteWS<GlobContext, Context, Message, Middlewares, Path, [...Excluded, 'onConnect']>, [...Excluded, 'onConnect']> {
 		this.data.onConnect = code as any
 
-		return this
+		return as<any>(this)
 	}
 
 	/**
@@ -147,10 +147,10 @@ export default class RouteWS<GlobContext extends Record<any, any> = {}, Context 
 	 * @since 5.4.0
 	*/ public onMessage(
 		/** The Async Code to run on a Message */ code: WebSocket<GlobContext & Context, Message, Middlewares, Path>['onMessage']
-	): this {
+	): ExcludeFrom<RouteWS<GlobContext, Context, Message, Middlewares, Path, [...Excluded, 'onMessage']>, [...Excluded, 'onMessage']> {
 		this.data.onMessage = code as any
 
-		return this
+		return as<any>(this)
 	}
 
 	/**
@@ -175,10 +175,10 @@ export default class RouteWS<GlobContext extends Record<any, any> = {}, Context 
 	 * @since 5.4.0
 	*/ public onClose(
 		/** The Async Code to run when the Socket Closes */ code: WebSocket<GlobContext & Context, Message, Middlewares, Path>['onClose']
-	): this {
+	): ExcludeFrom<RouteWS<GlobContext, Context, Message, Middlewares, Path, [...Excluded, 'onClose']>, [...Excluded, 'onClose']> {
 		this.data.onClose = code as any
 
-		return this
+		return as<any>(this)
 	}
 
 

@@ -17,6 +17,7 @@ import parseKV from "../../functions/parseKV"
 import getCompressMethod from "../../functions/getCompressMethod"
 import { createHash } from "crypto"
 import Path from "../path"
+import DocumentationBuilder from "../documentation/builder"
 
 export const toArrayBuffer = (buffer: Buffer): ArrayBuffer => {
   return buffer.buffer.slice(buffer.byteOffset, buffer.byteOffset + buffer.byteLength)
@@ -74,35 +75,31 @@ export default class HTTPRequest<Context extends Record<any, any> = {}, Body = u
 
 			switch (this.ctx.headers.get('content-type', '')) {
 				case "application/json": {
-					try { this.ctx.body.parsed = JSON.parse(stringified) }
-					catch { this.ctx.body.parsed = stringified }
-
-					this.ctx.body.type = 'json'
+					try {
+						this.ctx.body.parsed = JSON.parse(stringified)
+						this.ctx.body.type = 'json'
+					} catch {
+						this.ctx.body.parsed = stringified
+					}
 
 					break
 				}
 
 				case "application/x-www-form-urlencoded": {
-					try { this.ctx.body.parsed = parseKV(stringified).toJSON() }
-					catch { this.ctx.body.parsed = stringified }
-
-					this.ctx.body.type = 'url-encoded'
-
-					break
-				}
-
-				case "multipart/form-data": {
-					try { this.ctx.body.parsed = getParts(stringified, 'multipart/form-data') }
-					catch { this.ctx.body.parsed = stringified }
-
-					if (!this.ctx.body.parsed) this.ctx.body.parsed = stringified
-					else this.ctx.body.type = 'multipart'
+					try {
+						this.ctx.body.parsed = parseKV(stringified).toJSON()
+						this.ctx.body.type = 'url-encoded'
+					} catch {
+						this.ctx.body.parsed = stringified
+					}
 
 					break
 				}
 
 				default: {
-					this.ctx.body.parsed = stringified
+					this.ctx.body.parsed = getParts(this.ctx.body.raw, this.ctx.headers.get('content-type', ''))
+					if (Array.isArray(this.ctx.body.parsed)) this.ctx.body.type = 'multipart'
+					else this.ctx.body.parsed = stringified
 
 					break
 				}
@@ -387,6 +384,7 @@ export default class HTTPRequest<Context extends Record<any, any> = {}, Body = u
 
 						ctr.print(builder['html'])
 					}, type: 'http',
+					documentation: new DocumentationBuilder(),
 					data: {
 						headers: (this.ctx.execute.route as any)?.data.headers!,
 						validations: this.ctx.execute.route?.data.validations!

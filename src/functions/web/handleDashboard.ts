@@ -4,6 +4,7 @@ import { getFilesRecursively } from "rjutils-collection"
 import { getPreviousHours } from "../../classes/dataStat"
 import { RequestContext } from "../../types/external"
 import WebSocket from "../../types/webSocket"
+import DocumentationBuilder from "../../classes/documentation/builder"
 import Path from "../../classes/path"
 import HTTP from "../../types/http"
 import { Readable } from "stream"
@@ -16,6 +17,7 @@ export const dashboardIndexRoute = (ctg: GlobalContext): HTTP => ({
   type: 'http',
   method: 'GET',
   path: new Path('GET', '/'),
+  documentation: new DocumentationBuilder(),
   onRequest: async(ctr) => await statsRoute(ctr, ctg, 'http'),
   data: {
     validations: [],

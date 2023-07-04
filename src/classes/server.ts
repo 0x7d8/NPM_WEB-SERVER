@@ -116,6 +116,7 @@ import os from "os"
 
 	/**
 	 * Get OpenAPI 3.1 Defininitions for this Server (make sure to let all routes load before calling)
+	 * @warning This Method may be resource heavy and should be cached if routes will stay the same
 	 * @example
 	 * ```
 	 * const controller = new Server({ port: 4200 })

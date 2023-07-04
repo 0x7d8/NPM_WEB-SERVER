@@ -1,4 +1,5 @@
 import { ExternalRouter, LoadPath, HTTPMethods, RoutedValidation, MiddlewareInitted } from "../../types/internal"
+import DocumentationBuilder from "../documentation/builder"
 import Static from "../../types/static"
 import HTTP from "../../types/http"
 import WebSocket from "../../types/webSocket"
@@ -254,6 +255,7 @@ export default class RoutePath<GlobContext extends Record<any, any>, Middlewares
 			type: 'http',
 			method: 'GET',
 			path: new RPath('GET', parsePath([ this.httpPath, request ])),
+			documentation: new DocumentationBuilder(),
 			onRequest: (ctr) => ctr.redirect(redirect),
 			data: {
 				validations: this.validations,

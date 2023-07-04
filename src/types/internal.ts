@@ -29,6 +29,10 @@ export type MergeObjects<T extends object[]> = {
     UnionToIntersection<T[number]>[K]
 }
 
+export type ExcludeFrom<T extends object, U extends (keyof T)[]> = {
+	[K in Exclude<keyof T, U[number]>]: T[K]
+}
+
 export type DeepRequired<Type> = Type extends Content
 		? Type extends Map<any, any>
 			? Required<Type>

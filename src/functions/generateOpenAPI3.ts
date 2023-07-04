@@ -21,6 +21,22 @@ const transformRoutePath = (route: Route): {
 		}
 	}
 
+	for (const header in route.documentation['data'].headers) {
+		parameters.push({
+			...route.documentation['data'].headers[header],
+			name: header,
+			in: 'header'
+		})
+	}
+
+	for (const query in route.documentation['data'].queries) {
+		parameters.push({
+			...route.documentation['data'].queries[query],
+			name: query,
+			in: 'query'
+		})
+	}
+
 	if (isRegExp(route.path.path)) return {
 		path: base.replace('//', '/').concat(`/{${route.path.path}}`),
 		parameters
@@ -41,6 +57,8 @@ export default function generateOpenAPI3(ctg: GlobalContext, server?: string): O
 
 		paths[path][route.method.toLowerCase() as 'delete'] = {
 			responses: {},
+			description: route.documentation['data'].description,
+			deprecated: route.documentation['data'].deprecated,
 			parameters
 		}
 	}

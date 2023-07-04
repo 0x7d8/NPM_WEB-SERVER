@@ -1,9 +1,10 @@
-import { isRegExp } from "util/types"
-import { HTTPMethods, MiddlewareInitted, RoutedValidation } from "../../types/internal"
+import { HTTPMethods, MiddlewareInitted, RoutedValidation, ExcludeFrom } from "../../types/internal"
 import HTTP from "../../types/http"
 import RPath from "../path"
+import DocumentationBuilder from "../documentation/builder"
+import { as } from "rjutils-collection"
 
-export default class RouteHTTP<GlobContext extends Record<any, any> = {}, Context extends Record<any, any> = {}, Body = unknown, Middlewares extends MiddlewareInitted[] = [], Path extends string = '/'> {
+export default class RouteHTTP<GlobContext extends Record<any, any> = {}, Context extends Record<any, any> = {}, Body = unknown, Middlewares extends MiddlewareInitted[] = [], Path extends string = '/', Excluded extends (keyof RouteHTTP)[] = []> {
 	private data: HTTP
 
 	/** Generate HTTP Endpoint */
@@ -19,6 +20,7 @@ export default class RouteHTTP<GlobContext extends Record<any, any> = {}, Contex
 	
 			path: new RPath(method, path),
 			onRequest: () => null,
+			documentation: new DocumentationBuilder(),
 			data: {
 				validations,
 				headers
@@ -61,7 +63,7 @@ export default class RouteHTTP<GlobContext extends Record<any, any> = {}, Contex
 			 * @since 7.0.0
 			*/ keepForever?: boolean
 		} = {}
-	): this {
+	): ExcludeFrom<RouteHTTP<GlobContext, Context, Body, Middlewares, Path, [...Excluded, 'context']>, [...Excluded, 'context']> {
 		const keepForever = options?.keepForever ?? false
 
 		this.data.context = {
@@ -69,7 +71,46 @@ export default class RouteHTTP<GlobContext extends Record<any, any> = {}, Contex
 			keep: keepForever
 		}
 
-		return this
+		return as<any>(this)
+	}
+
+	/**
+	 * Add additional OpenAPI 3 Documentation to this Endpoint
+	 * 
+	 * This will append additional OpenAPI 3 Documentation Infos to this endpoint when calling
+	 * the `<Server>.getOpenAPI3Def()` Method. This is useful for preventing API documentation
+	 * duplication, making an endpoint for the `<Server>.getOpenAPI3Def()` Method that the frontend
+	 * can access would help with that.
+	 * @example
+	 * ```
+	 * const controller = new Server({ })
+	 * 
+	 * controller.path('/', (path) => path
+	 *   .http('GET', '/wait', (http) => http
+	 *     .document((docs) => docs
+	 *       .queries((queries) => queries
+	 *         .add('duration', (key) => key
+	 *           .description('The Duration in Seconds for waiting')
+	 *           .required()
+	 *         )
+	 *       )
+	 *     )
+	 *     .onRequest(async(ctr) => {
+	 *       if (!ctr.queries.has('duration'))) return ctr.status((s) => s.BAD_REQUEST).print('Missing the Duration query...')
+	 * 
+	 *       await new Promise((r) => setTimeout(r, Number(ctr.queries.get('duration')) * 1000))
+	 *       return ctr.print(`waited ${ctr.queries.get('duration')} seconds`)
+	 *     })
+	 *   )
+	 * )
+	 * ```
+	 * @since 8.5.0
+	*/ public document(
+		/** The Callback to handle defining the Documentation */ callback: (builder: DocumentationBuilder) => DocumentationBuilder
+	): ExcludeFrom<RouteHTTP<GlobContext, Context, Body, Middlewares, Path, [...Excluded, 'document']>, [...Excluded, 'document']> {
+		callback(this.data.documentation)
+
+		return as<any>(this)
 	}
 
 	/**
@@ -105,10 +146,10 @@ export default class RouteHTTP<GlobContext extends Record<any, any> = {}, Contex
 	 * @since 6.0.0
 	*/ public onRawBody(
 		/** The Async Code to run when the Socket gets an Upgrade HTTP Request */ code: HTTP<GlobContext & Context, never, Middlewares, Path>['onRawBody']
-	): this {
+	): ExcludeFrom<RouteHTTP<GlobContext, Context, Body, Middlewares, Path, [...Excluded, 'onRawBody']>, [...Excluded, 'onRawBody']> {
 		this.data.onRawBody = code as any
 
-		return this
+		return as<any>(this)
 	}
 
 	/**
@@ -132,10 +173,10 @@ export default class RouteHTTP<GlobContext extends Record<any, any> = {}, Contex
 	 * @since 6.0.0
 	*/ public onRequest(
 		/** The Async Code to run when the Socket is Established */ code: HTTP<GlobContext & Context, Body, Middlewares, Path>['onRequest']
-	): this {
+	): ExcludeFrom<RouteHTTP<GlobContext, Context, Body, Middlewares, Path, [...Excluded, 'onRequest']>, [...Excluded, 'onRequest']> {
 		this.data.onRequest = code as any
 
-		return this
+		return as<any>(this)
 	}
 
 
