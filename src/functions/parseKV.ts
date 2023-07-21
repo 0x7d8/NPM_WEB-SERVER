@@ -30,7 +30,14 @@ export const trimString = (str: string): string => {
 		let equalPos = keyValue.slice(progress, splitterPos).indexOf(equal)
 		if (equalPos === -1) equalPos = splitterPos
 
-		values.set(trimString(keyValue.slice(progress, progress + equalPos)), decode(keyValue.slice(progress + equalPos + 1, splitterPos)))
+		let sliced = keyValue.slice(progress + equalPos + 1, splitterPos), decodedVal: string
+		try {
+			decodedVal = decode(sliced)
+		} catch {
+			decodedVal = sliced
+		}
+
+		values.set(trimString(keyValue.slice(progress, progress + equalPos)), decodedVal)
 		progress = splitterPos + 1
 	}
 

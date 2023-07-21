@@ -84,8 +84,10 @@ export type URL = {
 		}
 	}
 
-	returns.path = decodeURI(returns.path)
-	returns.href = decodeURI(returns.href)
+	try {
+		returns.path = decodeURI(returns.path)
+		returns.href = decodeURI(returns.href)
+	} catch { }
 
 	return returns
 }

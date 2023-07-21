@@ -1,3 +1,7 @@
+## 5.5.2
+
+- Fix Crash when passing invalid URIs
+
 ## 5.5.1
 
 - Fix some typescript related issues

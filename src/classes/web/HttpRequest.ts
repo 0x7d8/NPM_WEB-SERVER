@@ -414,7 +414,7 @@ export default class HTTPRequest<Context extends Record<any, any> = {}, Body = u
 	 * })
 	 * ```
 	 * @since 0.6.3
-	*/ printFile(file: string, options: {
+	*/ public printFile(file: string, options: {
 		/**
 		 * Whether some Content Type Headers will be added automatically
 		 * @default true
@@ -617,7 +617,7 @@ export default class HTTPRequest<Context extends Record<any, any> = {}, Body = u
 	 * // in this case though just use ctr.printFile since it does exactly this
 	 * ```
 	 * @since 4.3.0
-	*/ printStream(stream: Readable, options: {
+	*/ public printStream(stream: Readable, options: {
 		/**
 		 * Whether to end the Request after the Stream finishes
 		 * @default true
