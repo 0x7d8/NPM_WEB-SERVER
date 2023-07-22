@@ -1,3 +1,7 @@
+## 5.5.3
+
+- Fix non file based routing adding invalid prefixes
+
 ## 5.5.2
 
 - Fix Crash when passing invalid URIs
