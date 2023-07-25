@@ -12,7 +12,7 @@ import { currentVersion } from "./middlewareBuilder"
 import HTTP from "../types/http"
 import { MiddlewareInitted } from "../types/internal"
 import RouteFile from "./router/file"
-import { getFilesRecursively } from "rjutils-collection"
+import { getFilesRecursively, time } from "rjutils-collection"
 import { HttpRequest, WsClose, WsConnect, WsMessage } from "../types/external"
 import mergeClasses from "../functions/mergeClasses"
 import generateOpenAPI3 from "../functions/generateOpenAPI3"
@@ -61,6 +61,11 @@ import os from "os"
 			controller: this as any,
 			contentTypes: {},
 			rateLimits: new ValueCollection(),
+			rateLimitInterval: setInterval(() => {
+				for (const [ key, { end } ] of this.globalContext.rateLimits) {
+					if (end < Date.now()) this.globalContext.rateLimits.delete(key)
+				}
+			}, time(30).s()),
 			logger: new Logger(fullOptions.logging),
 			options: fullOptions,
 			requests: new DataStat(),
