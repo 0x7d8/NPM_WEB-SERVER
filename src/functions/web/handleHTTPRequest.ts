@@ -552,8 +552,8 @@ export default async function handleHTTPRequest(req: HttpRequest, res: HttpRespo
 			}
 		}
 
-		ctx.response.headers['x-ratelimit-limit'] = ctx.execute.route.data.ratelimit.maxHits
-		ctx.response.headers['x-ratelimit-remaining'] = ctx.execute.route.data.ratelimit.maxHits - (data.hits + 1)
+		ctx.response.headers['x-ratelimit-limit'] = ctx.execute.route.data.ratelimit.maxHits.toString()
+		ctx.response.headers['x-ratelimit-remaining'] = (ctx.execute.route.data.ratelimit.maxHits - (data.hits + 1)).toString()
 		ctx.response.headers['x-ratelimit-reset'] = Math.floor(data.end / 1000).toString()
 		ctx.response.headers['x-ratelimit-policy'] = `${ctx.execute.route.data.ratelimit.maxHits};w=${Math.floor(ctx.execute.route.data.ratelimit.timeWindow / 1000)}`
 

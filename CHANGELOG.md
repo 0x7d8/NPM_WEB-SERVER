@@ -1,3 +1,7 @@
+## 8.6.2
+
+- Fix X-Ratelimit-Remaining not showing if value is 0
+
 ## 8.6.1
 
 - Fix some Typescript bugs
