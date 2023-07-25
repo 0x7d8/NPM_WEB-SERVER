@@ -1,7 +1,5 @@
-import { as, time } from "rjutils-collection"
+import { as, time, randomNum } from "rjutils-collection"
 import { ExcludeFrom } from "../../types/internal"
-
-let rateLimitIds = 0
 
 export default class RouteRateLimit<Excluded extends (keyof RouteRateLimit)[] = []> {
 	protected data: {
@@ -10,10 +8,10 @@ export default class RouteRateLimit<Excluded extends (keyof RouteRateLimit)[] = 
 		timeWindow: number
 		maxHits: number
 	} = {
-		sortTo: rateLimitIds++,
+		sortTo: randomNum(1, 10000000),
 		penalty: time(10).s(),
 		timeWindow: time(10).s(),
-		maxHits: 60
+		maxHits: Infinity
 	}
 
 	/**

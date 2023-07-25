@@ -1,3 +1,7 @@
+## 8.6.4
+
+- Fix some `@default`'s not being correct
+
 ## 8.6.3
 
 - Fix ratelimits spreading up

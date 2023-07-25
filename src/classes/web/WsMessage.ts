@@ -66,7 +66,7 @@ export default class WSMessage<Context extends Record<any, any> = {}, Message = 
 	 * handle. When this function is called, the server removes the set hit again.
 	 * @since 8.6.0
 	*/ public skipRateLimit(): this {
-		if (!this.ctx.execute.route || !('ratelimit' in this.ctx.execute.route.data) || this.ctx.execute.route.data.ratelimit.timeWindow === Infinity) return this
+		if (!this.ctx.execute.route || !('ratelimit' in this.ctx.execute.route.data) || this.ctx.execute.route.data.ratelimit.maxHits === Infinity) return this
 
 		const data = this.ctg.rateLimits.get(`ws+${this.client.ip}-${this.ctx.execute.route.data.ratelimit.sortTo}`, {
 			hits: 1,
@@ -89,7 +89,7 @@ export default class WSMessage<Context extends Record<any, any> = {}, Message = 
 	 * they are already reached.
 	 * @since 8.6.0
 	*/ public clearRateLimit(): this {
-		if (!this.ctx.execute.route || !('ratelimit' in this.ctx.execute.route.data) || this.ctx.execute.route.data.ratelimit.timeWindow === Infinity) return this
+		if (!this.ctx.execute.route || !('ratelimit' in this.ctx.execute.route.data) || this.ctx.execute.route.data.ratelimit.maxHits === Infinity) return this
 
 		this.ctg.rateLimits.delete(`ws+${this.client.ip}-${this.ctx.execute.route.data.ratelimit.sortTo}`)
 
@@ -102,7 +102,7 @@ export default class WSMessage<Context extends Record<any, any> = {}, Message = 
 	 * This will get all information about the currently applied ratelimit
 	 * to the socket. If none is active, will return `null`.
 	*/ public getRateLimit(): RatelimitInfos | null {
-		if (!this.ctx.execute.route || !('ratelimit' in this.ctx.execute.route.data) || this.ctx.execute.route.data.ratelimit.timeWindow === Infinity) return null
+		if (!this.ctx.execute.route || !('ratelimit' in this.ctx.execute.route.data) || this.ctx.execute.route.data.ratelimit.maxHits === Infinity) return null
 
 		const data = this.ctg.rateLimits.get(`ws+${this.client.ip}-${this.ctx.execute.route.data.ratelimit.sortTo}`, {
 			hits: 0,

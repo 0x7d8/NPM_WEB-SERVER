@@ -532,7 +532,7 @@ export default async function handleHTTPRequest(req: HttpRequest, res: HttpRespo
 	}
 
 	// Ratelimiting
-	if (ctx.execute.route && 'ratelimit' in ctx.execute.route.data && ctx.execute.route.data.ratelimit.timeWindow !== Infinity) {
+	if (ctx.execute.route && 'ratelimit' in ctx.execute.route.data && ctx.execute.route.data.ratelimit.maxHits !== Infinity) {
 		let data = ctg.rateLimits.get(`http+${ctr.client.ip}-${ctx.execute.route.data.ratelimit.sortTo}`, {
 			hits: 0,
 			end: Date.now() + ctx.execute.route.data.ratelimit.timeWindow
