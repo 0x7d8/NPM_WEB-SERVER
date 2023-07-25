@@ -454,7 +454,7 @@ export default class RoutePath<GlobContext extends Record<any, any>, Middlewares
 		if ('getData' in router) {
 			this.externals.push({ object: router, addPrefix: parsePath([ this.httpPath, prefix ]) })
 		} else {
-			const routePath = new RoutePath<GlobContext, Middlewares, `${Path}/${LPath}`>(parsePath([ this.httpPath, prefix ]) as any, [...this.validations], Object.assign({}, this.headers), this.httpratelimit, this.wsratelimit)
+			const routePath = new RoutePath<GlobContext, Middlewares, `${Path}/${LPath}`>(parsePath([ this.httpPath, prefix ]) as any, [...this.validations], Object.assign({}, this.headers), Object.assign({}, this.httpratelimit), Object.assign({}, this.wsratelimit))
 			this.externals.push({ object: routePath as any })
 			router(routePath)
 		}

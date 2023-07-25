@@ -1,3 +1,7 @@
+## 8.6.3
+
+- Fix ratelimits spreading up
+
 ## 8.6.2
 
 - Fix X-Ratelimit-Remaining not showing if value is 0
