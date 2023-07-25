@@ -1,4 +1,4 @@
-import { ExternalRouter, LoadPath, HTTPMethods, RoutedValidation, MiddlewareInitted } from "../../types/internal"
+import { ExternalRouter, LoadPath, HTTPMethods, RoutedValidation, MiddlewareInitted, ExcludeFrom } from "../../types/internal"
 import DocumentationBuilder from "../documentation/builder"
 import Static from "../../types/static"
 import HTTP from "../../types/http"
@@ -14,83 +14,16 @@ import fs from "fs"
 import RouteWS from "./ws"
 import RouteHTTP from "./http"
 import RouteDefaultHeaders from "./defaultHeaders"
+import RouteRateLimit from "./rateLimit"
+import { as } from "rjutils-collection"
 
-/// TODO: Maybe Finish
-//export class BasePath<PathContext extends Record<any, any>, GlobContext extends Record<any, any>, Middlewares extends MiddlewareInitted[] = [], Path extends string = '/'> {
-//	private contexts: HTTP['context']
-//	private validations: RoutedValidation[]
-//	private headers: Record<string, Content>
-//	private httpPath: string
-//
-//	/**
-//	 * Generate a Base Route Block
-//	 * @since 8.2.0
-//	*/ constructor(
-//		/** The Path of the Routes */ path: Path,
-//		/** The Validations to add */ validations?: RoutedValidation[],
-//		/** The Headers to add */ headers?: Record<string, Content>,
-//		/** The Contexts to add */ contexts?: HTTP['context']
-//	) {
-//		this.httpPath = path
-//		this.validations = validations || []
-//		this.headers = headers || {}
-//		this.contexts = contexts || []
-//	}
-//
-//	/**
-//	 * Add a default State for the Request Context (which stays for the entire requests lifecycle)
-//	 * 
-//	 * This will set the default context for the request. This applies to all callbacks
-//	 * attached to this handler. When `keepForever` is enabled, the context will be shared
-//	 * between requests to this callback and therefore will be globally mutable. This may be
-//	 * useful for something like a request counter so you dont have to worry about transferring
-//	 * it around.
-//	 * 
-//	 * This method is required to generate the full path context.
-//	 * @example
-//	 * ```
-//	 * const controller = new Server({ })
-//	 * 
-//	 * controller.path('/', (path) => path
-//	 *   .context({
-//	 *     text: 'hello world'
-//	 *   }, {
-//	 *     keepForever: true // If enabled this Context will be used & kept for every request on this router, so if you change something in it it will stay for the next time this request runs
-//	 *   })
-//	 *   .http('GET', '/context', (ws) => ws
-//	 *     .onRequest((ctr) => {
-//	 *       ctr.print(ctr["@"].text)
-//	 *     })
-//	 *   )
-//	 * )
-//	 * ```
-//	 * @since 8.2.0
-//	*/ public context<Context extends Record<any, any>>(
-//		/** The Default State of the Request Context */ context: PathContext extends Record<any, Reserved> ? Context : PathContext,
-//		/** The Options for this Function */ options: {
-//			/**
-//			 * Whether to keep the Data for the entirety of the Processes Lifetime
-//			 * @default false
-//			 * @since 7.0.0
-//			*/ keepForever?: boolean
-//		} = {}
-//	): RoutePath<PathContext extends Record<any, Reserved> ? Context : PathContext, GlobContext, Middlewares, Path> {
-//		const keepForever = options?.keepForever ?? false
-//
-//		this.contexts.push({
-//			data: context,
-//			keep: keepForever
-//		})
-//
-//		return new RoutePath<PathContext extends Record<any, Reserved> ? Context : PathContext, GlobContext, Middlewares, any>(this.httpPath, this.validations, this.headers, this.contexts)
-//	}
-//}
-
-export default class RoutePath<GlobContext extends Record<any, any>, Middlewares extends MiddlewareInitted[] = [], Path extends string = '/'> {
+export default class RoutePath<GlobContext extends Record<any, any>, Middlewares extends MiddlewareInitted[] = [], Path extends string = '/', Excluded extends (keyof RoutePath<GlobContext, Middlewares, Path>)[] = []> {
 	private externals: ExternalRouter[]
 	private validations: RoutedValidation[]
 	private headers: Record<string, Content>
 	private parsedHeaders: Record<string, Buffer>
+	private httpratelimit: RouteRateLimit['data']
+	private wsratelimit: RouteRateLimit['data']
 	private loadPaths: LoadPath[]
 	private statics: Static[]
 	private routes: HTTP[]
@@ -103,7 +36,8 @@ export default class RoutePath<GlobContext extends Record<any, any>, Middlewares
 		/** The Path of the Routes */ path: Path,
 		/** The Validations to add */ validations?: RoutedValidation[],
 		/** The Headers to add */ headers?: Record<string, Content>,
-		/** The Contexts to add */ contexts?: HTTP['context']
+		/** The HTTP Ratelimit to add */ httpRatelimit?: RouteRateLimit['data'],
+		/** The WS Ratelimit to add */ wsRatelimit?: RouteRateLimit['data']
 	) {
 		this.httpPath = parsePath(path)
 		this.routes = []
@@ -111,6 +45,9 @@ export default class RoutePath<GlobContext extends Record<any, any>, Middlewares
 		this.webSockets = []
 		this.loadPaths = []
 		this.parsedHeaders = {}
+
+		this.httpratelimit = httpRatelimit ?? new RouteRateLimit()['data']
+		this.wsratelimit = wsRatelimit ?? new RouteRateLimit()['data']
 
 		this.validations = validations || []
 		this.headers = headers || {}
@@ -144,11 +81,93 @@ export default class RoutePath<GlobContext extends Record<any, any>, Middlewares
 	 * ```
 	 * @since 3.2.1
 	*/ public validate<Context extends Record<any, any> = {}, Body = unknown>(
-		/** The Function to Validate the Request */ code: RoutedValidation<GlobContext & Context, Body, Middlewares, Path>
+		/** The Callback to Validate the Request */ callback: RoutedValidation<GlobContext & Context, Body, Middlewares, Path>
 	): this {
-		this.validations.push(code as any)
+		this.validations.push(callback as any)
 
 		return this
+	}
+
+	/**
+	 * Add a Ratelimit to all HTTP Endpoints in this Path (and all children)
+	 * 
+	 * When a User requests an Endpoint, that will count against their hit count, if
+	 * the hits exceeds the `<maxHits>` in `<timeWindow>ms`, they wont be able to access
+	 * the route for `<penalty>ms`.
+	 * @example
+	 * ```
+	 * const { time } = require("rjutils-collection")
+	 * 
+	 * controller.path('/', (path) => path
+	 *   .httpRateLimit((limit) => limit
+	 *     .hits(5)
+	 *     .timeWindow(time(20).s())
+	 *     .penalty(0)
+	 *   ) // This will allow 5 requests every 20 seconds
+	 *   .http('GET', '/hello', (ws) => ws
+	 *     .onRequest(async(ctr) => {
+	 *       ctr.print('Hello bro!')
+	 *     })
+	 *   )
+	 * )
+	 * 
+	 * controller.on('httpRatelimit', (ctr) => {
+	 *   ctr.print(`Please wait ${ctr.getRateLimit()?.resetIn}ms!!!!!`)
+	 * })
+	 * ```
+	 * @since 8.6.0
+	*/ public httpRatelimit(
+		callback: (limit: RouteRateLimit) => RouteRateLimit
+	): ExcludeFrom<RoutePath<GlobContext, Middlewares, Path, [...Excluded, 'httpRatelimit']>, [...Excluded, 'httpRatelimit']> {
+		const limit = new RouteRateLimit()
+		limit['data'] = Object.assign({}, this.httpratelimit)
+
+		callback(limit)
+
+		this.httpratelimit = limit['data']
+
+		return as<any>(this)
+	}
+
+	/**
+	 * Add a Ratelimit to all WebSocket Endpoints in this Path (and all children)
+	 * 
+	 * When a User sends a message to a Socket, that will count against their hit count, if
+	 * the hits exceeds the `<maxHits>` in `<timeWindow>ms`, they wont be able to access
+	 * the route for `<penalty>ms`.
+	 * @example
+	 * ```
+	 * const { time } = require("rjutils-collection")
+	 * 
+	 * controller.path('/', (path) => path
+	 *   .httpRateLimit((limit) => limit
+	 *     .hits(5)
+	 *     .timeWindow(time(20).s())
+	 *     .penalty(0)
+	 *   ) // This will allow 5 messages every 20 seconds
+	 *   .ws('/echo', (ws) => ws
+	 *     .onMessage(async(ctr) => {
+	 *       ctr.print(ctr.rawBodyBytes)
+	 *     })
+	 *   )
+	 * )
+	 * 
+	 * controller.on('wsMessageRatelimit', (ctr) => {
+	 *   ctr.print(`Please wait ${ctr.getRateLimit()?.resetIn}ms!!!!!`)
+	 * })
+	 * ```
+	 * @since 8.6.0
+	*/ public wsRatelimit(
+		callback: (limit: RouteRateLimit) => RouteRateLimit
+	): ExcludeFrom<RoutePath<GlobContext, Middlewares, Path, [...Excluded, 'wsRatelimit']>, [...Excluded, 'wsRatelimit']> {
+		const limit = new RouteRateLimit()
+		limit['data'] = Object.assign({}, this.wsratelimit)
+
+		callback(limit)
+
+		this.wsratelimit = limit['data']
+
+		return as<any>(this)
 	}
 
 	/**
@@ -171,7 +190,7 @@ export default class RoutePath<GlobContext extends Record<any, any>, Middlewares
 	): this {
 		if (this.routes.some((obj) => isRegExp(obj.path) ? false : obj.path.path === parsePath(path as string))) return this
 	
-		const routeHTTP = new RouteHTTP<GlobContext, Context, Body, Middlewares, `${Path}/${LPath}`>(path as any, method, this.validations, this.parsedHeaders)
+		const routeHTTP = new RouteHTTP<GlobContext, Context, Body, Middlewares, `${Path}/${LPath}`>(path as any, method, this.validations, this.parsedHeaders, this.httpratelimit)
 		this.externals.push({ object: routeHTTP, addPrefix: this.httpPath })
 		callback(routeHTTP)
 	
@@ -203,7 +222,7 @@ export default class RoutePath<GlobContext extends Record<any, any>, Middlewares
 	): this {
 		if (this.webSockets.some((obj) => isRegExp(obj.path) ? false : obj.path.path === parsePath(path as string))) return this
 
-		const routeWS = new RouteWS<GlobContext, Context, Message, Middlewares, `${Path}/${LPath}`>(path as any, this.validations, this.parsedHeaders)
+		const routeWS = new RouteWS<GlobContext, Context, Message, Middlewares, `${Path}/${LPath}`>(path as any, this.validations, this.parsedHeaders, this.wsratelimit)
 		this.externals.push({ object: routeWS, addPrefix: this.httpPath })
 		callback(routeWS)
 
@@ -217,6 +236,7 @@ export default class RoutePath<GlobContext extends Record<any, any>, Middlewares
 	 * controller.path('/', (path) => path
 	 *   .defaultHeaders((dH) => dH
 	 *     .add('X-Api-Version', '1.0.0')
+	 *     .add('Copyright', () => new Date().getYear())
 	 *   )
 	 * )
 	 * ```
@@ -258,6 +278,7 @@ export default class RoutePath<GlobContext extends Record<any, any>, Middlewares
 			documentation: new DocumentationBuilder(),
 			onRequest: (ctr) => ctr.redirect(redirect),
 			data: {
+				ratelimit: { maxHits: Infinity, penalty: 0, sortTo: -1, timeWindow: Infinity },
 				validations: this.validations,
 				headers: this.parsedHeaders
 			}, context: { data: {}, keep: true }
@@ -351,6 +372,8 @@ export default class RoutePath<GlobContext extends Record<any, any>, Middlewares
 			path: path.resolve(folder),
 			prefix: this.httpPath,
 			type: 'cjs',
+			httpRatelimit: this.httpratelimit,
+			wsRatelimit: this.wsratelimit,
 			validations: this.validations,
 			fileBasedRouting,
 			headers: this.parsedHeaders
@@ -389,6 +412,8 @@ export default class RoutePath<GlobContext extends Record<any, any>, Middlewares
 			path: path.resolve(folder),
 			prefix: this.httpPath,
 			type: 'esm',
+			httpRatelimit: this.httpratelimit,
+			wsRatelimit: this.wsratelimit,
 			validations: this.validations,
 			fileBasedRouting,
 			headers: this.parsedHeaders
@@ -429,7 +454,7 @@ export default class RoutePath<GlobContext extends Record<any, any>, Middlewares
 		if ('getData' in router) {
 			this.externals.push({ object: router, addPrefix: parsePath([ this.httpPath, prefix ]) })
 		} else {
-			const routePath = new RoutePath<GlobContext, Middlewares, `${Path}/${LPath}`>(parsePath([ this.httpPath, prefix ]) as any, [...this.validations], Object.assign({}, this.headers))
+			const routePath = new RoutePath<GlobContext, Middlewares, `${Path}/${LPath}`>(parsePath([ this.httpPath, prefix ]) as any, [...this.validations], Object.assign({}, this.headers), this.httpratelimit, this.wsratelimit)
 			this.externals.push({ object: routePath as any })
 			router(routePath)
 		}

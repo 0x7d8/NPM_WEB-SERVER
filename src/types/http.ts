@@ -2,6 +2,7 @@ import HTTPRequest from "../classes/web/HttpRequest"
 import RPath from "../classes/path"
 import { HTTPMethods } from "./external"
 import { EndFn, MergeObjects, MiddlewareInitted, RealAny, RoutedValidation } from "./internal"
+import RouteRateLimit from "../classes/router/rateLimit"
 import DocumentationBuilder from "../classes/documentation/builder"
 
 type Route<Context extends Record<any, any> = {}, Body = unknown, Middlewares extends MiddlewareInitted[] = [], Path extends string = '/'> = {
@@ -16,6 +17,7 @@ type Route<Context extends Record<any, any> = {}, Body = unknown, Middlewares ex
 	/** The Documentation of the Route */ documentation: DocumentationBuilder
 
 	/** Additional Route Data */ data: {
+		/** The Ratelimit that applies to this Route */ ratelimit: RouteRateLimit['data']
 		/** The Validations to run on this route */ validations: RoutedValidation[]
 		/** The Headers to add to this route */ headers: Record<string, Buffer>
 	}

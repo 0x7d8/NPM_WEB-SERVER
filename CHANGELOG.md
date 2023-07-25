@@ -1,12 +1,16 @@
-## 5.5.3
+## 8.6.0
+
+- Add built in rate limiting
+
+## 8.5.3
 
 - Fix non file based routing adding invalid prefixes
 
-## 5.5.2
+## 8.5.2
 
 - Fix Crash when passing invalid URIs
 
-## 5.5.1
+## 8.5.1
 
 - Fix some typescript related issues
 

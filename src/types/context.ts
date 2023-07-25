@@ -100,6 +100,8 @@ export type GlobalContext = {
 	/** The Request Count */ requests: DataStat
 	/** The Middlewares to run */ middlewares: MiddlewareInitted[]
 
+	/** The Stored Rate Limits */ rateLimits: ValueCollection<`${'http' | 'ws'}+${string}-${number}`, { hits: number, end: number }>
+
 	/** The WebSocket Stats */ webSockets: {
 		/** The Amount of Sockets Opened */ opened: DataStat
 		/** The Amount of Socket Messages recieved */ messages: {

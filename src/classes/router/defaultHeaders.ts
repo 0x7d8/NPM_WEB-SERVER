@@ -1,9 +1,8 @@
-import parseContent, { Content } from "../../functions/parseContent"
+import { Content } from "../../functions/parseContent"
 
 export default class RouteContentTypes {
 	private defaultHeaders: Record<string, Content>
 
-	/** Generate Content Type Block */
 	constructor(
 		/** Headers to import */ defaultHeaders: Record<string, Content> = {}
 	) {

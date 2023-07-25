@@ -9,6 +9,7 @@ import RouteContentTypes from "../classes/router/contentTypes"
 import RouteDefaultHeaders from "../classes/router/defaultHeaders"
 import RouteWS from "../classes/router/ws"
 import RouteHTTP from "../classes/router/http"
+import RouteRateLimit from "../classes/router/rateLimit"
 
 export type EndFn = (...args: any[]) => void
 export type RealAny = PromiseLike<any> | Promise<any> | any
@@ -60,6 +61,8 @@ export type LoadPath = {
 	prefix: string
 	type: 'cjs' | 'esm'
 	validations: RoutedValidation[]
+	httpRatelimit: RouteRateLimit['data']
+	wsRatelimit: RouteRateLimit['data']
 	headers: Record<string, Buffer>
 	fileBasedRouting: boolean
 }

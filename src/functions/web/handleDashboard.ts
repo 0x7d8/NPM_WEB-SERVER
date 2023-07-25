@@ -20,6 +20,7 @@ export const dashboardIndexRoute = (ctg: GlobalContext): HTTP => ({
   documentation: new DocumentationBuilder(),
   onRequest: async(ctr) => await statsRoute(ctr, ctg, 'http'),
   data: {
+    ratelimit: { maxHits: Infinity, penalty: 0, sortTo: -1, timeWindow: Infinity },
     validations: [],
     headers: {}
   }, context: { data: {}, keep: true }
@@ -30,6 +31,7 @@ export const dashboardWsRoute = (ctg: GlobalContext): WebSocket => ({
   path: new Path('GET', '/'),
   onConnect: async(ctr) => await statsRoute(ctr, ctg, 'socket'),
   data: {
+    ratelimit: { maxHits: Infinity, penalty: 0, sortTo: -1, timeWindow: Infinity },
     validations: [],
     headers: {}
   }, context: { data: {}, keep: true }

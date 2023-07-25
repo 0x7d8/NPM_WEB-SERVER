@@ -31,8 +31,35 @@ export default function handleWSConnect(ws: WebSocket<WebSocketContext>, message
 		const ctr = new ctg.classContexts.wsMessage(ctg.controller, ctx, ws)
 		ctr["@"] = custom
 
+		// Ratelimiting
+		if (ctx.execute.route && 'ratelimit' in ctx.execute.route.data && ctx.execute.route.data.ratelimit.timeWindow !== Infinity) {
+			let data = ctg.rateLimits.get(`ws+${ctr.client.ip}-${ctx.execute.route.data.ratelimit.sortTo}`, {
+				hits: 0,
+				end: Date.now() + ctx.execute.route.data.ratelimit.timeWindow
+			})
+	
+			if (data.hits + 1 > ctx.execute.route.data.ratelimit.maxHits && data.end > Date.now()) {
+				if (data.hits === ctx.execute.route.data.ratelimit.maxHits) data.end += ctx.execute.route.data.ratelimit.penalty
+	
+				ctx.executeCode = false
+				ctx.execute.event = 'wsMessageRatelimit'
+			} else if (data.end < Date.now()) {
+				ctg.rateLimits.delete(`ws+${ctr.client.ip}-${ctx.execute.route.data.ratelimit.sortTo}`)
+	
+				data = {
+					hits: 0,
+					end: Date.now() + ctx.execute.route.data.ratelimit.timeWindow
+				}
+			}
+	
+			ctg.rateLimits.set(`http+${ctr.client.ip}-${ctx.execute.route.data.ratelimit.sortTo}`, {
+				...data,
+				hits: data.hits + 1
+			})
+		}
+
 		// Execute Middleware
-		if (ctg.middlewares.length > 0 && !ctx.error) {
+		if (ctx.executeCode && ctg.middlewares.length > 0 && !ctx.error) {
 			for (let middlewareIndex = 0; middlewareIndex < ctg.middlewares.length; middlewareIndex++) {
 				const middleware = ctg.middlewares[middlewareIndex]
 				if (!middleware.data.wsMessageEvent) continue

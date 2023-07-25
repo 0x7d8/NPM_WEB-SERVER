@@ -1,6 +1,7 @@
 import HTTPRequest from "../classes/web/HttpRequest"
 import RPath from "../classes/path"
 import { MergeObjects, MiddlewareInitted, RealAny, RoutedValidation } from "./internal"
+import RouteRateLimit from "../classes/router/rateLimit"
 import { LocalContext } from "./context"
 
 import WSConnect from "../classes/web/WsConnect"
@@ -18,6 +19,7 @@ type Route<Context extends Record<any, any> = {}, Message = unknown, Middlewares
 	/** The Async Code to run when the Socket Closes */ onClose?(ctr: MergeObjects<[ WSClose<Context, Message, Path>, InstanceType<Middlewares[number]['data']['classModifications']['wsClose']> ]>): RealAny
 
 	/** Additional Route Data */ data: {
+		/** The Ratelimit that applies to this Route */ ratelimit: RouteRateLimit['data']
 		/** The Validations to run on this route */ validations: RoutedValidation[]
 		/** The Headers to add to this route */ headers: Record<string, Buffer>
 	}

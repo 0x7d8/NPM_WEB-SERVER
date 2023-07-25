@@ -8,7 +8,8 @@
   [<img src="https://img.rjansen.de/rjweb/changelog.svg" height="75px" style="margin-top:-25px;">](https://github.com/0x7d8/NPM_WEB-SERVER/blob/main/CHANGELOG.md)
 
   [![install size](https://packagephobia.com/badge?p=rjweb-server)](https://packagephobia.com/result?p=rjweb-server)
-  [![Socket Badge](https://socket.dev/api/badge/npm/package/rjweb-server)](https://socket.dev/npm/package/rjweb-server)
+  ![lines of code](https://tokei.rs/b1/github/0x7d8/NPM_WEB-SERVER?category=code)
+  ![files](https://tokei.rs/b1/github/0x7d8/NPM_WEB-SERVER?category=files)
 
 </div>
 
@@ -539,11 +540,11 @@ rjweb --help
 
 ## Official Middlewares
 - rjweb-server-ejs (To Render EJS templates easily)
-- rjweb-server-ratelimit (To add rate limiting easily)
+- rjweb-server-ratelimit (To add rate limiting easily (for older versions than 8.6.0))
 
 ## Full Example
-- Javascript: https://replit.com/@RobertJansen/aous
-- Typescript: https://replit.com/@RobertJansen/aous-ts
+- Javascript: https://replit.com/@RobertJansen/rjweb-server-JS
+- Typescript: https://replit.com/@RobertJansen/rjweb-server-TS
 
 ## Author
 

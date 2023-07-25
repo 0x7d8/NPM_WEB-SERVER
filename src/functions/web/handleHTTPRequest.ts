@@ -113,9 +113,9 @@ export default async function handleHTTPRequest(req: HttpRequest, res: HttpRespo
 			}
 		}
 
-		if (ctx.headers.has('proxy-authorization')) {
-			if (!ctg.options.proxy.credentials.authenticate) ctx.isProxy = true
-			else if (ctx.headers.get('proxy-authorization') !== 'Basic '.concat(Buffer.from(`${ctg.options.proxy.credentials.username}:${ctg.options.proxy.credentials.password}`).toString('base64'))) {
+		if (!ctg.options.proxy.credentials.authenticate) ctx.isProxy = true
+		else if (ctx.headers.has('proxy-authorization')) {
+			if (ctx.headers.get('proxy-authorization') !== 'Basic '.concat(Buffer.from(`${ctg.options.proxy.credentials.username}:${ctg.options.proxy.credentials.password}`).toString('base64'))) {
 				const meta = await writeHTTPMeta(res, ctx)
 
 				if (!ctx.isAborted) return res.cork(() => {
@@ -334,14 +334,14 @@ export default async function handleHTTPRequest(req: HttpRequest, res: HttpRespo
 			if (ctg.options.performance.eTag) {
 				eTag = toETag(response.content, ctx.response.headers, ctx.response.cookies, ctx.response.status)
 				ctg.logger.debug('generated etag for content of bytelen', response.content.byteLength)
-				if (eTag) ctx.response.headers['etag'] = Buffer.from(`W/"${eTag}"`)
+				if (eTag) ctx.response.headers['etag'] = eTag
 			}
 
 			const meta = await writeHTTPMeta(res, ctx)
 
 			if (!ctx.isAborted) return res.cork(() => {
 				let endEarly = false
-				if (ctg.options.performance.eTag && eTag && ctx.headers.get('if-none-match') === `W/"${eTag}"`) {
+				if (ctg.options.performance.eTag && eTag && ctx.headers.get('if-none-match') === eTag) {
 					ctg.logger.debug('ended etag request early because of match')
 
 					ctx.response.status = Status.NOT_MODIFIED
@@ -529,6 +529,38 @@ export default async function handleHTTPRequest(req: HttpRequest, res: HttpRespo
 		for (const [ key, value ] of Object.entries(ctx.execute.route.data.headers)) {
 			ctx.response.headers[key] = value
 		}
+	}
+
+	// Ratelimiting
+	if (ctx.execute.route && 'ratelimit' in ctx.execute.route.data && ctx.execute.route.data.ratelimit.timeWindow !== Infinity) {
+		let data = ctg.rateLimits.get(`http+${ctr.client.ip}-${ctx.execute.route.data.ratelimit.sortTo}`, {
+			hits: 0,
+			end: Date.now() + ctx.execute.route.data.ratelimit.timeWindow
+		})
+
+		if (data.hits + 1 > ctx.execute.route.data.ratelimit.maxHits && data.end > Date.now()) {
+			if (data.hits === ctx.execute.route.data.ratelimit.maxHits) data.end += ctx.execute.route.data.ratelimit.penalty
+
+			ctx.executeCode = false
+			ctx.execute.event = 'httpRatelimit'
+		} else if (data.end < Date.now()) {
+			ctg.rateLimits.delete(`http+${ctr.client.ip}-${ctx.execute.route.data.ratelimit.sortTo}`)
+
+			data = {
+				hits: 0,
+				end: Date.now() + ctx.execute.route.data.ratelimit.timeWindow
+			}
+		}
+
+		ctx.response.headers['x-ratelimit-limit'] = ctx.execute.route.data.ratelimit.maxHits
+		ctx.response.headers['x-ratelimit-remaining'] = ctx.execute.route.data.ratelimit.maxHits - (data.hits + 1)
+		ctx.response.headers['x-ratelimit-reset'] = Math.floor(data.end / 1000).toString()
+		ctx.response.headers['x-ratelimit-policy'] = `${ctx.execute.route.data.ratelimit.maxHits};w=${Math.floor(ctx.execute.route.data.ratelimit.timeWindow / 1000)}`
+
+		ctg.rateLimits.set(`http+${ctr.client.ip}-${ctx.execute.route.data.ratelimit.sortTo}`, {
+			...data,
+			hits: data.hits + 1
+		})
 	}
 
 	// Handle Incoming Data

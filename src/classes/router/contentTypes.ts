@@ -1,7 +1,6 @@
 export default class RouteContentTypes {
 	private contentTypes: Record<string, string>
 
-	/** Generate Content Type Block */
 	constructor(
 		/** Content Types to import */ contentTypes: Record<string, string> = {}
 	) {

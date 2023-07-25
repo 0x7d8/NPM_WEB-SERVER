@@ -60,6 +60,7 @@ import os from "os"
 		this.globalContext = {
 			controller: this as any,
 			contentTypes: {},
+			rateLimits: new ValueCollection(),
 			logger: new Logger(fullOptions.logging),
 			options: fullOptions,
 			requests: new DataStat(),
@@ -138,10 +139,24 @@ import os from "os"
 	 * Route File Builder
 	 * @example
 	 * ```
-	 * const { server } = require('../index.js')
+	 * // routes/say.js
+	 * const controller = require('../index.js')
 	 * 
-	 * module.exports = new server.routeFile((file) => file
-	 *   .http(...)
+	 * module.exports = new controller.routeFile((file) => file
+	 *   .http('GET', '/say/{text}', (http) => http
+	 *     .onRequest((ctr) => {
+	 *       ctr.print(ctr.params.get('text'))
+	 *     })
+	 *   )
+	 * )
+	 * 
+   * // index.js
+   * const controller = new Server({ })
+	 * 
+	 * module.exports = controller
+   * 
+   * controller.path('/', (path) => path
+	 *   .loadCJS('./routes')
 	 * )
 	 * ```
 	 * @since 7.0.0
@@ -336,7 +351,7 @@ import os from "os"
 						!(route instanceof RouteFile)
 					) throw new Error(`Invalid Route @ ${file}`)
 
-					const routeInfos = await route.getData(loadPath.fileBasedRouting ? path.posix.normalize(path.posix.normalize(file).replace(path.posix.normalize(loadPath.path), '').replaceAll('\\', '/')).replace(/index|\.(js|ts|cjs|cts|mjs|mts)/g, '') : '')
+					const routeInfos = await route.getData(loadPath.fileBasedRouting ? path.posix.normalize(path.posix.normalize(file).replace(path.posix.normalize(loadPath.path), '').replaceAll('\\', '/')).replace(/index|\.(js|ts|cjs|cts|mjs|mts)/g, '') : '', loadPath.httpRatelimit, loadPath.wsRatelimit)
 
 					for (const routeInfo of routeInfos.routes) {
 						routeInfo.path.addPrefix(loadPath.prefix)
@@ -369,7 +384,7 @@ import os from "os"
 						!(route instanceof RouteFile)
 					) throw new Error(`Invalid Route @ ${file}`)
 
-					const routeInfos = await route.getData(loadPath.fileBasedRouting ? path.posix.normalize(path.posix.normalize(file).replace(path.posix.normalize(loadPath.path), '').replaceAll('\\', '/')).replace(/index|\.(js|ts|cjs|cts|mjs|mts)/g, '') : '')
+					const routeInfos = await route.getData(loadPath.fileBasedRouting ? path.posix.normalize(path.posix.normalize(file).replace(path.posix.normalize(loadPath.path), '').replaceAll('\\', '/')).replace(/index|\.(js|ts|cjs|cts|mjs|mts)/g, '') : '', loadPath.httpRatelimit, loadPath.wsRatelimit)
 
 					for (const routeInfo of routeInfos.routes) {
 						routeInfo.path.addPrefix(loadPath.prefix)

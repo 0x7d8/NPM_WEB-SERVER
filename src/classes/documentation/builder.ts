@@ -1,5 +1,5 @@
 import { as, zValidate } from "rjutils-collection"
-import { BaseParameterObject, HeaderObject, ResponseObject } from "../../types/openAPI3"
+import { BaseParameterObject, HeaderObject, SchemaObject } from "../../types/openAPI3"
 import { ExcludeFrom } from "../../types/internal"
 import ParamsDefiner from "./paramsDefiner"
 

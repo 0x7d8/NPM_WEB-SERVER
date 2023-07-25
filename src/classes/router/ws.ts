@@ -2,6 +2,7 @@ import { MiddlewareInitted, RoutedValidation, ExcludeFrom } from "../../types/in
 import RPath from "../path"
 import WebSocket from "../../types/webSocket"
 import { as } from "rjutils-collection"
+import RouteRateLimit from "./rateLimit"
 
 export default class RouteWS<GlobContext extends Record<any, any> = {}, Context extends Record<any, any> = {}, Message = unknown, Middlewares extends MiddlewareInitted[] = [], Path extends string = '/', Excluded extends (keyof RouteWS)[] = []> {
 	private data: WebSocket
@@ -10,13 +11,15 @@ export default class RouteWS<GlobContext extends Record<any, any> = {}, Context 
 	constructor(
 		/** The Path of the Routes */ path: Path | RegExp,
 		/** The Validations to add */ validations: RoutedValidation[] = [],
-		/** The Headers to add */ headers: Record<string, Buffer> = {}
+		/** The Headers to add */ headers: Record<string, Buffer> = {},
+		/** The Ratelimit to apply */ ratelimit: RouteRateLimit['data']
 	) {
 		this.data = {
 			type: 'websocket',
 
 			path: new RPath('GET', path),
 			data: {
+				ratelimit,
 				validations,
 				headers
 			}, context: { data: {}, keep: true }
@@ -70,6 +73,48 @@ export default class RouteWS<GlobContext extends Record<any, any> = {}, Context 
 	}
 
 	/**
+	 * Add a Ratelimit to this Endpoint
+	 * 
+	 * When a User sends a message to this Socket, that will count against their hit count, if
+	 * the hits exceeds the `<maxHits>` in `<timeWindow>ms`, they wont be able to access
+	 * the route for `<penalty>ms`.
+	 * @example
+	 * ```
+	 * const { time } = require("rjutils-collection")
+	 * const controller = new Server({ })
+	 * 
+	 * controller.path('/', (path) => path
+	 *   .httpRateLimit((limit) => limit
+	 *     .hits(5)
+	 *     .timeWindow(time(20).s())
+	 *     .penalty(0)
+	 *   ) // This will allow 5 requests every 20 seconds
+	 *   .ws('/echo', (ws) => ws
+	 *     .onMessage(async(ctr) => {
+	 *       ctr.print(ctr.rawBodyBytes)
+	 *     })
+	 *   )
+	 * )
+	 * 
+	 * controller.on('httpRatelimit', (ctr) => {
+	 *   ctr.print(`Please wait ${ctr.getRateLimit()?.resetIn}ms!!!!!`)
+	 * })
+	 * ```
+	 * @since 8.6.0
+	*/ public ratelimit(
+		callback: (limit: RouteRateLimit) => RouteRateLimit
+	): ExcludeFrom<RouteWS<GlobContext, Context, Message, Middlewares, Path, [...Excluded, 'ratelimit']>, [...Excluded, 'ratelimit']> {
+		const limit = new RouteRateLimit()
+		limit['data'] = Object.assign({}, this.data.data.ratelimit)
+
+		callback(limit)
+
+		this.data.data.ratelimit = limit['data']
+
+		return as<any>(this)
+	}
+
+	/**
 	 * Attach a Callback for when someone wants to Upgrade from HTTP a Socket
 	 * 
 	 * This will attach a callback for when the client sends an http request but
@@ -92,9 +137,9 @@ export default class RouteWS<GlobContext extends Record<any, any> = {}, Context 
 	 * ```
 	 * @since 5.10.0
 	*/ public onUpgrade(
-		/** The Async Code to run when the Socket gets an Upgrade HTTP Request */ code: WebSocket<GlobContext & Context, never, Middlewares, Path>['onUpgrade']
+		/** The Async Callback to run when the Socket gets an Upgrade HTTP Request */ callback: WebSocket<GlobContext & Context, never, Middlewares, Path>['onUpgrade']
 	): ExcludeFrom<RouteWS<GlobContext, Context, Message, Middlewares, Path, [...Excluded, 'onUpgrade']>, [...Excluded, 'onUpgrade']> {
-		this.data.onUpgrade = code as any
+		this.data.onUpgrade = callback as any
 
 		return as<any>(this)
 	}
@@ -119,9 +164,9 @@ export default class RouteWS<GlobContext extends Record<any, any> = {}, Context 
 	 * ```
 	 * @since 5.4.0
 	*/ public onConnect(
-		/** The Async Code to run when the Socket is Established */ code: WebSocket<GlobContext & Context, never, Middlewares, Path>['onConnect']
+		/** The Async Callback to run when the Socket is Established */ callback: WebSocket<GlobContext & Context, never, Middlewares, Path>['onConnect']
 	): ExcludeFrom<RouteWS<GlobContext, Context, Message, Middlewares, Path, [...Excluded, 'onConnect']>, [...Excluded, 'onConnect']> {
-		this.data.onConnect = code as any
+		this.data.onConnect = callback as any
 
 		return as<any>(this)
 	}
@@ -146,9 +191,9 @@ export default class RouteWS<GlobContext extends Record<any, any> = {}, Context 
 	 * ```
 	 * @since 5.4.0
 	*/ public onMessage(
-		/** The Async Code to run on a Message */ code: WebSocket<GlobContext & Context, Message, Middlewares, Path>['onMessage']
+		/** The Async Callback to run on a Message */ callback: WebSocket<GlobContext & Context, Message, Middlewares, Path>['onMessage']
 	): ExcludeFrom<RouteWS<GlobContext, Context, Message, Middlewares, Path, [...Excluded, 'onMessage']>, [...Excluded, 'onMessage']> {
-		this.data.onMessage = code as any
+		this.data.onMessage = callback as any
 
 		return as<any>(this)
 	}
@@ -174,9 +219,9 @@ export default class RouteWS<GlobContext extends Record<any, any> = {}, Context 
 	 * ```
 	 * @since 5.4.0
 	*/ public onClose(
-		/** The Async Code to run when the Socket Closes */ code: WebSocket<GlobContext & Context, Message, Middlewares, Path>['onClose']
+		/** The Async Callback to run when the Socket Closes */ callback: WebSocket<GlobContext & Context, Message, Middlewares, Path>['onClose']
 	): ExcludeFrom<RouteWS<GlobContext, Context, Message, Middlewares, Path, [...Excluded, 'onClose']>, [...Excluded, 'onClose']> {
-		this.data.onClose = code as any
+		this.data.onClose = callback as any
 
 		return as<any>(this)
 	}

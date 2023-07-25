@@ -18,6 +18,7 @@ import getCompressMethod from "../../functions/getCompressMethod"
 import { createHash } from "crypto"
 import Path from "../path"
 import DocumentationBuilder from "../documentation/builder"
+import { RatelimitInfos } from "../../types/external"
 
 export const toArrayBuffer = (buffer: Buffer): ArrayBuffer => {
   return buffer.buffer.slice(buffer.byteOffset, buffer.byteOffset + buffer.byteLength)
@@ -249,6 +250,68 @@ export default class HTTPRequest<Context extends Record<any, any> = {}, Body = u
 	}
 
 	/**
+	 * Skips counting the request to the Client IPs Rate limit (if there is one)
+	 * 
+	 * When a specific IP makes a request to an endpoint under a ratelimit, the maxhits will be
+	 * increased instantly to prevent bypassing the rate limit by spamming requests faster than the host can
+	 * handle. When this function is called, the server removes the set hit again.
+	 * @since 8.6.0
+	*/ public skipRateLimit(): this {
+		if (!this.ctx.execute.route || !('ratelimit' in this.ctx.execute.route.data) || this.ctx.execute.route.data.ratelimit.timeWindow === Infinity) return this
+
+		const data = this.ctg.rateLimits.get(`http+${this.client.ip}-${this.ctx.execute.route.data.ratelimit.sortTo}`, {
+			hits: 1,
+			end: Date.now() + this.ctx.execute.route.data.ratelimit.timeWindow
+		})
+
+		this.ctg.rateLimits.set(`http+${this.client.ip}-${this.ctx.execute.route.data.ratelimit.sortTo}`, {
+			...data,
+			hits: data.hits - 1
+		})
+
+		return this
+	}
+
+	/**
+	 * Clear the active Ratelimit of the Client
+	 * 
+	 * This Clears the currently active Ratelimit (on this endpoint) of the Client, remember:
+	 * you cant call this in a normal endpoint if the max hits are already reached since well...
+	 * they are already reached.
+	 * @since 8.6.0
+	*/ public clearRateLimit(): this {
+		if (!this.ctx.execute.route || !('ratelimit' in this.ctx.execute.route.data) || this.ctx.execute.route.data.ratelimit.timeWindow === Infinity) return this
+
+		this.ctg.rateLimits.delete(`http+${this.client.ip}-${this.ctx.execute.route.data.ratelimit.sortTo}`)
+
+		return this
+	}
+
+	/**
+	 * Get Infos about the current Ratelimit
+	 * 
+	 * This will get all information about the currently applied ratelimit
+	 * to the endpoint. If none is active, will return `null`.
+	*/ public getRateLimit(): RatelimitInfos | null {
+		if (!this.ctx.execute.route || !('ratelimit' in this.ctx.execute.route.data) || this.ctx.execute.route.data.ratelimit.timeWindow === Infinity) return null
+
+		const data = this.ctg.rateLimits.get(`http+${this.client.ip}-${this.ctx.execute.route.data.ratelimit.sortTo}`, {
+			hits: 0,
+			end: Date.now() + this.ctx.execute.route.data.ratelimit.timeWindow
+		})
+
+		return {
+			hits: data.hits,
+			maxHits: this.ctx.execute.route.data.ratelimit.maxHits,
+			hasPenalty: data.hits > this.ctx.execute.route.data.ratelimit.maxHits,
+			penalty: this.ctx.execute.route.data.ratelimit.penalty,
+			timeWindow: this.ctx.execute.route.data.ratelimit.timeWindow,
+			endsAt: new Date(data.end),
+			endsIn: data.end - Date.now()
+		}
+	}
+
+	/**
 	 * Print a Message to the Client (automatically Formatted)
 	 * 
 	 * This Message will be the one actually sent to the client, nothing
@@ -300,7 +363,7 @@ export default class HTTPRequest<Context extends Record<any, any> = {}, Body = u
 	 * before, the response body will be only this, basically the first call is the same as `.print()`.
 	 * this could be used when for example you want to loop over an array asynchronously without some
 	 * `await Promise.all(array.map(async() => ...))` voodo magic. Basically just call `.printPart()`
-	 * after finishing an iteration.
+	 * after finishing an iteration. (which is also a bad idea (if using json) but if you want to, you can use it ;) )
 	 * @example
 	 * ```
 	 * ctr.printPart('hi')
@@ -355,7 +418,7 @@ export default class HTTPRequest<Context extends Record<any, any> = {}, Body = u
 	 * @since 6.6.0
 	*/ public printHTML(callback: (html: HTMLBuilder) => HTMLBuilder, options: {
 		/**
-		 * The HTML Language to show at the top html tag
+		 * The HTML Language to show at the top `<html>` tag
 		 * @default "en"
 		 * @since 6.6.0
 		*/ htmlLanguage?: string
@@ -382,10 +445,12 @@ export default class HTTPRequest<Context extends Record<any, any> = {}, Body = u
 						const builder = new HTMLBuilder(path, getEvery.fnArguments)
 						getEvery.callback(builder, res)
 
+						ctr.headers.set('content-type', 'text/html')
 						ctr.print(builder['html'])
 					}, type: 'http',
 					documentation: new DocumentationBuilder(),
 					data: {
+						ratelimit: { maxHits: Infinity, penalty: 0, sortTo: -1, timeWindow: Infinity },
 						headers: (this.ctx.execute.route as any)?.data.headers!,
 						validations: this.ctx.execute.route?.data.validations!
 					}, context: { data: {}, keep: true }
