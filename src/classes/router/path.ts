@@ -117,7 +117,7 @@ export default class RoutePath<GlobContext extends Record<any, any>, Middlewares
 	 * ```
 	 * @since 8.6.0
 	*/ public httpRatelimit(
-		callback: (limit: RouteRateLimit) => RouteRateLimit
+		callback: (limit: RouteRateLimit) => any
 	): ExcludeFrom<RoutePath<GlobContext, Middlewares, Path, [...Excluded, 'httpRatelimit']>, [...Excluded, 'httpRatelimit']> {
 		const limit = new RouteRateLimit()
 		limit['data'] = Object.assign({}, this.httpratelimit)
@@ -158,7 +158,7 @@ export default class RoutePath<GlobContext extends Record<any, any>, Middlewares
 	 * ```
 	 * @since 8.6.0
 	*/ public wsRatelimit(
-		callback: (limit: RouteRateLimit) => RouteRateLimit
+		callback: (limit: RouteRateLimit) => any
 	): ExcludeFrom<RoutePath<GlobContext, Middlewares, Path, [...Excluded, 'wsRatelimit']>, [...Excluded, 'wsRatelimit']> {
 		const limit = new RouteRateLimit()
 		limit['data'] = Object.assign({}, this.wsratelimit)
@@ -449,7 +449,7 @@ export default class RoutePath<GlobContext extends Record<any, any>, Middlewares
 	 * @since 5.0.0
 	*/ public path<LPath extends string = `/${string}`>(
 		/** The Path Prefix */ prefix: LPath,
-		/** The Callback to handle the Prefix */ router: ((path: RoutePath<GlobContext, Middlewares, `${Path}/${LPath}`>) => RoutePath<GlobContext, Middlewares, `${Path}/${LPath}`>) | RoutePath<any, any>
+		/** The Callback to handle the Prefix */ router: ((path: RoutePath<GlobContext, Middlewares, `${Path}/${LPath}`>) => any) | RoutePath<any, any>
 	): this {
 		if ('getData' in router) {
 			this.externals.push({ object: router, addPrefix: parsePath([ this.httpPath, prefix ]) })

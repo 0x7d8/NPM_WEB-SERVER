@@ -102,7 +102,7 @@ export default class RouteWS<GlobContext extends Record<any, any> = {}, Context 
 	 * ```
 	 * @since 8.6.0
 	*/ public ratelimit(
-		callback: (limit: RouteRateLimit) => RouteRateLimit
+		callback: (limit: RouteRateLimit) => any
 	): ExcludeFrom<RouteWS<GlobContext, Context, Message, Middlewares, Path, [...Excluded, 'ratelimit']>, [...Excluded, 'ratelimit']> {
 		const limit = new RouteRateLimit()
 		limit['data'] = Object.assign({}, this.data.data.ratelimit)

@@ -45,7 +45,7 @@ export default class RouteIndex<GlobContext extends Record<any, any>, Middleware
 	 * @since 5.0.0
 	*/ public path<Path extends string>(
 		/** The Path Prefix */ prefix: Path,
-		/** The Code to handle the Prefix */ router: ((path: RoutePath<GlobContext, Middlewares, Path>) => RoutePath<GlobContext, Middlewares, Path>) | RoutePath<any, any>
+		/** The Code to handle the Prefix */ router: ((path: RoutePath<GlobContext, Middlewares, Path>) => any) | RoutePath<any, any>
 	): this {
 		if ('getData' in router) {
 			this.externals.push({ object: router, addPrefix: prefix })
@@ -68,12 +68,12 @@ export default class RouteIndex<GlobContext extends Record<any, any>, Middleware
 	 * ```
 	 * @since 5.3.0
 	*/ public contentTypes(
-		/** The Code to handle the Headers */ code: (path: RouteContentTypes) => RouteContentTypes
+		/** The Callback to handle the Headers */ callback: (contentTypes: RouteContentTypes) => RouteContentTypes
 	): this {
 		const routeContentTypes = new RouteContentTypes()
 		this.externals.push({ object: routeContentTypes })
 	
-		code(routeContentTypes)
+		callback(routeContentTypes)
 	
 		return this
 	}
@@ -88,12 +88,12 @@ export default class RouteIndex<GlobContext extends Record<any, any>, Middleware
 	 * ```
 	 * @since 5.3.0
 	*/ public defaultHeaders(
-		/** The Code to handle the Headers */ code: (path: RouteDefaultHeaders) => RouteDefaultHeaders
+		/** The Callback to handle the Headers */ callback: (defaultHeaders: RouteDefaultHeaders) => RouteDefaultHeaders
 	): this {
 		const routeDefaultHeaders = new RouteDefaultHeaders()
 		this.externals.push({ object: routeDefaultHeaders })
 
-		code(routeDefaultHeaders)
+		callback(routeDefaultHeaders)
 
 		return this
 	}

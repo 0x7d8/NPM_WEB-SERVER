@@ -1,3 +1,7 @@
+## 8.6.1
+
+- Fix some Typescript bugs
+
 ## 8.6.0
 
 - Add built in rate limiting

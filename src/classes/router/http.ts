@@ -107,7 +107,7 @@ export default class RouteHTTP<GlobContext extends Record<any, any> = {}, Contex
 	 * ```
 	 * @since 8.6.0
 	*/ public ratelimit(
-		callback: (limit: RouteRateLimit) => RouteRateLimit
+		callback: (limit: RouteRateLimit) => any
 	): ExcludeFrom<RouteHTTP<GlobContext, Context, Body, Middlewares, Path, [...Excluded, 'ratelimit']>, [...Excluded, 'ratelimit']> {
 		const limit = new RouteRateLimit()
 		limit['data'] = Object.assign({}, this.data.data.ratelimit)
