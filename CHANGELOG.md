@@ -1,3 +1,7 @@
+## 8.6.6
+
+- Fix validations not including middleware types
+
 ## 8.6.5
 
 - Added Ratelimit Cleanups every 30 seconds
