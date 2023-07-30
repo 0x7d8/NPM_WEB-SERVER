@@ -57,7 +57,7 @@ export default class RouteHTTP<GlobContext extends Record<any, any> = {}, Contex
 	 * )
 	 * ```
 	 * @since 7.0.0
-	*/ public context(
+	*/ public context<Context extends Record<any, any>>(
 		/** The Default State of the Request Context */ context: Context,
 		/** The Options for this Function */ options: {
 			/**

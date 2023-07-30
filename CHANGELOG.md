@@ -1,3 +1,7 @@
+## 8.6.7
+
+- Fix more Typescript related issues
+
 ## 8.6.6
 
 - Fix validations not including middleware types
