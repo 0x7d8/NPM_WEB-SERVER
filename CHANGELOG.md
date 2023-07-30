@@ -1,3 +1,7 @@
+## 8.6.8
+
+- Fix Websocket Class Merging
+
 ## 8.6.7
 
 - Fix more Typescript related issues

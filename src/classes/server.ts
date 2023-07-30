@@ -77,9 +77,9 @@ import os from "os"
 				}
 			}, classContexts: {
 				http: mergeClasses(HttpRequest, ...this.middlewares.map((m) => m.data.classModifications.http)),
-				wsConnect: mergeClasses(WsConnect, ...this.middlewares.map((m) => m.data.classModifications.http)),
-				wsMessage: mergeClasses(WsMessage, ...this.middlewares.map((m) => m.data.classModifications.http)),
-				wsClose: mergeClasses(WsClose, ...this.middlewares.map((m) => m.data.classModifications.http))
+				wsConnect: mergeClasses(WsConnect, ...this.middlewares.map((m) => m.data.classModifications.wsConnect)),
+				wsMessage: mergeClasses(WsMessage, ...this.middlewares.map((m) => m.data.classModifications.wsMessage)),
+				wsClose: mergeClasses(WsClose, ...this.middlewares.map((m) => m.data.classModifications.wsClose))
 			}, defaults: {
 				globContext,
 				headers: {}
