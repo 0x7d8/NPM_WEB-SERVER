@@ -1,3 +1,7 @@
+## 8.6.9
+
+- Fix WebSocket Message Rate Limits not counting up
+
 ## 8.6.8
 
 - Fix Websocket Class Merging

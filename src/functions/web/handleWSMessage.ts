@@ -52,7 +52,7 @@ export default function handleWSConnect(ws: WebSocket<WebSocketContext>, message
 				}
 			}
 	
-			ctg.rateLimits.set(`http+${ctr.client.ip}-${ctx.execute.route.data.ratelimit.sortTo}`, {
+			ctg.rateLimits.set(`ws+${ctr.client.ip}-${ctx.execute.route.data.ratelimit.sortTo}`, {
 				...data,
 				hits: data.hits + 1
 			})
