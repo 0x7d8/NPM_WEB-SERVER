@@ -306,7 +306,7 @@ export default class HTTPRequest<Context extends Record<any, any> = {}, Body = u
 			hasPenalty: data.hits > this.ctx.execute.route.data.ratelimit.maxHits,
 			penalty: this.ctx.execute.route.data.ratelimit.penalty,
 			timeWindow: this.ctx.execute.route.data.ratelimit.timeWindow,
-			endsAt: new Date(data.end),
+			get endsAt() { return new Date(data.end) },
 			endsIn: data.end - Date.now()
 		}
 	}
@@ -724,20 +724,24 @@ export default class HTTPRequest<Context extends Record<any, any> = {}, Body = u
 				}
 
 				const dataListener = async(data: Buffer) => {
-					if (await Promise.resolve(validate(data))) {
-						try {
-							try {
-								data = (await parseContent(data, prettify, this.ctg.logger)).content
-							} catch (err) {
-								return this.ctx.handleError(err)
-							}
-
-							if (!this.ctx.isAborted) this.rawRes.cork(() => this.rawRes.write(data))
-
-							this.ctg.logger.debug('sent http body chunk with bytelen', data.byteLength)
-							this.ctg.data.outgoing.increase(data.byteLength)
-						} catch { }
+					try {
+						if (!await Promise.resolve(validate(data))) return
+					} catch (err) {
+						return this.ctx.handleError(err)
 					}
+
+					try {
+						try {
+							data = (await parseContent(data, prettify, this.ctg.logger)).content
+						} catch (err) {
+							return this.ctx.handleError(err)
+						}
+
+						if (!this.ctx.isAborted) this.rawRes.cork(() => this.rawRes.write(data))
+
+						this.ctg.logger.debug('sent http body chunk with bytelen', data.byteLength)
+						this.ctg.data.outgoing.increase(data.byteLength)
+					} catch { }
 				}, closeListener = () => {
 					if (destroyAbort) this.ctx.events.unlist('requestAborted', destroyStream)
 					if (endRequest) {

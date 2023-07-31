@@ -32,7 +32,7 @@ import parseContent from "./parseContent"
 		if ('maxAge' in infos && infos.maxAge !== undefined) cookieString += `;Max-Age=${infos.maxAge}`
 		if (infos.httpOnly) cookieString += `;HttpOnly`
 		if (infos.path) cookieString += `;Path=${infos.path}`
-		if (infos.sameSite) cookieString += `;SameSite=${infos.sameSite[0].toUpperCase() + infos.sameSite.slice(1)}`
+		if (infos.sameSite) cookieString += `;SameSite=${infos.sameSite[0].toUpperCase()}${infos.sameSite.slice(1)}`
 		if (infos.secure) cookieString += `;Secure`
 
 		readyCookies[cookie] = cookieString

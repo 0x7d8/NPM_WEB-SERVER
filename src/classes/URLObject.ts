@@ -10,7 +10,7 @@ import parseURL from "../functions/parseURL"
  * @since 5.6.0
 */ export default class URLObject {
 	/**
-	 * Create a new URL object for an easy Wrapper of `url.parse()`
+	 * Create a new URL object for an easier Wrapper of `parseURL()`
 	 * @since 5.6.0
 	*/ constructor(url: string, method: string) {
 		const parsed = parseURL(url)

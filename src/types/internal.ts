@@ -73,32 +73,37 @@ type BaseCookie = {
 	 * 
 	 * If not provided will not be used in the Cookie Header.
 	 * @default undefined
+	 * @see https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Set-Cookie#attributes
 	 * @since 8.3.0
 	*/ domain?: string
 	/**
 	 * Whether the Cookie should be HTTP only
 	 * @default false
+	 * @see https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Set-Cookie#attributes
 	 * @since 8.3.0
 	*/ httpOnly?: boolean
 	/**
 	 * Whether the Cookie should be Secure (HTTPS only)
 	 * @default false
+	 * @see https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Set-Cookie#attributes
 	 * @since 8.3.0
 	*/ secure?: boolean
 	/**
 	 * The Path under which to save the Cookie
 	 * @default "/"
+	 * @see https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Set-Cookie#attributes
 	 * @since 8.3.0
 	*/ path?: string
 	/**
 	 * The SameSite Attribute of the Cookie
-	 * @see https://datatracker.ietf.org/doc/html/draft-ietf-httpbis-cookie-same-site-00#section-4.1.1
 	 * @default false
+	 * @see https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Set-Cookie#attributes
 	 * @since 8.3.0
 	*/ sameSite?: false | 'strict' | 'lax' | 'none'
 
 	/**
 	 * The Value of the Cookie
+	 * @see https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Set-Cookie#attributes
 	 * @since 8.3.0
 	*/ value: Content
 }
@@ -109,6 +114,7 @@ type ExpiresCookie = {
 	 * 
 	 * If not provided will create a "Session Cookie".
 	 * @default undefined
+	 * @see https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Set-Cookie#attributes
 	 * @since 8.3.0
 	*/ expires?: Date
 } & BaseCookie
@@ -119,6 +125,7 @@ type MaxAgeCookie = {
 	 * 
 	 * If not provided will create a "Session Cookie".
 	 * @default undefined
+	 * @see https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Set-Cookie#attributes
 	 * @since 8.3.1
 	*/ maxAge?: number
 } & BaseCookie
@@ -143,8 +150,5 @@ export type ExternalRouter = {
 }
 
 export type AnyRouter = RouteWS<any, any, any, any> | RouteHTTP<any, any, any, any> | RoutePath<any, any> | RouteIndex<any> | RouteContentTypes | RouteDefaultHeaders
-
 export type MiddlewareInitted = ReturnType<MiddlewareLoader<any, any, any, any, any, any>['config']>
-
-export type Routed = (ctr: HTTPRequest) => RealAny
 export type RoutedValidation<Context extends Record<any, any> = {}, Body = unknown, Middlewares extends MiddlewareInitted[] = [], Path extends string = '/'> = (ctr: MergeObjects<[ HTTPRequest<Context, Body, Path>, InstanceType<Middlewares[number]['data']['classModifications']['http']> ]>, end: EndFn) => RealAny

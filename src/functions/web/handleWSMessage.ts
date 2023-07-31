@@ -100,6 +100,8 @@ export default function handleWSConnect(ws: WebSocket<WebSocketContext>, message
 			}
 
 			return resolve()
-		}); await runPageLogic()
+		})
+
+		await runPageLogic()
   }) ()}
 }

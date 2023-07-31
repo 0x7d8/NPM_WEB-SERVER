@@ -67,6 +67,8 @@ export default function handleWSOpen(ws: WebSocket<WebSocketContext>, ctg: Globa
 			}
 
 			return resolve()
-		}); await runPageLogic()
+		})
+
+		await runPageLogic()
   }) ()}
 }

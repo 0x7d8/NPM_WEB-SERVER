@@ -1,24 +1,6 @@
-import { Duplex, PassThrough } from "stream"
-import size from "./size"
+import { PassThrough } from "stream"
 
 import zlib from "zlib"
-
-class PassThrough64K extends Duplex {
-	constructor() {
-		super({
-			read() {},
-			write(chunk: ArrayBuffer) {
-				let chunkCount = Math.ceil(chunk.byteLength / size(64).kb()), index = 0
-		
-				while (chunkCount) {
-					this.push(chunk.slice(index, index + size(64).kb()))
-					index += size(64).kb()
-					chunkCount--
-				}
-			}
-		})
-	}
-}
 
 export type CompressTypes = 'none' | 'gzip' | 'br' | 'deflate'
 

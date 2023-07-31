@@ -145,7 +145,11 @@ export default class WSConnect<Context extends Record<any, any> = {}, Type = 'co
 		const validate = options?.validate?? (() => true)
 
 		const ref = reference['onChange'](async(value) => {
-			if (!await Promise.resolve(validate(value as any))) return
+			try {
+				if (!await Promise.resolve(validate(value as any))) return
+			} catch (err) {
+				return this.ctx.handleError(err)
+			}
 
 			let data: Buffer
 

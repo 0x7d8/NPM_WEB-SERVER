@@ -1,3 +1,9 @@
+## 8.6.10
+
+- Added better JSDocs
+- Removed Old Code
+- Added `<Server>.getListeningPort()`
+
 ## 8.6.9
 
 - Fix WebSocket Message Rate Limits not counting up

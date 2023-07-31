@@ -1,5 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
-
 // Typed interfaces for OpenAPI 3.1.0 from https://github.com/metadevpro/openapi3-ts/tree/master/src/model
 // see https://github.com/OAI/OpenAPI-Specification/blob/main/versions/3.1.0.md
 

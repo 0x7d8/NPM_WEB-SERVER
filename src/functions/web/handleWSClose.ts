@@ -76,6 +76,8 @@ export default function handleWSClose(ws: WebSocket<WebSocketContext>, message: 
 			}
 
 			return resolve()
-		}); await runPageLogic()
+		})
+
+		await runPageLogic()
   }) ()}
 }

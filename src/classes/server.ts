@@ -141,6 +141,28 @@ import os from "os"
 	}
 
 	/**
+	 * Get the Port the Server is currently listening on
+	 * @example
+	 * ```
+	 * const controller = new Server({ port: 0 })
+	 * 
+	 * controller.path('/', (path) => path
+	 *   .http('GET', '/port', (http) => http
+	 *     .onRequest((ctr) => {
+	 *       ctr.print(ctr.controller.getListeningPort())
+	 *     })
+	 *   )
+	 * )
+	 * ```
+	 * @since 8.6.10
+	*/ public getListeningPort(): number | null {
+		if (!this.socket) return null
+
+		const port = uWebsocket.getSocketPort(this.socket)
+		return port === -1 ? null : port
+	}
+
+	/**
 	 * Route File Builder
 	 * @example
 	 * ```
@@ -322,12 +344,12 @@ import os from "os"
 	 *   })
 	 * ```
 	 * @since 3.0.0
-	*/ public async stop(): Promise<void> {
+	*/ public stop(): this {
 		this.globalContext.cache.files.clear()
 		this.globalContext.cache.routes.clear()
 		uWebsocket.closeSocket(this.socket)
 
-		return
+		return this
 	}
 
 

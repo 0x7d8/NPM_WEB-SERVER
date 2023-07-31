@@ -115,7 +115,7 @@ export default class WSMessage<Context extends Record<any, any> = {}, Message = 
 			hasPenalty: data.hits > this.ctx.execute.route.data.ratelimit.maxHits,
 			penalty: this.ctx.execute.route.data.ratelimit.penalty,
 			timeWindow: this.ctx.execute.route.data.ratelimit.timeWindow,
-			endsAt: new Date(data.end),
+			get endsAt() { return new Date(data.end) },
 			endsIn: data.end - Date.now()
 		}
 	}

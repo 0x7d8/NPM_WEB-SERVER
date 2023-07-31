@@ -79,7 +79,7 @@ yargs
 				type: 'number',
 				description: 'The port on which to serve',
 				alias: ['p'],
-				default: 8080,
+				default: 0,
 			})
 			.option('hideHTML', {
 				type: 'boolean',
