@@ -1,3 +1,7 @@
+## 7.9.3
+
+- Fix URL Decoding Crash
+
 ## 7.9.2
 
 - Send Correct Range Headers
