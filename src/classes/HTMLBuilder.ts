@@ -59,7 +59,7 @@ const fF = (fn: Function): string => {
 	return addStart + fnString + addEnd
 }
 
-const fH = (text: string): string => {
+export const fH = (text: string): string => {
   const replace: Record<string, string> = {
     '&': '&amp;',
     '<': '&lt;',
@@ -67,7 +67,7 @@ const fH = (text: string): string => {
     '"': '&quot;',
     '\'': '&#039;'
   }
-  
+
   return text.replace(/[&<>"']/g, (m) => replace[m])
 }
 
@@ -148,7 +148,7 @@ export default class HTMLBuilder {
 	 * ctr.printHTML((html) => html
 	 *   .t('div', {}, (t) => t
 	 *     .t('p', {}, (t) => t
-	 *       .raw('hello world!')
+	 *       .escaped('hello world!')
 	 *     )
 	 *     .t('p', {}, 'hello world!')
 	 *   )

@@ -101,7 +101,7 @@ export default class RoutePath<GlobContext extends Record<any, any>, Middlewares
 	 * controller.path('/', (path) => path
 	 *   .httpRateLimit((limit) => limit
 	 *     .hits(5)
-	 *     .timeWindow(time(20).s())
+	 *     .window(time(20).s())
 	 *     .penalty(0)
 	 *   ) // This will allow 5 requests every 20 seconds
 	 *   .http('GET', '/hello', (ws) => ws
@@ -142,7 +142,7 @@ export default class RoutePath<GlobContext extends Record<any, any>, Middlewares
 	 * controller.path('/', (path) => path
 	 *   .httpRateLimit((limit) => limit
 	 *     .hits(5)
-	 *     .timeWindow(time(20).s())
+	 *     .window(time(20).s())
 	 *     .penalty(0)
 	 *   ) // This will allow 5 messages every 20 seconds
 	 *   .ws('/echo', (ws) => ws

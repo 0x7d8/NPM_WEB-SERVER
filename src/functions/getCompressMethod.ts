@@ -13,7 +13,7 @@ const tryEnd = (res: HttpResponse, chunk: ArrayBuffer, totalSize: number): boole
 	let result = [false, false]
 	res.cork(() => result = res.tryEnd(chunk, totalSize))
 
-	return result[0] || result[1]
+	return result[0]
 }
 
 /**

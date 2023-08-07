@@ -17,7 +17,6 @@ import { toArrayBuffer } from "../../classes/web/HttpRequest"
 import Static from "../../types/static"
 import { WebSocketContext } from "../../types/webSocket"
 import toETag from "../toETag"
-import { isRegExp } from "util/types"
 import parseKV from "../parseKV"
 import writeHTTPMeta from "../writeHTTPMeta"
 import getCompressMethod from "../getCompressMethod"
@@ -158,8 +157,9 @@ export default async function handleHTTPRequest(req: HttpRequest, res: HttpRespo
 
 	// Handle Aborting Requests
 	res.onAborted(() => {
-		ctx.events.send('requestAborted')
 		ctx.isAborted = true
+		ctg.logger.debug('HTTP Request aborted')
+		ctx.events.send('requestAborted')
 	})
 
 	// Handle CORS Requests
@@ -381,7 +381,7 @@ export default async function handleHTTPRequest(req: HttpRequest, res: HttpRespo
 									const ok = compressWrite(sliced)
 									if (ok) {
 										ctg.data.outgoing.increase(sliced.byteLength)
-										ctg.logger.debug('sent http body chunk with bytelen', sliced.byteLength)
+										ctg.logger.debug('sent http body chunk with bytelen', sliced.byteLength, '(delayed)')
 										//compression.resume()
 									}
 
@@ -389,7 +389,7 @@ export default async function handleHTTPRequest(req: HttpRequest, res: HttpRespo
 								})
 							} else {
 								ctg.data.outgoing.increase(content.byteLength)
-								ctg.logger.debug('sent http body chunk with bytelen', content.byteLength, '(delayed)')
+								ctg.logger.debug('sent http body chunk with bytelen', content.byteLength)
 							}
 						} catch { }
 					}

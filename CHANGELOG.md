@@ -1,3 +1,9 @@
+## 8.7.0
+
+- Add `html` function
+- Fix Route File Rate Limits being overridden
+- Fix some JSDocs
+
 ## 8.6.10
 
 - Added better JSDocs

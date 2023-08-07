@@ -9,6 +9,7 @@ export { default as parsePath } from "./functions/parsePath"
 export { default as parseKV } from "./functions/parseKV"
 export { default as Reference } from "./classes/reference"
 export { default as size } from "./functions/size"
+export { default as html } from "./functions/html"
 
 /** @ts-ignore */
 import { version } from "./pckg.json"

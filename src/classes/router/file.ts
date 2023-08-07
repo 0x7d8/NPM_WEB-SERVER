@@ -50,7 +50,7 @@ export default class RouteFile<GlobContext extends Record<any, any>, Middlewares
    * ```
 	 * @since 6.0.0
 	*/ constructor(
-		/** The Callback to handle the File */ callback: (file: RouteFile<GlobContext, Middlewares>) => RouteFile<GlobContext, Middlewares>
+		/** The Callback to handle the File */ callback: (file: RouteFile<GlobContext, Middlewares>) => any
 	) {
 		callback(this as any)
 	}
@@ -93,7 +93,7 @@ export default class RouteFile<GlobContext extends Record<any, any>, Middlewares
 	 * controller.path('/', (path) => path
 	 *   .httpRateLimit((limit) => limit
 	 *     .hits(5)
-	 *     .timeWindow(time(20).s())
+	 *     .window(time(20).s())
 	 *     .penalty(0)
 	 *   ) // This will allow 5 requests every 20 seconds
 	 *   .http('GET', '/hello', (ws) => ws
@@ -109,7 +109,7 @@ export default class RouteFile<GlobContext extends Record<any, any>, Middlewares
 	 * ```
 	 * @since 8.6.0
 	*/ public httpRatelimit(
-		callback: (limit: RouteRateLimit) => RouteRateLimit
+		callback: (limit: RouteRateLimit) => any
 	): ExcludeFrom<RouteFile<GlobContext, Middlewares, [...Excluded, 'httpRatelimit']>, [...Excluded, 'httpRatelimit']> {
 		const limit = new RouteRateLimit()
 		limit['data'] = Object.assign({}, this.httpratelimit)
@@ -117,6 +117,7 @@ export default class RouteFile<GlobContext extends Record<any, any>, Middlewares
 		callback(limit)
 
 		this.httpratelimit = limit['data']
+		this.hasSetHTTPLimit = true
 
 		return as<any>(this)
 	}
@@ -134,7 +135,7 @@ export default class RouteFile<GlobContext extends Record<any, any>, Middlewares
 	 * controller.path('/', (path) => path
 	 *   .httpRateLimit((limit) => limit
 	 *     .hits(5)
-	 *     .timeWindow(time(20).s())
+	 *     .window(time(20).s())
 	 *     .penalty(0)
 	 *   ) // This will allow 5 messages every 20 seconds
 	 *   .ws('/echo', (ws) => ws
@@ -150,7 +151,7 @@ export default class RouteFile<GlobContext extends Record<any, any>, Middlewares
 	 * ```
 	 * @since 8.6.0
 	*/ public wsRatelimit(
-		callback: (limit: RouteRateLimit) => RouteRateLimit
+		callback: (limit: RouteRateLimit) => any
 	): ExcludeFrom<RouteFile<GlobContext, Middlewares, [...Excluded, 'wsRatelimit']>, [...Excluded, 'wsRatelimit']> {
 		const limit = new RouteRateLimit()
 		limit['data'] = Object.assign({}, this.wsratelimit)
@@ -158,6 +159,7 @@ export default class RouteFile<GlobContext extends Record<any, any>, Middlewares
 		callback(limit)
 
 		this.wsratelimit = limit['data']
+		this.hasSetWSLimit = true
 
 		return as<any>(this)
 	}
