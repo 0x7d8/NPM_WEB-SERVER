@@ -576,13 +576,7 @@ export default class HTTPRequest<Context extends Record<any, any> = {}, Body = u
 			const meta = await writeHTTPMeta(this.rawRes, this.ctx)
 
 			if (!this.ctx.isAborted) this.rawRes.cork(() => {
-				if (!endEarly && (start !== 0 || end !== fileStat.size) && this.ctx.headers.get('if-unmodified-since') !== this.ctx.response.headers['last-modified']) {
-					this.ctg.logger.debug('Ended unmodified-since request early because of no match')
-
-					this.ctx.response.status = Status.PRECONDITION_FAILED
-					this.ctx.response.statusMessage = undefined
-					endEarly = true
-				} else if (!endEarly && start === 0 && end === fileStat.size && this.ctg.options.performance.lastModified && this.ctx.headers.get('if-modified-since') === this.ctx.response.headers['last-modified']) {
+				if (!endEarly && start === 0 && end === fileStat.size && this.ctg.options.performance.lastModified && this.ctx.headers.get('if-modified-since') === this.ctx.response.headers['last-modified']) {
 					this.ctg.logger.debug('Ended modified-since request early because of match')
 
 					this.ctx.response.status = Status.NOT_MODIFIED
@@ -600,7 +594,7 @@ export default class HTTPRequest<Context extends Record<any, any> = {}, Body = u
 				// Get File Content
 				if (compressHeader) this.ctg.logger.debug('negotiated to use', compressHeader)
 				const stream = createReadStream(pathResolve(file), { start, end })
-				const compression = handleCompressType(compressMethod)
+				const compression = handleCompressType(compressMethod, true)
 				const destroyStreams = () => {
 					compression.destroy()
 					stream.destroy()
@@ -608,22 +602,33 @@ export default class HTTPRequest<Context extends Record<any, any> = {}, Body = u
 
 				// Handle Compression
 				compression.on('data', (content: Buffer) => {
-					this.rawRes.content = toArrayBuffer(content)
+					const ab = toArrayBuffer(content),
+						lastOffset = this.rawRes.getWriteOffset()
+
 					if (!this.ctx.isAborted) {
 						try {
-							this.rawRes.contentOffset = this.rawRes.getWriteOffset()
-							const ok = compressWrite(this.rawRes.content)
+							const ok = compressWrite(ab)
 
 							if (!ok) {
+								compression.pause()
 								stream.pause()
 
-								this.rawRes.onWritable((offset) => {
-									const sliced = this.rawRes.content.slice(offset - this.rawRes.contentOffset)
+								this.rawRes.content = ab
+								this.rawRes.contentOffset = lastOffset
+
+								this.rawRes.onWritable(compressHeader ? () => {
+									compression.resume()
+									stream.resume()
+
+									return true
+								} : (offset) => {
+									const sliced: ArrayBuffer = this.rawRes.content.slice(offset - this.rawRes.contentOffset)
 
 									const ok = compressWrite(sliced)
 									if (ok) {
 										this.ctg.data.outgoing.increase(sliced.byteLength)
 										this.ctg.logger.debug('sent http body chunk with bytelen', sliced.byteLength, '(delayed)')
+										compression.resume()
 										stream.resume()
 									}
 
@@ -641,7 +646,7 @@ export default class HTTPRequest<Context extends Record<any, any> = {}, Body = u
 						const oldData = this.ctg.cache.files.get(`file::${this.ctg.options.httpCompression}::${file}`, Buffer.allocUnsafe(0))
 						this.ctg.cache.files.set(`file::${this.ctg.options.httpCompression}::${file}`, Buffer.concat([ oldData, content ]))
 					}
-				}).once('end', () => {
+				}).once('close', () => {
 					if (compressHeader && !this.ctx.isAborted) this.rawRes.cork(() => this.rawRes.end())
 					destroyStreams()
 

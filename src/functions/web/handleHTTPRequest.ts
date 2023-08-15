@@ -358,31 +358,38 @@ export default async function handleHTTPRequest(req: HttpRequest, res: HttpRespo
 
 				// Get Content
 				if (compressHeader) ctg.logger.debug('negotiated to use', compressHeader)
-				const compression = handleCompressType(compressMethod)
+				const compression = handleCompressType(compressMethod, false)
 				const destroyStream = () => {
 					compression.destroy()
 				}
 
 				// Handle Compression
 				compression.on('data', (content: Buffer) => {
-					res.content = toArrayBuffer(content)
+					const ab = toArrayBuffer(content),
+						lastOffset = res.getWriteOffset()
 
 					if (!ctx.isAborted) {
 						try {
-							res.contentOffset = res.getWriteOffset()
-							const ok = compressWrite(res.content)
+							const ok = compressWrite(ab)
 
 							if (!ok) {
-								//compression.pause()
+								compression.pause()
 
-								res.onWritable((offset) => {
-									const sliced = res.content.slice(offset - res.contentOffset)
+								res.content = ab
+								res.contentOffset = lastOffset
+
+								res.onWritable(compressHeader ? () => {
+									compression.resume()
+
+									return true
+								} : (offset) => {
+									const sliced: ArrayBuffer = res.content.slice(offset - res.contentOffset)
 
 									const ok = compressWrite(sliced)
 									if (ok) {
 										ctg.data.outgoing.increase(sliced.byteLength)
 										ctg.logger.debug('sent http body chunk with bytelen', sliced.byteLength, '(delayed)')
-										//compression.resume()
+										compression.resume()
 									}
 
 									return ok

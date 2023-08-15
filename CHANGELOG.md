@@ -1,3 +1,7 @@
+## 8.7.1
+
+- Fix Compression duplicating data sometimes
+
 ## 8.7.0
 
 - Add `html` function
