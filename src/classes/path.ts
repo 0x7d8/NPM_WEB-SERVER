@@ -1,7 +1,7 @@
 import parsePath from "../functions/parsePath"
 import { isRegExp } from "util/types"
 import ValueCollection from "./valueCollection"
-import { HTTPMethods } from "../types/external"
+import { HTTPMethod } from "../types/external"
 
 type Segment = {
 	raw: string
@@ -29,7 +29,7 @@ type Data = {
 	/**
 	 * Create a new Path object
 	 * @since 8.4.0
-	*/ constructor(public method: HTTPMethods, public path: string | RegExp) {
+	*/ constructor(public method: HTTPMethod, public path: string | RegExp) {
 		if (isRegExp(path)) {
 			this.data = {
         type: 'regexp',
@@ -171,7 +171,7 @@ type Data = {
 	/**
 	 * Test the Path against the Request Path
 	 * @since 8.4.0
-	*/ public matches(method: HTTPMethods, collection: ValueCollection, requestPath: string, requestPathSplit: string[]): boolean {
+	*/ public matches(method: HTTPMethod, collection: ValueCollection, requestPath: string, requestPathSplit: string[]): boolean {
 		if (this.method !== method) return false
 		if (this.data.type === 'normal' && this.data.segments.length !== requestPathSplit.length) return false
 		if (this.data.type === 'regexp' && !this.data.value.test(parsePath(requestPath.replace(this.data.prefix, '')))) return false

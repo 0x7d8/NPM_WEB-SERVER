@@ -1,8 +1,10 @@
-import { ExternalRouter, LoadPath, HTTPMethods, RoutedValidation, MiddlewareInitted, ExcludeFrom } from "../../types/internal"
+import { ExternalRouter, LoadPath, HTTPMethod, RoutedValidation, MiddlewareInitted, ExcludeFrom, ExcludeIf } from "../../types/internal"
 import DocumentationBuilder from "../documentation/builder"
 import Static from "../../types/static"
 import HTTP from "../../types/http"
 import WebSocket from "../../types/webSocket"
+import { as, zValidate } from "rjutils-collection"
+import methods from "../../misc/methods"
 import RPath from "../path"
 import { isRegExp } from "util/types"
 import parsePath from "../../functions/parsePath"
@@ -15,7 +17,6 @@ import RouteWS from "./ws"
 import RouteHTTP from "./http"
 import RouteDefaultHeaders from "./defaultHeaders"
 import RouteRateLimit from "./rateLimit"
-import { as } from "rjutils-collection"
 
 export default class RoutePath<GlobContext extends Record<any, any>, Middlewares extends MiddlewareInitted[] = [], Path extends string = '/', Excluded extends (keyof RoutePath<GlobContext, Middlewares, Path>)[] = []> {
 	private externals: ExternalRouter[]
@@ -80,7 +81,8 @@ export default class RoutePath<GlobContext extends Record<any, any>, Middlewares
 	 * )
 	 * ```
 	 * @since 3.2.1
-	*/ public validate<Context extends Record<any, any> = {}, Body = unknown>(
+	*/ @zValidate([ (z) => z.function() ])
+	public validate<Context extends Record<any, any> = {}, Body = unknown>(
 		/** The Callback to Validate the Request */ callback: RoutedValidation<GlobContext & Context, Body, Middlewares, Path>
 	): this {
 		this.validations.push(callback as any)
@@ -116,7 +118,8 @@ export default class RoutePath<GlobContext extends Record<any, any>, Middlewares
 	 * })
 	 * ```
 	 * @since 8.6.0
-	*/ public httpRatelimit(
+	*/ @zValidate([ (z) => z.function() ])
+	public httpRatelimit(
 		callback: (limit: RouteRateLimit) => any
 	): ExcludeFrom<RoutePath<GlobContext, Middlewares, Path, [...Excluded, 'httpRatelimit']>, [...Excluded, 'httpRatelimit']> {
 		const limit = new RouteRateLimit()
@@ -157,7 +160,8 @@ export default class RoutePath<GlobContext extends Record<any, any>, Middlewares
 	 * })
 	 * ```
 	 * @since 8.6.0
-	*/ public wsRatelimit(
+	*/ @zValidate([ (z) => z.function() ])
+	public wsRatelimit(
 		callback: (limit: RouteRateLimit) => any
 	): ExcludeFrom<RoutePath<GlobContext, Middlewares, Path, [...Excluded, 'wsRatelimit']>, [...Excluded, 'wsRatelimit']> {
 		const limit = new RouteRateLimit()
@@ -183,14 +187,15 @@ export default class RoutePath<GlobContext extends Record<any, any>, Middlewares
 	 * )
 	 * ```
 	 * @since 6.0.0
-	*/ public http<Context extends Record<any, any> = {}, Body = unknown, LPath extends string = '/'>(
-    /** The Request Method */ method: HTTPMethods,
+	*/ @zValidate([ (z) => z.string().refine((s) => methods.includes(s as any)), (z) => z.union([ z.string(), z.instanceof(RegExp) ]), (z) => z.function() ])
+	public http<Context extends Record<any, any> = {}, Body = unknown, LPath extends string = '/', Method extends HTTPMethod = 'GET'>(
+    /** The Request Method */ method: Method,
 		/** The Path on which this will be available */ path: LPath | RegExp,
-		/** The Callback to handle the Endpoint */ callback: (path: RouteHTTP<GlobContext, Context, Body, Middlewares, `${Path}/${LPath}`>) => any
+		/** The Callback to handle the Endpoint */ callback: (path: ExcludeIf<Method extends 'GET' ? true : false, RouteHTTP<GlobContext, Context, Body, Middlewares, `${Path}/${LPath}`, Method, Method extends 'GET' ? ['onRawBody'] : []>, 'onRawBody'>) => any
 	): this {
 		if (this.routes.some((obj) => isRegExp(obj.path) ? false : obj.path.path === parsePath(path as string))) return this
 	
-		const routeHTTP = new RouteHTTP<GlobContext, Context, Body, Middlewares, `${Path}/${LPath}`>(path as any, method, this.validations, this.parsedHeaders, this.httpratelimit)
+		const routeHTTP = new RouteHTTP<GlobContext, Context, Body, Middlewares, `${Path}/${LPath}`, Method, Method extends 'GET' ? ['onRawBody'] : []>(path as any, method, this.validations, this.parsedHeaders, this.httpratelimit)
 		this.externals.push({ object: routeHTTP, addPrefix: this.httpPath })
 		callback(routeHTTP)
 	
@@ -216,7 +221,8 @@ export default class RoutePath<GlobContext extends Record<any, any>, Middlewares
 	 * )
 	 * ```
 	 * @since 5.4.0
-	*/ public ws<Context extends Record<any, any> = {}, Message = unknown, LPath extends string = '/'>(
+	*/ @zValidate([ (z) => z.union([ z.string(), z.instanceof(RegExp) ]), (z) => z.function() ])
+	public ws<Context extends Record<any, any> = {}, Message = unknown, LPath extends string = '/'>(
 		/** The Path on which this will be available */ path: LPath | RegExp,
 		/** The Callback to handle the Endpoint */ callback: (path: RouteWS<GlobContext, Context, Message, Middlewares, `${Path}/${LPath}`>) => any
 	): this {
@@ -241,7 +247,8 @@ export default class RoutePath<GlobContext extends Record<any, any>, Middlewares
 	 * )
 	 * ```
 	 * @since 6.0.0
-	*/ public defaultHeaders(
+	*/ @zValidate([ (z) => z.function() ])
+	public defaultHeaders(
 		/** The Callback to handle the Headers */ callback: (path: RouteDefaultHeaders) => RouteDefaultHeaders
 	): this {
 		const routeDefaultHeaders = new RouteDefaultHeaders()
@@ -267,16 +274,18 @@ export default class RoutePath<GlobContext extends Record<any, any>, Middlewares
 	 * )
 	 * ```
 	 * @since 3.1.0
-	*/ public redirect(
+	*/ @zValidate([ (z) => z.string(), (z) => z.string(), (z) => z.union([ z.literal('temporary'), z.literal('permanent') ]) ])
+	public redirect(
 		/** The Request Path to Trigger the Redirect on */ request: string,
-		/** The Redirect Path to Redirect to */ redirect: string
+		/** The Redirect Path to Redirect to */ redirect: string,
+		/** The Redirect Type */ type?: 'temporary' | 'permanent'
 	): this {
 		this.routes.push({
 			type: 'http',
 			method: 'GET',
 			path: new RPath('GET', parsePath([ this.httpPath, request ])),
 			documentation: new DocumentationBuilder(),
-			onRequest: (ctr) => ctr.redirect(redirect),
+			onRequest: (ctr) => ctr.redirect(redirect, type),
 			data: {
 				ratelimit: { maxHits: Infinity, penalty: 0, sortTo: -1, timeWindow: Infinity },
 				validations: this.validations,
@@ -303,7 +312,12 @@ export default class RoutePath<GlobContext extends Record<any, any>, Middlewares
 	 * )
 	 * ```
 	 * @since 3.1.0
-	*/ public static(
+	*/ @zValidate([ (z) => z.string(), (z) => z.object({
+		addTypes: z.boolean().optional(),
+		compress: z.boolean().optional(),
+		hideHTML: z.boolean().optional()
+	}).optional() ])
+	public static(
 		/** The Folder which will be used */ folder: string,
 		/** Additional Configuration for Serving */ options: {
 			/**
@@ -354,7 +368,8 @@ export default class RoutePath<GlobContext extends Record<any, any>, Middlewares
 	 * )
 	 * ```
 	 * @since 3.1.0
-	*/ public loadCJS(
+	*/ @zValidate([ (z) => z.string(), (z) => z.object({ fileBasedRouting: z.boolean().optional() }).optional() ])
+	public loadCJS(
 		/** The Folder which will be used */ folder: string,
 		/** The Options */ options: {
 			/**
@@ -394,7 +409,8 @@ export default class RoutePath<GlobContext extends Record<any, any>, Middlewares
 	 * )
 	 * ```
 	 * @since 4.0.0
-	*/ public loadESM(
+	*/ @zValidate([ (z) => z.string(), (z) => z.object({ fileBasedRouting: z.boolean().optional() }).optional() ])
+	public loadESM(
 		/** The Folder which will be used */ folder: string,
 		/** The Options */ options: {
 			/**
@@ -447,7 +463,8 @@ export default class RoutePath<GlobContext extends Record<any, any>, Middlewares
 	 * )
 	 * ```
 	 * @since 5.0.0
-	*/ public path<LPath extends string = `/${string}`>(
+	*/ @zValidate([ (z) => z.string(), (z) => z.union([ z.function(), z.instanceof(RoutePath) ]) ])
+	public path<LPath extends string = `/${string}`>(
 		/** The Path Prefix */ prefix: LPath,
 		/** The Callback to handle the Prefix */ router: ((path: RoutePath<GlobContext, Middlewares, `${Path}/${LPath}`>) => any) | RoutePath<any, any>
 	): this {

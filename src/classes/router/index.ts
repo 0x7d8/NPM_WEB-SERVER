@@ -7,6 +7,7 @@ import Static from "../../types/static"
 import RoutePath from "./path"
 import RouteContentTypes from "./contentTypes"
 import RouteDefaultHeaders from "./defaultHeaders"
+import { zValidate } from "rjutils-collection"
 
 export default class RouteIndex<GlobContext extends Record<any, any>, Middlewares extends MiddlewareInitted[] = []> extends SafeServerEventEmitter<GlobContext, Middlewares> {
 	protected middlewares: MiddlewareInitted[]
@@ -43,7 +44,8 @@ export default class RouteIndex<GlobContext extends Record<any, any>, Middleware
 	 * )
 	 * ```
 	 * @since 5.0.0
-	*/ public path<Path extends string>(
+	*/ @zValidate([ (z) => z.string(), (z) => z.union([ z.function(), z.instanceof(RoutePath) ]) ])
+	public path<Path extends string>(
 		/** The Path Prefix */ prefix: Path,
 		/** The Code to handle the Prefix */ router: ((path: RoutePath<GlobContext, Middlewares, Path>) => any) | RoutePath<any, any>
 	): this {
@@ -67,7 +69,8 @@ export default class RouteIndex<GlobContext extends Record<any, any>, Middleware
 	 * )
 	 * ```
 	 * @since 5.3.0
-	*/ public contentTypes(
+	*/ @zValidate([ (z) => z.function() ])
+	public contentTypes(
 		/** The Callback to handle the Headers */ callback: (contentTypes: RouteContentTypes) => RouteContentTypes
 	): this {
 		const routeContentTypes = new RouteContentTypes()
@@ -87,7 +90,8 @@ export default class RouteIndex<GlobContext extends Record<any, any>, Middleware
 	 * )
 	 * ```
 	 * @since 5.3.0
-	*/ public defaultHeaders(
+	*/ @zValidate([ (z) => z.function() ])
+	public defaultHeaders(
 		/** The Callback to handle the Headers */ callback: (defaultHeaders: RouteDefaultHeaders) => RouteDefaultHeaders
 	): this {
 		const routeDefaultHeaders = new RouteDefaultHeaders()

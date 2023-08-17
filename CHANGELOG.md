@@ -1,3 +1,10 @@
+## 8.8.0
+
+- Validate Method Inputs
+- Allow setting redirect type in router
+- Remove Body Intellisense for 'GET' requests
+- Allow Body & Message Binding with Zod
+
 ## 8.7.1
 
 - Fix Compression duplicating data sometimes

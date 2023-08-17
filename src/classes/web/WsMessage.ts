@@ -4,6 +4,8 @@ import WSConnect from "./WsConnect"
 import { WebSocket } from "@rjweb/uws"
 import { WebSocketContext } from "../../types/webSocket"
 import { RatelimitInfos } from "../../types/external"
+import { ZodResponse } from "../../types/internal"
+import { z } from "zod"
 
 export default class WSMessage<Context extends Record<any, any> = {}, Message = unknown, Path extends string = '/'> extends WSConnect<Context, 'message', Path> {
 	/**
@@ -55,6 +57,34 @@ export default class WSMessage<Context extends Record<any, any> = {}, Message = 
 	 * @since 8.1.4
 	*/ public get rawMessageBytes(): Buffer {
 		return this.ctx.body.raw
+	}
+
+	/**
+	 * Bind the Message using Zod
+	 * 
+	 * This uses `.message` internally so no binary data
+	 * @example
+	 * ```
+	 * const [ infos, error ] = ctr.bindMessage((z) => z.object({
+	 *   name: z.string().max(24),
+	 *   gender: z.union([ z.literal('male'), z.literal('female') ])
+	 * }))
+	 * 
+	 * if (!infos) return ctr.print(error.toString())
+	 * 
+	 * ctr.print('Everything valid! 👍')
+	 * ctr.print(`
+	 *   your name is ${infos.name}
+	 *   and you are a ${infos.gender}
+	 * `)
+	 * ```
+	 * @since 8.8.0
+	*/ public bindMessage<Schema extends z.ZodTypeAny>(schema: Schema | ((z: typeof import('zod')) => Schema)): ZodResponse<Schema> {
+		const fullSchema = typeof schema === 'function' ? schema(z as any) : schema,
+			parsed = fullSchema.safeParse(this.message)
+
+		if (!parsed.success) return [null, parsed.error]
+		return [parsed, null]
 	}
 
 

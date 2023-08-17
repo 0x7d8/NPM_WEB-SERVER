@@ -1,17 +1,17 @@
-import { HTTPMethods, MiddlewareInitted, RoutedValidation, ExcludeFrom } from "../../types/internal"
+import { HTTPMethod, MiddlewareInitted, RoutedValidation, ExcludeFrom } from "../../types/internal"
 import HTTP from "../../types/http"
 import RPath from "../path"
 import DocumentationBuilder from "../documentation/builder"
-import { as } from "rjutils-collection"
+import { as, zValidate } from "rjutils-collection"
 import RouteRateLimit from "./rateLimit"
 
-export default class RouteHTTP<GlobContext extends Record<any, any> = {}, Context extends Record<any, any> = {}, Body = unknown, Middlewares extends MiddlewareInitted[] = [], Path extends string = '/', Excluded extends (keyof RouteHTTP)[] = []> {
+export default class RouteHTTP<GlobContext extends Record<any, any> = {}, Context extends Record<any, any> = {}, Body = unknown, Middlewares extends MiddlewareInitted[] = [], Path extends string = '/', Method extends HTTPMethod = 'GET', Excluded extends (keyof RouteHTTP)[] = []> {
 	private data: HTTP
 
 	/** Generate HTTP Endpoint */
 	constructor(
 		/** The Path of the Routes */ path: Path | RegExp,
-		/** The Method to use */ method: HTTPMethods,
+		/** The Method to use */ method: Method,
 		/** The Validations to add */ validations: RoutedValidation[] = [],
 		/** The Headers to add */ headers: Record<string, Buffer> = {},
 		/** The Ratelimit to apply */ ratelimit: RouteRateLimit['data']
@@ -57,7 +57,8 @@ export default class RouteHTTP<GlobContext extends Record<any, any> = {}, Contex
 	 * )
 	 * ```
 	 * @since 7.0.0
-	*/ public context<Context extends Record<any, any>>(
+	*/ @zValidate([ (z) => z.record(z.any(), z.any()), (z) => z.object({ keepForever: z.boolean().optional() }).optional() ])
+	public context<Context extends Record<any, any>>(
 		/** The Default State of the Request Context */ context: Context,
 		/** The Options for this Function */ options: {
 			/**
@@ -66,7 +67,7 @@ export default class RouteHTTP<GlobContext extends Record<any, any> = {}, Contex
 			 * @since 7.0.0
 			*/ keepForever?: boolean
 		} = {}
-	): ExcludeFrom<RouteHTTP<GlobContext, Context, Body, Middlewares, Path, [...Excluded, 'context']>, [...Excluded, 'context']> {
+	): ExcludeFrom<RouteHTTP<GlobContext, Context, Body, Middlewares, Path, Method, [...Excluded, 'context']>, [...Excluded, 'context']> {
 		const keepForever = options?.keepForever ?? false
 
 		this.data.context = {
@@ -106,9 +107,10 @@ export default class RouteHTTP<GlobContext extends Record<any, any> = {}, Contex
 	 * })
 	 * ```
 	 * @since 8.6.0
-	*/ public ratelimit(
+	*/ @zValidate([ (z) => z.function() ])
+	public ratelimit(
 		callback: (limit: RouteRateLimit) => any
-	): ExcludeFrom<RouteHTTP<GlobContext, Context, Body, Middlewares, Path, [...Excluded, 'ratelimit']>, [...Excluded, 'ratelimit']> {
+	): ExcludeFrom<RouteHTTP<GlobContext, Context, Body, Middlewares, Path, Method, [...Excluded, 'ratelimit']>, [...Excluded, 'ratelimit']> {
 		const limit = new RouteRateLimit()
 		limit['data'] = Object.assign({}, this.data.data.ratelimit)
 
@@ -150,9 +152,10 @@ export default class RouteHTTP<GlobContext extends Record<any, any> = {}, Contex
 	 * )
 	 * ```
 	 * @since 8.5.0
-	*/ public document(
+	*/ @zValidate([ (z) => z.function() ])
+	public document(
 		/** The Callback to handle defining the Documentation */ callback: (builder: DocumentationBuilder) => any
-	): ExcludeFrom<RouteHTTP<GlobContext, Context, Body, Middlewares, Path, [...Excluded, 'document']>, [...Excluded, 'document']> {
+	): ExcludeFrom<RouteHTTP<GlobContext, Context, Body, Middlewares, Path, Method, [...Excluded, 'document']>, [...Excluded, 'document']> {
 		callback(this.data.documentation)
 
 		return as<any>(this)
@@ -189,9 +192,10 @@ export default class RouteHTTP<GlobContext extends Record<any, any> = {}, Contex
 	 * )
 	 * ```
 	 * @since 6.0.0
-	*/ public onRawBody(
-		/** The Async Callback to run when the Socket gets an Upgrade HTTP Request */ callback: HTTP<GlobContext & Context, never, Middlewares, Path>['onRawBody']
-	): ExcludeFrom<RouteHTTP<GlobContext, Context, Body, Middlewares, Path, [...Excluded, 'onRawBody']>, [...Excluded, 'onRawBody']> {
+	*/ @zValidate([ (z) => z.function() ])
+	public onRawBody(
+		/** The Async Callback to run when the Socket gets an Upgrade HTTP Request */ callback: HTTP<GlobContext & Context, never, Middlewares, Path, Method>['onRawBody']
+	): ExcludeFrom<RouteHTTP<GlobContext, Context, Body, Middlewares, Path, 'GET', [...Excluded, 'onRawBody']>, [...Excluded, 'onRawBody']> {
 		this.data.onRawBody = callback as any
 
 		return as<any>(this)
@@ -216,9 +220,10 @@ export default class RouteHTTP<GlobContext extends Record<any, any> = {}, Contex
 	 * )
 	 * ```
 	 * @since 6.0.0
-	*/ public onRequest(
-		/** The Async Callback to run when the Socket is Established */ callback: HTTP<GlobContext & Context, Body, Middlewares, Path>['onRequest']
-	): ExcludeFrom<RouteHTTP<GlobContext, Context, Body, Middlewares, Path, [...Excluded, 'onRequest']>, [...Excluded, 'onRequest']> {
+	*/ @zValidate([ (z) => z.function() ])
+	public onRequest(
+		/** The Async Callback to run when the Socket is Established */ callback: HTTP<GlobContext & Context, Body, Middlewares, Path, Method>['onRequest']
+	): ExcludeFrom<RouteHTTP<GlobContext, Context, Body, Middlewares, Path, Method, [...Excluded, 'onRequest']>, [...Excluded, 'onRequest']> {
 		this.data.onRequest = callback as any
 
 		return as<any>(this)

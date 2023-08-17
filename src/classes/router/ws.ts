@@ -1,7 +1,7 @@
 import { MiddlewareInitted, RoutedValidation, ExcludeFrom } from "../../types/internal"
 import RPath from "../path"
 import WebSocket from "../../types/webSocket"
-import { as } from "rjutils-collection"
+import { as, zValidate } from "rjutils-collection"
 import RouteRateLimit from "./rateLimit"
 
 export default class RouteWS<GlobContext extends Record<any, any> = {}, Context extends Record<any, any> = {}, Message = unknown, Middlewares extends MiddlewareInitted[] = [], Path extends string = '/', Excluded extends (keyof RouteWS)[] = []> {
@@ -52,7 +52,8 @@ export default class RouteWS<GlobContext extends Record<any, any> = {}, Context 
 	 * )
 	 * ```
 	 * @since 7.0.0
-	*/ public context<Context extends Record<any, any>>(
+	*/ @zValidate([ (z) => z.record(z.any(), z.any()), (z) => z.object({ keepForever: z.boolean().optional() }).optional() ])
+	public context<Context extends Record<any, any>>(
 		/** The Default State of the Request Context */ context: Context,
 		/** The Options for this Function */ options: {
 			/**
@@ -101,7 +102,8 @@ export default class RouteWS<GlobContext extends Record<any, any> = {}, Context 
 	 * })
 	 * ```
 	 * @since 8.6.0
-	*/ public ratelimit(
+	*/ @zValidate([ (z) => z.function() ])
+	public ratelimit(
 		callback: (limit: RouteRateLimit) => any
 	): ExcludeFrom<RouteWS<GlobContext, Context, Message, Middlewares, Path, [...Excluded, 'ratelimit']>, [...Excluded, 'ratelimit']> {
 		const limit = new RouteRateLimit()
@@ -136,7 +138,8 @@ export default class RouteWS<GlobContext extends Record<any, any> = {}, Context 
 	 * )
 	 * ```
 	 * @since 5.10.0
-	*/ public onUpgrade(
+	*/ @zValidate([ (z) => z.function() ])
+	public onUpgrade(
 		/** The Async Callback to run when the Socket gets an Upgrade HTTP Request */ callback: WebSocket<GlobContext & Context, never, Middlewares, Path>['onUpgrade']
 	): ExcludeFrom<RouteWS<GlobContext, Context, Message, Middlewares, Path, [...Excluded, 'onUpgrade']>, [...Excluded, 'onUpgrade']> {
 		this.data.onUpgrade = callback as any
@@ -163,7 +166,8 @@ export default class RouteWS<GlobContext extends Record<any, any> = {}, Context 
 	 * )
 	 * ```
 	 * @since 5.4.0
-	*/ public onConnect(
+	*/ @zValidate([ (z) => z.function() ])
+	public onConnect(
 		/** The Async Callback to run when the Socket is Established */ callback: WebSocket<GlobContext & Context, never, Middlewares, Path>['onConnect']
 	): ExcludeFrom<RouteWS<GlobContext, Context, Message, Middlewares, Path, [...Excluded, 'onConnect']>, [...Excluded, 'onConnect']> {
 		this.data.onConnect = callback as any
@@ -190,7 +194,8 @@ export default class RouteWS<GlobContext extends Record<any, any> = {}, Context 
 	 * )
 	 * ```
 	 * @since 5.4.0
-	*/ public onMessage(
+	*/ @zValidate([ (z) => z.function() ])
+	public onMessage(
 		/** The Async Callback to run on a Message */ callback: WebSocket<GlobContext & Context, Message, Middlewares, Path>['onMessage']
 	): ExcludeFrom<RouteWS<GlobContext, Context, Message, Middlewares, Path, [...Excluded, 'onMessage']>, [...Excluded, 'onMessage']> {
 		this.data.onMessage = callback as any
@@ -218,7 +223,8 @@ export default class RouteWS<GlobContext extends Record<any, any> = {}, Context 
 	 * )
 	 * ```
 	 * @since 5.4.0
-	*/ public onClose(
+	*/ @zValidate([ (z) => z.function() ])
+	public onClose(
 		/** The Async Callback to run when the Socket Closes */ callback: WebSocket<GlobContext & Context, Message, Middlewares, Path>['onClose']
 	): ExcludeFrom<RouteWS<GlobContext, Context, Message, Middlewares, Path, [...Excluded, 'onClose']>, [...Excluded, 'onClose']> {
 		this.data.onClose = callback as any

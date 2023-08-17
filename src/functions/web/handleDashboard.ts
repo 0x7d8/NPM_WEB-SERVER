@@ -18,7 +18,7 @@ export const dashboardIndexRoute = (ctg: GlobalContext): HTTP => ({
   method: 'GET',
   path: new Path('GET', '/'),
   documentation: new DocumentationBuilder(),
-  onRequest: async(ctr) => await statsRoute(ctr, ctg, 'http'),
+  onRequest: async(ctr) => await statsRoute(ctr as any, ctg, 'http'),
   data: {
     ratelimit: { maxHits: Infinity, penalty: 0, sortTo: -1, timeWindow: Infinity },
     validations: [],

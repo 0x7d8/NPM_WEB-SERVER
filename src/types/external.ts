@@ -1,4 +1,4 @@
-import { HTTPMethods } from "./internal"
+import { HTTPMethod } from "./internal"
 export { Options } from "../functions/parseOptions"
 export { default as HTMLBuilder, HTMLAttribute, HTMLContent } from "../classes/HTMLBuilder"
 import { MultipartField } from "@rjweb/uws"
@@ -56,7 +56,7 @@ export {
 	WsClose
 }
 
-export { HTTPMethods }
+export { HTTPMethod }
 
 export { default as Status } from "../misc/statusEnum"
 export { default as Methods } from "../misc/methodsEnum"

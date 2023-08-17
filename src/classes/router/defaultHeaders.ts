@@ -1,3 +1,4 @@
+import { zValidate } from "rjutils-collection"
 import { Content } from "../../functions/parseContent"
 
 export default class RouteContentTypes {
@@ -20,7 +21,8 @@ export default class RouteContentTypes {
 	 * )
 	 * ```
 	 * @since 5.3.0
-	*/ public add(
+	*/ @zValidate([ (z) => z.string().toLowerCase(), (z) => z.any() ])
+	public add(
 		/** The Name of the Header */ name: Lowercase<string>,
 		/** The Value of the Header */ contentType: Content
 	): this {

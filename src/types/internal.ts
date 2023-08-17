@@ -1,7 +1,7 @@
 import { Content } from "../functions/parseContent"
 import { MiddlewareLoader } from "../classes/middlewareBuilder"
 import HTTPRequest from "../classes/web/HttpRequest"
-import Methods from "../misc/methodsEnum"
+import methods from "../misc/methods"
 
 import RouteIndex from "../classes/router"
 import RoutePath from "../classes/router/path"
@@ -132,23 +132,17 @@ type MaxAgeCookie = {
 
 export type CookieSettings = ExpiresCookie | MaxAgeCookie
 
-export type HTTPMethods =
-	| 'CONNECT'
-	| 'TRACE'
-	| 'OPTIONS'
-	| 'DELETE'
-	| 'PATCH'
-	| 'POST'
-	| 'HEAD'
-	| 'PUT'
-	| 'GET'
-	| Methods
+export type ExcludeIf<Cond extends boolean, Obj extends object, Exclude extends string> = Cond extends true ? Omit<Obj, Exclude> : Obj
+
+export type ZodResponse<Schema extends Zod.ZodTypeAny> = [Zod.infer<Schema>, null] | [null, Zod.ZodError<Zod.infer<Schema>>]
+
+export type HTTPMethod = (typeof methods)[number]
 
 export type ExternalRouter = {
 	object: AnyRouter
 	addPrefix?: string
 }
 
-export type AnyRouter = RouteWS<any, any, any, any> | RouteHTTP<any, any, any, any> | RoutePath<any, any> | RouteIndex<any> | RouteContentTypes | RouteDefaultHeaders
+export type AnyRouter = RouteWS<any, any, any, any> | RouteHTTP<any, any, any, any, any, any, any> | RoutePath<any, any> | RouteIndex<any> | RouteContentTypes | RouteDefaultHeaders
 export type MiddlewareInitted = ReturnType<MiddlewareLoader<any, any, any, any, any, any>['config']>
 export type RoutedValidation<Context extends Record<any, any> = {}, Body = unknown, Middlewares extends MiddlewareInitted[] = [], Path extends string = '/'> = (ctr: MergeObjects<[ HTTPRequest<Context, Body, Path>, InstanceType<Middlewares[number]['data']['classModifications']['http']> ]>, end: EndFn) => RealAny

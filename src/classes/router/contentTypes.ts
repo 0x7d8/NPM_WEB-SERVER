@@ -1,3 +1,5 @@
+import { zValidate } from "rjutils-collection"
+
 export default class RouteContentTypes {
 	private contentTypes: Record<string, string>
 
@@ -18,7 +20,8 @@ export default class RouteContentTypes {
 	 * )
 	 * ```
 	 * @since 5.3.0
-	*/ public add(
+	*/ @zValidate([ (z) => z.string(), (z) => z.string() ])
+	public add(
 		/** The File ending to apply this to */ ending: string,
 		/** The Content Type to add to it */ contentType: string
 	): this {

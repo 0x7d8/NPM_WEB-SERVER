@@ -12,7 +12,7 @@ import { currentVersion } from "./middlewareBuilder"
 import HTTP from "../types/http"
 import { MiddlewareInitted } from "../types/internal"
 import RouteFile from "./router/file"
-import { getFilesRecursively, time } from "rjutils-collection"
+import { getFilesRecursively, time, zValidate } from "rjutils-collection"
 import { HttpRequest, WsClose, WsConnect, WsMessage } from "../types/external"
 import mergeClasses from "../functions/mergeClasses"
 import generateOpenAPI3 from "../functions/generateOpenAPI3"
@@ -136,7 +136,8 @@ import os from "os"
 	 * )
 	 * ```
 	 * @since 7.6.0
-	*/ public getOpenAPI3Def(serverUrl?: string): OpenAPIObject {
+	*/ @zValidate([ (z) => z.string().optional() ])
+	public getOpenAPI3Def(serverUrl?: string): OpenAPIObject {
 		return generateOpenAPI3(this.globalContext, serverUrl)
 	}
 

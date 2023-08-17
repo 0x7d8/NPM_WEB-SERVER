@@ -1,4 +1,4 @@
-import { HTTPMethods } from ".."
+import { HTTPMethod } from ".."
 import parseURL from "../functions/parseURL"
 
 /**
@@ -20,7 +20,7 @@ import parseURL from "../functions/parseURL"
 		this.query = parsed.query
 		this.fragments = parsed.fragments
 
-		this.method = method.toUpperCase() as HTTPMethods
+		this.method = method.toUpperCase() as HTTPMethod
 	}
 
 	/**
@@ -32,7 +32,7 @@ import parseURL from "../functions/parseURL"
 	 * url.method // "POST"
 	 * ```
 	 * @since 5.6.0
-	*/ public readonly method: HTTPMethods
+	*/ public readonly method: HTTPMethod
 
 	/**
 	 * The full URL

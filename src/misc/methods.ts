@@ -1,11 +1,3 @@
-export default [
-	'CONNECT',
-	'TRACE',
-	'OPTIONS',
-	'DELETE',
-	'PATCH',
-	'HEAD',
-	'POST',
-	'PUT',
-	'GET'
-]
+import methodsEnum from "./methodsEnum"
+
+export default Object.values(methodsEnum)

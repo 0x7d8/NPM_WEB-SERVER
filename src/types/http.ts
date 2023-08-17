@@ -1,18 +1,18 @@
 import HTTPRequest from "../classes/web/HttpRequest"
 import RPath from "../classes/path"
-import { HTTPMethods } from "./external"
-import { EndFn, MergeObjects, MiddlewareInitted, RealAny, RoutedValidation } from "./internal"
+import { HTTPMethod } from "./external"
+import { EndFn, MergeObjects, MiddlewareInitted, RealAny, RoutedValidation, ExcludeIf } from "./internal"
 import RouteRateLimit from "../classes/router/rateLimit"
 import DocumentationBuilder from "../classes/documentation/builder"
 
-type Route<Context extends Record<any, any> = {}, Body = unknown, Middlewares extends MiddlewareInitted[] = [], Path extends string = '/'> = {
+type Route<Context extends Record<any, any> = {}, Body = unknown, Middlewares extends MiddlewareInitted[] = [], Path extends string = '/', Method extends HTTPMethod = HTTPMethod> = {
 	/** The Type of this Object */ type: 'http'
 
 	/** The Path Class related to the Route */ path: RPath
 
-	/** The Request Method of the Route */ method: HTTPMethods
+	/** The Request Method of the Route */ method: Method
 	/** The Async Code to run on every Raw Body recieved */ onRawBody?(ctr: MergeObjects<[ HTTPRequest<Context, '', Path>, InstanceType<Middlewares[number]['data']['classModifications']['http']> ]>, end: EndFn, chunk: Buffer, isLast: boolean): RealAny
-	/** The Async Code to run on the Request */ onRequest(ctr: MergeObjects<[ HTTPRequest<Context, Body, Path>, InstanceType<Middlewares[number]['data']['classModifications']['http']> ]>): RealAny
+	/** The Async Code to run on the Request */ onRequest(ctr: ExcludeIf<Method extends 'GET' ? true : false, MergeObjects<[ HTTPRequest<Context, Body, Path>, InstanceType<Middlewares[number]['data']['classModifications']['http']> ]>, 'body' | 'rawBody' | 'rawBodyBytes' | 'bodyType' | 'bindBody'>): RealAny
 
 	/** The Documentation of the Route */ documentation: DocumentationBuilder
 

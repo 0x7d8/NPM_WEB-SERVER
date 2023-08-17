@@ -19,6 +19,8 @@ import { createHash } from "crypto"
 import Path from "../path"
 import DocumentationBuilder from "../documentation/builder"
 import { RatelimitInfos } from "../../types/external"
+import { ZodResponse } from "../../types/internal"
+import { z } from "zod"
 
 export const toArrayBuffer = (buffer: Buffer): ArrayBuffer => {
   return buffer.buffer.slice(buffer.byteOffset, buffer.byteOffset + buffer.byteLength)
@@ -132,6 +134,34 @@ export default class HTTPRequest<Context extends Record<any, any> = {}, Body = u
 		}
 
 		return this.ctx.body.raw
+	}
+
+	/**
+	 * Bind the Body using Zod
+	 * 
+	 * This uses `.body` internally so no binary data
+	 * @example
+	 * ```
+	 * const [ infos, error ] = ctr.bindBody((z) => z.object({
+	 *   name: z.string().max(24),
+	 *   gender: z.union([ z.literal('male'), z.literal('female') ])
+	 * }))
+	 * 
+	 * if (!infos) return ctr.status((s) => s.BAD_REQUEST).print(error.toString())
+	 * 
+	 * ctr.print('Everything valid! 👍')
+	 * ctr.printPart(`
+	 *   your name is ${infos.name}
+	 *   and you are a ${infos.gender}
+	 * `)
+	 * ```
+	 * @since 8.8.0
+	*/ public bindBody<Schema extends z.ZodTypeAny>(schema: Schema | ((z: typeof import('zod')) => Schema)): ZodResponse<Schema> {
+		const fullSchema = typeof schema === 'function' ? schema(z as any) : schema,
+			parsed = fullSchema.safeParse(this.body)
+
+		if (!parsed.success) return [null, parsed.error]
+		return [parsed, null]
 	}
 
 
