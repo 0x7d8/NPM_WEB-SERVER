@@ -52,7 +52,7 @@ export default class WSConnect<Context extends Record<any, any> = {}, Type = 'co
 		{(async() => {
 			let result: ParseContentReturns
 			try {
-				result = await parseContent(message, false, this.ctg.logger)
+				result = await parseContent(message, false, this.ctg.options.performance.validatePrint, this.ctg.logger)
 			} catch (err) {
 				this.ctx.handleError(err)
 				return true
@@ -97,7 +97,7 @@ export default class WSConnect<Context extends Record<any, any> = {}, Type = 'co
 		{(async() => {
 			let result: ParseContentReturns
 			try {
-				result = await parseContent(message, prettify, this.ctg.logger)
+				result = await parseContent(message, prettify, this.ctg.options.performance.validatePrint, this.ctg.logger)
 			} catch (err) {
 				this.ctx.handleError(err)
 				return true
@@ -154,7 +154,7 @@ export default class WSConnect<Context extends Record<any, any> = {}, Type = 'co
 			let data: Buffer
 
 			try {
-				data = (await parseContent(value, prettify, this.ctg.logger)).content
+				data = (await parseContent(value, prettify, this.ctg.options.performance.validatePrint, this.ctg.logger)).content
 			} catch (err) {
 				return this.ctx.handleError(err)
 			}
@@ -247,7 +247,7 @@ export default class WSConnect<Context extends Record<any, any> = {}, Type = 'co
 			if (!await Promise.resolve(validate(data))) return
 
 			try {
-				data = (await parseContent(data, prettify, this.ctg.logger)).content
+				data = (await parseContent(data, prettify, this.ctg.options.performance.validatePrint, this.ctg.logger)).content
 			} catch (err) {
 				return this.ctx.handleError(err)
 			}

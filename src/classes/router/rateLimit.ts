@@ -20,7 +20,7 @@ export default class RouteRateLimit<Excluded extends (keyof RouteRateLimit)[] = 
 	 * This is useful for when you want to make two code seperate rate limit rules act like one, just assign them the
 	 * same Identifier and they are interlinked. be wary, this *might* cause issues if the rate limits arent the same
 	 * rules.
-	 * @default randomNum(1,10000000)
+	 * @default randomNum(1, 10000000)
 	 * @warn ONLY USE IF YOU KNOW WHAT YOU ARE DOING
 	 * @since 8.7.2
 	*/ @zValidate([ (z) => z.number() ])
@@ -41,7 +41,7 @@ export default class RouteRateLimit<Excluded extends (keyof RouteRateLimit)[] = 
 	 * You can always prevent a request / message from counting towards the ratelimit by calling `<HTTPRequest | WSMessage>.skipRateLimit()`
 	 * @default time(10).s()
 	 * @since 8.6.0
-	*/ @zValidate([ (z) => z.number() ])
+	*/ @zValidate([ (z) => z.number().positive() ])
 	public penalty(ms: number): ExcludeFrom<RouteRateLimit<[...Excluded, 'penalty']>, [...Excluded, 'penalty']> {
 		this.data.penalty = ms
 
@@ -59,7 +59,7 @@ export default class RouteRateLimit<Excluded extends (keyof RouteRateLimit)[] = 
 	 * You can always prevent a request / message from counting towards the ratelimit by calling `<HTTPRequest | WSMessage>.skipRateLimit()`
 	 * @default time(10).s()
 	 * @since 8.6.0
-	*/ @zValidate([ (z) => z.number() ])
+	*/ @zValidate([ (z) => z.number().positive() ])
 	public window(ms: number): ExcludeFrom<RouteRateLimit<[...Excluded, 'window']>, [...Excluded, 'window']> {
 		this.data.timeWindow = ms
 
@@ -78,7 +78,7 @@ export default class RouteRateLimit<Excluded extends (keyof RouteRateLimit)[] = 
 	 * You can always prevent a request / message from counting towards the ratelimit by calling `<HTTPRequest | WSMessage>.skipRateLimit()`
 	 * @default Infinity
 	 * @since 8.6.0
-	*/ @zValidate([ (z) => z.number() ])
+	*/ @zValidate([ (z) => z.number().positive() ])
 	public hits(amount: number): ExcludeFrom<RouteRateLimit<[...Excluded, 'hits']>, [...Excluded, 'hits']> {
 		this.data.maxHits = amount
 

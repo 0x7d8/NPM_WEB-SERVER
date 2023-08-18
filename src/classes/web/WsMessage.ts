@@ -84,7 +84,7 @@ export default class WSMessage<Context extends Record<any, any> = {}, Message = 
 			parsed = fullSchema.safeParse(this.message)
 
 		if (!parsed.success) return [null, parsed.error]
-		return [parsed, null]
+		return [parsed.data, null]
 	}
 
 

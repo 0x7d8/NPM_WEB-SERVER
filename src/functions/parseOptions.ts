@@ -172,6 +172,11 @@ export type Options = {
 		 * @since 6.3.0
 		*/ eTag?: boolean
 		/**
+		 * Whether to validate `.print` input, no need to keep on if typescript is used
+		 * @default false
+		 * @since 8.8.1
+		*/ validatePrint?: boolean
+		/**
 		 * Whether to include Last-Modified Headers on every request that serves a file
 		 * @default true
 		 * @since 6.3.0
@@ -294,6 +299,7 @@ export type Options = {
 			updateInterval: 1500
 		}, performance: {
 			eTag: true,
+			validatePrint: false,
       lastModified: true,
       decompressBodies: true
 		}, proxy: {

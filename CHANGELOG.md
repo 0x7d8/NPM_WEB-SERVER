@@ -1,3 +1,8 @@
+## 8.8.1
+
+- Add Option to validate parseContent input
+- Fix `.bindBody` & `.bindMessage` not returning correct data
+
 ## 8.8.0
 
 - Validate Method Inputs

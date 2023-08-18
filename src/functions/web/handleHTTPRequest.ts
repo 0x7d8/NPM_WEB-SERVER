@@ -142,17 +142,21 @@ export default async function handleHTTPRequest(req: HttpRequest, res: HttpRespo
 		})
 		else return
 	} else if (ctx.headers.has('content-length') && parseInt(ctx.headers.get('content-length')) > ctg.options.body.maxSize) {
-		const result = await parseContent(ctg.options.body.message, false, ctg.logger)
-		const meta = await writeHTTPMeta(res, ctx)
+		try {
+			const result = await parseContent(ctg.options.body.message, false, ctg.options.performance.validatePrint, ctg.logger)
+			const meta = await writeHTTPMeta(res, ctx)
 
-		if (!ctx.isAborted) return res.cork(() => {
-			ctx.response.status = Status.PAYLOAD_TOO_LARGE
-			ctx.response.statusMessage = undefined
-			meta()
+			if (!ctx.isAborted) return res.cork(() => {
+				ctx.response.status = Status.PAYLOAD_TOO_LARGE
+				ctx.response.statusMessage = undefined
+				meta()
 
-			if (!ctx.isAborted) res.end(result.content)
-		})
-		else return
+				if (!ctx.isAborted) res.end(result.content)
+			})
+			else return
+		} catch {
+			if (!ctx.isAborted) res.end()
+		}
 	}
 
 	// Handle Aborting Requests
@@ -322,7 +326,7 @@ export default async function handleHTTPRequest(req: HttpRequest, res: HttpRespo
 
 		// Handle Reponse
 		if (ctx.continueSend) try {
-			const results = await Promise.all([ ... ctx.response.content.map((c) => parseContent(c, ctx.response.contentPrettify, ctg.logger)) ])
+			const results = await Promise.all([ ... ctx.response.content.map((c) => parseContent(c, ctx.response.contentPrettify, ctg.options.performance.validatePrint, ctg.logger)) ])
 			const response = { content: Buffer.concat(results.map((r) => r.content)), headers: Object.assign({}, ...results.map((r) => r.headers)) }
 
 			Object.assign(ctx.response.headers, response.headers)
@@ -626,7 +630,7 @@ export default async function handleHTTPRequest(req: HttpRequest, res: HttpRespo
 					ctg.data.incoming.increase(sendBuffer.byteLength)
 
 					if (totalBytes > ctg.options.body.maxSize) {
-						const result = await parseContent(ctg.options.body.message, false, ctg.logger)
+						const result = await parseContent(ctg.options.body.message, false, ctg.options.performance.validatePrint, ctg.logger)
 						ctg.logger.debug('big http body request aborted')
 						deCompression.destroy()
 		
@@ -653,7 +657,9 @@ export default async function handleHTTPRequest(req: HttpRequest, res: HttpRespo
 					}
 
 					if (isLast) deCompression.end()
-				} catch { }
+				} catch {
+					if (!ctx.isAborted) res.end()
+				}
 			}
 		})
 	}

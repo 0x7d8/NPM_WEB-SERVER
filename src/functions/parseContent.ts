@@ -1,19 +1,45 @@
 import { Duplex } from "stream"
 import Logger from "../classes/logger"
 import { isMap, isPromise, isSet } from "util/types"
+import { z } from "zod"
+import { JSONParsed, JSONValue } from "../types/external"
+
+export const jsonValue: z.ZodUnion<[z.ZodString]> = z.union([
+	z.string(),
+	z.number(),
+	z.boolean(),
+	z.null(),
+	z.record(z.string(), z.lazy(() => jsonValue)),
+	z.lazy(() => z.array(jsonValue))
+] as any)
+
+export const contentSchema: z.ZodUnion<[z.ZodString]> = z.union([
+	z.string(),
+	z.instanceof(Buffer),
+	z.map(z.string(), jsonValue),
+	z.set(jsonValue),
+	z.number(),
+	z.boolean(),
+	z.undefined(),
+	z.record(z.string(), jsonValue),
+	z.symbol(),
+	z.function(),
+	z.array(jsonValue),
+	z.lazy(() => z.promise(contentSchema))
+] as any)
 
 export type Content =
 	| string
 	| Buffer
-	| Map<any, any>
-	| Set<any>
+	| Map<string, JSONValue>
+	| Set<JSONValue>
 	| number
 	| boolean
 	| undefined
-	| Record<any, any>
 	| symbol
 	| Function
-	| any[]
+	| JSONValue[]
+	| JSONParsed
 	| Promise<Content>
 
 export type ParseContentReturns = Awaited<ReturnType<typeof parseContent>>
@@ -41,7 +67,7 @@ export type ParseContentReturns = Awaited<ReturnType<typeof parseContent>>
 		super({
 			writableObjectMode: true,
 			async write(chunk) {
-				const parsed = await parseContent(chunk, prettify, logger)
+				const parsed = await parseContent(chunk, prettify, false, logger)
 
 				this.push(parsed.content, 'binary')
 			}, read() {}
@@ -52,10 +78,12 @@ export type ParseContentReturns = Awaited<ReturnType<typeof parseContent>>
 /**
  * Parse almost anything into a Buffer that resolves to a string
  * @since 5.0.0
-*/ export default async function parseContent(content: Content, prettify: boolean = false, logger?: Logger): Promise<{
+*/ export default async function parseContent(content: Content, prettify: boolean = false, validate: boolean = true, logger?: Logger): Promise<{
 	/** The Headers associated with the parsed Content */ headers: Record<string, Buffer>
 	/** The Parsed Content, 100% a Buffer */ content: Buffer
 }> {
+	if (validate) contentSchema.parse(content)
+
 	const returnObject: ParseContentReturns = { headers: {}, content: Buffer.allocUnsafe(0) }
 
 	if (isPromise(content)) {
@@ -63,7 +91,7 @@ export type ParseContentReturns = Awaited<ReturnType<typeof parseContent>>
 			await new Promise<void>((resolve, reject) => {
 				(content as Promise<Content>)
 					.then(async(r) => {
-						content = (await parseContent(r, prettify, logger)).content
+						content = (await parseContent(r, prettify, validate, logger)).content
 
 						resolve()
 					})
@@ -78,7 +106,7 @@ export type ParseContentReturns = Awaited<ReturnType<typeof parseContent>>
 
 	if (Buffer.isBuffer(content)) return { headers: {}, content }
 	if (isMap(content)) content = Object.fromEntries(content.entries())
-	if (isSet(content)) content = Object.fromEntries(content.entries())
+	if (isSet(content)) content = Array.from(content)
 
 	switch (typeof content) {
 		case "object":
@@ -110,7 +138,7 @@ export type ParseContentReturns = Awaited<ReturnType<typeof parseContent>>
 
 		case "function":
 			const result = await Promise.resolve(content())
-			returnObject.content = (await parseContent(result, prettify, logger)).content
+			returnObject.content = (await parseContent(result, prettify, validate, logger)).content
 
 			break
 

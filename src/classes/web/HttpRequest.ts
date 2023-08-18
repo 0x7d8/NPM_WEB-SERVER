@@ -161,7 +161,7 @@ export default class HTTPRequest<Context extends Record<any, any> = {}, Body = u
 			parsed = fullSchema.safeParse(this.body)
 
 		if (!parsed.success) return [null, parsed.error]
-		return [parsed, null]
+		return [parsed.data, null]
 	}
 
 
@@ -767,7 +767,7 @@ export default class HTTPRequest<Context extends Record<any, any> = {}, Body = u
 
 					try {
 						try {
-							data = (await parseContent(data, prettify, this.ctg.logger)).content
+							data = (await parseContent(data, prettify, false, this.ctg.logger)).content
 						} catch (err) {
 							return this.ctx.handleError(err)
 						}
