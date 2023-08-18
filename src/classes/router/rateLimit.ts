@@ -59,7 +59,7 @@ export default class RouteRateLimit<Excluded extends (keyof RouteRateLimit)[] = 
 	 * You can always prevent a request / message from counting towards the ratelimit by calling `<HTTPRequest | WSMessage>.skipRateLimit()`
 	 * @default time(10).s()
 	 * @since 8.6.0
-	*/ @zValidate([ (z) => z.number().positive() ])
+	*/ @zValidate([ (z) => z.number().min(0) ])
 	public window(ms: number): ExcludeFrom<RouteRateLimit<[...Excluded, 'window']>, [...Excluded, 'window']> {
 		this.data.timeWindow = ms
 

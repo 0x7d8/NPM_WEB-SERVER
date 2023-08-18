@@ -1,3 +1,7 @@
+## 8.8.2
+
+- Fix Ratelimit Penalty not being able to be 0
+
 ## 8.8.1
 
 - Add Option to validate parseContent input
