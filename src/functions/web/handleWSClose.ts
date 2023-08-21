@@ -19,8 +19,6 @@ export default function handleWSClose(ws: WebSocket<WebSocketContext>, message: 
 	ctg.data.incoming.increase()
 
 	ctx.handleError = (err) => {
-		if (!err) return
-
 		ctx.error = err
 		ctx.execute.event = 'wsCloseError'
 	}
@@ -67,8 +65,7 @@ export default function handleWSClose(ws: WebSocket<WebSocketContext>, message: 
 				try {
 					await Promise.resolve(ctx.execute.route.onClose(ctr))
 				} catch (err) {
-					ctx.error = err
-					ctx.execute.event = 'wsCloseError'
+					ctx.handleError(err)
 					await runPageLogic()
 				}
 

@@ -1,3 +1,8 @@
+## 8.8.3
+
+- Use `ctx.handleError()` instead of manual code
+- Fix some issues with `mergeClasses()`
+
 ## 8.8.2
 
 - Fix Ratelimit Penalty not being able to be 0

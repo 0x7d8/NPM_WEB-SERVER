@@ -14,8 +14,6 @@ export default function handleWSOpen(ws: WebSocket<WebSocketContext>, ctg: Globa
 	ctx.executeCode = true
 
 	ctx.handleError = (err) => {
-		if (!err) return
-
 		ctx.error = err
 		ctx.execute.event = 'wsConnectError'
 	}
@@ -58,8 +56,7 @@ export default function handleWSOpen(ws: WebSocket<WebSocketContext>, ctg: Globa
 				try {
 					await Promise.resolve(ctx.execute.route.onConnect(ctr))
 				} catch (err) {
-					ctx.error = err
-					ctx.execute.event = 'wsConnectError'
+					ctx.handleError(err)
 					await runPageLogic()
 				}
 

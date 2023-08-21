@@ -43,8 +43,6 @@ export default async function handleHTTPRequest(req: HttpRequest, res: HttpRespo
 	const ctx: LocalContext = {
 		executeSelf: () => true,
 		handleError(err) {
-			if (!err) return
-
 			ctx.error = err
 			ctx.execute.event = 'httpError'
 		}, setExecuteSelf(callback) {
@@ -280,8 +278,8 @@ export default async function handleHTTPRequest(req: HttpRequest, res: HttpRespo
             )
           })
 				} catch (err) {
-					ctx.error = err
-					ctx.execute.event = 'httpError'
+					ctx.handleError(err)
+
 					await runPageLogic(true)
 				}
 
@@ -299,8 +297,8 @@ export default async function handleHTTPRequest(req: HttpRequest, res: HttpRespo
 				try {
 					await Promise.resolve(ctx.execute.route.onRequest(ctr))
 				} catch (err) {
-					ctx.error = err
-					ctx.execute.event = 'httpError'
+					ctx.handleError(err)
+
 					await runPageLogic(true)
 				}
 

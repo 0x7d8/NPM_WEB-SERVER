@@ -1,7 +1,9 @@
 import { AnyClass } from "../types/internal"
 
 export default function mergeClasses<Target extends AnyClass>(target: Target, ...sources: AnyClass[]): Target {
-  sources.forEach(({ prototype: source }) => {
+  sources.forEach((s) => {
+    const source = s?.prototype ?? {}
+
     const descriptors: Record<string | symbol, PropertyDescriptor> = Object.keys(source).reduce((descriptors: Record<string, PropertyDescriptor>, key) => {
       descriptors[key] = Object.getOwnPropertyDescriptor(source, key)!
       return descriptors

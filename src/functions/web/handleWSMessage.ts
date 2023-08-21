@@ -20,8 +20,6 @@ export default function handleWSConnect(ws: WebSocket<WebSocketContext>, message
 	ctg.webSockets.messages.incoming.increase()
 
 	ctx.handleError = (err) => {
-		if (!err) return
-
 		ctx.error = err
 		ctx.execute.event = 'wsMessageError'
 	}
@@ -91,8 +89,8 @@ export default function handleWSConnect(ws: WebSocket<WebSocketContext>, message
 				try {
 					await Promise.resolve(ctx.execute.route.onMessage(ctr))
 				} catch (err) {
-					ctx.error = err
-					ctx.execute.event = 'wsMessageError'
+					ctx.handleError(err)
+
 					await runPageLogic()
 				}
 
