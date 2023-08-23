@@ -12,7 +12,7 @@ import WsConnect from "../classes/web/WsConnect"
 import WsMessage from "../classes/web/WsMessage"
 import WsClose from "../classes/web/WsClose"
 
-export type JSONValue = string | number | boolean | { [key: string]: JSONValue } | JSONValue[]
+export type JSONValue = string | number | boolean | { toString(): string } | { [key: string]: JSONValue } | JSONValue[]
 export type JSONParsed = Record<string, JSONValue>
 export type URLEncodedParsed = Record<string, string>
 export type MultiPartParsed = MultipartField[]

@@ -1,3 +1,8 @@
+## 8.8.4
+
+- Improve Content Type
+- Allow 0 penalty for ratelimits
+
 ## 8.8.3
 
 - Use `ctx.handleError()` instead of manual code

@@ -9,6 +9,7 @@ export const jsonValue: z.ZodUnion<[z.ZodString]> = z.union([
 	z.number(),
 	z.boolean(),
 	z.null(),
+	z.object({ toString: z.function().returns(z.string()) }),
 	z.record(z.string(), z.lazy(() => jsonValue)),
 	z.lazy(() => z.array(jsonValue))
 ] as any)
@@ -21,6 +22,7 @@ export const contentSchema: z.ZodUnion<[z.ZodString]> = z.union([
 	z.number(),
 	z.boolean(),
 	z.undefined(),
+	z.object({ toString: z.function().returns(z.string()) }),
 	z.record(z.string(), jsonValue),
 	z.symbol(),
 	z.function(),
@@ -37,6 +39,7 @@ export type Content =
 	| boolean
 	| undefined
 	| symbol
+	| { toString(): string }
 	| Function
 	| JSONValue[]
 	| JSONParsed
