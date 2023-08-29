@@ -1,3 +1,7 @@
+## 8.8.5
+
+- Allow `null` as `JSONValue`
+
 ## 8.8.4
 
 - Improve Content Type
