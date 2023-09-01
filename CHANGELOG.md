@@ -1,3 +1,8 @@
+## 8.8.6
+
+- Fix some validation issues
+- Allow adding `.redirect` in routeFiles
+
 ## 8.8.5
 
 - Allow `null` as `JSONValue`

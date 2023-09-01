@@ -274,7 +274,7 @@ export default class RoutePath<GlobContext extends Record<any, any>, Middlewares
 	 * )
 	 * ```
 	 * @since 3.1.0
-	*/ @zValidate([ (z) => z.string(), (z) => z.string(), (z) => z.union([ z.literal('temporary'), z.literal('permanent') ]) ])
+	*/ @zValidate([ (z) => z.string(), (z) => z.string(), (z) => z.union([ z.literal('temporary'), z.literal('permanent').optional() ]) ])
 	public redirect(
 		/** The Request Path to Trigger the Redirect on */ request: string,
 		/** The Redirect Path to Redirect to */ redirect: string,

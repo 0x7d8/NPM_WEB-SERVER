@@ -4,6 +4,7 @@ import { ExcludeFrom, ExternalRouter, HTTPMethod, MiddlewareInitted, RoutedValid
 import { as, zValidate } from "rjutils-collection"
 import { isRegExp } from "util/types"
 import { Content } from "../../functions/parseContent"
+import RPath from "../path"
 import methods from "../../misc/methods"
 import parsePath from "../../functions/parsePath"
 
@@ -11,6 +12,7 @@ import RouteWS from "./ws"
 import RouteHTTP from "./http"
 import RouteDefaultHeaders from "./defaultHeaders"
 import RouteRateLimit from "./rateLimit"
+import DocumentationBuilder from "../documentation/builder"
 
 export default class RouteFile<GlobContext extends Record<any, any>, Middlewares extends MiddlewareInitted[], Excluded extends (keyof RouteFile<GlobContext, Middlewares>)[] = []> {
 	private routes: HTTP[] = []
@@ -250,6 +252,42 @@ export default class RouteFile<GlobContext extends Record<any, any>, Middlewares
 		const routeWS = new RouteWS<GlobContext, Context, Message, Middlewares, Path>(path as any, this.validations, this.parsedHeaders, this.wsratelimit)
 		this.externals.push({ object: routeWS })
 		callback(routeWS)
+
+		return this
+	}
+
+	/**
+	 * Add a Redirect
+	 * @example
+	 * ```
+	 * // The /devil route will automatically redirect to google.com
+	 * // Obviously still putting the prefix (in this case / from the RoutePath in front)
+	 * const controller = new Server({ })
+	 * 
+	 * controller.path('/', (path) => path
+	 *   .redirect('/devil', 'https://google.com')
+	 *   .redirect('/devilpics', 'https://google.com/search?q=devil')
+	 * )
+	 * ```
+	 * @since 8.8.6
+	*/ @zValidate([ (z) => z.string(), (z) => z.string(), (z) => z.union([ z.literal('temporary'), z.literal('permanent').optional() ]) ])
+	public redirect(
+		/** The Request Path to Trigger the Redirect on */ request: string,
+		/** The Redirect Path to Redirect to */ redirect: string,
+		/** The Redirect Type */ type?: 'temporary' | 'permanent'
+	): this {
+		this.routes.push({
+			type: 'http',
+			method: 'GET',
+			path: new RPath('GET', parsePath(request)),
+			documentation: new DocumentationBuilder(),
+			onRequest: (ctr) => ctr.redirect(redirect, type),
+			data: {
+				ratelimit: { maxHits: Infinity, penalty: 0, sortTo: -1, timeWindow: Infinity },
+				validations: this.validations,
+				headers: this.parsedHeaders
+			}, context: { data: {}, keep: true }
+		})
 
 		return this
 	}
