@@ -1,3 +1,7 @@
+## 8.8.7
+
+- Allow setting routepath as array for multiple paths that point to same callback
+
 ## 8.8.6
 
 - Fix some validation issues

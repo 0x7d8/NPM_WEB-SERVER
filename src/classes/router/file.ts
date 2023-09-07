@@ -208,17 +208,19 @@ export default class RouteFile<GlobContext extends Record<any, any>, Middlewares
 	 * )
 	 * ```
 	 * @since 6.0.0
-	*/ @zValidate([ (z) => z.string().refine((s) => methods.includes(s as any)), (z) => z.union([ z.string(), z.instanceof(RegExp) ]), (z) => z.function() ])
-	public http<Context extends Record<any, any> = {}, Body = unknown, Path extends string = '/', Method extends HTTPMethod = 'GET'>(
+	*/ @zValidate([ (z) => z.string().refine((s) => methods.includes(s as any)), (z) => z.union([ z.string(), z.string().array(), z.instanceof(RegExp), z.instanceof(RegExp).array() ]), (z) => z.function() ])
+	public http<Context extends Record<any, any> = {}, Body = unknown, const Path extends string | string[] = '/', Method extends HTTPMethod = 'GET'>(
     /** The Request Method */ method: Method,
-		/** The Path on which this will be available */ path: Path | RegExp,
-		/** The Callback to handle the Endpoint */ callback: (path: ExcludeIf<Method extends 'GET' ? true : false, RouteHTTP<GlobContext, Context, Body, Middlewares, Path, Method, Method extends 'GET' ? ['onRawBody'] : []>, 'onRawBody'>) => any
+		/** The Path on which this will be available */ path: Path | RegExp | RegExp[],
+		/** The Callback to handle the Endpoint */ callback: (path: ExcludeIf<Method extends 'GET' ? true : false, RouteHTTP<GlobContext, Context, Body, Middlewares, Path extends string[] ? Path[number] : Path, Method, Method extends 'GET' ? ['onRawBody'] : []>, 'onRawBody'>) => any
 	): this {
-		if (this.routes.some((obj) => isRegExp(obj.path) ? false : obj.path.path === parsePath(path as string))) return this
+		for (const route of Array.isArray(path) ? path : [path]) {
+			if (this.routes.some((obj) => isRegExp(obj.path) ? false : obj.path.path === parsePath(path as string))) continue
 
-		const routeHTTP = new RouteHTTP<GlobContext, Context, Body, Middlewares, Path, Method, Method extends 'GET' ? ['onRawBody'] : []>(path as any, method, this.validations, this.parsedHeaders, this.httpratelimit)
-		this.externals.push({ object: routeHTTP })
-		callback(routeHTTP)
+			const routeHTTP = new RouteHTTP<GlobContext, Context, Body, Middlewares, '', Method, Method extends 'GET' ? ['onRawBody'] : []>(route as any, method, this.validations, this.parsedHeaders, this.httpratelimit)
+			this.externals.push({ object: routeHTTP })
+			callback(routeHTTP)
+		}
 
 		return this
 	}
@@ -242,16 +244,18 @@ export default class RouteFile<GlobContext extends Record<any, any>, Middlewares
 	 * )
 	 * ```
 	 * @since 5.4.0
-	*/ @zValidate([ (z) => z.union([ z.string(), z.instanceof(RegExp) ]), (z) => z.function() ])
-	public ws<Context extends Record<any, any> = {}, Message = unknown, Path extends string = '/'>(
-		/** The Path on which this will be available */ path: Path | RegExp,
-		/** The Callback to handle the Endpoint */ callback: (path: RouteWS<GlobContext, Context, Message, Middlewares, Path>) => any
+	*/ @zValidate([ (z) => z.union([ z.string(), z.string().array(), z.instanceof(RegExp), z.instanceof(RegExp).array() ]), (z) => z.function() ])
+	public ws<Context extends Record<any, any> = {}, Message = unknown, const Path extends string | string[] = '/'>(
+		/** The Path on which this will be available */ path: Path | RegExp | RegExp[],
+		/** The Callback to handle the Endpoint */ callback: (path: RouteWS<GlobContext, Context, Message, Middlewares, Path extends string[] ? Path[number] : Path>) => any
 	): this {
-		if (this.webSockets.some((obj) => isRegExp(obj.path) ? false : obj.path.path === parsePath(path as string))) return this
+		for (const route of Array.isArray(path) ? path : [path]) {
+			if (this.webSockets.some((obj) => isRegExp(obj.path) ? false : obj.path.path === parsePath(path as string))) continue
 
-		const routeWS = new RouteWS<GlobContext, Context, Message, Middlewares, Path>(path as any, this.validations, this.parsedHeaders, this.wsratelimit)
-		this.externals.push({ object: routeWS })
-		callback(routeWS)
+			const routeWS = new RouteWS<GlobContext, Context, Message, Middlewares, ''>(route as any, this.validations, this.parsedHeaders, this.wsratelimit)
+			this.externals.push({ object: routeWS })
+			callback(routeWS)
+		}
 
 		return this
 	}
