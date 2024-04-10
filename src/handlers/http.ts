@@ -11,7 +11,7 @@ import { UsableMiddleware } from "@/classes/Middleware"
 /**
  * Handler for HTTP Requests
  * @since 9.0.0
-*/ export default async function handle(context: RequestContext, req: HttpContext, server: Server<any, any, any>, middlewares: UsableMiddleware[]) {
+*/ export default async function handle(context: RequestContext, req: HttpContext, server: Server<any, any, any>, middlewares: UsableMiddleware[], customContext: Record<string, any>) {
 	if (context.global.options.version) req.header('rjweb-server', version)
 
 	context.response.headers.set('content-type', 'text/plain')
@@ -24,6 +24,7 @@ import { UsableMiddleware } from "@/classes/Middleware"
 	}
 
 	const ctr = new context.global.classContexts.HttpRequest(context, req, req.aborted())
+	Object.assign(ctr["@"], customContext)
 
 	if (context.global.options.proxy.enabled) {
 		context.response.headers.set('proxy-authenticate', `Basic realm="Access rjweb-server@${version}"`)

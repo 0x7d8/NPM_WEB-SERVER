@@ -1,3 +1,7 @@
+## 9.0.3
+
+- Properly handle global context
+
 ## 9.0.2
 
 - Split and trim the proxy header

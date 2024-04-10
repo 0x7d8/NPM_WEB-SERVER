@@ -81,7 +81,7 @@ export default class Server<const Options extends ServerOptions, Middlewares ext
 	 * })
 	 * ```
 	 * @since 3.0.0
-	*/ constructor(implementation: BaseImplementation, options: Options, middlewares?: Middlewares, context: Context = {} as never) {
+	*/ constructor(implementation: BaseImplementation, options: Options, middlewares?: Middlewares, private context: Context = {} as never) {
 		this.middlewares = middlewares ?? [] as never
 
 		this.options = object.deepParse(defaultOptions, options)
@@ -268,7 +268,7 @@ export default class Server<const Options extends ServerOptions, Middlewares ext
 		if (this._status === 'listening') throw new Error('Server is already listening')
 
 		this.implementation.handle({
-			http: (context) => httpHandler(new RequestContext(context, this.middlewares, this as any, this.global), context, this, this.middlewares),
+			http: (context) => httpHandler(new RequestContext(context, this.middlewares, this as any, this.global), context, this, this.middlewares, this.context),
 			ws: (ws) => wsHandler(ws.data(), ws, this, this.middlewares)
 		})
 
