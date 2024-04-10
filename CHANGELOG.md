@@ -1,3 +1,7 @@
+## 9.0.2
+
+- Split and trim the proxy header
+
 ## 9.0.1
 
 - Properly handle `index` on route loading

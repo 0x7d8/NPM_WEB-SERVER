@@ -58,7 +58,7 @@ import { UsableMiddleware } from "@/classes/Middleware"
 
 		const oldIp = context.ip.value
 		if (context.ip.isProxied) {
-			context.ip.value = context.headers.get(context.global.options.proxy.header, context.ip.value)
+			context.ip.value = context.headers.get(context.global.options.proxy.header, context.ip.value).split(',')[0].trim()
 		}
 
 		if (context.ip.isProxied && context.global.options.proxy.ips.validate) {
