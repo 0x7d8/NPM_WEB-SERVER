@@ -1,3 +1,7 @@
+## 9.0.4
+
+- Apply `FileLoader` validators properly
+
 ## 9.0.3
 
 - Properly handle global context

@@ -178,6 +178,8 @@ export default class File<Middlewares extends UsableMiddleware[], Validators ext
 							modifiedRoutesStatic: Route<'static'>[] = []
 
 						for (const route of router['routesHttp']) {
+							route.validators.unshift(...this.validators)
+
 							if (options.fileBasedRouting) {
 								if (route.urlData.type === 'regexp') {
 									route.urlData.prefix = this.computePath(route.urlData.prefix.concat(path)) as string
@@ -197,6 +199,8 @@ export default class File<Middlewares extends UsableMiddleware[], Validators ext
 						}
 
 						for (const route of router['routesWS']) {
+							route.validators.unshift(...this.validators)
+
 							if (options.fileBasedRouting) {
 								if (route.urlData.type === 'regexp') {
 									route.urlData.prefix = this.computePath(route.urlData.prefix.concat(path)) as string
@@ -216,6 +220,8 @@ export default class File<Middlewares extends UsableMiddleware[], Validators ext
 						}
 
 						for (const route of router['routesStatic']) {
+							route.validators.unshift(...this.validators)
+
 							if (options.fileBasedRouting) {
 								if (route.urlData.type === 'regexp') {
 									route.urlData.prefix = this.computePath(route.urlData.prefix.concat(path)) as string

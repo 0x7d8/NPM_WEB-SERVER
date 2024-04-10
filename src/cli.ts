@@ -170,7 +170,7 @@ yargs
 			)
 
 			server.http((ctr) => {
-				console.log(`${prefix} ${colors.fg.gray}${ctr.client.ip} ${colors.fg.green}HTTP ${ctr.url.method} ${colors.fg.cyan}${coloredPath(ctr.url.path)}`)
+				console.log(`${prefix} ${colors.fg.gray}${ctr.client.ip.usual()} ${colors.fg.green}HTTP ${ctr.url.method} ${colors.fg.cyan}${coloredPath(ctr.url.path)}`)
 			})
 
 			server.start()
