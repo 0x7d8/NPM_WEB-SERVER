@@ -170,7 +170,7 @@ export default class File<Middlewares extends UsableMiddleware[], Validators ext
 
 				try {
 					const { default: router } = await eval(`import(${JSON.stringify(file.path)})`), // bypass ttsc converting to require() in cjs
-						path = file.path.replace(resolved, '').replace(/\\/g, '/').split('.').slice(0, -1).join('.').concat('/')
+						path = file.path.replace(resolved, '').replaceAll('index', '').replace(/\\/g, '/').split('.').slice(0, -1).join('.').concat('/')
 
 					if (router instanceof Path) {
 						const modifiedRoutesHttp: Route<'http'>[] = [],

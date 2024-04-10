@@ -1,3 +1,7 @@
+## 9.0.1
+
+- Properly handle `index` on route loading
+
 ## 9.0.0
 
 [How to Migrate](https://github.com/0x7d8/NPM_WEB-SERVER/blob/main/migrating/9.md)
