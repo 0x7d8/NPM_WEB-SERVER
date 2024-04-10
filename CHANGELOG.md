@@ -1,3 +1,36 @@
+## 9.0.0
+
+[How to Migrate](https://github.com/0x7d8/NPM_WEB-SERVER/blob/main/migrating/9.md)
+
+- Rewrote everything
+- Support for multiple runtimes
+- Added Validators
+- Added FileLoaders
+- Added ability for middlewares to listen to callback ends
+- Better Performance, less chunked encoding by default
+- Better Proxy Support with IP Whitelisting
+- More Compression Control with `minSize`, `maxSize` and `preferOrder`
+- Global Middlewares
+- Smaller Package Size, not including uws anymore
+- More Templates
+- Proper SSE and custom chunking support
+- Abort Handlers on all requests
+- Names and versions for middlewares
+- Removed Dashboard
+- Removed Traffic, Requests, ... Stats
+- Better Context Support for route files
+- Replaced `Reference` with `Channel`
+- Added `Cookie` Class
+- Added `RuntimeError` Class to more easily find the cause of errors
+- Internal Routing revamp
+- Added `Throttler` Class to limit chunking speed (for example)
+- Removed `ctr.printPart`
+- Less unnecessary promises
+- Allow sending binary and text in websockets
+- Dont read request body until requested, improving memory usage when never read
+- Typedocs are now all Docs
+- New Typedocs (Docs) Style
+
 ## 8.8.7
 
 - Allow setting routepath as array for multiple paths that point to same callback

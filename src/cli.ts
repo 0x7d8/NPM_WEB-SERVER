@@ -1,16 +1,25 @@
 #! /usr/bin/env node
 
-import { Version, Status } from "."
-import { Spinner } from "rjutils-collection"
-import { colors } from "./classes/logger"
-import Server from "./classes/server"
-
+import { colors } from "@/classes/Logger"
+import { Server, defaultOptions, version } from "@/index"
 import { exec, execSync } from "child_process"
 import https from "https"
 import yargs from "yargs"
 import pPath from "path/posix"
 import path from "path"
 import fs from "fs"
+import { object } from "@rjweb/utils"
+
+class Spinner {
+	private current = 0
+	private readonly spinner = ['⠋', '⠙', '⠹', '⠸', '⠼', '⠴', '⠦', '⠧', '⠇', '⠏']
+
+	public get(): string {
+		this.current = (this.current + 1) % this.spinner.length
+
+		return this.spinner[this.current]
+	}
+}
 
 type GitFile = {
 	name: string
@@ -33,9 +42,46 @@ type Template = {
 	}[]
 }
 
-type PackageManager = 'npm' | 'yarn' | 'pnpm'
+type PackageManager = 'npm' | 'yarn' | 'pnpm' | 'bun'
 
-const prefix = `⚡  ${colors.fg.white}[RJWEB ${Version.split('.')[0]}]${colors.fg.gray}:${colors.reset}`
+const prefix = `⚡  ${colors.fg.white}[RJWEB ${version.split('.')[0]}]${colors.fg.gray}:${colors.reset}`
+
+const getAllOptionKeys = (options: Record<string, any>): string[] => {
+	return Object.keys(options).map((key) => {
+		if (typeof options[key] === 'object' && !Array.isArray(options[key])) return getAllOptionKeys(options[key]).map((k) => `${key}.${k}`)
+		else return key
+	}).flat()
+}
+
+const resolveOptionKey = (key: string) => {
+	const parts = key.split('.')
+	let options = defaultOptions
+
+	for (const part of parts) {
+		options = (options as any)[part]
+	}
+
+	return options
+}
+
+const optionKeyValueToObject = (keys: Record<string, any>) => {
+	let output: Record<string, any> = {}
+	for (const key in keys) {
+		const parts = key.split('.')
+		let current = output
+
+		for (let i = 0; i < parts.length; i++) {
+			if (i === parts.length - 1) {
+				current[parts[i]] = keys[key]
+			} else {
+				if (!current[parts[i]]) current[parts[i]] = {}
+				current = current[parts[i]]
+			}
+		}
+	}
+
+	return output
+}
 
 const coloredPath = (path: string) => {
 	let output: string[] = []
@@ -65,100 +111,66 @@ const isX = (type: 'dir' | 'file', path: string) => {
 yargs
 	.scriptName('rjweb')
 	.usage('$0 <command> [args]')
-	.version(Version)
+	.version(version)
 	.command(
 		'serve <folder>',
 		'Serve a Folder',
-		((cmd) => cmd
-			.positional('folder', {
-				type: 'string',
-				description: 'The Folder to serve',
-				demandOption: true
-			})
-			.option('port', {
-				type: 'number',
-				description: 'The port on which to serve',
-				alias: ['p'],
-				default: 0,
-			})
-			.option('hideHTML', {
-				type: 'boolean',
-				description: 'Whether to remove html file endings',
-				alias: ['html', 'h', 'hH'],
-				default: false,
-			})
-			.option('compress', {
-				type: 'boolean',
-				description: 'Whether to compress outgoing data',
-				alias: ['C'],
-				default: true,
-			})
-			.option('cors', {
-				type: 'boolean',
-				description: 'Whether to enable * CORS headers',
-				alias: ['c'],
-				default: false,
-			})
-			.option('proxy', {
-				type: 'boolean',
-				description: 'Whether to enable using X-Forwarded-For Header',
-				alias: ['P'],
-				default: false,
-			})
-			.option('bind', {
-				type: 'string',
-				description: 'Where to bind the Server to',
-				alias: ['b'],
-				default: '0.0.0.0',
-			})
-			.option('404-file', {
-				type: 'string',
-				description: 'The file to print when a route is not found',
-				alias: ['404'],
-				default: '',
-			})
-			.option('dashboard', {
-				type: 'boolean',
-				description: 'Whether to enable the built-in dashboard (/rjweb-dashboard)',
-				alias: ['d', 'dash'],
-				default: false,
-			})
-			.option('dashboard-password', {
-				type: 'string',
-				description: 'The password for the dashboard',
-				alias: ['dP', 'pass'],
-				default: '',
-			})
-		),
-		((args) => {
-			if (!isX('dir', pR(args.folder ?? '//'))) return console.error(`${prefix} ${colors.fg.red}Couldnt find ${colors.fg.cyan}${args.folder}`)
-			if (args["404File"] && !isX('file', pR(args["404File"] ?? '//'))) return console.error(`${prefix} ${colors.fg.red}Couldnt find ${colors.fg.cyan}${args["404File"]}`)
+		// @ts-ignore
+		((cmd) => {
+			cmd
+				.positional('folder', {
+					type: 'string',
+					description: 'The Folder to serve',
+					demandOption: true
+				})
+				.option('runtime', {
+					type: 'string',
+					description: 'The Runtime Package to use',
+					alias: ['r'],
+					default: '@rjweb/runtime-node',
+					demandOption: true
+				})
+				.option('stripHtmlEnding', {
+					type: 'boolean',
+					description: 'Strip the .html Ending from Files',
+					alias: ['s'],
+					default: true
+				})
+		
+			for (const key of getAllOptionKeys(defaultOptions)) {
+				if (key === 'version') continue
 
-			const server = new Server({
-				port: args.port,
-				dashboard: {
-					enabled: args.dashboard,
-					password: args.dashboardPassword,
-				}, httpCompression: {
-					enabled: args.compress
-				}, cors: args.cors,
-				proxy: {
-					enabled: args.proxy
-				}, bind: args.bind,
-			}, [])
+				cmd.option(key, {
+					description: `The ${key} Option`,
+					type: typeof resolveOptionKey(key) === 'object' ? 'array' : typeof resolveOptionKey(key)
+				})
+			}
+
+			return cmd
+		}),
+		(async(args: { folder: string, runtime: string, stripHtmlEnding: boolean }) => {
+			if (!isX('dir', pR(args.folder ?? '//'))) return console.error(`${prefix} ${colors.fg.red}Could not find ${colors.fg.cyan}${args.folder}`)
+
+			const serverOptions = getAllOptionKeys(defaultOptions).reduce((acc, key) => {
+				acc[key] = (args as any)[key] ?? resolveOptionKey(key)
+
+				return acc
+			}, {} as any)
+
+			console.log(`${prefix} ${colors.fg.gray}Starting Server...`)
+			const server = new Server(await import(args.runtime).then((runtime) => runtime.Runtime).catch(() => {
+				console.error(`${prefix} ${colors.fg.red}Could not find Runtime Package ${colors.fg.cyan}${args.runtime} ${colors.fg.red}installed globally.`)
+				process.exit(1)
+			}), optionKeyValueToObject(serverOptions))
 
 			server.path('/', (path) => path
-				.static(pR(args.folder!), {
-					hideHTML: args.hideHTML
+				.static(pR(args.folder), {
+					stripHtmlEnding: args.stripHtmlEnding
 				})
 			)
 
-			server.on('httpRequest', (ctr) => {
+			server.http((ctr) => {
 				console.log(`${prefix} ${colors.fg.gray}${ctr.client.ip} ${colors.fg.green}HTTP ${ctr.url.method} ${colors.fg.cyan}${coloredPath(ctr.url.path)}`)
-			})
-
-			if (args["404File"]) server.on('route404', (ctr) => {
-				ctr.status(Status.NOT_FOUND).printFile(pR(args["404File"]))
 			})
 
 			server.start()
@@ -195,7 +207,7 @@ yargs
 			})
 		),
 		(async(args) => {
-			const { default: inquirer } = await import('inquirer')
+			const { default: inquirer } = await eval('import("inquirer")') as typeof import('inquirer')
 
 			console.log(`${prefix} ${colors.fg.gray}Fetching Templates from GitHub...`)
 			const templates: Template[] = []
@@ -206,7 +218,7 @@ yargs
 					host: 'api.github.com',
 					port: 443,
 					headers: {
-						"User-Agent": `rjweb-server@cli ${Version}`,
+						"User-Agent": `rjweb-server@cli ${version}`,
 						"Accept": 'application/vnd.github.v3+json',
 					}
 				}, (res) => {
@@ -291,7 +303,7 @@ yargs
 						host: 'api.github.com',
 						port: 443,
 						headers: {
-							"User-Agent": `rjweb-server@cli ${Version}`,
+							"User-Agent": `rjweb-server@cli ${version}`,
 							"Accept": 'application/vnd.github.v3+json',
 						}
 					}, (res) => {
@@ -351,6 +363,13 @@ yargs
 				})
 
 				availablePackageManagers.push('pnpm')
+			} catch { }
+			try {
+				execSync('bun --version', {
+					stdio: 'ignore'
+				})
+
+				availablePackageManagers.push('bun')
 			} catch { }
 
 			let continueWith: PackageManager = 'npm'

@@ -1,32 +1,41 @@
-const { Server, Reference } = require('rjweb-server')
+const { Server, Channel } = require('rjweb-server')
+const { Runtime } = require('@rjweb/runtime-node')
 const path = require('path')
 
-const chatRef = new Reference('')
+const chatRef = new Channel()
 
-const server = new Server({
+const server = new Server(Runtime, {
 	port: 8000
 })
 
+const chatValidator = new server.Validator()
+	.httpRequest((ctr, end) => {
+		if (ctr.queries.get('username', '').length < 5) {
+			return end(ctr.status(ctr.$status.BAD_REQUEST).print('Username must be at least 5 characters long'))
+		}
+	})
+
 server.path('/', (p) => p
 	.static(path.join(__dirname, 'static'), {
-		hideHTML: true
+		stripHtmlEnding: true
 	})
   .ws('/chat/ws', (ws) => ws
-		.onConnect((ctr) => {
-			ctr.printRef(chatRef)
+		.validate(chatValidator.use({}))
+		.onOpen((ctr) => {
+			ctr.printChannel(chatRef)
 
-			chatRef.set(`${ctr.queries.get('username', 'unknown')} has joined!`)
+			chatRef.send('text', `${ctr.queries.get('username', 'unknown')} has joined!`)
 		})
 		.onMessage((ctr) => {
-			chatRef.set(`${ctr.queries.get('username', 'unknown')} said: ${ctr.rawMessage}`)
+			chatRef.send('text', `${ctr.queries.get('username', 'unknown')} said: ${ctr.rawMessage}`)
 		})
 		.onClose((ctr) => {
-			chatRef.set(`${ctr.queries.get('username', 'unknown')} has left!`)
+			chatRef.send('text', `${ctr.queries.get('username', 'unknown')} has left!`)
 		})
 	)
 )
 
-server.on('httpRequest', (ctr) => {
+server.http((ctr) => {
   console.log(`Request made to ${ctr.url.href}`)
 })
 

@@ -1,4 +1,16 @@
-import { fH, HTMLContent } from "../classes/HTMLBuilder"
+export type HTMLContent =
+	| string
+	| number
+	| boolean
+	| undefined
+
+const replace: Record<string, string> = {
+	'&': '&amp;',
+	'<': '&lt;',
+	'>': '&gt;',
+	'"': '&quot;',
+	'\'': '&#039;'
+}
 
 /**
  * Parse HTML Content to remove XSS (if used properly)
@@ -22,7 +34,7 @@ import { fH, HTMLContent } from "../classes/HTMLBuilder"
 
 	for (let i = 0; i < parts.length; i++) {
 		result += parts[i]
-		if (variables[i]) result += fH(String(variables[i]))
+		if (variables[i]) result += String(variables[i]).replace(/[&<>"']/g, (m) => replace[m])
 	}
 
 	return result

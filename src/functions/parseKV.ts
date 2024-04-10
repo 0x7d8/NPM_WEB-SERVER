@@ -1,4 +1,5 @@
-import ValueCollection from "../classes/valueCollection"
+import ValueCollection from "@/classes/ValueCollection"
+import { as } from "@rjweb/utils"
 
 export const trimString = (str: string): string => {
   let start = 0, end = str.length - 1
@@ -17,10 +18,10 @@ export const trimString = (str: string): string => {
 /**
  * Efficiently parse Key-Value Strings into ValueCollections
  * @since 7.0.0
-*/ export default function parseKV(keyValue: string, equal = '=', splitter = '&', decode = decodeURIComponent): ValueCollection<string, string> {
-	const values = new ValueCollection<string, string>()
+*/ export default function parseKV<Type extends 'ValueCollection' | 'Object'>(type: Type, keyValue: string, equal = '=', splitter = '&', decode = decodeURIComponent): Type extends 'ValueCollection' ? ValueCollection<string, string> : Record<string, string> {
+	const values = type === 'ValueCollection' ? new ValueCollection<string, string>() : {}
 
-	if (!keyValue) return values
+	if (!keyValue) return as<any>(values)
 
 	let progress = 0
 	while (progress < keyValue.length) {
@@ -37,9 +38,11 @@ export const trimString = (str: string): string => {
 			decodedVal = sliced
 		}
 
-		values.set(trimString(keyValue.slice(progress, progress + equalPos)), decodedVal)
+		if (type === 'ValueCollection') as<ValueCollection>(values).set(trimString(keyValue.slice(progress, progress + equalPos)), decodedVal)
+		else as<Record<string, string>>(values)[trimString(keyValue.slice(progress, progress + equalPos))] = decodedVal
+
 		progress = splitterPos + 1
 	}
 
-	return values
+	return as<any>(values)
 }

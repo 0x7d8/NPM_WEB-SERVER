@@ -1,9 +1,15 @@
 import { Server } from "rjweb-server"
-import { WebServerContext } from "./types/context"
+import { Runtime } from "@rjweb/runtime-node"
 
-export const server = new Server<WebServerContext>({
+const server = new Server(Runtime, {
   port: 8000
+}, [], {
+  requests: 0
 })
+
+export const fileRouter = new server.FileLoader('/api')
+  .load('./routes', { fileBasedRouting: true })
+  .export()
 
 server.path('/', (path) => path
   .http('GET', '/', (http) => http
@@ -11,17 +17,13 @@ server.path('/', (path) => path
       ctr.print('<a href="/api/hello">hello api</a>')
     })
   )
-  .path('/api', (path) => path
-    .loadCJS('./routes')
-  )
 )
 
 let requests = 0
-server.on('httpRequest', (ctr) => {
+server.http((ctr) => {
   console.log(`Request made to ${ctr.url.href}`)
 
-  requests++
-  ctr.setCustom('requests', requests)
+  ctr["@"].requests = ++requests
 })
 
 server.start()

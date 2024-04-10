@@ -1,11 +1,12 @@
 {
+  "name": "rjweb-server-devil-middleware",
   "version": "1.0.0",
   "license": "MIT",
   "scripts": {
     "build": "tsc"
   },
   "dependencies": {
-    "rjweb-server": "^8.0.0"
+    "rjweb-server": "^9.0.0"
   },
   "devDependencies": {
     "@types/node": "^18.15.12",

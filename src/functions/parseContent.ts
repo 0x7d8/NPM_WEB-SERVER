@@ -1,38 +1,15 @@
 import { Duplex } from "stream"
-import Logger from "../classes/logger"
-import { isMap, isPromise, isSet } from "util/types"
-import { z } from "zod"
-import { JSONParsed, JSONValue } from "../types/external"
+import Logger from "@/classes/Logger"
+import { isArrayBuffer, isMap, isPromise, isSet } from "util/types"
+import { JSONParsed, JSONValue } from "@/types/global"
+import toArrayBuffer from "@/functions/toArrayBuffer"
 
-export const jsonValue: z.ZodUnion<[z.ZodString]> = z.union([
-	z.string(),
-	z.number(),
-	z.boolean(),
-	z.null(),
-	z.object({ toString: z.function().returns(z.string()) }),
-	z.record(z.string(), z.lazy(() => jsonValue)),
-	z.lazy(() => z.array(jsonValue))
-] as any)
-
-export const contentSchema: z.ZodUnion<[z.ZodString]> = z.union([
-	z.string(),
-	z.instanceof(Buffer),
-	z.map(z.string(), jsonValue),
-	z.set(jsonValue),
-	z.number(),
-	z.boolean(),
-	z.undefined(),
-	z.object({ toString: z.function().returns(z.string()) }),
-	z.record(z.string(), jsonValue),
-	z.symbol(),
-	z.function(),
-	z.array(jsonValue),
-	z.lazy(() => z.promise(contentSchema))
-] as any)
+const failMessage = toArrayBuffer('Failed to parse provided Object')
 
 export type Content =
 	| string
 	| Buffer
+	| ArrayBuffer
 	| Map<string, JSONValue>
 	| Set<JSONValue>
 	| number
@@ -43,7 +20,6 @@ export type Content =
 	| Function
 	| JSONValue[]
 	| JSONParsed
-	| Promise<Content>
 
 export type ParseContentReturns = Awaited<ReturnType<typeof parseContent>>
 
@@ -70,7 +46,7 @@ export type ParseContentReturns = Awaited<ReturnType<typeof parseContent>>
 		super({
 			writableObjectMode: true,
 			async write(chunk) {
-				const parsed = await parseContent(chunk, prettify, false, logger)
+				const parsed = await parseContent(chunk, prettify, logger)
 
 				this.push(parsed.content, 'binary')
 			}, read() {}
@@ -81,78 +57,67 @@ export type ParseContentReturns = Awaited<ReturnType<typeof parseContent>>
 /**
  * Parse almost anything into a Buffer that resolves to a string
  * @since 5.0.0
-*/ export default async function parseContent(content: Content, prettify: boolean = false, validate: boolean = true, logger?: Logger): Promise<{
-	/** The Headers associated with the parsed Content */ headers: Record<string, Buffer>
-	/** The Parsed Content, 100% a Buffer */ content: Buffer
+*/ export default async function parseContent(content: Content, prettify: boolean = false, logger?: Logger): Promise<{
+	headers: Record<string, string>
+	content: ArrayBuffer
 }> {
-	if (validate) contentSchema.parse(content)
+	if (isPromise(content)) return parseContent(await content as any, prettify, logger)
 
-	const returnObject: ParseContentReturns = { headers: {}, content: Buffer.allocUnsafe(0) }
+	if (isArrayBuffer(content)) return { headers: {}, content }
+	if (Buffer.isBuffer(content)) return { headers: {}, content: toArrayBuffer(content) }
 
-	if (isPromise(content)) {
-		try {
-			await new Promise<void>((resolve, reject) => {
-				(content as Promise<Content>)
-					.then(async(r) => {
-						content = (await parseContent(r, prettify, validate, logger)).content
-
-						resolve()
-					})
-					.catch((e) => {
-						reject(e)
-					})
-			})
-		} catch (err) {
-			logger?.error('Failed to resolve promisified content:', err)
-		}
-	}
-
-	if (Buffer.isBuffer(content)) return { headers: {}, content }
 	if (isMap(content)) content = Object.fromEntries(content.entries())
 	if (isSet(content)) content = Array.from(content)
+
+	const returnObject: ParseContentReturns = { headers: {}, content: new ArrayBuffer(0) }
 
 	switch (typeof content) {
 		case "object":
 			try {
-				if (prettify) returnObject.content = Buffer.from(JSON.stringify(content, null, 2))
-				else returnObject.content = Buffer.from(JSON.stringify(content))
+				if (prettify) returnObject.content = toArrayBuffer(JSON.stringify(content, null, 2))
+				else returnObject.content = toArrayBuffer(JSON.stringify(content))
 
-				returnObject.headers['content-type'] = Buffer.from('application/json')
+				returnObject.headers['content-type'] = 'application/json'
 			} catch (err) {
 				logger?.error('Failed to parse Object content:', err)
-				returnObject.content = Buffer.from('Failed to parse provided Object')
+				returnObject.content = failMessage
 			}
 
 			break
 
 		case "string":
-			returnObject.content = Buffer.from(content, 'utf8')
+			returnObject.content = toArrayBuffer(content)
+
+			if ((content as any).json) {
+				returnObject.headers['content-type'] = 'application/json'
+			}
+
 			break
 
 		case "symbol":
-			returnObject.content = Buffer.from(content.toString(), 'utf8')
+			returnObject.content = toArrayBuffer(content.toString())
 			break
 
 		case "bigint":
 		case "number":
 		case "boolean":
-			returnObject.content = Buffer.from(String(content), 'utf8')
+			returnObject.content = toArrayBuffer(String(content))
 			break
 
 		case "function":
 			const result = await Promise.resolve(content())
-			returnObject.content = (await parseContent(result, prettify, validate, logger)).content
+			returnObject.content = (await parseContent(result, prettify, logger)).content
 
 			break
 
 		case "undefined":
-			returnObject.content = Buffer.allocUnsafe(0)
+			returnObject.content = new ArrayBuffer(0)
 			break
 	}
 
-	if (!Buffer.isBuffer(returnObject.content)) {
+	if (!isArrayBuffer(returnObject.content)) {
 		logger?.error('Unknown Content Parsing Error occured (nB):', returnObject.content)
-		returnObject.content = Buffer.from('Unknown Parsing Error', 'utf8')
+		returnObject.content = toArrayBuffer('Unknown Parsing Error')
 	}
 
 	return returnObject

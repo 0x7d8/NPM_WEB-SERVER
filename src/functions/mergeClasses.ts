@@ -1,4 +1,4 @@
-import { AnyClass } from "../types/internal"
+import { AnyClass } from "@/types/internal"
 
 export default function mergeClasses<Target extends AnyClass>(target: Target, ...sources: AnyClass[]): Target {
   sources.forEach((s) => {

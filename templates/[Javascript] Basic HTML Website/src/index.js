@@ -1,16 +1,17 @@
 import { Server } from "rjweb-server"
+import { Runtime } from "@rjweb/runtime-node"
 
-const server = new Server({
+const server = new Server(Runtime, {
 	port: 8000
 })
 
 server.path('/', (p) => p
 	.static('./static', {
-		hideHTML: true
+		stripHtmlEnding: true
 	})
 )
 
-server.on('httpRequest', (ctr) => {
+server.http((ctr) => {
   console.log(`Request made to ${ctr.url.href}`)
 })
 

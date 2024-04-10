@@ -1,5 +1,5 @@
-import { HTTPMethod } from ".."
-import parseURL from "../functions/parseURL"
+import { Method } from "@/types/global"
+import parseURL from "@/functions/parseURL"
 
 /**
  * A Utility to wrap a parsed URL
@@ -12,7 +12,7 @@ import parseURL from "../functions/parseURL"
 	/**
 	 * Create a new URL object for an easier Wrapper of `parseURL()`
 	 * @since 5.6.0
-	*/ constructor(url: string, method: string) {
+	*/ constructor(url: string, method: Method) {
 		const parsed = parseURL(url)
 
 		this.href = parsed.href
@@ -20,7 +20,7 @@ import parseURL from "../functions/parseURL"
 		this.query = parsed.query
 		this.fragments = parsed.fragments
 
-		this.method = method.toUpperCase() as HTTPMethod
+		this.method = method
 	}
 
 	/**
@@ -32,7 +32,7 @@ import parseURL from "../functions/parseURL"
 	 * url.method // "POST"
 	 * ```
 	 * @since 5.6.0
-	*/ public readonly method: HTTPMethod
+	*/ public readonly method: Method
 
 	/**
 	 * The full URL

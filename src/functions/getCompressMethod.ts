@@ -1,26 +1,19 @@
-import { HttpResponse } from "@rjweb/uws"
-import { CompressTypes } from "./handleCompressType"
-import { GlobalContext } from "../types/context"
-
-const write = (res: HttpResponse, chunk: ArrayBuffer): boolean => {
-	let result = false
-	res.cork(() => result = res.write(chunk))
-
-	return result
-}
-
-const tryEnd = (res: HttpResponse, chunk: ArrayBuffer, totalSize: number): boolean => {
-	let result = [false, false]
-	res.cork(() => result = res.tryEnd(chunk, totalSize))
-
-	return result[0]
-}
+import { CompressionAlgorithm } from "@/types/global"
+import GlobalContext from "@/types/internal/classes/GlobalContext"
+import { as } from "@rjweb/utils"
 
 /**
  * Get the best compression using a header
  * @since 8.0.0
-*/ export default function getCompressMethod(doCompress: boolean, header: string, res: HttpResponse, totalSize: number, ctg: GlobalContext): [CompressTypes, string | undefined, (chunk: ArrayBuffer) => boolean] {
-	if (!doCompress || !ctg.options.httpCompression.enabled || ctg.options.httpCompression.maxSize < totalSize) return ['none', undefined, (chunk) => tryEnd(res, chunk, totalSize)]
+*/ export default function getCompressMethod(doCompress: boolean, header: string, size: number, proxied: boolean, global: GlobalContext): CompressionAlgorithm | null {
+	if (
+		!doCompress
+		|| !global.options.compression.http.enabled
+		|| size > global.options.compression.http.maxSize
+		|| size < global.options.compression.http.minSize
+		|| (proxied && !global.options.proxy.compress)
+	) return null
+	if (global.cache.compressionMethods.has(header)) return global.cache.compressionMethods.get(header)!
 
 	let highestValue = 'none', highestPriority = -Infinity, tempValue = '', tempPriority = ''
 
@@ -35,26 +28,26 @@ const tryEnd = (res: HttpResponse, chunk: ArrayBuffer, totalSize: number): boole
 
 		if (header[progress] === ',') {
 			let prio = parseInt(tempPriority)
-			if (ctg.options.httpCompression.disabledAlgorithms.includes(tempValue as never)) prio = NaN
+			if (!global.options.compression.http.preferOrder.includes(tempValue === 'br' ? 'brotli' : as<CompressionAlgorithm>(tempValue))) prio = NaN
 
-			switch (tempValue as CompressTypes) {
+			switch (as<'gzip' | 'deflate' | 'br'>(tempValue)) {
 				case "br":
 					if (isNaN(prio)) {
-						if (!ctg.options.httpCompression.disabledAlgorithms.includes('br')) prio = -0.1
+						if (global.options.compression.http.preferOrder.includes('brotli')) prio = -(global.options.compression.http.preferOrder.indexOf('brotli') / 10)
 						else prio = -Infinity
 						break
 					} else break
 
 				case "gzip":
 					if (isNaN(prio)) {
-						if (!ctg.options.httpCompression.disabledAlgorithms.includes('gzip')) prio = -0.2
+						if (global.options.compression.http.preferOrder.includes('gzip')) prio = -(global.options.compression.http.preferOrder.indexOf('gzip') / 10)
 						else prio = -Infinity
 						break
 					} else break
 
 				case "deflate":
 					if (isNaN(prio)) {
-						if (!ctg.options.httpCompression.disabledAlgorithms.includes('deflate')) prio = -0.3
+						if (global.options.compression.http.preferOrder.includes('deflate')) prio = -(global.options.compression.http.preferOrder.indexOf('deflate') / 10)
 						else prio = -Infinity
 						break
 					} else break
@@ -85,5 +78,8 @@ const tryEnd = (res: HttpResponse, chunk: ArrayBuffer, totalSize: number): boole
 		progress++
 	}
 
-	return [highestValue as CompressTypes, highestValue === 'none' ? undefined : highestValue, highestValue !== 'none' ? (chunk) => write(res, chunk) : (chunk) => tryEnd(res, chunk, totalSize)]
+	const result = highestValue === 'none' ? null : as<CompressionAlgorithm>(highestValue === 'br' ? 'brotli' : highestValue)
+	if (result) global.cache.compressionMethods.set(header, result)
+
+	return result
 }

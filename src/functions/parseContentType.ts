@@ -1,85 +1,98 @@
-import { GlobalContext } from "../types/context"
+import GlobalContext from "@/types/internal/classes/GlobalContext"
+
+const mapping: Record<string, string> = {
+	pdf: 'application/pdf',
+	js: 'text/javascript',
+	html: 'text/html',
+	css: 'text/css',
+	csv: 'text/csv',
+	svg: 'image/svg+xml',
+	mpeg: 'video/mpeg',
+	mp4: 'video/mp4',
+	webm: 'video/webm',
+	bmp: 'image/bmp',
+	gif: 'image/gif',
+	jpeg: 'image/jpeg',
+	jpg: 'image/jpeg',
+	png: 'image/png',
+	tiff: 'image/tiff',
+	tif: 'image/tiff',
+	xml: 'application/xml',
+	json: 'application/json',
+	txt: 'text/plain',
+	doc: 'application/msword',
+	docx: 'application/msword',
+	ppt: 'application/vnd.ms-powerpoint',
+	pptx: 'application/vnd.ms-powerpoint',
+	xls: 'application/vnd.ms-excel',
+	xlsx: 'application/vnd.ms-excel',
+	'7z': 'application/x-7z-compressed',
+	zip: 'application/zip',
+	tar: 'application/x-tar',
+	gz: 'application/gzip',
+	gzip: 'application/gzip',
+	mp3: 'audio/mpeg',
+	aac: 'audio/aac',
+	midi: 'audio/midi',
+	mid: 'audio/midi',
+	wav: 'audio/wav',
+	ogg: 'audio/ogg',
+	flac: 'audio/flac',
+	odt: 'application/vnd.oasis.opendocument.text',
+	odp: 'application/vnd.oasis.opendocument.presentation',
+	ods: 'application/vnd.oasis.opendocument.spreadsheet',
+	avi: 'video/x-msvideo',
+	wmv: 'video/x-ms-wmv',
+	mov: 'video/quicktime',
+	mkv: 'video/x-matroska',
+	webp: 'image/webp',
+	ico: 'image/x-icon',
+	jfif: 'image/jpeg',
+	jpe: 'image/jpeg',
+	jif: 'image/jpeg',
+	jfi: 'image/jpeg',
+	svgz: 'image/svg+xml',
+	m4a: 'audio/m4a',
+	opus: 'audio/opus',
+	mpg: 'video/mpeg',
+	ogv: 'video/ogg',
+	dcm: 'application/dicom',
+	xlsb: 'application/vnd.ms-excel.sheet.binary.macroEnabled.12',
+	xlsm: 'application/vnd.ms-excel.sheet.macroEnabled.12',
+	xltx: 'application/vnd.openxmlformats-officedocument.spreadsheetml.template',
+	dotx: 'application/vnd.openxmlformats-officedocument.wordprocessingml.template',
+	ppam: 'application/vnd.ms-powerpoint.addin.macroEnabled.12',
+	ppsm: 'application/vnd.ms-powerpoint.slideshow.macroEnabled.12',
+	potx: 'application/vnd.openxmlformats-officedocument.presentationml.template',
+	sldx: 'application/vnd.openxmlformats-officedocument.presentationml.slide',
+	thmx: 'application/vnd.ms-officetheme',
+	docm: 'application/vnd.ms-word.document.macroEnabled.12',
+	dotm: 'application/vnd.ms-word.template.macroEnabled.12',
+	ppsx: 'application/vnd.openxmlformats-officedocument.presentationml.slideshow',
+	sldm: 'application/vnd.ms-powerpoint.slide.macroEnabled.12',
+	xlam: 'application/vnd.ms-excel.addin.macroEnabled.12',
+	dot: 'application/msword',
+	pot: 'application/vnd.ms-powerpoint',
+	pps: 'application/vnd.ms-powerpoint',
+	sld: 'application/vnd.ms-powerpoint',
+	xlt: 'application/vnd.ms-excel',
+	xla: 'application/vnd.ms-excel',
+	eml: 'message/rfc822',
+	vcf: 'text/vcard',
+	ics: 'text/calendar'
+}
 
 /**
  * Parse File Name into a Content Type or empty string
  * @since 4.0.0
 */ export default function parseContentType(name: string, customTypes: GlobalContext['contentTypes']): string {
-	for (const [ key, value ] of Object.entries(customTypes)) {
+	for (const [ key, value ] of customTypes) {
 		if (name.endsWith(key)) return value
 	}
 
-	if (name.endsWith('.pdf')) return 'application/pdf'
-	if (name.endsWith('.js')) return 'text/javascript'
-	if (name.endsWith('.html')) return 'text/html'
-	if (name.endsWith('.css')) return 'text/css'
-	if (name.endsWith('.csv')) return 'text/csv'
-	if (name.endsWith('.svg')) return 'image/svg+xml'
-	if (name.endsWith('.mpeg')) return 'video/mpeg'
-	if (name.endsWith('.mp4')) return 'video/mp4'
-	if (name.endsWith('.webm')) return 'video/webm'
-	if (name.endsWith('.bmp')) return 'image/bmp'
-	if (name.endsWith('.gif')) return 'image/gif'
-	if (name.endsWith('.jpeg') || name.endsWith('.jpg')) return 'image/jpeg'
-	if (name.endsWith('.png')) return 'image/png'
-	if (name.endsWith('.tiff') || name.endsWith('.tif')) return 'image/tiff'
-	if (name.endsWith('.xml')) return 'application/xml'
-	if (name.endsWith('.json')) return 'application/json'
-	if (name.endsWith('.txt')) return 'text/plain'
-	if (name.endsWith('.doc') || name.endsWith('.docx')) return 'application/msword'
-	if (name.endsWith('.ppt') || name.endsWith('.pptx')) return 'application/vnd.ms-powerpoint'
-	if (name.endsWith('.xls') || name.endsWith('.xlsx')) return 'application/vnd.ms-excel'
-	if (name.endsWith('.7z')) return 'application/x-7z-compressed'
-	if (name.endsWith('.zip')) return 'application/zip'
-	if (name.endsWith('.tar')) return 'application/x-tar'
-	if (name.endsWith('.gz') || name.endsWith('.gzip')) return 'application/gzip'
-	if (name.endsWith('.mp3')) return 'audio/mpeg'
-	if (name.endsWith('.aac')) return 'audio/aac'
-	if (name.endsWith('.midi') || name.endsWith('.mid')) return 'audio/midi'
-	if (name.endsWith('.wav')) return 'audio/wav'
-	if (name.endsWith('.ogg')) return 'audio/ogg'
-	if (name.endsWith('.flac')) return 'audio/flac'
-	if (name.endsWith('.odt')) return 'application/vnd.oasis.opendocument.text'
-	if (name.endsWith('.odp')) return 'application/vnd.oasis.opendocument.presentation'
-	if (name.endsWith('.ods')) return 'application/vnd.oasis.opendocument.spreadsheet'
-	if (name.endsWith('.avi')) return 'video/x-msvideo'
-	if (name.endsWith('.wmv')) return 'video/x-ms-wmv'
-	if (name.endsWith('.mov')) return 'video/quicktime'
-	if (name.endsWith('.mkv')) return 'video/x-matroska'
-	if (name.endsWith('.webp')) return 'image/webp'
-	if (name.endsWith('.ico')) return 'image/x-icon'
-	if (name.endsWith('.jfif') || name.endsWith('.jpe') || name.endsWith('.jif') || name.endsWith('.jfi')) return 'image/jpeg'
-	if (name.endsWith('.svgz')) return 'image/svg+xml'
-	if (name.endsWith('.m4a')) return 'audio/m4a'
-	if (name.endsWith('.opus')) return 'audio/opus'
-	if (name.endsWith('.mpg')) return 'video/mpeg'
-	if (name.endsWith('.ogv')) return 'video/ogg'
-	if (name.endsWith('.dcm')) return 'application/dicom'
-	if (name.endsWith('.xlsb')) return 'application/vnd.ms-excel.sheet.binary.macroEnabled.12'
-	if (name.endsWith('.xlsm')) return 'application/vnd.ms-excel.sheet.macroEnabled.12'
-	if (name.endsWith('.xltx')) return 'application/vnd.openxmlformats-officedocument.spreadsheetml.template'
-	if (name.endsWith('.dotx')) return 'application/vnd.openxmlformats-officedocument.wordprocessingml.template'
-	if (name.endsWith('.ppam')) return 'application/vnd.ms-powerpoint.addin.macroEnabled.12'
-	if (name.endsWith('.ppsm')) return 'application/vnd.ms-powerpoint.slideshow.macroEnabled.12'
-	if (name.endsWith('.potx')) return 'application/vnd.openxmlformats-officedocument.presentationml.template'
-	if (name.endsWith('.sldx')) return 'application/vnd.openxmlformats-officedocument.presentationml.slide'
-	if (name.endsWith('.thmx')) return 'application/vnd.ms-officetheme'
-	if (name.endsWith('.docm')) return 'application/vnd.ms-word.document.macroEnabled.12'
-	if (name.endsWith('.dotm')) return 'application/vnd.ms-word.template.macroEnabled.12'
-	if (name.endsWith('.ppsx')) return 'application/vnd.openxmlformats-officedocument.presentationml.slideshow'
-	if (name.endsWith('.sldm')) return 'application/vnd.ms-powerpoint.slide.macroEnabled.12'
-	if (name.endsWith('.xlam')) return 'application/vnd.ms-excel.addin.macroEnabled.12'
-	if (name.endsWith('.xls')) return 'application/vnd.ms-excel'
-	if (name.endsWith('.dot')) return 'application/msword'
-	if (name.endsWith('.pot')) return 'application/vnd.ms-powerpoint'
-	if (name.endsWith('.pps')) return 'application/vnd.ms-powerpoint'
-	if (name.endsWith('.sld')) return 'application/vnd.ms-powerpoint'
-	if (name.endsWith('.xlt')) return 'application/vnd.ms-excel'
-	if (name.endsWith('.xla')) return 'application/vnd.ms-excel'
-	if (name.endsWith('.ppt')) return 'application/vnd.ms-powerpoint'
-	if (name.endsWith('.eml')) return 'message/rfc822'
-	if (name.endsWith('.vcf')) return 'text/vcard'
-	if (name.endsWith('.ics')) return 'text/calendar'
-	if (name.endsWith('.vcf')) return 'text/x-vcard'
+	const end = name.split('.').at(-1)
+	if (!end) return 'application/octet-stream'
 
-	return ''
+	const type = mapping[end]
+	return type ?? 'application/octet-stream'
 }

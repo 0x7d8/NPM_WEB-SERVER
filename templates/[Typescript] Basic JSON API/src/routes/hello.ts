@@ -1,9 +1,8 @@
-import { server } from "../index"
+import { fileRouter } from "../index"
 
-export = new server.routeFile((file) => file
-  .http('GET', '/hello', (http) => http
+export = new fileRouter.Path('/')
+  .http('GET', '/', (http) => http
     .onRequest((ctr) => {
       ctr.print({ hello: 'world', requests: ctr["@"].requests })
     })
   )
-)
