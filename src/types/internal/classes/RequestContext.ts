@@ -109,17 +109,19 @@ export default class RequestContext<MiddlewareData extends Record<any, any> = an
 
 		if (!ctr) this.global.logger.debug(`Aborted Request on ${this.url.method} ${this.url.href}`)
 
-		for (let i = 0; i < this.middlewares.length; i++) {
-			const middleware = this.middlewares[i]
-	
-			if (middleware.finishCallbacks.httpRequest) try {
-				await Promise.resolve(middleware.finishCallbacks.httpRequest(middleware.config, this.server, this, ctr as any, this.elapsed()))
+		if (ctr) {
+			for (let i = 0; i < this.middlewares.length; i++) {
+				const middleware = this.middlewares[i]
+		
+				if (middleware.finishCallbacks.httpRequest) try {
+					await Promise.resolve(middleware.finishCallbacks.httpRequest(middleware.config, this.server, this, ctr, this.elapsed()))
+				} catch { }
+			}
+
+			if (this.global.finishHandlers.httpRequest) try {
+				await Promise.resolve(this.global.finishHandlers.httpRequest(ctr, this.elapsed()))
 			} catch { }
 		}
-
-		if (this.global.finishHandlers.httpRequest) try {
-			await Promise.resolve(this.global.finishHandlers.httpRequest(ctr, this.elapsed()))
-		} catch { }
 
 		this.aborted = !ctr
 		return false

@@ -116,7 +116,7 @@ export default class Middleware<
 	}
 
 	/**
-	 * Callback that runs when any HTTP Request finishes or aborts
+	 * Callback that runs when any HTTP Request finishes
 	 * @since 9.0.0
 	*/ public httpRequestFinish(
 		callback: (config: Config, server: Server<{}, [], {}>, context: RequestContext<InternalData>, ctr: Base, ms: number) => RealAny

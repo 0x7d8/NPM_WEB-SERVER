@@ -1,3 +1,7 @@
+## 9.0.5
+
+- Do not call finish handler on aborts
+
 ## 9.0.4
 
 - Apply `FileLoader` validators properly
