@@ -17,6 +17,7 @@ type Listeners<Data extends Record<string, any>, Context extends Record<string, 
 
 export default class Validator<Data extends Record<string, any> = {}, Context extends Record<string, any> = {}, Middlewares extends UsableMiddleware[] = []> {
 	private openApi: OperationObject = {}
+	private openApiFn: ((data: Data) => OperationObject) | null = null
 	private listeners: Listeners<Data, Context, Middlewares> = {
 		httpRequest: [],
 		wsOpen: [],
@@ -84,8 +85,9 @@ export default class Validator<Data extends Record<string, any> = {}, Context ex
 	/**
 	 * Add OpenAPI Documentation to all Endpoints using this Validator
 	 * @since 9.0.0
-	*/ public document(item: OperationObject): this {
-		this.openApi = object.deepMerge(this.openApi, item)
+	*/ public document(item: OperationObject | ((data: Data) => OperationObject)): this {
+		if (typeof item !== 'function') this.openApi = object.deepMerge(this.openApi, item)
+		else this.openApiFn = item
 
 		return this
 	}
@@ -105,6 +107,10 @@ export default class Validator<Data extends Record<string, any> = {}, Context ex
 		this.listeners.wsOpen.unshift(...validator.listeners.wsOpen)
 		this.listeners.wsMessage.unshift(...validator.listeners.wsMessage)
 		this.listeners.wsClose.unshift(...validator.listeners.wsClose)
+		this.openApi = object.deepMerge(this.openApi, validator.openApi)
+
+		const openApiFn = this.openApiFn
+		if (validator.openApiFn) this.openApiFn = (data) => object.deepMerge(openApiFn?.(data) ?? {}, validator.openApiFn?.(data) ?? {})
 
 		return this as any
 	}
@@ -154,7 +160,7 @@ export default class Validator<Data extends Record<string, any> = {}, Context ex
 		return {
 			data,
 			listeners: this.listeners,
-			openApi: this.openApi
+			openApi: object.deepMerge(this.openApi, this.openApiFn?.(data) ?? {}),
 		} satisfies Omit<UsableValidator, 'NOTICE' | 'context'> as never
 	}
 }

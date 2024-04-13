@@ -3,3 +3,4 @@ test/
 templates/
 docs/
 migrating/
+pnpm-lock.yaml

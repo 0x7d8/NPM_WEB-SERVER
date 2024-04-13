@@ -1,5 +1,4 @@
 import Route from "@/classes/Route"
-import RuntimeError from "@/classes/RuntimeError"
 import { WsContext } from "@/types/implementation/contexts/ws"
 import { WebsocketData } from "@/types/implementation/handle"
 import { Server } from "@/index"

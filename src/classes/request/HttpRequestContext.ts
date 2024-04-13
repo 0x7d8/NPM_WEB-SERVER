@@ -1,6 +1,6 @@
 import InternalRequestContext from "@/types/internal/classes/RequestContext"
 import { HttpContext } from "@/types/implementation/contexts/http"
-import { Content, ParsedBody, Status } from "@/types/global"
+import { Content, ParsedBody, RatelimitInfos, Status } from "@/types/global"
 import Base from "@/classes/request/Base"
 import * as fs from "fs/promises"
 import * as path from "path"
@@ -15,6 +15,7 @@ import getCompressMethod from "@/functions/getCompressMethod"
 import status from "@/enums/status"
 import { Duplex, Writable } from "stream"
 import parseContent from "@/functions/parseContent"
+import { createHash } from "crypto"
 
 export default class HttpRequestContext<Context extends Record<any, any> = {}> extends Base<Context> {
 	constructor(context: InternalRequestContext, private rawContext: HttpContext, private abort: AbortSignal) {
@@ -140,6 +141,133 @@ export default class HttpRequestContext<Context extends Record<any, any> = {}> e
 	}
 
 	/**
+	 * HTTP WWW-Authentication Checker
+	 * 
+	 * This will validate the Authorization Header using the WWW-Authentication Standard,
+	 * you can choose between `basic` and `digest` authentication, in most cases `digest`
+	 * should be used unless you are using an outdated client or want to test easily.
+	 * When not matching any user the method will return `null` and the request should be
+	 * ended with a `Status.UNAUTHORIZED` (401) status code.
+	 * @example
+	 * ```
+	 * const user = ctr.wwwAuth('basic', 'Access this Page.', { // Automatically adds www-authenticate header
+	 *   bob: '123!',
+	 *   rotvproHD: 'password'
+	 * })
+	 * 
+	 * if (!user) return ctr.status(ctr.$status.UNAUTHORIZED).print('Invalid credentials')
+	 * 
+	 * ctr.print('You authenticated with user:', user)
+	 * ```
+	 * @since 8.0.0
+	*/ public wwwAuth<Users extends Record<string, string>>(type: 'basic' | 'digest', reason: string, users: Users): keyof Users | null {
+		if (type === 'basic') this.headers.set('www-authenticate', `Basic realm="${encodeURI(reason)}", charset="UTF-8"`)
+		else if (type === 'digest') this.headers.set('www-authenticate', `Digest realm="${encodeURI(reason)}", algorithm=MD5, nonce="${Math.random()}", cnonce="${Math.random()}", opaque="${createHash('md5').update(encodeURI(reason)).digest('hex')}", qop="auth", charset="UTF-8"`)
+
+		const spacePos = this.headers.get('authorization', '').indexOf(' ')
+		const sentType = this.headers.get('authorization', '').slice(0, spacePos)
+		const sentAuth = this.headers.get('authorization', '').slice(spacePos)
+
+		if (!sentType || !sentAuth) return null
+		let user: keyof Users | null = null
+
+		switch (sentType.toLowerCase()) {
+			case "basic": {
+				for (const [ username, password ] of Object.entries(users)) {
+					if (sentAuth.trim() === Buffer.from(`${username}:${password}`).toString('base64')) {
+						user = username
+						break
+					}
+				}
+
+				break
+			}
+
+			case "digest": {
+				for (const [ username, password ] of Object.entries(users)) {
+					const info = parseKV('ValueCollection',  sentAuth, '=', ',', (s) => s.replaceAll('"', ''))
+
+					const ha1 = createHash('md5').update(`${username}:${encodeURI(reason)}:${password}`).digest('hex')
+					const ha2 = createHash('md5').update(`${this.url.method}:${info.get('uri')}`).digest('hex')
+
+					if (info.get('response') === createHash('md5').update(`${ha1}:${info.get('nonce')}:${info.get('nc')}:${info.get('cnonce')}:${info.get('qop')}:${ha2}`).digest('hex')) {
+						user = username
+						break
+					}
+				}
+
+				break
+			}
+		}
+
+		return user
+	}
+
+	/**
+	 * Clear the active Ratelimit of the Client
+	 * 
+	 * This Clears the currently active Ratelimit (on this endpoint) of the Client, remember:
+	 * you cant call this in a normal endpoint if the max hits are already reached since well...
+	 * they are already reached.
+	 * @since 8.6.0
+	*/ public clearRateLimit(): this {
+		if (!this.context.route || !this.context.route.ratelimit || this.context.route.ratelimit.maxHits === Infinity) return this
+		this.global.rateLimits.delete(`http+${this.client.ip}-${this.context.route.ratelimit.sortTo}`)
+
+		return this
+	}
+
+	/**
+	 * Skips counting the request to the Client IPs Rate limit (if there is one)
+	 * 
+	 * When a specific IP makes a request to an endpoint under a ratelimit, the maxhits will be
+	 * increased instantly to prevent bypassing the rate limit by spamming requests faster than the host can
+	 * handle. When this function is called, the server removes the set hit again.
+	 * @since 8.6.0
+	*/ public skipRateLimit(): this {
+		if (!this.context.route || !this.context.route.ratelimit || this.context.route.ratelimit.maxHits === Infinity) return this
+
+		const data = this.global.rateLimits.get(`http+${this.client.ip}-${this.context.route.ratelimit.sortTo}`, {
+			hits: 1,
+			end: Date.now() + this.context.route.ratelimit.timeWindow
+		})
+
+		if (data.hits === 0) return this
+
+		this.global.rateLimits.set(`http+${this.client.ip}-${this.context.route.ratelimit.sortTo}`, {
+			...data,
+			hits: data.hits - 1
+		})
+
+		return this
+	}
+
+	/**
+	 * Get Infos about the current Ratelimit
+	 * 
+	 * This will get all information about the currently applied ratelimit
+	 * to the endpoint. If none is active, will return `null`.
+	 * @since 8.6.0
+	*/ public getRateLimit(): RatelimitInfos | null {
+		if (!this.context.route || !this.context.route.ratelimit || this.context.route.ratelimit.maxHits === Infinity) return null
+
+		const data = this.global.rateLimits.get(`http+${this.client.ip}-${this.context.route.ratelimit.sortTo}`, {
+			hits: 0,
+			end: Date.now() + this.context.route.ratelimit.timeWindow
+		})
+
+		return {
+			hits: data.hits,
+			maxHits: this.context.route.ratelimit.maxHits,
+			hasPenalty: data.hits > this.context.route.ratelimit.maxHits,
+			penalty: this.context.route.ratelimit.penalty,
+			timeWindow: this.context.route.ratelimit.timeWindow,
+			get endsAt() { return new Date(data.end) },
+			endsIn: data.end - Date.now()
+		}
+	}
+
+	/**
 	 * The Request Status to Send
 	 * 
 	 * This will set the status of the request that the client will recieve, by default
@@ -155,7 +283,7 @@ export default class HttpRequestContext<Context extends Record<any, any> = {}> e
 	 * ctr.status(666, 'The Devil').print('The Devil')
 	 * 
 	 * // or
-	 * ctr.status((c) => c.IM_A_TEAPOT).print('Im a Teapot, mate!')
+	 * ctr.status(ctr.$status.IM_A_TEAPOT).print('Im a Teapot, mate!')
 	 * ```
 	 * @since 0.0.2
 	*/ public status(code: number, message?: string): this {
@@ -182,7 +310,6 @@ export default class HttpRequestContext<Context extends Record<any, any> = {}> e
 		else this.context.response.status = Status.FOUND
 
 		this.context.response.statusText = null
-
 		this.context.response.headers.set('location', location)
 
 		return this

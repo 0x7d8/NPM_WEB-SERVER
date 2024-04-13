@@ -1,3 +1,12 @@
+## 9.1.0
+
+- Fix issues in templates
+- Add back `<HttpRequestContext>.wwwAuth`
+- Add back `<HttpRequestContext>.getRateLimit`
+- Add back `<HttpRequestContext>.clearRateLimit`
+- Add back `<HttpRequestContext>.skipRateLimit`
+- Allow Validators to dynamically add openapi using provided options
+
 ## 9.0.5
 
 - Do not call finish handler on aborts
