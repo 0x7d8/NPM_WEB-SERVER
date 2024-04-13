@@ -118,23 +118,23 @@ export default class HttpRequestContext<Context extends Record<any, any> = {}> e
 	 * This uses `.body` internally so no binary data
 	 * @example
 	 * ```
-	 * const [ infos, error ] = ctr.bindBody((z) => z.object({
+	 * const [ data, error ] = await ctr.bindBody((z) => z.object({
 	 *   name: z.string().max(24),
 	 *   gender: z.union([ z.literal('male'), z.literal('female') ])
 	 * }))
 	 * 
-	 * if (!infos) return ctr.status((s) => s.BAD_REQUEST).print(error.toString())
+	 * if (!data) return ctr.status((s) => s.BAD_REQUEST).print(error.toString())
 	 * 
 	 * ctr.print('Everything valid! 👍')
 	 * ctr.printPart(`
-	 *   your name is ${infos.name}
-	 *   and you are a ${infos.gender}
+	 *   your name is ${data.name}
+	 *   and you are a ${data.gender}
 	 * `)
 	 * ```
 	 * @since 8.8.0
-	*/ public bindBody<Schema extends z.ZodTypeAny>(schema: Schema | ((z: typeof import('zod')) => Schema)): ZodResponse<Schema> {
+	*/ public async bindBody<Schema extends z.ZodTypeAny>(schema: Schema | ((z: typeof import('zod')) => Schema)): Promise<ZodResponse<Schema>> {
 		const fullSchema = typeof schema === 'function' ? schema(z as any) : schema,
-			parsed = fullSchema.safeParse(this.body)
+			parsed = await fullSchema.safeParseAsync(await this.body())
 
 		if (!parsed.success) return [null, parsed.error]
 		return [parsed.data, null]

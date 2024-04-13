@@ -1,5 +1,9 @@
 # Changelog
 
+## 9.1.2
+
+- Fix `<HttpRequestContext>.bindBody`
+
 ## 9.1.1
 
 - Improve performance of `<HttpRequestContext>.wwwAuth`
