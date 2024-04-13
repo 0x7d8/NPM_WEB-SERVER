@@ -29,6 +29,7 @@ import Channel from "@/classes/Channel"
 import Cookie from "@/classes/Cookie"
 import Throttler from "@/classes/Throttler"
 import Middleware from "@/classes/Middleware"
+import RuntimeError from "@/classes/RuntimeError"
 
 export {
 	parseContent,
@@ -44,7 +45,8 @@ export {
 	Channel,
 	Cookie,
 	Throttler,
-	Middleware
+	Middleware,
+	RuntimeError
 }
 
 export type {

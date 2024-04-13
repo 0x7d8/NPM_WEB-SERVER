@@ -3,15 +3,10 @@ import { WsContext } from "@/types/implementation/contexts/ws"
 import WsOpenContext from "@/classes/request/WsOpenContext"
 import { ParsedBody } from "@/types/global"
 
-export default class WsMessageContext<Context extends Record<any, any> = {}> extends WsOpenContext<Context> {
+export default class WsMessageContext<Context extends Record<any, any> = {}> extends WsOpenContext<'message', Context> {
 	constructor(context: InternalRequestContext, rawContext: WsContext, abort: AbortSignal) {
-		super(context, rawContext, abort)
+		super(context, rawContext, abort, 'message')
 	}
-
-	/**
-	 * The Type of this Websocket Event
-	 * @since 5.7.0
-	*/ public override readonly type = 'message' as any
 
 	/**
 	 * The Websocket Message (JSON Automatically parsed if enabled)

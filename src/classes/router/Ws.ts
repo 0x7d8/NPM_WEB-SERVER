@@ -146,7 +146,7 @@ export default class Ws<Middlewares extends UsableMiddleware[] = [], Validators 
 	 * ```
 	 * @since 5.4.0
 	*/ public onOpen(
-		callback: (ctr: DataContext<'WsOpen', 'GET', WsOpenContext<Context & UnionToIntersection<Validators[number]['context']>>, Middlewares>) => RealAny
+		callback: (ctr: DataContext<'WsOpen', 'GET', WsOpenContext<'open', Context & UnionToIntersection<Validators[number]['context']>>, Middlewares>) => RealAny
 	): Omit<Ws<Middlewares, Validators, Context, [...Excluded, 'onOpen']>, Excluded[number] | 'onOpen'> {
 		this.route.data.onOpen = callback as any
 

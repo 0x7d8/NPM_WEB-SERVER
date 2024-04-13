@@ -157,7 +157,7 @@ export default class HttpRequestContext<Context extends Record<any, any> = {}> e
 	 * 
 	 * if (!user) return ctr.status(ctr.$status.UNAUTHORIZED).print('Invalid credentials')
 	 * 
-	 * ctr.print('You authenticated with user:', user)
+	 * ctr.print(`You authenticated with user: ${user}`)
 	 * ```
 	 * @since 8.0.0
 	*/ public wwwAuth<Users extends Record<string, string>>(type: 'basic' | 'digest', reason: string, users: Users): keyof Users | null {
@@ -165,8 +165,10 @@ export default class HttpRequestContext<Context extends Record<any, any> = {}> e
 		else if (type === 'digest') this.headers.set('www-authenticate', `Digest realm="${encodeURI(reason)}", algorithm=MD5, nonce="${Math.random()}", cnonce="${Math.random()}", opaque="${createHash('md5').update(encodeURI(reason)).digest('hex')}", qop="auth", charset="UTF-8"`)
 
 		const spacePos = this.headers.get('authorization', '').indexOf(' ')
-		const sentType = this.headers.get('authorization', '').slice(0, spacePos)
-		const sentAuth = this.headers.get('authorization', '').slice(spacePos)
+		if (spacePos === -1) return null
+
+		const sentType = this.headers.get('authorization', '').slice(0, spacePos),
+			sentAuth = this.headers.get('authorization', '').slice(spacePos).trim()
 
 		if (!sentType || !sentAuth) return null
 		let user: keyof Users | null = null
@@ -174,7 +176,7 @@ export default class HttpRequestContext<Context extends Record<any, any> = {}> e
 		switch (sentType.toLowerCase()) {
 			case "basic": {
 				for (const [ username, password ] of Object.entries(users)) {
-					if (sentAuth.trim() === Buffer.from(`${username}:${password}`).toString('base64')) {
+					if (sentAuth === Buffer.from(`${username}:${password}`).toString('base64')) {
 						user = username
 						break
 					}
@@ -184,11 +186,11 @@ export default class HttpRequestContext<Context extends Record<any, any> = {}> e
 			}
 
 			case "digest": {
-				for (const [ username, password ] of Object.entries(users)) {
-					const info = parseKV('ValueCollection',  sentAuth, '=', ',', (s) => s.replaceAll('"', ''))
+				const info = parseKV('ValueCollection', sentAuth, '=', ',', (s) => s.replaceAll('"', '')),
+					ha2 = createHash('md5').update(`${this.url.method}:${info.get('uri')}`).digest('hex')
 
+				for (const [ username, password ] of Object.entries(users)) {
 					const ha1 = createHash('md5').update(`${username}:${encodeURI(reason)}:${password}`).digest('hex')
-					const ha2 = createHash('md5').update(`${this.url.method}:${info.get('uri')}`).digest('hex')
 
 					if (info.get('response') === createHash('md5').update(`${ha1}:${info.get('nonce')}:${info.get('nc')}:${info.get('cnonce')}:${info.get('qop')}:${ha2}`).digest('hex')) {
 						user = username

@@ -1,3 +1,11 @@
+# Changelog
+
+## 9.1.1
+
+- Improve performance of `<HttpRequestContext>.wwwAuth`
+- Fix some typescript issues on the `WsMessageContext`
+- Export `RuntimeError`
+
 ## 9.1.0
 
 - Fix issues in templates

@@ -8,7 +8,6 @@ import yargs from "yargs"
 import pPath from "path/posix"
 import path from "path"
 import fs from "fs"
-import { object } from "@rjweb/utils"
 
 class Spinner {
 	private current = 0

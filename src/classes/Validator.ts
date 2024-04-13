@@ -10,7 +10,7 @@ import { OperationObject } from "openapi3-ts/oas31"
 type Listeners<Data extends Record<string, any>, Context extends Record<string, any>, Middlewares extends UsableMiddleware[] = []> = {
 	httpRequest: ((ctr: DataContext<'HttpRequest', 'POST', HttpRequestContext<Context>, Middlewares>, end: EndFn, data: Data) => RealAny)[]
 	
-	wsOpen: ((ctr: DataContext<'WsOpen', 'GET', WsOpenContext<Context>, Middlewares>, end: EndFn, data: Data) => RealAny)[]
+	wsOpen: ((ctr: DataContext<'WsOpen', 'GET', WsOpenContext<'open', Context>, Middlewares>, end: EndFn, data: Data) => RealAny)[]
 	wsMessage: ((ctr: DataContext<'WsMessage', 'GET', WsMessageContext<Context>, Middlewares>, end: EndFn, data: Data) => RealAny)[]
 	wsClose: ((ctr: DataContext<'WsClose', 'GET', WsCloseContext<Context>, Middlewares>, end: EndFn, data: Data) => RealAny)[]
 }

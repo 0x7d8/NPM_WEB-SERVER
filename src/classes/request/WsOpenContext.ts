@@ -5,15 +5,17 @@ import { WsContext } from "@/types/implementation/contexts/ws"
 import parseContent from "@/functions/parseContent"
 import Channel from "@/classes/Channel"
 
-export default class WsOpenContext<Context extends Record<any, any> = {}> extends Base<Context> {
-	constructor(context: InternalRequestContext, protected rawContext: WsContext, private abort: AbortSignal) {
+export default class WsOpenContext<Type extends 'open' | 'message' = 'open', Context extends Record<any, any> = {}> extends Base<Context> {
+	constructor(context: InternalRequestContext, protected rawContext: WsContext, private abort: AbortSignal, type: Type = 'open' as Type) {
 		super(context)
+
+		this.type = type
 	}
 
 	/**
 	 * The Type of this Websocket Event
 	 * @since 5.7.0
-	*/ public readonly type = 'open'
+	*/ public readonly type: Type
 
 	/**
 	 * Websocket Close (Abort) Controller (please use to decrease server load)
