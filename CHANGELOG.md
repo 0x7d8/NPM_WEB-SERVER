@@ -1,5 +1,9 @@
 # Changelog
 
+## 9.1.3
+
+- Fix OpenAPI not merging when loading routes
+
 ## 9.1.2
 
 - Fix `<HttpRequestContext>.bindBody`
