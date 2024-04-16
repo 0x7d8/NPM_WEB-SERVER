@@ -449,6 +449,17 @@ export default class HttpRequestContext<Context extends Record<any, any> = {}> e
 	 * @since 0.6.3
 	*/ public printFile(file: string, options: {
 		/**
+		 * The Name of the File (if not set, the basename of the file will be used)
+		 * 
+		 * Only applied if the `content-disposition` header is not set and options.download is true
+		 * @default path.basename(file)
+		 * @since 9.1.4
+		*/ name?: string
+		/**
+		 * Whether to download the file or display it in the browser
+		 * @default ctr.headers.get('content-type') === 'application/octet-stream'
+		*/ download?: boolean
+		/**
 		 * Whether some Content Type Headers will be added automatically
 		 * @default true
 		 * @since 2.2.0
@@ -475,8 +486,8 @@ export default class HttpRequestContext<Context extends Record<any, any> = {}> e
 				if (!fileStat.isFile() && !fileStat.isFIFO()) throw new Error('Not a File')
 
 				this.headers.set('content-length', fileStat.size.toString())
-				if (!this.headers.has('content-disposition') && this.headers.get('content-type') === 'application/octet-stream') {
-					this.headers.set('content-disposition', `attachment; filename="${path.basename(file)}"`)
+				if (!this.headers.has('content-disposition')) {
+					this.headers.set('content-disposition', `${options.download ?? this.headers.get('content-type') === 'application/octet-stream' ? 'attachment' : 'inline'}; filename="${options.name ?? path.basename(file)}"`)
 				}
 			} catch (err) {
 				this.context.handleError(err, 'printFile.fs.stat')

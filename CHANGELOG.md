@@ -1,5 +1,9 @@
 # Changelog
 
+## 9.1.4
+
+- Add `options.download` and `options.name` to `<HttpRequestContext>.printFile()`
+
 ## 9.1.3
 
 - Fix OpenAPI not merging when loading routes
