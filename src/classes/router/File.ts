@@ -182,12 +182,12 @@ export default class File<Middlewares extends UsableMiddleware[], Validators ext
 
 							if (options.fileBasedRouting) {
 								if (route.urlData.type === 'regexp') {
-									route.urlData.prefix = this.computePath(route.urlData.prefix.concat(path)) as string
+									route.urlData.prefix = this.computePath(path.concat(route.urlData.prefix)) as string
 									route.openApi = object.deepMerge(this.openApi, route.openApi)
 
 									modifiedRoutesHttp.push(route)
 								} else {
-									const newRoute = new Route('http', route['urlMethod'], this.computePath(route.urlData.value.concat(path)), route.data)
+									const newRoute = new Route('http', route['urlMethod'], this.computePath(path.concat(route.urlData.value)), route.data)
 									newRoute.validators = route.validators
 									newRoute.ratelimit = Object.assign(this._httpRatelimit, route.ratelimit)
 									newRoute.openApi = object.deepMerge(this.openApi, route.openApi)
@@ -204,12 +204,12 @@ export default class File<Middlewares extends UsableMiddleware[], Validators ext
 
 							if (options.fileBasedRouting) {
 								if (route.urlData.type === 'regexp') {
-									route.urlData.prefix = this.computePath(route.urlData.prefix.concat(path)) as string
+									route.urlData.prefix = this.computePath(path.concat(route.urlData.prefix)) as string
 									route.openApi = object.deepMerge(this.openApi, route.openApi)
 
 									modifiedRoutesWS.push(route)
 								} else {
-									const newRoute = new Route('ws', route['urlMethod'], this.computePath(route.urlData.value.concat(path)), route.data)
+									const newRoute = new Route('ws', route['urlMethod'], this.computePath(path.concat(route.urlData.value)), route.data)
 									newRoute.validators = route.validators
 									newRoute.ratelimit = Object.assign(this._wsRatelimit, route.ratelimit)
 									newRoute.openApi = object.deepMerge(this.openApi, route.openApi)
@@ -226,12 +226,12 @@ export default class File<Middlewares extends UsableMiddleware[], Validators ext
 
 							if (options.fileBasedRouting) {
 								if (route.urlData.type === 'regexp') {
-									route.urlData.prefix = this.computePath(route.urlData.prefix.concat(path)) as string
+									route.urlData.prefix = this.computePath(path.concat(route.urlData.prefix)) as string
 									route.openApi = object.deepMerge(this.openApi, route.openApi)
 
 									modifiedRoutesStatic.push(route)
 								} else {
-									const newRoute = new Route('static', route['urlMethod'], this.computePath(route.urlData.value.concat(path)), route.data)
+									const newRoute = new Route('static', route['urlMethod'], this.computePath(path.concat(route.urlData.value)), route.data)
 									newRoute.validators = route.validators
 									newRoute.ratelimit = route.ratelimit
 									newRoute.openApi = object.deepMerge(this.openApi, route.openApi)

@@ -458,6 +458,7 @@ export default class HttpRequestContext<Context extends Record<any, any> = {}> e
 		/**
 		 * Whether to download the file or display it in the browser
 		 * @default ctr.headers.get('content-type') === 'application/octet-stream'
+		 * @since 9.1.4
 		*/ download?: boolean
 		/**
 		 * Whether some Content Type Headers will be added automatically

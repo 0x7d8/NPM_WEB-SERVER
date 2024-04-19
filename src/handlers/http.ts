@@ -13,6 +13,7 @@ import { UsableMiddleware } from "@/classes/Middleware"
  * @since 9.0.0
 */ export default async function handle(context: RequestContext, req: HttpContext, server: Server<any, any, any>, middlewares: UsableMiddleware[], customContext: Record<string, any>) {
 	if (context.global.options.version) req.header('rjweb-server', version)
+	req.header('date', new Date().toUTCString())
 
 	context.response.headers.set('content-type', 'text/plain')
 	context.response.headers.set('accept-ranges', 'none')

@@ -1,5 +1,10 @@
 # Changelog
 
+## 9.1.5
+
+- Fix File Routing issues
+- Make sure to always add date header
+
 ## 9.1.4
 
 - Add `options.download` and `options.name` to `<HttpRequestContext>.printFile()`
