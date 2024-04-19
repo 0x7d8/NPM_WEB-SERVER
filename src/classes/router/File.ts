@@ -21,7 +21,7 @@ export default class File<Middlewares extends UsableMiddleware[], Validators ext
 	private computePath(path: string | RegExp): string | RegExp {
 		if (path instanceof RegExp) return path
 
-		return parseURL(path).path
+		return parseURL(this.prefix.concat('/', path)).path
 	}
 
 	/**
@@ -266,13 +266,12 @@ export default class File<Middlewares extends UsableMiddleware[], Validators ext
 	*/ public export(): {
 		Path: new (prefix: string) => Path<Middlewares, Validators, Context>
 	} {
-		const prefix = this.prefix,
-			global = this._global
+		const global = this._global
 
 		return {
 			Path: class FakePath extends Path<Middlewares, Validators, Context> {
 				constructor() {
-					super(prefix, global, undefined, undefined, [])
+					super('/', global, undefined, undefined, [])
 				}
 			}
 		}

@@ -1,5 +1,9 @@
 # Changelog
 
+## 9.1.6
+
+- Do not include prefix in route files directly
+
 ## 9.1.5
 
 - Fix File Routing issues
