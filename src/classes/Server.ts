@@ -1,7 +1,7 @@
 import { BaseImplementation, Implementation } from "@/types/implementation"
 import { Method, ReverseProxyIps, ServerStatus } from "@/types/global"
 import { FullServerOptions, ServerOptions } from "@/types/structures/ServerOptions"
-import { as, object, size } from "@rjweb/utils"
+import { as, object, size, time } from "@rjweb/utils"
 import GlobalContext from "@/types/internal/classes/GlobalContext"
 import ContentTypes from "@/classes/router/ContentTypes"
 import { DataContext, EndFn, ErrorCallbacks, RatelimitCallbacks, RealAny } from "@/types/internal"
@@ -67,6 +67,7 @@ export default class Server<const Options extends ServerOptions, Middlewares ext
 	private _status: ServerStatus = 'stopped'
 	private global: GlobalContext
 	private promises: Promise<any>[] = []
+	private interval: NodeJS.Timeout | null = null
 	private openAPISchemas: Record<string, oas31.SchemaObject | oas31.ReferenceObject> = {}
 
 	/**
@@ -286,6 +287,17 @@ export default class Server<const Options extends ServerOptions, Middlewares ext
 				await Promise.all(this.middlewares.map((middleware) => middleware.callbacks.load?.(middleware.config, this as any, this.global)))
 				this.global.logger.debug(`Running Middleware Promises ... Done ${(performance.now() - middlewareStartTime).toFixed(2)}ms`)
 
+				this.interval = setInterval(() => {
+					this.global.logger.debug('Running 1min Interval ...')
+					const intervalStartTime = performance.now()
+
+					for (const [ key, { end } ] of this.global.rateLimits) {
+						if (end < Date.now()) this.global.rateLimits.delete(key)
+					}
+
+					this.global.logger.debug(`Running 1min Interval ... Done ${(performance.now() - intervalStartTime).toFixed(2)}ms`)
+				}, time(1).m())
+
 				resolve(this.implementation.port())
 			} catch (err) {
 				this.implementation.stop()
@@ -318,6 +330,7 @@ export default class Server<const Options extends ServerOptions, Middlewares ext
 		if (this._status === 'stopped') throw new Error('Server is already stopped')
 
 		this.implementation.stop()
+		if (this.interval) clearInterval(this.interval)
 		this._status = 'stopped'
 
 		return this

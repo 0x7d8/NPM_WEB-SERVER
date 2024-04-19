@@ -31,7 +31,7 @@ You will need a runtime to actually use the server. (adapt command to your packa
 
 ```sh
 npm install @rjweb/runtime-bun # for bun users
-npm install @rjweb/runtime-node # for nodejs users (who couldve guseed, may also work with deno though)
+npm install @rjweb/runtime-node # for nodejs users (who couldve guessed, may also work with deno though)
 ```
 
 ## Migrating

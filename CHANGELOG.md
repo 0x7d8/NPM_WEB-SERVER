@@ -1,5 +1,11 @@
 # Changelog
 
+## 9.1.7
+
+- Add Ratelimit cleanup interval
+- Fix typo in readme
+- fix some tabs
+
 ## 9.1.6
 
 - Do not include prefix in route files directly

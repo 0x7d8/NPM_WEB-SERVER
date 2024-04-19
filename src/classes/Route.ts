@@ -55,19 +55,19 @@ export default class Route<Type extends RequestType> {
 
 		if (isRegExp(path)) {
 			this.urlData = {
-        type: 'regexp',
-        value: path,
+				type: 'regexp',
+				value: path,
 				prefix: '/',
-        segments: [{
+				segments: [{
 					raw: '',
-          paramsRegExp: new RegExp(''),
-          params: []
+					paramsRegExp: new RegExp(''),
+					params: []
 				}, {
 					raw: '',
-          paramsRegExp: new RegExp(''),
-          params: []
+					paramsRegExp: new RegExp(''),
+					params: []
 				}]
-      }
+			}
 		} else if (typeof path === 'string') {
 			const segments = parseURL(path).path.split('/')
 
@@ -80,8 +80,8 @@ export default class Route<Type extends RequestType> {
 			for (const segment of segments) {
 				this.urlData.segments.push({
 					raw: segment,
-          paramsRegExp: new RegExp(segment.replace(/{([^}]+)}/g, '(.*\\S)')),
-          params: (segment.match(/{([^}]+)}/g) ?? []).map((m) => m.slice(1, -1))
+					paramsRegExp: new RegExp(segment.replace(/{([^}]+)}/g, '(.*\\S)')),
+					params: (segment.match(/{([^}]+)}/g) ?? []).map((m) => m.slice(1, -1))
 				})
 			}
 		} else {
