@@ -7,6 +7,7 @@ import getCompressMethod from "@/functions/getCompressMethod"
 import { network } from "@rjweb/utils"
 import { fileExists } from "@/functions/fileExists"
 import { UsableMiddleware } from "@/classes/Middleware"
+import YieldedResponse from "@/classes/YieldedResponse"
 
 /**
  * Handler for HTTP Requests
@@ -93,67 +94,179 @@ import { UsableMiddleware } from "@/classes/Middleware"
 	}
 
 	const split = context.url.path.split('/')
+	let executedMiddlewares = false
+
 	for (const route of context.global.routes[context.type]) {
 		if (route.matches(context.url.method, context.params, context.url.path, split)) {
 			context.route = route
+
+			if (!executedMiddlewares) for (let i = 0; i < middlewares.length; i++) {
+				const middleware = middlewares[i]
+		
+				if (req.aborted().aborted) return context.abort()
+				if (middleware.callbacks.httpRequest) {
+					try {
+						await Promise.resolve(middleware.callbacks.httpRequest(middleware.config, server, context, ctr, () => context.endFn = true))
+					} catch (err) {
+						context.handleError(err, `http.handle.middleware.${i}.httpRequest`)
+					}
+		
+					if (context.endFn) break
+				}
+			}
+
+			executedMiddlewares = true
+		
+			if (context.route?.ratelimit && context.route.ratelimit.maxHits !== Infinity && context.route.ratelimit.timeWindow !== Infinity) {
+				let data = context.global.rateLimits.get(`http+${ctr.client.ip}-${context.route.ratelimit.sortTo}`, {
+					hits: 0,
+					end: Date.now() + context.route.ratelimit.timeWindow
+				})
+		
+				if (data.hits + 1 > context.route.ratelimit.maxHits && data.end > Date.now()) {
+					if (data.hits === context.route.ratelimit.maxHits) data.end += context.route.ratelimit.penalty
+		
+					context.endFn = true
+					if (context.global.rateLimitHandlers.httpRequest) {
+						try {
+							await Promise.resolve(context.global.rateLimitHandlers.httpRequest(ctr))
+						} catch (err) {
+							context.handleError(err, 'http.handle.rateLimitHandlers.httpRequest')
+						}
+					} else {
+						context.response.status = 429
+						context.response.statusText = 'Too Many Requests'
+						context.response.content = context.global.cache.arrayBufferTexts.rate_limit_exceeded
+					}
+				} else if (data.end < Date.now()) {
+					context.global.rateLimits.delete(`http+${ctr.client.ip}-${context.route.ratelimit.sortTo}`)
+		
+					data = {
+						hits: 0,
+						end: Date.now() + context.route.ratelimit.timeWindow
+					}
+				}
+		
+				context.response.headers.set('x-ratelimit-limit', context.route.ratelimit.maxHits.toString())
+				context.response.headers.set('x-ratelimit-remaining', (context.route.ratelimit.maxHits - (data.hits + 1)).toString())
+				context.response.headers.set('x-ratelimit-reset', Math.floor(data.end / 1000).toString())
+				context.response.headers.set('x-ratelimit-policy', `${context.route.ratelimit.maxHits};w=${Math.floor(context.route.ratelimit.timeWindow / 1000)}`)
+		
+				context.global.rateLimits.set(`http+${ctr.client.ip}-${context.route.ratelimit.sortTo}`, {
+					...data,
+					hits: data.hits + 1
+				})
+			}
+		
+			if (req.aborted().aborted) return context.abort()
+		
+			if (context.route && !context.endFn) {
+				for (let i = 0; i < context.route.validators.length; i++) {
+					const validator = context.route.validators[i]
+		
+					for (let j = 0; j < validator.listeners.httpRequest.length; j++) {
+						if (req.aborted().aborted) return
+						const validate = validator.listeners.httpRequest[j]
+		
+						try {
+							const response = await Promise.resolve(validate(ctr, () => context.endFn = true, validator.data))
+
+							if (response instanceof YieldedResponse) {
+								context.yielded = response
+								continue
+							}
+						} catch (err) {
+							context.handleError(err, `ws.handle.validator.${i}.listeners.${j}.httpRequest`)
+						}
+					}
+				}
+			}
+		
+			if (!context.endFn) {
+				if (req.aborted().aborted) return context.abort()
+		
+				switch (context.route?.type) {
+					case "http": {
+						if (context.route.data.onRawBody) {
+							await Promise.resolve(context.awaitBody(ctr, false))
+						}
+		
+						if (context.route?.data.onRequest) try {
+							const response = await Promise.resolve(context.route.data.onRequest(ctr))
+
+							if (response instanceof YieldedResponse) {
+								context.yielded = response
+								continue
+							}
+						} catch (err) {
+							context.handleError(err, 'http.handle.onRequest')
+						}
+		
+						break
+					}
+		
+					case "ws": {
+						if (context.route.data.onUpgrade) try {
+							const response = await Promise.resolve(context.route.data.onUpgrade(ctr, () => context.endFn = true))
+
+							if (response instanceof YieldedResponse) {
+								context.yielded = response
+								continue
+							}
+						} catch (err) {
+							context.handleError(err, 'http.handle.onUpgrade')
+						}
+		
+						context.response.status = 101
+						context.response.statusText = 'Switching Protocols'
+		
+						if (!context.endFn && !context.error) {
+							context.setExecuteSelf(async() => {
+								await writeHeaders(null, context, req)
+		
+								context.body.chunks.length = 0
+								context.body.raw = Buffer.allocUnsafe(0)
+		
+								const success = req
+									.status(101, 'Switching Protocols')
+									.upgrade({
+										custom: ctr["@"],
+										aborter: new AbortController(),
+										context
+									})
+		
+								if (!success) {
+									context.handleError(new Error('Failed to Upgrade Connection'), 'http.handle.upgrade')
+									return true
+								}
+		
+								return false
+							})
+						}
+		
+						break
+					}
+		
+					case undefined: {
+						if (context.global.notFoundHandler) {
+							try {
+								await Promise.resolve(context.global.notFoundHandler(ctr))
+							} catch (err) {
+								context.handleError(err, 'http.handle.notFoundHandler')
+							}
+						} else {
+							context.response.status = 404
+							context.response.statusText = null
+							context.response.content = context.global.cache.arrayBufferTexts.route_not_found
+						}
+		
+						break
+					}
+				}
+			}
+
 			break
 		}
-	}
-
-	for (let i = 0; i < middlewares.length; i++) {
-		const middleware = middlewares[i]
-
-		if (req.aborted().aborted) return context.abort()
-		if (middleware.callbacks.httpRequest) {
-			try {
-				await Promise.resolve(middleware.callbacks.httpRequest(middleware.config, server, context, ctr, () => context.endFn = true))
-			} catch (err) {
-				context.handleError(err, `http.handle.middleware.${i}.httpRequest`)
-			}
-
-			if (context.endFn) break
-		}
-	}
-
-	if (context.route?.ratelimit && context.route.ratelimit.maxHits !== Infinity && context.route.ratelimit.timeWindow !== Infinity) {
-		let data = context.global.rateLimits.get(`http+${ctr.client.ip}-${context.route.ratelimit.sortTo}`, {
-			hits: 0,
-			end: Date.now() + context.route.ratelimit.timeWindow
-		})
-
-		if (data.hits + 1 > context.route.ratelimit.maxHits && data.end > Date.now()) {
-			if (data.hits === context.route.ratelimit.maxHits) data.end += context.route.ratelimit.penalty
-
-			context.endFn = true
-			if (context.global.rateLimitHandlers.httpRequest) {
-				try {
-					await Promise.resolve(context.global.rateLimitHandlers.httpRequest(ctr))
-				} catch (err) {
-					context.handleError(err, 'http.handle.rateLimitHandlers.httpRequest')
-				}
-			} else {
-				context.response.status = 429
-				context.response.statusText = 'Too Many Requests'
-				context.response.content = context.global.cache.arrayBufferTexts.rate_limit_exceeded
-			}
-		} else if (data.end < Date.now()) {
-			context.global.rateLimits.delete(`http+${ctr.client.ip}-${context.route.ratelimit.sortTo}`)
-
-			data = {
-				hits: 0,
-				end: Date.now() + context.route.ratelimit.timeWindow
-			}
-		}
-
-		context.response.headers.set('x-ratelimit-limit', context.route.ratelimit.maxHits.toString())
-		context.response.headers.set('x-ratelimit-remaining', (context.route.ratelimit.maxHits - (data.hits + 1)).toString())
-		context.response.headers.set('x-ratelimit-reset', Math.floor(data.end / 1000).toString())
-		context.response.headers.set('x-ratelimit-policy', `${context.route.ratelimit.maxHits};w=${Math.floor(context.route.ratelimit.timeWindow / 1000)}`)
-
-		context.global.rateLimits.set(`http+${ctr.client.ip}-${context.route.ratelimit.sortTo}`, {
-			...data,
-			hits: data.hits + 1
-		})
 	}
 
 	if (!context.endFn && !context.route && context.url.method === 'GET') {
@@ -218,106 +331,12 @@ import { UsableMiddleware } from "@/classes/Middleware"
 				}
 			}
 		}
-	}
 
-	if (req.aborted().aborted) return context.abort()
-
-	if (context.route && !context.endFn) {
-		for (let i = 0; i < context.route.validators.length; i++) {
-			const validator = context.route.validators[i]
-
-			for (let j = 0; j < validator.listeners.httpRequest.length; j++) {
-				if (req.aborted().aborted) return
-				const validate = validator.listeners.httpRequest[j]
-
-				try {
-					await Promise.resolve(validate(ctr, () => context.endFn = true, validator.data))
-				} catch (err) {
-					context.handleError(err, `ws.handle.validator.${i}.listeners.${j}.httpRequest`)
-				}
-			}
-		}
-	}
-
-	if (!context.endFn) {
-		if (req.aborted().aborted) return context.abort()
-
-		switch (context.route?.type) {
-			case "http": {
-				if (context.route.data.onRawBody) {
-					await Promise.resolve(context.awaitBody(ctr, false))
-				}
-
-				if (context.route?.data.onRequest) try {
-					await Promise.resolve(context.route.data.onRequest(ctr))
-				} catch (err) {
-					context.handleError(err, 'http.handle.onRequest')
-				}
-
-				break
-			}
-
-			case "ws": {
-				if (context.route.data.onUpgrade) try {
-					await Promise.resolve(context.route.data.onUpgrade(ctr, () => context.endFn = true))
-				} catch (err) {
-					context.handleError(err, 'http.handle.onUpgrade')
-				}
-
-				context.response.status = 101
-				context.response.statusText = 'Switching Protocols'
-
-				if (!context.endFn && !context.error) {
-					context.setExecuteSelf(async() => {
-						await writeHeaders(null, context, req)
-
-						context.body.chunks.length = 0
-						context.body.raw = Buffer.allocUnsafe(0)
-
-						const success = req
-							.status(101, 'Switching Protocols')
-							.upgrade({
-								custom: ctr["@"],
-								aborter: new AbortController(),
-								context
-							})
-
-						if (!success) {
-							context.handleError(new Error('Failed to Upgrade Connection'), 'http.handle.upgrade')
-							return true
-						}
-
-						return false
-					})
-				}
-
-				break
-			}
-
-			case "static": {
-				if (context.file) {
-					ctr.printFile(context.file)
-				} else {
-					context.global.logger.debug(`Static Route without File: ${context.url.path}`)
-				}
-
-				break
-			}
-
-			case undefined: {
-				if (context.global.notFoundHandler) {
-					try {
-						await Promise.resolve(context.global.notFoundHandler(ctr))
-					} catch (err) {
-						context.handleError(err, 'http.handle.notFoundHandler')
-					}
-				} else {
-					context.response.status = 404
-					context.response.statusText = null
-					context.response.content = context.global.cache.arrayBufferTexts.route_not_found
-				}
-
-				break
+		if (context.route?.type === 'static') {
+			if (context.file) {
+				ctr.printFile(context.file)
+			} else {
+				context.global.logger.debug(`Static Route without File: ${context.url.path}`)
 			}
 		}
 	}

@@ -6,8 +6,8 @@ settings:
 
 dependencies:
   '@rjweb/utils':
-    specifier: ^1.12.9
-    version: 1.12.9
+    specifier: ^1.12.12
+    version: 1.12.12
   inquirer:
     specifier: ^9.2.19
     version: 9.2.19
@@ -18,8 +18,8 @@ dependencies:
     specifier: ^17.7.2
     version: 17.7.2
   zod:
-    specifier: ^3.22.5
-    version: 3.22.5
+    specifier: ^3.23.4
+    version: 3.23.4
 
 devDependencies:
   '@types/inquirer':
@@ -94,8 +94,8 @@ packages:
     resolution: {integrity: sha512-0FCeqG6WvK4/Cc06F/xXMd/pv4FeisI0c1tUpBbfhA2n9Y8eZEv4Karjbmf2ZqQCPUWMrGp8A571tCjizxoTiQ==}
     dev: true
 
-  /@rjweb/utils@1.12.9:
-    resolution: {integrity: sha512-RedUhfR+lIw8qvvacsBVhfHOcwfhfcmCHBNq8RgxUTyHMtGU1whpKk9DLVHnDqvrSbPCJ82oM1kmHNIGO5GaDg==}
+  /@rjweb/utils@1.12.12:
+    resolution: {integrity: sha512-5jxouObI8f5G7t7l5kUQwNcdeL7IBZFe47Lzen3/e7WMe8HrvUsPyRj0CXFgZ3l1GaN0b/GkkztnN3Xw317q7A==}
     engines: {node: '>=18.0.0'}
     dependencies:
       ts-arithmetic: 0.1.1
@@ -862,6 +862,6 @@ packages:
     engines: {node: '>=6'}
     dev: true
 
-  /zod@3.22.5:
-    resolution: {integrity: sha512-HqnGsCdVZ2xc0qWPLdO25WnseXThh0kEYKIdV5F/hTHO75hNZFp8thxSeHhiPrHZKrFTo1SOgkAj9po5bexZlw==}
+  /zod@3.23.4:
+    resolution: {integrity: sha512-/AtWOKbBgjzEYYQRNfoGKHObgfAZag6qUJX1VbHo2PRBgS+wfWagEY2mizjfyAPcGesrJOcx/wcl0L9WnVrHFw==}
     dev: false

@@ -148,7 +148,7 @@ export default class Http<_Method extends Method, Middlewares extends UsableMidd
 	 * ```
 	 * @since 6.0.0
 	*/ public onRawBody(
-		callback: (ctr: DataContext<'HttpRequest', _Method, HttpRequestContext<Context & UnionToIntersection<Validators[number]['context']>>, Middlewares>, end: () => void, chunk: Buffer, isLast: boolean) => void
+		callback: (ctr: Omit<DataContext<'HttpRequest', _Method, HttpRequestContext<Context & UnionToIntersection<Validators[number]['context']>>, Middlewares>, 'yield'>, end: () => void, chunk: Buffer, isLast: boolean) => void
 	): Omit<Http<_Method, Middlewares, Validators, Context, [...Excluded, 'onRawBody']>, Excluded[number] | 'onRawBody'>{
 		this.route.data.onRawBody = callback as any
 

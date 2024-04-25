@@ -16,6 +16,7 @@ import status from "@/enums/status"
 import { Duplex, Writable } from "stream"
 import parseContent from "@/functions/parseContent"
 import { createHash } from "crypto"
+import YieldedResponse from "@/classes/YieldedResponse"
 
 export default class HttpRequestContext<Context extends Record<any, any> = {}> extends Base<Context> {
 	constructor(context: InternalRequestContext, private rawContext: HttpContext, private abort: AbortSignal) {
@@ -206,6 +207,42 @@ export default class HttpRequestContext<Context extends Record<any, any> = {}> e
 	}
 
 	/**
+	 * Yield the Request to the next Route that matches the URL
+	 * 
+	 * This will yield the request to the next route that matches the URL, this is useful
+	 * if you want to have multiple routes that match the same URL but have different methods
+	 * or if you want to have a fallback route that matches all URLs. You can also pass data
+	 * to the next route by providing it as an argument.
+	 * @example
+	 * ```
+	 * const server = new Server(...)
+	 * 
+	 * server.path('/api', (path) => path
+	 *   .http('GET', '/', (http) => http
+	 *     .onRequest((ctr) => {
+	 *       if (ctr.queries.has('yield')) return ctr.yield('Hello World!')
+	 * 
+	 *       ctr.headers.set('content-type', 'text/html')
+	 *       ctr.print('<a href="/api/hello?yield">yield this shit</a>')
+	 *     })
+	 *   )
+	 *   .http('GET', '/', (http) => http
+	 *     .onRequest((ctr) => {
+	 *       ctr.print(`u yielded, ${ctr.yield().data()}`) // u yielded, Hello World!
+	 *     })
+	 *   )
+	 * )
+	 * ```
+	 * @since 9.2.0
+	*/ public yield<Data = unknown>(data?: Data): YieldedResponse<Data> {
+		if (data === undefined && !this.context.yielded) throw new Error('Cannot yield without data when no data was provided before')
+		else if (data === undefined) return this.context.yielded as YieldedResponse<Data>
+
+		this.context.yielded = new YieldedResponse(data)
+		return this.context.yielded as YieldedResponse<Data>
+	}
+
+	/**
 	 * Clear the active Ratelimit of the Client
 	 * 
 	 * This Clears the currently active Ratelimit (on this endpoint) of the Client, remember:
@@ -371,6 +408,11 @@ export default class HttpRequestContext<Context extends Record<any, any> = {}> e
 	 *   })
 	 * 
 	 *   file.on('end', () => {
+	 *     end()
+	 *   })
+	 * 
+	 *   ctr.$abort(() => {
+	 *     file.destroy()
 	 *     end()
 	 *   })
 	 * }))

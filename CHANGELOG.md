@@ -1,5 +1,10 @@
 # Changelog
 
+## 9.2.0
+
+- Add `ctr.yield` to skip route handlers
+- Fix some bad code in TSDocs
+
 ## 9.1.7
 
 - Add Ratelimit cleanup interval

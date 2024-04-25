@@ -5,6 +5,7 @@ import RuntimeError from "@/classes/RuntimeError"
 import Server from "@/classes/Server"
 import URLObject from "@/classes/URLObject"
 import ValueCollection from "@/classes/ValueCollection"
+import YieldedResponse from "@/classes/YieldedResponse"
 import HttpRequestContext from "@/classes/request/HttpRequestContext"
 import { Content, ParsedBody } from "@/types/global"
 import { HttpContext } from "@/types/implementation/contexts/http"
@@ -70,6 +71,10 @@ export default class RequestContext<MiddlewareData extends Record<any, any> = an
 	 * Whether the Request is chunked
 	 * @since 9.0.0
 	*/ public chunked = false
+	/**
+	 * The Yielded Response
+	 * @since 9.2.0
+	*/ public yielded: YieldedResponse | null = null
 	/**
 	 * The File to print at the end of the request
 	 * @warn Only used in static routes, do not use in other routes

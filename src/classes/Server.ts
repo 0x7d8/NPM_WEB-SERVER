@@ -314,7 +314,7 @@ export default class Server<const Options extends ServerOptions, Middlewares ext
 	 * ```
 	 * import { Server } from "rjweb-server"
 	 * 
-	 * const server = new Server({})
+	 * const server = new Server(...)
 	 * 
 	 * server.start().then((port) => {
 	 *   console.log(`Server Started on Port ${port}`)
