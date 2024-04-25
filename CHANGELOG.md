@@ -1,5 +1,9 @@
 # Changelog
 
+## 9.2.1
+
+- Fix Typescript Middleware issues
+
 ## 9.2.0
 
 - Add `ctr.yield` to skip route handlers

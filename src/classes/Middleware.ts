@@ -18,10 +18,10 @@ export type UsableMiddleware<
 > = {
 	NOTICE: 'DO NOT CALL MANUALLY, THIS IS FOR RJWEB INTERNALLY'
 	classContexts: {
-		HttpRequest(config: Config, Original: typeof HttpRequestContext): ModifiedHttpContext
-		WsOpen(config: Config, Original: typeof WsOpenContext): ModifiedWsOpenContext
-		WsMessage(config: Config, Original: typeof WsMessageContext): ModifiedWsMessageContext
-		WsClose(config: Config, Original: typeof WsCloseContext): ModifiedWsCloseContext
+		HttpRequest(config: Config, Original: AnyClass): ModifiedHttpContext
+		WsOpen(config: Config, Original: AnyClass): ModifiedWsOpenContext
+		WsMessage(config: Config, Original: AnyClass): ModifiedWsMessageContext
+		WsClose(config: Config, Original: AnyClass): ModifiedWsCloseContext
 	}
 
 	infos: {
@@ -32,18 +32,18 @@ export type UsableMiddleware<
 	rjwebVersion: number
 	config: Config
 	callbacks: {
-		load?(config: Config, server: Server<{}, [], {}>, context: GlobalContext): RealAny
-		httpRequest?(config: Config, server: Server<{}, [], {}>, context: RequestContext, ctr: HttpRequestContext & InstanceType<ModifiedHttpContext>, end: EndFn): RealAny
-		wsOpen?(config: Config, server: Server<{}, [], {}>, context: RequestContext, ctr: WsOpenContext & InstanceType<ModifiedWsOpenContext>, end: EndFn): RealAny
-		wsMessage?(config: Config, server: Server<{}, [], {}>, context: RequestContext, ctr: WsMessageContext & InstanceType<ModifiedWsMessageContext>, end: EndFn): RealAny
-		wsClose?(config: Config, server: Server<{}, [], {}>, context: RequestContext, ctr: WsCloseContext & InstanceType<ModifiedWsCloseContext>, end: EndFn): RealAny
+		load?(config: Config, server: Server<any, any, any>, context: GlobalContext): RealAny
+		httpRequest?(config: Config, server: Server<any, any, any>, context: RequestContext, ctr: HttpRequestContext & InstanceType<ModifiedHttpContext>, end: EndFn): RealAny
+		wsOpen?(config: Config, server: Server<any, any, any>, context: RequestContext, ctr: WsOpenContext & InstanceType<ModifiedWsOpenContext>, end: EndFn): RealAny
+		wsMessage?(config: Config, server: Server<any, any, any>, context: RequestContext, ctr: WsMessageContext & InstanceType<ModifiedWsMessageContext>, end: EndFn): RealAny
+		wsClose?(config: Config, server: Server<any, any, any>, context: RequestContext, ctr: WsCloseContext & InstanceType<ModifiedWsCloseContext>, end: EndFn): RealAny
 	}
 
 	finishCallbacks: {
-		httpRequest?(config: Config, server: Server<{}, [], {}>, context: RequestContext, ctr: Base, ms: number): RealAny
-		wsOpen?(config: Config, server: Server<{}, [], {}>, context: RequestContext, ctr: Base, ms: number): RealAny
-		wsMessage?(config: Config, server: Server<{}, [], {}>, context: RequestContext, ctr: Base, ms: number): RealAny
-		wsClose?(config: Config, server: Server<{}, [], {}>, context: RequestContext, ctr: Base, ms: number): RealAny
+		httpRequest?(config: Config, server: Server<any, any, any>, context: RequestContext, ctr: Base, ms: number): RealAny
+		wsOpen?(config: Config, server: Server<any, any, any>, context: RequestContext, ctr: Base, ms: number): RealAny
+		wsMessage?(config: Config, server: Server<any, any, any>, context: RequestContext, ctr: Base, ms: number): RealAny
+		wsClose?(config: Config, server: Server<any, any, any>, context: RequestContext, ctr: Base, ms: number): RealAny
 	}
 }
 
@@ -97,7 +97,7 @@ export default class Middleware<
 	 * Callback that runs when the middleware is loaded (server starting, can be multiple times!)
 	 * @since 9.0.0
 	*/ public load(
-		callback: (config: Config, server: Server<{}, [], {}>, context: GlobalContext) => RealAny
+		callback: (config: Config, server: Server<any, any, any>, context: GlobalContext) => RealAny
 	): Omit<Middleware<Config, InternalData, ModifiedHttpContext, ModifiedWsOpenContext, ModifiedWsMessageContext, ModifiedWsCloseContext, [...Excluded, 'load']>, Excluded[number] | 'load'> {
 		this.data.callbacks.load = callback
 
@@ -108,7 +108,7 @@ export default class Middleware<
 	 * Callback that runs when any HTTP Request is made
 	 * @since 9.0.0
 	*/ public httpRequest(
-		callback: (config: Config, server: Server<{}, [], {}>, context: RequestContext<InternalData>, ctr: HttpRequestContext & InstanceType<ModifiedHttpContext>, end: EndFn) => RealAny
+		callback: (config: Config, server: Server<any, any, any>, context: RequestContext<InternalData>, ctr: HttpRequestContext & InstanceType<ModifiedHttpContext>, end: EndFn) => RealAny
 	): Omit<Middleware<Config, InternalData, ModifiedHttpContext, ModifiedWsOpenContext, ModifiedWsMessageContext, ModifiedWsCloseContext, [...Excluded, 'httpRequest']>, Excluded[number] | 'httpRequest'> {
 		this.data.callbacks.httpRequest = callback as never
 
@@ -119,7 +119,7 @@ export default class Middleware<
 	 * Callback that runs when any HTTP Request finishes
 	 * @since 9.0.0
 	*/ public httpRequestFinish(
-		callback: (config: Config, server: Server<{}, [], {}>, context: RequestContext<InternalData>, ctr: Base, ms: number) => RealAny
+		callback: (config: Config, server: Server<any, any, any>, context: RequestContext<InternalData>, ctr: Base, ms: number) => RealAny
 	): Omit<Middleware<Config, InternalData, ModifiedHttpContext, ModifiedWsOpenContext, ModifiedWsMessageContext, ModifiedWsCloseContext, [...Excluded, 'httpRequestFinish']>, Excluded[number] | 'httpRequestFinish'> {
 		this.data.finishCallbacks.httpRequest = callback as never
 
@@ -141,7 +141,7 @@ export default class Middleware<
 	 * Callback that runs when any WebSocket Connection is opened
 	 * @since 9.0.0
 	*/ public wsOpen(
-		callback: (config: Config, server: Server<{}, [], {}>, context: RequestContext<InternalData>, ctr: WsOpenContext & InstanceType<ModifiedWsOpenContext>, end: EndFn) => RealAny
+		callback: (config: Config, server: Server<any, any, any>, context: RequestContext<InternalData>, ctr: WsOpenContext & InstanceType<ModifiedWsOpenContext>, end: EndFn) => RealAny
 	): Omit<Middleware<Config, InternalData, ModifiedHttpContext, ModifiedWsOpenContext, ModifiedWsMessageContext, ModifiedWsCloseContext, [...Excluded, 'wsOpen']>, Excluded[number] | 'wsOpen'> {
 		this.data.callbacks.wsOpen = callback as never
 
@@ -152,7 +152,7 @@ export default class Middleware<
 	 * Callback that runs when any WebSocket Connection is opened and finishes running all events
 	 * @since 9.0.0
 	*/ public wsOpenFinish(
-		callback: (config: Config, server: Server<{}, [], {}>, context: RequestContext<InternalData>, ctr: Base, ms: number) => RealAny
+		callback: (config: Config, server: Server<any, any, any>, context: RequestContext<InternalData>, ctr: Base, ms: number) => RealAny
 	): Omit<Middleware<Config, InternalData, ModifiedHttpContext, ModifiedWsOpenContext, ModifiedWsMessageContext, ModifiedWsCloseContext, [...Excluded, 'wsOpenFinish']>, Excluded[number] | 'wsOpenFinish'> {
 		this.data.finishCallbacks.wsOpen = callback as never
 
@@ -174,7 +174,7 @@ export default class Middleware<
 	 * Callback that runs when any WebSocket Message is recieved
 	 * @since 9.0.0
 	*/ public wsMessage(
-		callback: (config: Config, server: Server<{}, [], {}>, context: RequestContext<InternalData>, ctr: WsMessageContext & InstanceType<ModifiedWsMessageContext>, end: EndFn) => RealAny
+		callback: (config: Config, server: Server<any, any, any>, context: RequestContext<InternalData>, ctr: WsMessageContext & InstanceType<ModifiedWsMessageContext>, end: EndFn) => RealAny
 	): Omit<Middleware<Config, InternalData, ModifiedHttpContext, ModifiedWsOpenContext, ModifiedWsMessageContext, ModifiedWsCloseContext, [...Excluded, 'wsMessage']>, Excluded[number] | 'wsMessage'> {
 		this.data.callbacks.wsMessage = callback as never
 
@@ -185,7 +185,7 @@ export default class Middleware<
 	 * Callback that runs when any WebSocket Message is recieved and finishes running all events
 	 * @since 9.0.0
 	*/ public wsMessageFinish(
-		callback: (config: Config, server: Server<{}, [], {}>, context: RequestContext<InternalData>, ctr: Base, ms: number) => RealAny
+		callback: (config: Config, server: Server<any, any, any>, context: RequestContext<InternalData>, ctr: Base, ms: number) => RealAny
 	): Omit<Middleware<Config, InternalData, ModifiedHttpContext, ModifiedWsOpenContext, ModifiedWsMessageContext, ModifiedWsCloseContext, [...Excluded, 'wsMessageFinish']>, Excluded[number] | 'wsMessageFinish'> {
 		this.data.finishCallbacks.wsMessage = callback as never
 
@@ -207,7 +207,7 @@ export default class Middleware<
 	 * Callback that runs when any WebSocket Connection is closed
 	 * @since 9.0.0
 	*/ public wsClose(
-		callback: (config: Config, server: Server<{}, [], {}>, context: RequestContext<InternalData>, ctr: WsCloseContext & InstanceType<ModifiedWsCloseContext>, end: EndFn) => RealAny
+		callback: (config: Config, server: Server<any, any, any>, context: RequestContext<InternalData>, ctr: WsCloseContext & InstanceType<ModifiedWsCloseContext>, end: EndFn) => RealAny
 	): Omit<Middleware<Config, InternalData, ModifiedHttpContext, ModifiedWsOpenContext, ModifiedWsMessageContext, ModifiedWsCloseContext, [...Excluded, 'wsClose']>, Excluded[number] | 'wsClose'> {
 		this.data.callbacks.wsClose = callback as never
 
@@ -218,7 +218,7 @@ export default class Middleware<
 	 * Callback that runs when any WebSocket Connection is closed and finishes running all events
 	 * @since 9.0.0
 	*/ public wsCloseFinish(
-		callback: (config: Config, server: Server<{}, [], {}>, context: RequestContext<InternalData>, ctr: Base, ms: number) => RealAny
+		callback: (config: Config, server: Server<any, any, any>, context: RequestContext<InternalData>, ctr: Base, ms: number) => RealAny
 	): Omit<Middleware<Config, InternalData, ModifiedHttpContext, ModifiedWsOpenContext, ModifiedWsMessageContext, ModifiedWsCloseContext, [...Excluded, 'wsCloseFinish']>, Excluded[number] | 'wsCloseFinish'> {
 		this.data.finishCallbacks.wsClose = callback as never
 

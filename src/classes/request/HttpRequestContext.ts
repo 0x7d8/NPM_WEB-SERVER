@@ -223,7 +223,7 @@ export default class HttpRequestContext<Context extends Record<any, any> = {}> e
 	 *       if (ctr.queries.has('yield')) return ctr.yield('Hello World!')
 	 * 
 	 *       ctr.headers.set('content-type', 'text/html')
-	 *       ctr.print('<a href="/api/hello?yield">yield this shit</a>')
+	 *       ctr.print('<a href="/api?yield">yield this shit</a>')
 	 *     })
 	 *   )
 	 *   .http('GET', '/', (http) => http
