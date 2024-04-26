@@ -238,8 +238,7 @@ export default class HttpRequestContext<Context extends Record<any, any> = {}> e
 		if (data === undefined && !this.context.yielded) throw new Error('Cannot yield without data when no data was provided before')
 		else if (data === undefined) return this.context.yielded as YieldedResponse<Data>
 
-		this.context.yielded = new YieldedResponse(data)
-		return this.context.yielded as YieldedResponse<Data>
+		return new YieldedResponse(data)
 	}
 
 	/**

@@ -94,7 +94,8 @@ import YieldedResponse from "@/classes/YieldedResponse"
 	}
 
 	const split = context.url.path.split('/')
-	let executedMiddlewares = false
+	let executedMiddlewares = false,
+		ranBody = false
 
 	for (const route of context.global.routes[context.type]) {
 		if (route.matches(context.url.method, context.params, context.url.path, split)) {
@@ -161,6 +162,8 @@ import YieldedResponse from "@/classes/YieldedResponse"
 			if (req.aborted().aborted) return context.abort()
 		
 			if (context.route && !context.endFn) {
+				let yieldedNow = false
+
 				for (let i = 0; i < context.route.validators.length; i++) {
 					const validator = context.route.validators[i]
 		
@@ -173,30 +176,42 @@ import YieldedResponse from "@/classes/YieldedResponse"
 
 							if (response instanceof YieldedResponse) {
 								context.yielded = response
-								continue
+								yieldedNow = true
 							}
 						} catch (err) {
 							context.handleError(err, `ws.handle.validator.${i}.listeners.${j}.httpRequest`)
 						}
+
+						if (context.endFn) break
+						if (yieldedNow) {
+							context.route = null
+							break
+						}
 					}
+
+					if (context.endFn) break
+					if (!context.route) break
 				}
 			}
 		
-			if (!context.endFn) {
+			if (!context.endFn && context.route) {
 				if (req.aborted().aborted) return context.abort()
-		
-				switch (context.route?.type) {
+
+				let yieldedNow = false
+				switch (context.route.type) {
 					case "http": {
-						if (context.route.data.onRawBody) {
-							await Promise.resolve(context.awaitBody(ctr, false))
+						if (context.route.data.onRawBody && !ranBody) {
+							ranBody = true
+							await context.awaitBody(ctr, false)
 						}
 		
 						if (context.route?.data.onRequest) try {
 							const response = await Promise.resolve(context.route.data.onRequest(ctr))
 
 							if (response instanceof YieldedResponse) {
+								context.route = null
 								context.yielded = response
-								continue
+								yieldedNow = true
 							}
 						} catch (err) {
 							context.handleError(err, 'http.handle.onRequest')
@@ -246,23 +261,10 @@ import YieldedResponse from "@/classes/YieldedResponse"
 		
 						break
 					}
-		
-					case undefined: {
-						if (context.global.notFoundHandler) {
-							try {
-								await Promise.resolve(context.global.notFoundHandler(ctr))
-							} catch (err) {
-								context.handleError(err, 'http.handle.notFoundHandler')
-							}
-						} else {
-							context.response.status = 404
-							context.response.statusText = null
-							context.response.content = context.global.cache.arrayBufferTexts.route_not_found
-						}
-		
-						break
-					}
 				}
+
+				if (req.aborted().aborted) return context.abort()
+				if (yieldedNow) continue
 			}
 
 			break
@@ -338,6 +340,20 @@ import YieldedResponse from "@/classes/YieldedResponse"
 			} else {
 				context.global.logger.debug(`Static Route without File: ${context.url.path}`)
 			}
+		}
+	}
+
+	if (!context.route) {
+		if (context.global.notFoundHandler) {
+			try {
+				await Promise.resolve(context.global.notFoundHandler(ctr))
+			} catch (err) {
+				context.handleError(err, 'http.handle.notFoundHandler')
+			}
+		} else {
+			context.response.status = 404
+			context.response.statusText = null
+			context.response.content = context.global.cache.arrayBufferTexts.route_not_found
 		}
 	}
 

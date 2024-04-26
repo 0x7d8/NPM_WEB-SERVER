@@ -2,7 +2,6 @@ import { HttpContext } from "@/types/implementation/contexts/http"
 import RequestContext from "@/types/internal/classes/RequestContext"
 import toETag from "@/functions/toETag"
 import Status from "@/enums/status"
-import { STATUS_CODES } from "http"
 import parseContent from "@/functions/parseContent"
 import { isDate } from "util/types"
 import toString from "@/functions/toString"
@@ -16,7 +15,7 @@ import toString from "@/functions/toString"
 
 		if (eTag) {
 			if (context.headers.get('if-none-match') === eTag) {
-				rawContext.status(Status.NOT_MODIFIED, STATUS_CODES[context.response.status] || 'Unknown').write(new ArrayBuffer(0))
+				rawContext.status(Status.NOT_MODIFIED, 'Not Modified').write(new ArrayBuffer(0))
 				return false
 			}
 

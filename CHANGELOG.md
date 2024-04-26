@@ -1,5 +1,12 @@
 # Changelog
 
+## 9.2.2
+
+- Fix class merging breaking some methods
+- Improve yielding logic
+- Fix etag status message
+- More typescript middleware fixes
+
 ## 9.2.1
 
 - Fix Typescript Middleware issues
