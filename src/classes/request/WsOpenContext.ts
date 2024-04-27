@@ -6,7 +6,7 @@ import parseContent from "@/functions/parseContent"
 import Channel from "@/classes/Channel"
 
 export default class WsOpenContext<Type extends 'open' | 'message' = 'open', Context extends Record<any, any> = {}> extends Base<Context> {
-	constructor(context: InternalRequestContext, protected rawContext: WsContext, private abort: AbortSignal, type: Type = 'open' as Type) {
+	constructor(context: InternalRequestContext, protected rawContext: WsContext, protected abort: AbortSignal, type: Type = 'open' as Type) {
 		super(context)
 
 		this.type = type

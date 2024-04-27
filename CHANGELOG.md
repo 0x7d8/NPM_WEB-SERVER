@@ -1,5 +1,11 @@
 # Changelog
 
+## 9.2.3
+
+- Make `<HttpRequestContext>.rawContext` protected instead of private
+- Make `<HttpRequestContext>.abort` protected instead of private
+- Make `<WsOpenContext>.abort` protected instead of private
+
 ## 9.2.2
 
 - Fix class merging breaking some methods

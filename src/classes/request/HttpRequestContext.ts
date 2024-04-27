@@ -19,7 +19,7 @@ import { createHash } from "crypto"
 import YieldedResponse from "@/classes/YieldedResponse"
 
 export default class HttpRequestContext<Context extends Record<any, any> = {}> extends Base<Context> {
-	constructor(context: InternalRequestContext, private rawContext: HttpContext, private abort: AbortSignal) {
+	constructor(context: InternalRequestContext, protected rawContext: HttpContext, protected abort: AbortSignal) {
 		super(context)
 
 		this.type = context.type
