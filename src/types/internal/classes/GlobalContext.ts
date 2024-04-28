@@ -48,15 +48,15 @@ export default class GlobalContext {
 	/**
 	 * The Error handlers
 	 * @since 9.0.0
-	*/ public errorHandlers: ErrorCallbacks<any> = {}
+	*/ public errorHandlers: ErrorCallbacks<any, any> = {}
 	/**
 	 * The Finish handlers
 	 * @since 9.0.0
-	*/ public finishHandlers: FinishCallbacks<any> = {}
+	*/ public finishHandlers: FinishCallbacks<any, any> = {}
 	/**
 	 * The Ratelimit Handlers
 	 * @since 9.0.0
-	*/ public rateLimitHandlers: RatelimitCallbacks<any> = {}
+	*/ public rateLimitHandlers: RatelimitCallbacks<any, any> = {}
 	/**
 	 * The Not Found handler
 	 * @since 9.0.0

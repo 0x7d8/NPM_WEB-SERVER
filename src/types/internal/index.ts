@@ -28,26 +28,26 @@ export type RateLimitConfig = {
   maxHits: number
 }
 
-export type ErrorCallbacks<Middlewares extends UsableMiddleware[]> = {
-	httpRequest?(ctr: DataContext<'HttpRequest', 'GET', HttpRequestContext, Middlewares>, error: RuntimeError): RealAny
+export type ErrorCallbacks<Middlewares extends UsableMiddleware[], Context extends Record<string, any>> = {
+	httpRequest?(ctr: DataContext<'HttpRequest', 'GET', HttpRequestContext<Context>, Middlewares>, error: RuntimeError): RealAny
 
-	wsOpen?(ctr: DataContext<'WsOpen', 'GET', WsOpenContext, Middlewares>, error: RuntimeError): RealAny
-	wsMessage?(ctr: DataContext<'WsMessage', 'GET', WsMessageContext, Middlewares>, error: RuntimeError): RealAny
-	wsClose?(ctr: DataContext<'WsClose', 'GET', WsCloseContext, Middlewares>, error: RuntimeError): RealAny
+	wsOpen?(ctr: DataContext<'WsOpen', 'GET', WsOpenContext<'open', Context>, Middlewares>, error: RuntimeError): RealAny
+	wsMessage?(ctr: DataContext<'WsMessage', 'GET', WsMessageContext<Context>, Middlewares>, error: RuntimeError): RealAny
+	wsClose?(ctr: DataContext<'WsClose', 'GET', WsCloseContext<Context>, Middlewares>, error: RuntimeError): RealAny
 }
 
-export type FinishCallbacks<Middlewares extends UsableMiddleware[]> = {
-	httpRequest?(ctr: DataContext<'HttpRequest', 'GET', Base, Middlewares>, ms: number): RealAny
+export type FinishCallbacks<Middlewares extends UsableMiddleware[], Context extends Record<string, any>> = {
+	httpRequest?(ctr: DataContext<'HttpRequest', 'GET', Base<Context>, Middlewares>, ms: number): RealAny
 
-	wsOpen?(ctr: DataContext<'WsOpen', 'GET', Base, Middlewares>, ms: number): RealAny
-	wsMessage?(ctr: DataContext<'WsMessage', 'GET', Base, Middlewares>, ms: number): RealAny
-	wsClose?(ctr: DataContext<'WsClose', 'GET', Base, Middlewares>, ms: number): RealAny
+	wsOpen?(ctr: DataContext<'WsOpen', 'GET', Base<Context>, Middlewares>, ms: number): RealAny
+	wsMessage?(ctr: DataContext<'WsMessage', 'GET', Base<Context>, Middlewares>, ms: number): RealAny
+	wsClose?(ctr: DataContext<'WsClose', 'GET', Base<Context>, Middlewares>, ms: number): RealAny
 }
 
-export type RatelimitCallbacks<Middlewares extends UsableMiddleware[]> = {
-  httpRequest?(ctr: DataContext<'HttpRequest', 'GET', HttpRequestContext, Middlewares>): RealAny
+export type RatelimitCallbacks<Middlewares extends UsableMiddleware[], Context extends Record<string, any>> = {
+  httpRequest?(ctr: DataContext<'HttpRequest', 'GET', HttpRequestContext<Context>, Middlewares>): RealAny
 
-  wsMessage?(ctr: DataContext<'WsMessage', 'GET', WsMessageContext, Middlewares>): RealAny
+  wsMessage?(ctr: DataContext<'WsMessage', 'GET', WsMessageContext<Context>, Middlewares>): RealAny
 }
 
 export type ClassContexts = {

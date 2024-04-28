@@ -1,5 +1,9 @@
 # Changelog
 
+## 9.2.4
+
+- Fix some Context Issues
+
 ## 9.2.3
 
 - Make `<HttpRequestContext>.rawContext` protected instead of private

@@ -142,7 +142,7 @@ export default class Server<const Options extends ServerOptions, Middlewares ext
 	/**
 	 * Listen to Error Callbacks
 	 * @since 9.0.0
-	*/ public error<Key extends keyof ErrorCallbacks<Middlewares>>(key: Key, callback: ErrorCallbacks<Middlewares>[Key]): this {
+	*/ public error<Key extends keyof ErrorCallbacks<Middlewares, Context>>(key: Key, callback: ErrorCallbacks<Middlewares, Context>[Key]): this {
 		this.global.errorHandlers[key] = callback
 
 		return this
@@ -151,7 +151,7 @@ export default class Server<const Options extends ServerOptions, Middlewares ext
 	/**
 	 * Listen to Ratelimit Callbacks
 	 * @since 9.0.0
-	*/ public rateLimit<Key extends keyof RatelimitCallbacks<Middlewares>>(key: Key, callback: RatelimitCallbacks<Middlewares>[Key]): this {
+	*/ public rateLimit<Key extends keyof RatelimitCallbacks<Middlewares, Context>>(key: Key, callback: RatelimitCallbacks<Middlewares, Context>[Key]): this {
 		this.global.rateLimitHandlers[key] = callback
 
 		return this
@@ -160,7 +160,7 @@ export default class Server<const Options extends ServerOptions, Middlewares ext
 	/**
 	 * Listen to Not Found Callbacks
 	 * @since 9.0.0
-	*/ public notFound(callback: (ctr: DataContext<'HttpRequest', 'GET', HttpRequestContext<GlobalContext>, Middlewares>) => RealAny): this {
+	*/ public notFound(callback: (ctr: DataContext<'HttpRequest', 'GET', HttpRequestContext<Context>, Middlewares>) => RealAny): this {
 		this.global.notFoundHandler = callback as any
 
 		return this
