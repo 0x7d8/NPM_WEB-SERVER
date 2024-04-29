@@ -102,7 +102,7 @@ export default class Validator<Data extends Record<string, any> = {}, Context ex
 	/**
 	 * Extend on another validator
 	 * @since 9.0.0
-	*/ public extend<V extends Validator<any, any, any>, _Data extends [any, any] = V extends Validator<infer Data, infer Context> ? [Data, Context] : [{}, {}]>(validator: V): Validator<Data & _Data[0], Context & _Data[1]> {
+	*/ public extend<V extends Validator<any, any, any>, _Data extends [any, any] = V extends Validator<infer Data, infer Context> ? [Data, Context] : [{}, {}]>(validator: V): Validator<Data & _Data[0], Context & _Data[1], Middlewares> {
 		this.listeners.httpRequest = new Set([ ...validator.listeners.httpRequest.values(), ...this.listeners.httpRequest.values() ])
 		this.listeners.wsOpen = new Set([ ...validator.listeners.wsOpen.values(), ...this.listeners.wsOpen.values() ])
 		this.listeners.wsMessage = new Set([ ...validator.listeners.wsMessage.values(), ...this.listeners.wsMessage.values() ])

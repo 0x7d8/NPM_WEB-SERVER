@@ -1,5 +1,9 @@
 # Changelog
 
+## 9.2.6
+
+- Fix validator extending issue
+
 ## 9.2.5
 
 - Make sure validator callbacks are not ran twice when extending
