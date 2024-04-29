@@ -9,12 +9,13 @@ import GlobalContext from "@/types/internal/classes/GlobalContext"
 import { filesystem, object } from "@rjweb/utils"
 import { OperationObject } from "openapi3-ts/oas31"
 import Path from "@/classes/router/Path"
+import deepClone from "@/functions/deepClone"
 
 export default class File<Middlewares extends UsableMiddleware[], Validators extends UsableValidator[] = [], Context extends Record<string, any> = {}, Excluded extends (keyof File<Middlewares>)[] = []> {
 	protected _httpRatelimit: RateLimitConfig
 	protected _wsRatelimit: RateLimitConfig
 	protected promises: Promise<any>[]
-	protected openApi: OperationObject
+	protected openApi: OperationObject = {}
 	private _global: GlobalContext
 	private prefix: string
 
@@ -27,7 +28,7 @@ export default class File<Middlewares extends UsableMiddleware[], Validators ext
 	/**
 	 * Create a new File Loader
 	 * @since 9.0.0
-	*/ constructor(prefix: string, global: GlobalContext, private validators: Validators = [] as never, ratelimits?: [RateLimitConfig, RateLimitConfig], promises?: Promise<any>[], openApi?: OperationObject) {
+	*/ constructor(prefix: string, global: GlobalContext, private validators: Validators = [] as never, ratelimits?: [RateLimitConfig, RateLimitConfig], promises?: Promise<any>[]) {
 		this.prefix = prefix
 		this._global = global
 
@@ -40,7 +41,6 @@ export default class File<Middlewares extends UsableMiddleware[], Validators ext
 		}
 
 		this.promises = promises ?? []
-		this.openApi = openApi ?? {}
 	}
 
 	/**
@@ -183,14 +183,14 @@ export default class File<Middlewares extends UsableMiddleware[], Validators ext
 							if (options.fileBasedRouting) {
 								if (route.urlData.type === 'regexp') {
 									route.urlData.prefix = this.computePath(path.concat(route.urlData.prefix)) as string
-									route.openApi = object.deepMerge(this.openApi, route.openApi)
+									route.openApi = deepClone(object.deepMerge(deepClone(this.openApi), route.openApi))
 
 									modifiedRoutesHttp.push(route)
 								} else {
 									const newRoute = new Route('http', route['urlMethod'], this.computePath(path.concat(route.urlData.value)), route.data)
 									newRoute.validators = route.validators
 									newRoute.ratelimit = Object.assign(this._httpRatelimit, route.ratelimit)
-									newRoute.openApi = object.deepMerge(this.openApi, route.openApi)
+									newRoute.openApi = deepClone(object.deepMerge(deepClone(this.openApi), route.openApi))
 
 									modifiedRoutesHttp.push(newRoute)
 								}
@@ -205,14 +205,14 @@ export default class File<Middlewares extends UsableMiddleware[], Validators ext
 							if (options.fileBasedRouting) {
 								if (route.urlData.type === 'regexp') {
 									route.urlData.prefix = this.computePath(path.concat(route.urlData.prefix)) as string
-									route.openApi = object.deepMerge(this.openApi, route.openApi)
+									route.openApi = deepClone(object.deepMerge(deepClone(this.openApi), route.openApi))
 
 									modifiedRoutesWS.push(route)
 								} else {
 									const newRoute = new Route('ws', route['urlMethod'], this.computePath(path.concat(route.urlData.value)), route.data)
 									newRoute.validators = route.validators
 									newRoute.ratelimit = Object.assign(this._wsRatelimit, route.ratelimit)
-									newRoute.openApi = object.deepMerge(this.openApi, route.openApi)
+									newRoute.openApi = deepClone(object.deepMerge(deepClone(this.openApi), route.openApi))
 
 									modifiedRoutesWS.push(newRoute)
 								}
@@ -227,14 +227,12 @@ export default class File<Middlewares extends UsableMiddleware[], Validators ext
 							if (options.fileBasedRouting) {
 								if (route.urlData.type === 'regexp') {
 									route.urlData.prefix = this.computePath(path.concat(route.urlData.prefix)) as string
-									route.openApi = object.deepMerge(this.openApi, route.openApi)
 
 									modifiedRoutesStatic.push(route)
 								} else {
 									const newRoute = new Route('static', route['urlMethod'], this.computePath(path.concat(route.urlData.value)), route.data)
 									newRoute.validators = route.validators
 									newRoute.ratelimit = route.ratelimit
-									newRoute.openApi = object.deepMerge(this.openApi, route.openApi)
 
 									modifiedRoutesStatic.push(newRoute)
 								}

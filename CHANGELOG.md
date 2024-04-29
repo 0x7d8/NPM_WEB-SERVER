@@ -1,5 +1,9 @@
 # Changelog
 
+## 9.2.7
+
+- Fix OpenAPI Merging issues
+
 ## 9.2.6
 
 - Fix validator extending issue

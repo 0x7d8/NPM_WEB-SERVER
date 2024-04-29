@@ -11,6 +11,7 @@ import GlobalContext from "@/types/internal/classes/GlobalContext"
 import { ArrayOrNot, filesystem, object } from "@rjweb/utils"
 import Ws from "@/classes/router/Ws"
 import { OperationObject } from "openapi3-ts/oas31"
+import deepClone from "@/functions/deepClone"
 
 export default class Path<Middlewares extends UsableMiddleware[], Validators extends UsableValidator[] = [], Context extends Record<string, any> = {}, Excluded extends (keyof Path<Middlewares>)[] = []> {
 	protected routesHttp: Route<'http'>[] = []
@@ -163,7 +164,7 @@ export default class Path<Middlewares extends UsableMiddleware[], Validators ext
 	 * Create a subpath of this Path
 	 * @since 6.0.0
 	*/ public path(prefix: string, callback: (path: Path<Middlewares, Validators, Context>) => any): this {
-		const path = new Path<Middlewares, Validators, Context>(this.prefix.concat('/', prefix), this._global, [...this.validators] as any, [this._httpRatelimit, this._wsRatelimit], this.promises, this.openApi)
+		const path = new Path<Middlewares, Validators, Context>(this.prefix.concat('/', prefix), this._global, [...this.validators] as any, [this._httpRatelimit, this._wsRatelimit], this.promises, deepClone(this.openApi))
 		callback(path)
 
 		this.routesHttp.push(...path.routesHttp)
@@ -279,7 +280,7 @@ export default class Path<Middlewares extends UsableMiddleware[], Validators ext
 	*/ public http<_Method extends Method>(method: _Method, path: ArrayOrNot<string | RegExp>, callback: (http: Http<_Method, Middlewares, Validators, Context>) => any): this {
 		for (const p of Array.isArray(path) ? path : [path]) {
 			const http = new Http<_Method, Middlewares, Validators, Context>(method, this.computePath(p), this._httpRatelimit)
-			http['route'].openApi = Object.assign({}, this.openApi)
+			http['route'].openApi = deepClone(this.openApi)
 
 			callback(http)
 
@@ -311,7 +312,7 @@ export default class Path<Middlewares extends UsableMiddleware[], Validators ext
 	*/ public ws(path: ArrayOrNot<string | RegExp>, callback: (ws: Ws<Middlewares, Validators, Context>) => any): this {
 		for (const p of Array.isArray(path) ? path : [path]) {
 			const ws = new Ws<Middlewares, Validators, Context>(this.computePath(p), this._wsRatelimit)
-			ws['route'].openApi = Object.assign({}, this.openApi)
+			ws['route'].openApi = deepClone(this.openApi)
 
 			callback(ws)
 

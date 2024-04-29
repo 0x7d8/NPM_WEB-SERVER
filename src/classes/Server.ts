@@ -282,6 +282,7 @@ export default class Server<const Options extends ServerOptions, Middlewares ext
 				const promisesStartTime = performance.now()
 				await Promise.all(this.promises)
 				this.global.logger.debug(`Running Router Promises ... Done ${(performance.now() - promisesStartTime).toFixed(2)}ms`)
+
 				this.global.logger.debug('Running Middleware Promises ...')
 				const middlewareStartTime = performance.now()
 				await Promise.all(this.middlewares.map((middleware) => middleware.callbacks.load?.(middleware.config, this as any, this.global)))

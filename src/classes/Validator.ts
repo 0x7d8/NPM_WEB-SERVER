@@ -6,6 +6,7 @@ import WsMessageContext from "@/classes/request/WsMessageContext"
 import WsCloseContext from "@/classes/request/WsCloseContext"
 import { object } from "@rjweb/utils"
 import { OperationObject } from "openapi3-ts/oas31"
+import deepClone from "@/functions/deepClone"
 
 type Listeners<Data extends Record<string, any>, Context extends Record<string, any>, Middlewares extends UsableMiddleware[] = []> = {
 	httpRequest: Set<((ctr: DataContext<'HttpRequest', 'POST', HttpRequestContext<Context>, Middlewares>, end: EndFn, data: Data) => RealAny)>
@@ -107,7 +108,7 @@ export default class Validator<Data extends Record<string, any> = {}, Context ex
 		this.listeners.wsOpen = new Set([ ...validator.listeners.wsOpen.values(), ...this.listeners.wsOpen.values() ])
 		this.listeners.wsMessage = new Set([ ...validator.listeners.wsMessage.values(), ...this.listeners.wsMessage.values() ])
 		this.listeners.wsClose = new Set([ ...validator.listeners.wsClose.values(), ...this.listeners.wsClose.values() ])
-		this.openApi = object.deepMerge(this.openApi, validator.openApi)
+		this.openApi = deepClone(object.deepMerge(this.openApi, validator.openApi))
 
 		const openApiFn = this.openApiFn
 		if (validator.openApiFn) this.openApiFn = (data) => object.deepMerge(openApiFn?.(data) ?? {}, validator.openApiFn?.(data) ?? {})
