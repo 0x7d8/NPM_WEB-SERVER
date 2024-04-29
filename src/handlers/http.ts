@@ -166,10 +166,11 @@ import YieldedResponse from "@/classes/YieldedResponse"
 
 				for (let i = 0; i < context.route.validators.length; i++) {
 					const validator = context.route.validators[i]
-		
-					for (let j = 0; j < validator.listeners.httpRequest.length; j++) {
+
+					const values = Array.from(validator.listeners.httpRequest.values())
+					for (let j = 0; j < validator.listeners.httpRequest.size; j++) {
 						if (req.aborted().aborted) return
-						const validate = validator.listeners.httpRequest[j]
+						const validate = values[j]
 		
 						try {
 							const response = await Promise.resolve(validate(ctr, () => context.endFn = true, validator.data))

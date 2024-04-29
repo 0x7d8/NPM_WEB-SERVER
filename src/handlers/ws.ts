@@ -44,9 +44,10 @@ export default async function wsHandler({ context, custom, aborter }: WebsocketD
 			if (!context.endFn) for (let i = 0; i < route.validators.length; i++) {
 				const validator = route.validators[i]
 
-				for (let j = 0; j < validator.listeners.wsOpen.length; j++) {
+				const values = Array.from(validator.listeners.wsOpen.values())
+				for (let j = 0; j < validator.listeners.wsOpen.size; j++) {
 					if (aborter.signal.aborted) return
-					const validate = validator.listeners.wsOpen[j]
+					const validate = values[j]
 
 					try {
 						await Promise.resolve(validate(ctr, () => context.endFn = true, validator.data))
@@ -219,9 +220,10 @@ export default async function wsHandler({ context, custom, aborter }: WebsocketD
 			if (!context.endFn) for (let i = 0; i < route.validators.length; i++) {
 				const validator = route.validators[i]
 
-				for (let j = 0; j < validator.listeners.wsMessage.length; j++) {
+				const values = Array.from(validator.listeners.wsMessage.values())
+				for (let j = 0; j < validator.listeners.wsMessage.size; j++) {
 					if (aborter.signal.aborted) return
-					const validate = validator.listeners.wsMessage[j]
+					const validate = values[j]
 
 					try {
 						await Promise.resolve(validate(ctr, () => context.endFn = true, validator.data))
@@ -332,9 +334,10 @@ export default async function wsHandler({ context, custom, aborter }: WebsocketD
 			if (!context.endFn) for (let i = 0; i < route.validators.length; i++) {
 				const validator = route.validators[i]
 
-				for (let j = 0; j < validator.listeners.wsClose.length; j++) {
+				const values = Array.from(validator.listeners.wsClose.values())
+				for (let j = 0; j < validator.listeners.wsClose.size; j++) {
 					if (aborter.signal.aborted) return
-					const validate = validator.listeners.wsClose[j]
+					const validate = values[j]
 
 					try {
 						await Promise.resolve(validate(ctr, () => context.endFn = true, validator.data))

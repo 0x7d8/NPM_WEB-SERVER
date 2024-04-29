@@ -1,4 +1,4 @@
-import { DataContext, EndFn, RealAny } from "@/types/internal"
+import { DataContext, EndFn, RealAny, SetItemType } from "@/types/internal"
 import { UsableMiddleware } from "@/classes/Middleware"
 import HttpRequestContext from "@/classes/request/HttpRequestContext"
 import WsOpenContext from "@/classes/request/WsOpenContext"
@@ -8,21 +8,21 @@ import { object } from "@rjweb/utils"
 import { OperationObject } from "openapi3-ts/oas31"
 
 type Listeners<Data extends Record<string, any>, Context extends Record<string, any>, Middlewares extends UsableMiddleware[] = []> = {
-	httpRequest: ((ctr: DataContext<'HttpRequest', 'POST', HttpRequestContext<Context>, Middlewares>, end: EndFn, data: Data) => RealAny)[]
+	httpRequest: Set<((ctr: DataContext<'HttpRequest', 'POST', HttpRequestContext<Context>, Middlewares>, end: EndFn, data: Data) => RealAny)>
 	
-	wsOpen: ((ctr: DataContext<'WsOpen', 'GET', WsOpenContext<'open', Context>, Middlewares>, end: EndFn, data: Data) => RealAny)[]
-	wsMessage: ((ctr: DataContext<'WsMessage', 'GET', WsMessageContext<Context>, Middlewares>, end: EndFn, data: Data) => RealAny)[]
-	wsClose: ((ctr: DataContext<'WsClose', 'GET', WsCloseContext<Context>, Middlewares>, end: EndFn, data: Data) => RealAny)[]
+	wsOpen: Set<((ctr: DataContext<'WsOpen', 'GET', WsOpenContext<'open', Context>, Middlewares>, end: EndFn, data: Data) => RealAny)>
+	wsMessage: Set<((ctr: DataContext<'WsMessage', 'GET', WsMessageContext<Context>, Middlewares>, end: EndFn, data: Data) => RealAny)>
+	wsClose: Set<((ctr: DataContext<'WsClose', 'GET', WsCloseContext<Context>, Middlewares>, end: EndFn, data: Data) => RealAny)>
 }
 
 export default class Validator<Data extends Record<string, any> = {}, Context extends Record<string, any> = {}, Middlewares extends UsableMiddleware[] = []> {
 	private openApi: OperationObject = {}
 	private openApiFn: ((data: Data) => OperationObject) | null = null
 	private listeners: Listeners<Data, Context, Middlewares> = {
-		httpRequest: [],
-		wsOpen: [],
-		wsMessage: [],
-		wsClose: []
+		httpRequest: new Set(),
+		wsOpen: new Set(),
+		wsMessage: new Set(),
+		wsClose: new Set()
 	}
 
 	/**
@@ -103,10 +103,10 @@ export default class Validator<Data extends Record<string, any> = {}, Context ex
 	 * Extend on another validator
 	 * @since 9.0.0
 	*/ public extend<V extends Validator<any, any, any>, _Data extends [any, any] = V extends Validator<infer Data, infer Context> ? [Data, Context] : [{}, {}]>(validator: V): Validator<Data & _Data[0], Context & _Data[1]> {
-		this.listeners.httpRequest.unshift(...validator.listeners.httpRequest)
-		this.listeners.wsOpen.unshift(...validator.listeners.wsOpen)
-		this.listeners.wsMessage.unshift(...validator.listeners.wsMessage)
-		this.listeners.wsClose.unshift(...validator.listeners.wsClose)
+		this.listeners.httpRequest = new Set([ ...validator.listeners.httpRequest.values(), ...this.listeners.httpRequest.values() ])
+		this.listeners.wsOpen = new Set([ ...validator.listeners.wsOpen.values(), ...this.listeners.wsOpen.values() ])
+		this.listeners.wsMessage = new Set([ ...validator.listeners.wsMessage.values(), ...this.listeners.wsMessage.values() ])
+		this.listeners.wsClose = new Set([ ...validator.listeners.wsClose.values(), ...this.listeners.wsClose.values() ])
 		this.openApi = object.deepMerge(this.openApi, validator.openApi)
 
 		const openApiFn = this.openApiFn
@@ -119,8 +119,8 @@ export default class Validator<Data extends Record<string, any> = {}, Context ex
 	/**
 	 * Add a validation step for an http event
 	 * @since 9.0.0
-	*/ public httpRequest(handler: Listeners<Data, Context, Middlewares>['httpRequest'][number]): this {
-		this.listeners.httpRequest.push(handler)
+	*/ public httpRequest(handler: SetItemType<Listeners<Data, Context, Middlewares>['httpRequest']>): this {
+		this.listeners.httpRequest.add(handler)
 
 		return this
 	}
@@ -128,8 +128,8 @@ export default class Validator<Data extends Record<string, any> = {}, Context ex
 	/**
 	 * Add a validation step for a websocket open event
 	 * @since 9.0.0
-	*/ public wsOpen(handler: Listeners<Data, Context, Middlewares>['wsOpen'][number]): this {
-		this.listeners.wsOpen.push(handler)
+	*/ public wsOpen(handler: SetItemType<Listeners<Data, Context, Middlewares>['wsOpen']>): this {
+		this.listeners.wsOpen.add(handler)
 
 		return this
 	}
@@ -137,8 +137,8 @@ export default class Validator<Data extends Record<string, any> = {}, Context ex
 	/**
 	 * Add a validation step for a websocket message event
 	 * @since 9.0.0
-	*/ public wsMessage(handler: Listeners<Data, Context, Middlewares>['wsMessage'][number]): this {
-		this.listeners.wsMessage.push(handler)
+	*/ public wsMessage(handler: SetItemType<Listeners<Data, Context, Middlewares>['wsMessage']>): this {
+		this.listeners.wsMessage.add(handler)
 
 		return this
 	}
@@ -146,8 +146,8 @@ export default class Validator<Data extends Record<string, any> = {}, Context ex
 	/**
 	 * Add a validation step for a websocket close event
 	 * @since 9.0.0
-	*/ public wsClose(handler: Listeners<Data, Context, Middlewares>['wsClose'][number]): this {
-		this.listeners.wsClose.push(handler)
+	*/ public wsClose(handler: SetItemType<Listeners<Data, Context, Middlewares>['wsClose']>): this {
+		this.listeners.wsClose.add(handler)
 
 		return this
 	}

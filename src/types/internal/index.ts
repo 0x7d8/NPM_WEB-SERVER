@@ -11,6 +11,8 @@ import { z } from "zod"
 export type RealAny = Promise<any> | any
 export type EndFn = (...args: any[]) => void
 
+export type SetItemType<S> = S extends Set<infer T> ? T : never
+
 export type UnionToIntersection<U> =
   (U extends any ? (k: U) => void : never) extends ((k: infer I) => void) ? I : never  
 	
