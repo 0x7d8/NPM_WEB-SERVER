@@ -1,5 +1,9 @@
 # Changelog
 
+## 9.2.8
+
+- Fix some ratelimit issues when loading route files
+
 ## 9.2.7
 
 - Fix OpenAPI Merging issues

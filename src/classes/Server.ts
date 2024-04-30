@@ -192,7 +192,7 @@ export default class Server<const Options extends ServerOptions, Middlewares ext
 	/**
 	 * Generate an OpenAPI Specification for the Server
 	 * @since 9.0.0
-	*/ public openAPI(name: string, version: string, server: oas31.ServerObject, contact?: oas31.ContactObject): oas31.SchemaObject {
+	*/ public openAPI(name: string, version: string, server: oas31.ServerObject, contact?: oas31.ContactObject): oas31.OpenAPIObject {
 		const builder = new oas31.OpenApiBuilder()
 			.addTitle(name)
 			.addVersion(version)

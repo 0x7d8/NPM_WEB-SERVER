@@ -189,7 +189,7 @@ export default class File<Middlewares extends UsableMiddleware[], Validators ext
 								} else {
 									const newRoute = new Route('http', route['urlMethod'], this.computePath(path.concat(route.urlData.value)), route.data)
 									newRoute.validators = route.validators
-									newRoute.ratelimit = Object.assign(this._httpRatelimit, route.ratelimit)
+									newRoute.ratelimit = route.ratelimit
 									newRoute.openApi = deepClone(object.deepMerge(deepClone(this.openApi), route.openApi))
 
 									modifiedRoutesHttp.push(newRoute)
@@ -211,7 +211,7 @@ export default class File<Middlewares extends UsableMiddleware[], Validators ext
 								} else {
 									const newRoute = new Route('ws', route['urlMethod'], this.computePath(path.concat(route.urlData.value)), route.data)
 									newRoute.validators = route.validators
-									newRoute.ratelimit = Object.assign(this._wsRatelimit, route.ratelimit)
+									newRoute.ratelimit = route.ratelimit
 									newRoute.openApi = deepClone(object.deepMerge(deepClone(this.openApi), route.openApi))
 
 									modifiedRoutesWS.push(newRoute)
@@ -264,12 +264,12 @@ export default class File<Middlewares extends UsableMiddleware[], Validators ext
 	*/ public export(): {
 		Path: new (prefix: string) => Path<Middlewares, Validators, Context>
 	} {
-		const global = this._global
+		const self = this
 
 		return {
 			Path: class FakePath extends Path<Middlewares, Validators, Context> {
 				constructor() {
-					super('/', global, undefined, undefined, [])
+					super('/', self._global, undefined, [self._httpRatelimit, self._wsRatelimit], self.promises)
 				}
 			}
 		}

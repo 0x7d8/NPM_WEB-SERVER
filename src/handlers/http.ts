@@ -118,7 +118,7 @@ import YieldedResponse from "@/classes/YieldedResponse"
 
 			executedMiddlewares = true
 		
-			if (context.route?.ratelimit && context.route.ratelimit.maxHits !== Infinity && context.route.ratelimit.timeWindow !== Infinity) {
+			if (context.route.ratelimit && context.route.ratelimit.maxHits !== Infinity && context.route.ratelimit.timeWindow !== Infinity) {
 				let data = context.global.rateLimits.get(`http+${ctr.client.ip}-${context.route.ratelimit.sortTo}`, {
 					hits: 0,
 					end: Date.now() + context.route.ratelimit.timeWindow
