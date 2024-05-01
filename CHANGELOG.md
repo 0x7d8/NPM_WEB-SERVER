@@ -1,5 +1,9 @@
 # Changelog
 
+## 9.2.9
+
+- Do not allow duplicate openapi parameters
+
 ## 9.2.8
 
 - Fix some ratelimit issues when loading route files

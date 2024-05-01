@@ -214,10 +214,26 @@ export default class Server<const Options extends ServerOptions, Middlewares ext
 			const pathItem: oas31.PathItemObject = {}
 
 			for (const [ method, route ] of Object.entries(routes[path])) {
-				pathItem[method.toLowerCase() as Lowercase<Exclude<Method, 'CONNECT'>>] = route['openApi']
+				const openAPI = route['openApi']
+				if (!Object.keys(openAPI).length) continue
+
+				const parameters = []
+				for (const parameter of openAPI.parameters ?? []) {
+					if (!('name' in parameter)) {
+						parameters.push(parameter)
+						continue
+					}
+
+					if (parameters.find((p) => 'name' in p && p.name === parameter.name && p.in === parameter.in)) continue
+
+					parameters.push(parameter)
+				}
+
+				openAPI.parameters = parameters
+				pathItem[method.toLowerCase() as Lowercase<Exclude<Method, 'CONNECT'>>] = openAPI
 			}
 
-			builder.addPath(path, pathItem)
+			if (Object.keys(pathItem).length) builder.addPath(path, pathItem)
 		}
 
 		for (const schema in this.openAPISchemas) {
