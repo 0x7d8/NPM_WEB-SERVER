@@ -135,7 +135,7 @@ export default class File<Middlewares extends UsableMiddleware[], Validators ext
 	 * @since 9.0.0
 	*/ public validate<_Validator extends UsableValidator<any>>(validator: _Validator): File<Middlewares, [...Validators, _Validator], Context, Excluded> {
 		this.validators.push(validator)
-		this.openApi = object.deepMerge(this.openApi, validator.openApi)
+		this.openApi = object.deepMerge(this.openApi, deepClone(validator.openApi))
 
 		return this as any
 	}
@@ -183,14 +183,14 @@ export default class File<Middlewares extends UsableMiddleware[], Validators ext
 							if (options.fileBasedRouting) {
 								if (route.urlData.type === 'regexp') {
 									route.urlData.prefix = this.computePath(path.concat(route.urlData.prefix)) as string
-									route.openApi = deepClone(object.deepMerge(deepClone(this.openApi), route.openApi))
+									route.openApi = object.deepMerge(deepClone(this.openApi), route.openApi)
 
 									modifiedRoutesHttp.push(route)
 								} else {
 									const newRoute = new Route('http', route['urlMethod'], this.computePath(path.concat(route.urlData.value)), route.data)
 									newRoute.validators = route.validators
 									newRoute.ratelimit = route.ratelimit
-									newRoute.openApi = deepClone(object.deepMerge(deepClone(this.openApi), route.openApi))
+									newRoute.openApi = object.deepMerge(deepClone(this.openApi), route.openApi)
 
 									modifiedRoutesHttp.push(newRoute)
 								}
@@ -205,14 +205,14 @@ export default class File<Middlewares extends UsableMiddleware[], Validators ext
 							if (options.fileBasedRouting) {
 								if (route.urlData.type === 'regexp') {
 									route.urlData.prefix = this.computePath(path.concat(route.urlData.prefix)) as string
-									route.openApi = deepClone(object.deepMerge(deepClone(this.openApi), route.openApi))
+									route.openApi = object.deepMerge(deepClone(this.openApi), route.openApi)
 
 									modifiedRoutesWS.push(route)
 								} else {
 									const newRoute = new Route('ws', route['urlMethod'], this.computePath(path.concat(route.urlData.value)), route.data)
 									newRoute.validators = route.validators
 									newRoute.ratelimit = route.ratelimit
-									newRoute.openApi = deepClone(object.deepMerge(deepClone(this.openApi), route.openApi))
+									newRoute.openApi = object.deepMerge(deepClone(this.openApi), route.openApi)
 
 									modifiedRoutesWS.push(newRoute)
 								}

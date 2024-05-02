@@ -181,7 +181,7 @@ export default class Path<Middlewares extends UsableMiddleware[], Validators ext
 	 * @since 9.0.0
 	*/ public validate<_Validator extends UsableValidator<any>>(validator: _Validator): Path<Middlewares, [...Validators, _Validator], Context, Excluded> {
 		this.validators.push(validator)
-		this.openApi = object.deepMerge(this.openApi, validator.openApi)
+		this.openApi = object.deepMerge(this.openApi, deepClone(validator.openApi))
 
 		return this as any
 	}

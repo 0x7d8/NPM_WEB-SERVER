@@ -7,6 +7,7 @@ import { UsableValidator } from "@/classes/Validator"
 import { DataContext, RateLimitConfig, RealAny, UnionToIntersection } from "@/types/internal"
 import HttpRequestContext from "@/classes/request/HttpRequestContext"
 import { OperationObject } from "openapi3-ts/oas31"
+import deepClone from "@/functions/deepClone"
 
 export default class Http<_Method extends Method, Middlewares extends UsableMiddleware[] = [], Validators extends UsableValidator[] = [], Context extends Record<string, any> = {}, Excluded extends (keyof Http<_Method>)[] = []> {
 	protected route: Route<'http'>
@@ -85,7 +86,7 @@ export default class Http<_Method extends Method, Middlewares extends UsableMidd
 	 * @since 9.0.0
 	*/ public validate<_Validator extends UsableValidator<any>>(validator: _Validator): Http<_Method, Middlewares, [...Validators, _Validator], Context, Excluded> {
 		this.route.validators.push(validator)
-		this.route.openApi = object.deepMerge(this.route.openApi, validator.openApi)
+		this.route.openApi = object.deepMerge(this.route.openApi, deepClone(validator.openApi))
 
 		return as<any>(this)
 	}

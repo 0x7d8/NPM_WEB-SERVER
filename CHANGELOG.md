@@ -1,5 +1,9 @@
 # Changelog
 
+## 9.2.10
+
+- Fix OpenAPi merging spreading up using validators
+
 ## 9.2.9
 
 - Do not allow duplicate openapi parameters
