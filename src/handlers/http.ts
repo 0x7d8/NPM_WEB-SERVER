@@ -16,6 +16,15 @@ import YieldedResponse from "@/classes/YieldedResponse"
 	if (context.global.options.version) req.header('rjweb-server', version)
 	req.header('date', new Date().toUTCString())
 
+	const internalIdentifier = parseInt(context.headers.get('rjweb-server-identifier'))
+	if (!isNaN(internalIdentifier)) {
+		if (context.global.internalRequestIdentifiers.has(internalIdentifier)) {
+			context.global.internalRequestIdentifiers.delete(internalIdentifier)
+
+			context.ip.isInternal = true
+		}
+	}
+
 	context.response.headers.set('content-type', 'text/plain')
 	context.response.headers.set('accept-ranges', 'none')
 

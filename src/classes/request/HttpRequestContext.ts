@@ -17,6 +17,7 @@ import { Duplex, Writable } from "stream"
 import parseContent from "@/functions/parseContent"
 import { createHash } from "crypto"
 import YieldedResponse from "@/classes/YieldedResponse"
+import Server from "@/classes/Server"
 
 export default class HttpRequestContext<Context extends Record<any, any> = {}> extends Base<Context> {
 	constructor(context: InternalRequestContext, protected rawContext: HttpContext, protected abort: AbortSignal) {

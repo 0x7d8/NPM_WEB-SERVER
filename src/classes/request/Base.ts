@@ -31,12 +31,14 @@ export default class Base<Context extends Record<any, any> = {}> {
 			switch (event) {
 				case "set": {
 					context.response.headers.set(key, data)
-					return
+
+					break
 				}
 
 				case "delete": {
 					context.response.headers.delete(key)
-					return
+
+					break
 				}
 
 				case "clear": {
@@ -57,13 +59,14 @@ export default class Base<Context extends Record<any, any> = {}> {
 			switch (event) {
 				case "set": {
 					context.response.cookies.set(key, data)
-					return
+
+					break
 				}
 
 				case "delete": {
 					context.response.cookies.set(key, new Cookie('remove', { expires: 0 }))
 
-					return
+					break
 				}
 
 				case "clear": {
@@ -86,6 +89,8 @@ export default class Base<Context extends Record<any, any> = {}> {
 		this.client = {
 			userAgent: context.headers.get('user-agent', ''),
 			port: context.ip.port,
+			proxied: context.ip.isProxied,
+			internal: context.ip.isInternal,
 			get ip() {
 				if (ip) return ip
 
@@ -141,13 +146,14 @@ export default class Base<Context extends Record<any, any> = {}> {
 			switch (event) {
 				case "set": {
 					this.context.response.cookies.set(key, data)
-					return
+
+					break
 				}
 
 				case "delete": {
 					this.context.response.cookies.set(key, new Cookie('remove', { expires: 0 }))
 
-					return
+					break
 				}
 
 				case "clear": {
@@ -215,9 +221,17 @@ export default class Base<Context extends Record<any, any> = {}> {
 		 * @since 3.0.0
 		*/ readonly port: number
 		/**
+		 * Whether the Client IP Address is proxied
+		 * @since 9.3.0
+		*/ readonly proxied: boolean
+		/**
+		 * Whether the Client IP Address is from an internal fetch
+		 * @since 9.3.0
+		*/ readonly internal: boolean
+		/**
 		 * The IP Address that the Client is using
 		 * 
-		 * When a valid Proxy Request is made (and proxy is enabled) will be the proper IP
+		 * When a valid Proxy Request is made (and proxy is enabled) this will be the proper IP
 		 * @since 3.0.0
 		*/ readonly ip: network.IPAddress
 	}
@@ -228,7 +242,7 @@ export default class Base<Context extends Record<any, any> = {}> {
 	*/ public readonly url: URLObject
 
 	/**
-	 * Context Variables that are available everywhere in the requests lifespan
+	 * Context Variables that are available anywhere in the requests lifespan
 	 * @since 1.2.1
 	*/ public '@': Context = {} as any
 }

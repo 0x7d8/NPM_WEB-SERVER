@@ -26,6 +26,7 @@ export default class RequestContext<MiddlewareData extends Record<any, any> = an
 
 		this.ip = {
 			isProxied: false,
+			isInternal: false,
 			value: context.clientIP(),
 			port: context.clientPort()
 		}
@@ -232,6 +233,10 @@ export default class RequestContext<MiddlewareData extends Record<any, any> = an
 		 * Whether the IP is Proxied
 		 * @since 9.0.0
 		*/ isProxied: boolean
+		/**
+		 * Whether the IP is from an internal request
+		 * @since 9.3.0
+		*/ isInternal: boolean
 		/**
 		 * The Value of the IP
 		 * @since 9.0.0

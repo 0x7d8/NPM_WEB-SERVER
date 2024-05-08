@@ -3,7 +3,7 @@ import { as, time, number } from "@rjweb/utils"
 
 export default class RateLimit<Excluded extends (keyof RateLimit)[] = []> {
 	protected data: RateLimitConfig = {
-		sortTo: number.generate(1, 10000000),
+		sortTo: number.generateCrypto(1, 10000000),
 		penalty: time(10).s(),
 		timeWindow: time(10).s(),
 		maxHits: Infinity

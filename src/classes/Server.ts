@@ -1,7 +1,7 @@
 import { BaseImplementation, Implementation } from "@/types/implementation"
 import { Method, ReverseProxyIps, ServerStatus } from "@/types/global"
 import { FullServerOptions, ServerOptions } from "@/types/structures/ServerOptions"
-import { as, object, size, time } from "@rjweb/utils"
+import { as, network, number, object, size, time } from "@rjweb/utils"
 import GlobalContext from "@/types/internal/classes/GlobalContext"
 import ContentTypes from "@/classes/router/ContentTypes"
 import { DataContext, EndFn, ErrorCallbacks, RatelimitCallbacks, RealAny } from "@/types/internal"
@@ -11,6 +11,7 @@ import Validator from "@/classes/Validator"
 import Path from "@/classes/router/Path"
 import Route from "@/classes/Route"
 import mergeClasses from "@/functions/mergeClasses"
+import parseURL from "@/functions/parseURL"
 import { oas31 } from "openapi3-ts"
 
 import httpHandler from "@/handlers/http"
@@ -111,6 +112,31 @@ export default class Server<const Options extends ServerOptions, Middlewares ext
 		} else {
 			this.global.logger.debug('  (None)')
 		}
+	}
+
+	/**
+	 * Fetch (simulate) a request to the Server
+	 * @since 9.3.0
+	*/ public async fetch(path: string | URL, request?: RequestInit): ReturnType<typeof fetch> {
+		if (this._status === 'stopped') throw new Error('Server is not listening')
+
+		const v4 = this.options.bind.includes('.')
+
+		const realUrl = new URL('http://host'.concat(parseURL(path instanceof URL ? path.pathname : path).href))
+
+		realUrl.hostname = v4
+			? this.options.bind === '0.0.0.0' ? '127.0.0.1' : this.options.bind
+			: new network.IPAddress(this.options.bind).equals(new network.IPAddress('::')) ? '::1' : this.options.bind
+		realUrl.port = this.port()?.toString() ?? '0'
+
+		const identifier = number.generateCrypto(1, 1000000)
+		this.global.internalRequestIdentifiers.add(identifier)
+
+		return fetch(realUrl.href, Object.assign(request ?? {}, {
+			headers: Object.assign(request?.headers ?? {}, {
+				'rjweb-server-identifier': identifier
+			})
+		}))
 	}
 
 	/**
@@ -330,6 +356,7 @@ export default class Server<const Options extends ServerOptions, Middlewares ext
 	 * @example
 	 * ```
 	 * import { Server } from "rjweb-server"
+import { parseURL } from ".."
 	 * 
 	 * const server = new Server(...)
 	 * 

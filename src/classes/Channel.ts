@@ -43,7 +43,7 @@ export default class Channel<Value extends Content = Content> {
 	 * @since 9.0.0
 	*/ constructor(id?: number | null, initial?: Content) {
 		this.data = initial ?? null
-		this.id = id ?? number.generate(1, 10000000)
+		this.id = id ?? number.generateCrypto(1, 10000000)
 	}
 
 	/**

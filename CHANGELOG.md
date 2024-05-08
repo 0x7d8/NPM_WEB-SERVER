@@ -1,5 +1,18 @@
 # Changelog
 
+## 9.3.0
+
+- Add `<Server>.fetch` to run internal fetch calls
+- Allow more inputs in `<ValueCollection>.import()`
+- Add `<ValueCollection>.search()`
+- Add `<ValueCollection>.json()`
+- Add `<ValueCollection>.values()`
+- Add `<ValueCollection>.keys()`
+- Add `<ValueCollection>.size()`
+- Deprecate `<ValueCollection>.objectCount`
+- Deprecate `<ValueCollection>.toArray()`
+- Deprecate `<ValueCollection>.toJSON()`
+
 ## 9.2.10
 
 - Fix OpenAPi merging spreading up using validators

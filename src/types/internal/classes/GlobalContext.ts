@@ -73,6 +73,10 @@ export default class GlobalContext {
 	 * Rate Limit Store
 	 * @since 9.0.0
 	*/ public rateLimits = new ValueCollection<`${'http' | 'ws'}+${string}-${number}`, { hits: number, end: number }>()
+	/**
+	 * Internal Request Identifiers
+	 * @since 9.3.0
+	*/ public internalRequestIdentifiers = new Set<number>()
 
 	/**
 	 * Caches for various methods
