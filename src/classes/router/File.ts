@@ -12,8 +12,8 @@ import Path from "@/classes/router/Path"
 import deepClone from "@/functions/deepClone"
 
 export default class File<Middlewares extends UsableMiddleware[], Validators extends UsableValidator[] = [], Context extends Record<string, any> = {}, Excluded extends (keyof File<Middlewares>)[] = []> {
-	protected _httpRatelimit: RateLimitConfig
-	protected _wsRatelimit: RateLimitConfig
+	protected _httpRatelimit: RateLimitConfig | null
+	protected _wsRatelimit: RateLimitConfig | null
 	protected promises: Promise<any>[]
 	protected openApi: OperationObject = {}
 	private _global: GlobalContext
@@ -36,8 +36,8 @@ export default class File<Middlewares extends UsableMiddleware[], Validators ext
 			this._httpRatelimit = ratelimits[0]
 			this._wsRatelimit = ratelimits[1]
 		} else {
-			this._httpRatelimit = new RateLimit()['data']
-			this._wsRatelimit = new RateLimit()['data']
+			this._httpRatelimit = null
+			this._wsRatelimit = null
 		}
 
 		this.promises = promises ?? []

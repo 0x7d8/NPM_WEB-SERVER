@@ -15,7 +15,7 @@ export default class Http<_Method extends Method, Middlewares extends UsableMidd
 	/**
 	 * Create a new HTTP Route Builder
 	 * @since 7.0.0
-	*/ constructor(method: _Method, path: string | RegExp, ratelimit?: RateLimitConfig) {
+	*/ constructor(method: _Method, path: string | RegExp, ratelimit?: RateLimitConfig | null) {
 		this.route = new Route('http', method, path, {})
 		if (ratelimit) this.route.ratelimit = ratelimit
 	}

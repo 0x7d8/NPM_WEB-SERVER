@@ -1,5 +1,9 @@
 # Changelog
 
+## 9.3.2
+
+- Set default ratelimits to null to prevent identifier overlapping
+
 ## 9.3.1
 
 - Allow calling `<Ratelimit>.identifier()` without arguments to generate new identifier

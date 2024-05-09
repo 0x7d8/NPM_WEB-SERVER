@@ -16,7 +16,7 @@ export default class Ws<Middlewares extends UsableMiddleware[] = [], Validators 
 	/**
 	 * Create a new HTTP Route Builder
 	 * @since 7.0.0
-	*/ constructor(path: string | RegExp, ratelimit?: RateLimitConfig) {
+	*/ constructor(path: string | RegExp, ratelimit?: RateLimitConfig | null) {
 		this.route = new Route('ws', 'GET', path, {})
 		if (ratelimit) this.route.ratelimit = ratelimit
 	}

@@ -17,8 +17,8 @@ export default class Path<Middlewares extends UsableMiddleware[], Validators ext
 	protected routesHttp: Route<'http'>[] = []
 	protected routesStatic: Route<'static'>[] = []
 	protected routesWS: Route<'ws'>[] = []
-	protected _httpRatelimit: RateLimitConfig
-	protected _wsRatelimit: RateLimitConfig
+	protected _httpRatelimit: RateLimitConfig | null
+	protected _wsRatelimit: RateLimitConfig | null
 	protected promises: Promise<any>[]
 	protected openApi: OperationObject
 	private _global: GlobalContext
@@ -33,7 +33,7 @@ export default class Path<Middlewares extends UsableMiddleware[], Validators ext
 	/**
 	 * Create a new Path
 	 * @since 6.0.0
-	*/ constructor(prefix: string, global: GlobalContext, private validators: Validators = [] as never, ratelimits?: [RateLimitConfig, RateLimitConfig], promises?: Promise<any>[], openApi?: OperationObject) {
+	*/ constructor(prefix: string, global: GlobalContext, private validators: Validators = [] as never, ratelimits?: [RateLimitConfig | null, RateLimitConfig | null], promises?: Promise<any>[], openApi?: OperationObject) {
 		this.prefix = prefix
 		this._global = global
 
@@ -41,8 +41,8 @@ export default class Path<Middlewares extends UsableMiddleware[], Validators ext
 			this._httpRatelimit = ratelimits[0]
 			this._wsRatelimit = ratelimits[1]
 		} else {
-			this._httpRatelimit = new RateLimit()['data']
-			this._wsRatelimit = new RateLimit()['data']
+			this._httpRatelimit = null
+			this._wsRatelimit = null
 		}
 
 		this.promises = promises ?? []
