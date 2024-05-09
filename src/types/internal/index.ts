@@ -21,7 +21,7 @@ export type AnyClass = new (...args: any[]) => any
 
 export type DataContext<Type extends keyof UsableMiddleware['classContexts'], HTTPMethod extends Method, Request extends object, Middlewares extends UsableMiddleware[]>
   = (Request extends HttpRequestContext ? HTTPMethod extends 'GET' ? Omit<Request, 'body' | 'rawBody' | 'rawBodyBytes' | 'bindBody'> : Request : Request)
-    & UnionToIntersection<InstanceType<ReturnType<Middlewares[number]['classContexts'][Type]>>>
+    & Omit<UnionToIntersection<InstanceType<ReturnType<Middlewares[number]['classContexts'][Type]>>>, keyof InstanceType<ClassContexts[Type]>>
 
 export type RateLimitConfig = {
   sortTo: number

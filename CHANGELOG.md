@@ -1,5 +1,9 @@
 # Changelog
 
+## 9.3.3
+
+- Fix issues when merging middleware classes with outdated properties
+
 ## 9.3.2
 
 - Set default ratelimits to null to prevent identifier overlapping

@@ -125,7 +125,7 @@ export default class HttpRequestContext<Context extends Record<any, any> = {}> e
 	 *   gender: z.union([ z.literal('male'), z.literal('female') ])
 	 * }))
 	 * 
-	 * if (!data) return ctr.status((s) => s.BAD_REQUEST).print(error.toString())
+	 * if (!data) return ctr.status(ctr.$status.BAD_REQUEST).print(error.toString())
 	 * 
 	 * ctr.print('Everything valid! 👍')
 	 * ctr.printPart(`
