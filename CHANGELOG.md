@@ -1,5 +1,9 @@
 # Changelog
 
+## 9.3.6
+
+- Reverse Cors prefer order
+
 ## 9.3.5
 
 - Remove instanceof to check for IPAddress in proxy ip validation
