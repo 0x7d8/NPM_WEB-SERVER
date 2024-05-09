@@ -1,5 +1,10 @@
 # Changelog
 
+## 9.3.5
+
+- Remove instanceof to check for IPAddress in proxy ip validation
+- Fix Cors origin issue
+
 ## 9.3.4
 
 - Properly support multiple origins in cors middleware

@@ -24,7 +24,10 @@ export default new Middleware<{
 		if (config.allowAll || config.credentials) ctr.headers.set('access-control-allow-credentials', config.allowAll ? '*' : 'true')
 		if (config.maxAge) ctr.headers.set('access-control-max-age', config.maxAge.toString())
 
-		const host = ctr.headers.get('host', '')
+		let host = ctr.headers.get('host', ctr.headers.get('origin', ''))
+		if (host.startsWith('http://')) host = host.slice(7)
+		else if (host.startsWith('https://')) host = host.slice(8)
+
 		if (!config.allowAll && config.origins?.length) {
 			for (const origin of config.origins) {
 				if (origin.includes(host)) {

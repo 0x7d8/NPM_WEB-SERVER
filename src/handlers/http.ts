@@ -74,7 +74,7 @@ import YieldedResponse from "@/classes/YieldedResponse"
 		}
 
 		if (context.ip.isProxied && context.global.options.proxy.ips.validate) {
-			if (context.global.options.proxy.ips.list.some((ip) => ip instanceof network.IPAddress ? ip.equals(ctr.client.ip) : ip.includes(ctr.client.ip))) {
+			if (context.global.options.proxy.ips.list.some((ip) => 'equals' in ip ? ip.equals(ctr.client.ip) : ip.includes(ctr.client.ip))) {
 				if (context.global.options.proxy.ips.mode === 'blacklist') {
 					if (context.global.options.proxy.force) {
 						await req
