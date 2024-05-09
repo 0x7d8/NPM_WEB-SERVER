@@ -1,5 +1,10 @@
 # Changelog
 
+## 9.3.4
+
+- Properly support multiple origins in cors middleware
+- Add `<HttpRequestContext>.vary()` to easily modify vary header
+
 ## 9.3.3
 
 - Fix issues when merging middleware classes with outdated properties

@@ -307,6 +307,24 @@ export default class HttpRequestContext<Context extends Record<any, any> = {}> e
 	}
 
 	/**
+	 * Add a Header the response depended on (vary header)
+	 * 
+	 * This will add a header to the response that tells the client that the response
+	 * is dependent on the value of the header, this is useful if you want to cache
+	 * responses that are dependent on the value of a header.
+	 * @example
+	 * ```
+	 * ctr.vary('origin').print('Hello World!')
+	 * ```
+	 * @since 9.3.4
+	 * @see https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Vary
+	*/ public vary(header: string): this {
+		this.context.vary.add(header)
+
+		return this
+	}
+
+	/**
 	 * The Request Status to Send
 	 * 
 	 * This will set the status of the request that the client will recieve, by default

@@ -42,5 +42,7 @@ import toString from "@/functions/toString"
 		rawContext.header('set-cookie', cookieString)
 	}
 
+	if (context.vary.size) rawContext.header('vary', Array.from(context.vary).join(', '))
+
 	return true
 }

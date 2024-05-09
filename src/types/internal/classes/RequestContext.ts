@@ -65,6 +65,10 @@ export default class RequestContext<MiddlewareData extends Record<any, any> = an
 	 * @since 9.0.0
 	*/ public type: 'http' | 'ws'
 	/**
+	 * What headers affected the response (vary)
+	 * @since 9.3.4
+	*/ public vary: Set<string> = new Set()
+	/**
 	 * Whether the EndFn was called
 	 * @since 9.0.0
 	*/ public endFn = false
