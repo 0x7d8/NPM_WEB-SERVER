@@ -128,7 +128,7 @@ import YieldedResponse from "@/classes/YieldedResponse"
 			executedMiddlewares = true
 		
 			if (context.route.ratelimit && context.route.ratelimit.maxHits !== Infinity && context.route.ratelimit.timeWindow !== Infinity) {
-				let data = context.global.rateLimits.get(`http+${ctr.client.ip}-${context.route.ratelimit.sortTo}`, {
+				let data = context.global.rateLimits.get(`http+${ctr.client.ip.long()}-${context.route.ratelimit.sortTo}`, {
 					hits: 0,
 					end: Date.now() + context.route.ratelimit.timeWindow
 				})
@@ -149,7 +149,7 @@ import YieldedResponse from "@/classes/YieldedResponse"
 						context.response.content = context.global.cache.arrayBufferTexts.rate_limit_exceeded
 					}
 				} else if (data.end < Date.now()) {
-					context.global.rateLimits.delete(`http+${ctr.client.ip}-${context.route.ratelimit.sortTo}`)
+					context.global.rateLimits.delete(`http+${ctr.client.ip.long()}-${context.route.ratelimit.sortTo}`)
 		
 					data = {
 						hits: 0,
@@ -162,7 +162,7 @@ import YieldedResponse from "@/classes/YieldedResponse"
 				context.response.headers.set('x-ratelimit-reset', Math.floor(data.end / 1000).toString())
 				context.response.headers.set('x-ratelimit-policy', `${context.route.ratelimit.maxHits};w=${Math.floor(context.route.ratelimit.timeWindow / 1000)}`)
 		
-				context.global.rateLimits.set(`http+${ctr.client.ip}-${context.route.ratelimit.sortTo}`, {
+				context.global.rateLimits.set(`http+${ctr.client.ip.long()}-${context.route.ratelimit.sortTo}`, {
 					...data,
 					hits: data.hits + 1
 				})

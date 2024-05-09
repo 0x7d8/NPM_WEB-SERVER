@@ -64,7 +64,7 @@ export default class Base<Context extends Record<any, any> = {}> {
 				}
 
 				case "delete": {
-					context.response.cookies.set(key, new Cookie('remove', { expires: 0 }))
+					context.response.cookies.set(key, new Cookie('remove', { expires: 1 }))
 
 					break
 				}
@@ -73,7 +73,7 @@ export default class Base<Context extends Record<any, any> = {}> {
 					let keys = 0
 					for (const [ cKey ] of this.cookies) {
 						if (!key.includes(cKey)) {
-							context.response.cookies.set(cKey, new Cookie('remove', { expires: 0 }))
+							context.response.cookies.set(cKey, new Cookie('remove', { expires: 1 }))
 
 							keys++
 						}

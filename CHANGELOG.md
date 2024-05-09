@@ -1,5 +1,11 @@
 # Changelog
 
+## 9.3.1
+
+- Allow calling `<Ratelimit>.identifier()` without arguments to generate new identifier
+- Fix some jsdocs
+- Fix broken ratelimit ip addresses
+
 ## 9.3.0
 
 - Add `<Server>.fetch` to run internal fetch calls

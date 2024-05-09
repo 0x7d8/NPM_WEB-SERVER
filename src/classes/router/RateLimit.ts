@@ -15,11 +15,11 @@ export default class RateLimit<Excluded extends (keyof RateLimit)[] = []> {
 	 * This is useful for when you want to make two code seperate rate limit rules act like one, just assign them the
 	 * same Identifier and they are interlinked. be wary, this *might* cause issues if the rate limits arent the same
 	 * rules.
-	 * @default number.generate(1, 10000000)
+	 * @default number.generateCrypto(1, 10000000)
 	 * @warn ONLY USE IF YOU KNOW WHAT YOU ARE DOING
 	 * @since 8.7.2
-	*/ public identifier(identifier: number): Omit<RateLimit<[...Excluded, 'identifier']>, Excluded[number] | 'identifier'> {
-		this.data.sortTo = identifier
+	*/ public identifier(identifier?: number): Omit<RateLimit<[...Excluded, 'identifier']>, Excluded[number] | 'identifier'> {
+		this.data.sortTo = identifier ?? number.generateCrypto(1, 10000000)
 
 		return as<any>(this)
 	}

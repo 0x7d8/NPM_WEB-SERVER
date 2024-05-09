@@ -356,7 +356,6 @@ export default class Server<const Options extends ServerOptions, Middlewares ext
 	 * @example
 	 * ```
 	 * import { Server } from "rjweb-server"
-import { parseURL } from ".."
 	 * 
 	 * const server = new Server(...)
 	 * 

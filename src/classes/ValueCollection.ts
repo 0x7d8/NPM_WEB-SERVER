@@ -135,6 +135,19 @@ export class BaseCollection<Key extends PropertyKey = PropertyKey, Value = any> 
 	}
 
 	/**
+	 * Get the Entries of this Collection
+	 * @since 6.0.3
+	*/ public entries(excluded: Key[] = []): [ Key, Value ][] {
+		const entries: [ Key, Value ][] = []
+		for (const [ key, value ] of this.data) {
+			if (excluded.includes(key)) continue
+			entries.push([ key, value ])
+		}
+
+		return entries
+	}
+
+	/**
 	 * Loop over all Keys
 	 * @since 2.5.0
 	*/ public forEach(callback: (key: Key, value: Value, index: number) => RealAny, excluded: Key[] = []): this {
@@ -155,21 +168,6 @@ export class BaseCollection<Key extends PropertyKey = PropertyKey, Value = any> 
 	 * @since 7.7.0
 	*/ public [Symbol.iterator](): Iterator<[ Key, Value ]> {
 		return this.data[Symbol.iterator]()
-	}
-
-	/**
-	 * Get the Entries of this Collection
-	 * @since 6.0.3
-	*/ public entries(excluded: Key[] = []): [Key, Value][] {
-		const entries: [Key, Value][] = []
-		
-		this.data.forEach((value, key) => {
-			if (excluded.includes(key)) return
-
-			entries.push([ key, value ])
-		})
-
-		return entries
 	}
 
 	/**
