@@ -1,5 +1,9 @@
 # Changelog
 
+## 9.4.1
+
+- Properly allow all headers in cors
+
 ## 9.4.0
 
 - Make sure middlewares also run on 404

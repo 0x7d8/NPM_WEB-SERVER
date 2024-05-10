@@ -24,10 +24,12 @@ export default new Middleware<{
 		if (config.allowAll || config.credentials) ctr.headers.set('access-control-allow-credentials', config.allowAll ? '*' : 'true')
 		if (config.maxAge) ctr.headers.set('access-control-max-age', config.maxAge.toString())
 
+		ctr.headers.set('access-control-allow-headers', ctr.headers.get('access-control-request-headers', '*'))
+
 		const host = ctr.headers.get('origin', ctr.headers.get('host', ''))
 		if (!config.allowAll && config.origins?.length) {
 			for (const origin of config.origins) {
-				if (host.includes(origin)) {
+				if (origin.includes(host)) {
 					ctr.headers.set('access-control-allow-origin', origin)
 					break
 				}
@@ -35,6 +37,8 @@ export default new Middleware<{
 		}
 
 		if (ctr.url.method === 'OPTIONS' && !context.route) {
+			ctr.headers.delete('content-type')
+
 			return end(ctr.status(ctr.$status.NO_CONTENT))
 		}
 	})
