@@ -92,6 +92,21 @@ import YieldedResponse from "@/classes/YieldedResponse"
 		}
 	}
 
+	for (let i = 0; i < middlewares.length; i++) {
+		const middleware = middlewares[i]
+
+		if (req.aborted().aborted) return context.abort()
+		if (middleware.callbacks.httpRequest) {
+			try {
+				await Promise.resolve(middleware.callbacks.httpRequest(middleware.config, server, context, ctr, () => context.endFn = true))
+			} catch (err) {
+				context.handleError(err, `http.handle.middleware.${i}.httpRequest`)
+			}
+
+			if (context.endFn) break
+		}
+	}
+
 	if (context.global.httpHandler) {
 		try {
 			await Promise.resolve(context.global.httpHandler(ctr, () => context.endFn = true))
@@ -103,29 +118,11 @@ import YieldedResponse from "@/classes/YieldedResponse"
 	}
 
 	const split = context.url.path.split('/')
-	let executedMiddlewares = false,
-		ranBody = false
+	let ranBody = false
 
 	for (const route of context.global.routes[context.type]) {
 		if (route.matches(context.url.method, context.params, context.url.path, split)) {
 			context.route = route
-
-			if (!executedMiddlewares) for (let i = 0; i < middlewares.length; i++) {
-				const middleware = middlewares[i]
-		
-				if (req.aborted().aborted) return context.abort()
-				if (middleware.callbacks.httpRequest) {
-					try {
-						await Promise.resolve(middleware.callbacks.httpRequest(middleware.config, server, context, ctr, () => context.endFn = true))
-					} catch (err) {
-						context.handleError(err, `http.handle.middleware.${i}.httpRequest`)
-					}
-		
-					if (context.endFn) break
-				}
-			}
-
-			executedMiddlewares = true
 		
 			if (context.route.ratelimit && context.route.ratelimit.maxHits !== Infinity && context.route.ratelimit.timeWindow !== Infinity) {
 				let data = context.global.rateLimits.get(`http+${ctr.client.ip.long()}-${context.route.ratelimit.sortTo}`, {
@@ -353,7 +350,7 @@ import YieldedResponse from "@/classes/YieldedResponse"
 		}
 	}
 
-	if (!context.route) {
+	if (!context.route && !context.endFn) {
 		if (context.global.notFoundHandler) {
 			try {
 				await Promise.resolve(context.global.notFoundHandler(ctr))

@@ -195,7 +195,12 @@ export default class File<Middlewares extends UsableMiddleware[], Validators ext
 									modifiedRoutesHttp.push(newRoute)
 								}
 							} else {
-								modifiedRoutesHttp.push(route)
+								const newRoute = new Route('http', route['urlMethod'], this.computePath(route.urlData.value), route.data)
+								newRoute.validators = route.validators
+								newRoute.ratelimit = route.ratelimit
+								newRoute.openApi = object.deepMerge(deepClone(this.openApi), route.openApi)
+
+								modifiedRoutesHttp.push(newRoute)
 							}
 						}
 
@@ -217,7 +222,12 @@ export default class File<Middlewares extends UsableMiddleware[], Validators ext
 									modifiedRoutesWS.push(newRoute)
 								}
 							} else {
-								modifiedRoutesWS.push(route)
+								const newRoute = new Route('ws', route['urlMethod'], this.computePath(route.urlData.value), route.data)
+								newRoute.validators = route.validators
+								newRoute.ratelimit = route.ratelimit
+								newRoute.openApi = object.deepMerge(deepClone(this.openApi), route.openApi)
+
+								modifiedRoutesWS.push(newRoute)
 							}
 						}
 
@@ -237,7 +247,11 @@ export default class File<Middlewares extends UsableMiddleware[], Validators ext
 									modifiedRoutesStatic.push(newRoute)
 								}
 							} else {
-								modifiedRoutesStatic.push(route)
+								const newRoute = new Route('static', route['urlMethod'], this.computePath(route.urlData.value), route.data)
+								newRoute.validators = route.validators
+								newRoute.ratelimit = route.ratelimit
+
+								modifiedRoutesStatic.push(newRoute)
 							}
 						}
 

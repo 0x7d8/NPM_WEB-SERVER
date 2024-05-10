@@ -1,5 +1,11 @@
 # Changelog
 
+## 9.4.0
+
+- Make sure middlewares also run on 404
+- Add `<RequestContext>.findRoute()`
+- Fix Cors Middleware issues
+
 ## 9.3.6
 
 - Reverse Cors prefer order

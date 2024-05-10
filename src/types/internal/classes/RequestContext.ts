@@ -7,7 +7,8 @@ import URLObject from "@/classes/URLObject"
 import ValueCollection from "@/classes/ValueCollection"
 import YieldedResponse from "@/classes/YieldedResponse"
 import HttpRequestContext from "@/classes/request/HttpRequestContext"
-import { Content, ParsedBody } from "@/types/global"
+import parseURL from "@/functions/parseURL"
+import { Content, Method, ParsedBody } from "@/types/global"
 import { HttpContext } from "@/types/implementation/contexts/http"
 import GlobalContext from "@/types/internal/classes/GlobalContext"
 
@@ -109,6 +110,21 @@ export default class RequestContext<MiddlewareData extends Record<any, any> = an
 		this.error = new RuntimeError(cause, error)
 
 		return this.error
+	}
+
+	/**
+	 * Get the Route that matches the input
+	 * @since 9.4.0
+	*/ public findRoute(method: Method, path: string): Route<'http'> | Route<'ws'> | null {
+		const split = parseURL(path).path.split('/')
+
+		for (const route of this.global.routes[this.type]) {
+			if (route.matches(method, this.params, path, split)) {
+				return route
+			}
+		}
+
+		return null
 	}
 
 	/**
