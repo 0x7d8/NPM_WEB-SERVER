@@ -1,5 +1,14 @@
 # Changelog
 
+## 9.5.0
+
+- Add `options.methods.head`
+- Add `options.methods.trace`
+- Handle `HEAD` Requests automatically unless overridden
+- Handle `TRACE` Requests automatically if enabled
+- Add `<HttpRequestContext>.client.origin`
+- Add `<HttpRequestContext>.client.referrer`
+
 ## 9.4.1
 
 - Properly allow all headers in cors

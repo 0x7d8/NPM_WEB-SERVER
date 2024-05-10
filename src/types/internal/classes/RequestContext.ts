@@ -119,7 +119,7 @@ export default class RequestContext<MiddlewareData extends Record<any, any> = an
 		const split = parseURL(path).path.split('/')
 
 		for (const route of this.global.routes[this.type]) {
-			if (route.matches(method, this.params, path, split)) {
+			if (route.matches(method, null, path, split) || (this.global.options.methods.head && route.matches('GET', null, this.url.path, split))) {
 				return route
 			}
 		}

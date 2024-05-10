@@ -8,6 +8,7 @@ import { network } from "@rjweb/utils"
 import { fileExists } from "@/functions/fileExists"
 import { UsableMiddleware } from "@/classes/Middleware"
 import YieldedResponse from "@/classes/YieldedResponse"
+import toArrayBuffer from "@/functions/toArrayBuffer"
 
 /**
  * Handler for HTTP Requests
@@ -15,6 +16,20 @@ import YieldedResponse from "@/classes/YieldedResponse"
 */ export default async function handle(context: RequestContext, req: HttpContext, server: Server<any, any, any>, middlewares: UsableMiddleware[], customContext: Record<string, any>) {
 	if (context.global.options.version) req.header('rjweb-server', version)
 	req.header('date', new Date().toUTCString())
+
+	if (context.url.method === 'TRACE' && context.global.options.methods.trace) {
+		let data = `HTTP/1.1 ${context.url.href}`
+
+		for (const [ key, value ] of context.headers) {
+			data += `${key}: ${value}\r\n`
+		}
+
+		await req
+			.status(200, 'OK')
+			.write(toArrayBuffer(data))
+
+		return
+	}
 
 	const internalIdentifier = parseInt(context.headers.get('rjweb-server-identifier'))
 	if (!isNaN(internalIdentifier)) {
@@ -121,7 +136,7 @@ import YieldedResponse from "@/classes/YieldedResponse"
 	let ranBody = false
 
 	for (const route of context.global.routes[context.type]) {
-		if (route.matches(context.url.method, context.params, context.url.path, split)) {
+		if (route.matches(context.url.method, context.params, context.url.path, split) || (context.global.options.methods.head && route.matches('GET', context.params, context.url.path, split))) {
 			context.route = route
 		
 			if (context.route.ratelimit && context.route.ratelimit.maxHits !== Infinity && context.route.ratelimit.timeWindow !== Infinity) {
@@ -278,7 +293,7 @@ import YieldedResponse from "@/classes/YieldedResponse"
 		}
 	}
 
-	if (!context.endFn && !context.route && context.url.method === 'GET') {
+	if (!context.endFn && !context.route && (context.url.method === 'GET' || (context.global.options.methods.head && context.url.method === 'HEAD'))) {
 		const cached = context.global.cache.staticFiles.get(context.url.path)
 
 		if (cached) {
@@ -382,18 +397,19 @@ import YieldedResponse from "@/classes/YieldedResponse"
 		}
 
 		const content = await parseContent(context.response.content, context.response.prettify, context.global.logger)
-		
+
 		if (req.aborted().aborted) return context.abort()
 
 		for (const [ key, value ] of Object.entries(content.headers)) {
 			context.response.headers.set(key, value)
 		}
 
+		req.compress(getCompressMethod(true, context.headers.get('accept-encoding', ''), content.content.byteLength, context.ip.isProxied, context.global))
+
 		const continueWrites = await writeHeaders(content.content, context, req)
 		if (!continueWrites) return
 
 		await req
-			.compress(getCompressMethod(true, context.headers.get('accept-encoding', ''), content.content.byteLength, context.ip.isProxied, context.global))
 			.status(context.response.status, context.response.statusText || STATUS_CODES[context.response.status] || 'Unknown')
 			.write(content.content)
 	}

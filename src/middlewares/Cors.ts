@@ -26,10 +26,9 @@ export default new Middleware<{
 
 		ctr.headers.set('access-control-allow-headers', ctr.headers.get('access-control-request-headers', '*'))
 
-		const host = ctr.headers.get('origin', ctr.headers.get('host', ''))
 		if (!config.allowAll && config.origins?.length) {
 			for (const origin of config.origins) {
-				if (origin.includes(host)) {
+				if (origin.includes(ctr.client.origin)) {
 					ctr.headers.set('access-control-allow-origin', origin)
 					break
 				}

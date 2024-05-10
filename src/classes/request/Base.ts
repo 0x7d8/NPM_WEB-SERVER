@@ -84,13 +84,19 @@ export default class Base<Context extends Record<any, any> = {}> {
 			}
 		}
 
+		let origin = context.headers.get('origin', context.headers.get('host', '')),
+			ip: network.IPAddress | null = null
 
-		let ip: network.IPAddress | null = null
+		if (origin.startsWith('https://')) origin = origin.slice(8)
+		else if (origin.startsWith('http://')) origin = origin.slice(7)
+
 		this.client = {
 			userAgent: context.headers.get('user-agent', ''),
 			port: context.ip.port,
 			proxied: context.ip.isProxied,
 			internal: context.ip.isInternal,
+			origin,
+			referrer: context.headers.get('referrer', context.headers.get('referer', '')),
 			get ip() {
 				if (ip) return ip
 
@@ -106,10 +112,10 @@ export default class Base<Context extends Record<any, any> = {}> {
 	 * A Collection of all Headers
 	 * @example
 	 * ```
-	 * if (ctr.headers.has('Authorization')) console.log('Authorization Header is present')
+	 * if (ctr.headers.has('authorization')) console.log('Authorization Header is present')
 	 * 
-	 * console.log(ctr.headers.get('Authorization')) // Will print undefined if not present
-	 * console.log(ctr.headers.get('Authorization', 'hello')) // Will print 'hello' if not present
+	 * console.log(ctr.headers.get('authorization')) // Will print undefined if not present
+	 * console.log(ctr.headers.get('authorization', 'hello')) // Will print 'hello' if not present
 	 * ```
 	 * @since 2.0.0
 	*/ public readonly headers: ValueCollection<string, string, Content>
@@ -228,6 +234,16 @@ export default class Base<Context extends Record<any, any> = {}> {
 		 * Whether the Client IP Address is from an internal fetch
 		 * @since 9.3.0
 		*/ readonly internal: boolean
+		/**
+		 * The Origin of the Clients Request
+		 * @since 9.5.0
+		 * @example localhost:8000
+		*/ readonly origin: string
+		/**
+		 * The Referrer of the Clients Request
+		 * @since 9.5.0
+		 * @example https://localhost:8000/me
+		*/ readonly referrer: string
 		/**
 		 * The IP Address that the Client is using
 		 * 

@@ -17,7 +17,7 @@ import { Duplex, Writable } from "stream"
 import parseContent from "@/functions/parseContent"
 import { createHash } from "crypto"
 import YieldedResponse from "@/classes/YieldedResponse"
-import Server from "@/classes/Server"
+import contentDisposition from "content-disposition"
 
 export default class HttpRequestContext<Context extends Record<any, any> = {}> extends Base<Context> {
 	constructor(context: InternalRequestContext, protected rawContext: HttpContext, protected abort: AbortSignal) {
@@ -314,12 +314,20 @@ export default class HttpRequestContext<Context extends Record<any, any> = {}> e
 	 * responses that are dependent on the value of a header.
 	 * @example
 	 * ```
-	 * ctr.vary('origin').print('Hello World!')
+	 * switch (ctr.client.origin) {
+	 *   case "localhost": {
+	 *     return ctr.vary('origin').print('Hi, ur cool')
+	 *   }
+	 * 
+	 *   default: {
+	 *     return ctr.vary('origin').print('You are gay.')
+	 *   }
+	 * }
 	 * ```
 	 * @since 9.3.4
 	 * @see https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Vary
 	*/ public vary(header: string): this {
-		this.context.vary.add(header)
+		this.context.vary.add(header.toLowerCase())
 
 		return this
 	}
@@ -460,10 +468,12 @@ export default class HttpRequestContext<Context extends Record<any, any> = {}> e
 		stream.pause()
 
 		this.context.setExecuteSelf(() => new Promise(async(resolve) => {
-			await writeHeaders(null, this.context, this.rawContext)
+			this.rawContext.compress(getCompressMethod(true, this.headers.get('accept-encoding', ''), 0, this.context.ip.isProxied, this.context.global))
+
+			const continueWrites = await writeHeaders(null, this.context, this.rawContext)
+			if (!continueWrites) return resolve(false)
 
 			this.rawContext
-				.compress(getCompressMethod(true, this.headers.get('accept-encoding', ''), 0, this.context.ip.isProxied, this.context.global))
 				.status(this.context.response.status, this.context.response.statusText || STATUS_CODES[this.context.response.status] || 'Unknown')
 				.write(stream)
 
@@ -547,8 +557,10 @@ export default class HttpRequestContext<Context extends Record<any, any> = {}> e
 				if (!fileStat.isFile() && !fileStat.isFIFO()) throw new Error('Not a File')
 
 				this.headers.set('content-length', fileStat.size.toString())
-				if (!this.headers.has('content-disposition')) {
-					this.headers.set('content-disposition', `${options.download ?? this.headers.get('content-type') === 'application/octet-stream' ? 'attachment' : 'inline'}; filename="${options.name ?? path.basename(file)}"`)
+				if (!this.context.response.headers.has('content-disposition')) {
+					this.headers.set('content-disposition', contentDisposition(options.name ?? path.basename(file), {
+						type: options.download ?? this.context.response.headers.get('content-type') === 'application/octet-stream' ? 'attachment' : 'inline'
+					}))
 				}
 			} catch (err) {
 				this.context.handleError(err, 'printFile.fs.stat')
@@ -600,11 +612,12 @@ export default class HttpRequestContext<Context extends Record<any, any> = {}> e
 				}
 			}
 
+			this.rawContext.compress(getCompressMethod(compress, this.headers.get('accept-encoding', ''), fileStat.size, this.context.ip.isProxied, this.global))
+
 			const continueWrites = await writeHeaders(null, this.context, this.rawContext)
 			if (!continueWrites) return resolve(false)
 
 			this.rawContext
-				.compress(getCompressMethod(compress, this.headers.get('accept-encoding', ''), fileStat.size, this.context.ip.isProxied, this.global))
 				.status(this.context.response.status, this.context.response.statusText || STATUS_CODES[this.context.response.status] || 'Unknown')
 				.writeFile(file, start, end)
 

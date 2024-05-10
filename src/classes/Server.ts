@@ -58,6 +58,9 @@ export const defaultOptions: FullServerOptions = {
 			username: 'proxy',
 			password: 'proxy'
 		}
+	}, methods: {
+		head: true,
+		trace: false
 	}
 }
 

@@ -168,6 +168,22 @@ export type ServerOptions = {
 			*/ password?: string
 		}
 	}
+
+	/**
+	 * The HTTP Methods that should automatically be handled for you
+	 * @since 9.5.0
+	*/ methods?: {
+		/**
+		 * Whether to automatically handle `HEAD` Requests
+		 * @default true
+		 * @since 9.5.0
+		*/ head?: boolean
+		/**
+		 * Whether to automatically handle `TRACE` Requests
+		 * @default false
+		 * @since 9.5.0
+		*/ trace?: boolean
+	}
 }
 
 export type FullServerOptions = DeepRequired<ServerOptions>

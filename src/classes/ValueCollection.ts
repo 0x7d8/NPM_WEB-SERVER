@@ -266,7 +266,7 @@ export class BaseCollection<Key extends PropertyKey = PropertyKey, Value = any> 
 	/**
 	 * Import another Value Collection into this one
 	 * @since 9.0.0
-	*/ public import(data: ValueCollection<Key, SetValue, any> | Map<Key, SetValue> | IterableIterator<[Key, SetValue]>): this {
+	*/ public import(data: ValueCollection<Key, SetValue, any> | Map<Key, SetValue> | IterableIterator<[Key, SetValue]> | [Key, SetValue][]): this {
 		if (!this.allowModify) return this
 
 		for (const [ key, value ] of data) {

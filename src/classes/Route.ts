@@ -110,7 +110,7 @@ export default class Route<Type extends RequestType> {
 	 * Test the Path against the Request Path
 	 * @warn NOT FOR STATIC ROUTES
 	 * @since 9.0.0
-	*/ public matches(method: Method, collection: ValueCollection<string, string>, requestPath: string, requestPathSplit: string[]): boolean {
+	*/ public matches(method: Method, collection: ValueCollection<string, string> | null, requestPath: string, requestPathSplit: string[]): boolean {
 		if (this.urlMethod !== method) return false
 		if (this.urlData.type === 'normal' && this.urlData.segments.length !== requestPathSplit.length) return false
 		if (this.urlData.type === 'regexp' && !this.urlData.value.test(parseURL(requestPath.slice(this.urlData.prefix.length)).path)) return false
@@ -148,7 +148,7 @@ export default class Route<Type extends RequestType> {
 			} else break
 		}
 
-		if (found) Object.entries(pathParams).forEach(([ key, value ]) => collection.set(key, value))
+		if (found && collection) collection.import(Object.entries(pathParams))
 
 		return found
 	}

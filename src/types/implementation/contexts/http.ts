@@ -32,7 +32,6 @@ export abstract class HttpContext {
 		if (this.compression) {
 			if (chunked) this.header('transfer-encoding', 'chunked')
 			this.header('content-encoding', this.compression === 'brotli' ? 'br' : this.compression)
-			this.header('vary', 'Accept-Encoding')
 		}
 
 		return this
