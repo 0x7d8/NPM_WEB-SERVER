@@ -1,5 +1,9 @@
 # Changelog
 
+## 9.5.1
+
+- Fix `HEAD` Support breaking some route paths
+
 ## 9.5.0
 
 - Add `options.methods.head`

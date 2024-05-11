@@ -135,10 +135,15 @@ import toArrayBuffer from "@/functions/toArrayBuffer"
 	const split = context.url.path.split('/')
 	let ranBody = false
 
-	for (const route of context.global.routes[context.type]) {
-		if (route.matches(context.url.method, context.params, context.url.path, split) || (context.global.options.methods.head && route.matches('GET', context.params, context.url.path, split))) {
-			context.route = route
-		
+	const headRoute = context.url.method === 'HEAD' ? context.findRoute('GET', context.url.path) : null,
+		routes = context.global.routes[context.type]
+
+	for (let i = 0; i < routes.length + 1; i++) {
+		const route = routes[i]
+
+		if (route?.matches(context.url.method, context.params, context.url.path, split) || (i === routes.length && headRoute)) {
+			context.route = route ?? headRoute
+
 			if (context.route.ratelimit && context.route.ratelimit.maxHits !== Infinity && context.route.ratelimit.timeWindow !== Infinity) {
 				let data = context.global.rateLimits.get(`http+${ctr.client.ip.long()}-${context.route.ratelimit.sortTo}`, {
 					hits: 0,

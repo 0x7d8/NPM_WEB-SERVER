@@ -2,7 +2,7 @@ import { FullServerOptions } from "@/types/structures/ServerOptions"
 import { HandleRecord } from "@/types/implementation/handle"
 
 export abstract class Implementation {
-	protected options: FullServerOptions
+	public readonly options: FullServerOptions
 
 	constructor(options: FullServerOptions) {
 		this.options = options
@@ -18,4 +18,4 @@ export abstract class Implementation {
 	public abstract wsPublish(type: 'text' | 'binary', id: number, data: ArrayBuffer, compressed: boolean): void
 }
 
-export type BaseImplementation = new(options: FullServerOptions) => Implementation
+export type BaseImplementation = new(options: any) => Implementation
