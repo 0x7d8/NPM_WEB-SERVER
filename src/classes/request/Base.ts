@@ -93,8 +93,8 @@ export default class Base<Context extends Record<any, any> = {}> {
 		this.client = {
 			userAgent: context.headers.get('user-agent', ''),
 			port: context.ip.port,
-			proxied: context.ip.isProxied,
-			internal: context.ip.isInternal,
+			get proxied() { return context.ip.isProxied },
+			get internal() { return context.ip.isInternal },
 			origin,
 			referrer: context.headers.get('referrer', context.headers.get('referer', '')),
 			get ip() {

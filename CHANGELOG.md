@@ -1,5 +1,10 @@
 # Changelog
 
+## 9.5.3
+
+- Fix `<HttpRequestContext>.client.proxied` not being updated
+- Fix `<HttpRequestContext>.client.internal` not being updated
+
 ## 9.5.2
 
 - Add back `<WsMessageContext>.getRateLimit`
