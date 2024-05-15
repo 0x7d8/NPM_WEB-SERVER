@@ -1,6 +1,6 @@
 {
   "name": "rjweb-server",
-  "version": "9.5.1",
+  "version": "9.5.2",
   "description": "Easy and Robust Way to create a Web Server with Many Easy-to-use Features in NodeJS",
   "main": "./lib/cjs/index.js",
   "module": "./lib/esm/index.js",
@@ -47,7 +47,7 @@
   "devDependencies": {
     "@types/content-disposition": "^0.5.8",
     "@types/inquirer": "^9.0.7",
-    "@types/node": "^20.12.11",
+    "@types/node": "^20.12.12",
     "@types/yargs": "^17.0.32",
     "rjweb-server": "link:",
     "tsc-progress": "^1.0.4",
@@ -58,9 +58,9 @@
     "typescript-transform-paths": "^3.4.7"
   },
   "dependencies": {
-    "@rjweb/utils": "^1.12.13",
+    "@rjweb/utils": "^1.12.14",
     "content-disposition": "^0.5.4",
-    "inquirer": "^9.2.20",
+    "inquirer": "^9.2.21",
     "openapi3-ts": "^4.3.1",
     "yargs": "^17.7.2",
     "zod": "^3.23.8"

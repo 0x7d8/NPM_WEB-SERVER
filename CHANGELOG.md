@@ -1,5 +1,11 @@
 # Changelog
 
+## 9.5.2
+
+- Add back `<WsMessageContext>.getRateLimit`
+- Add back `<WsMessageContext>.clearRateLimit`
+- Add back `<WsMessageContext>.skipRateLimit`
+
 ## 9.5.1
 
 - Fix `HEAD` Support breaking some route paths

@@ -1,7 +1,7 @@
 import InternalRequestContext from "@/types/internal/classes/RequestContext"
 import { WsContext } from "@/types/implementation/contexts/ws"
 import WsOpenContext from "@/classes/request/WsOpenContext"
-import { ParsedBody } from "@/types/global"
+import { ParsedBody, RatelimitInfos } from "@/types/global"
 
 export default class WsMessageContext<Context extends Record<any, any> = {}> extends WsOpenContext<'message', Context> {
 	constructor(context: InternalRequestContext, rawContext: WsContext, abort: AbortSignal) {
@@ -47,4 +47,66 @@ export default class WsMessageContext<Context extends Record<any, any> = {}> ext
 	*/ public rawMessageBytes(): Buffer {
 		return this.context.body.raw!
 	}
+
+	/**
+	 * Skips counting the request to the Client IPs Rate limit (if there is one)
+	 * 
+	 * When a specific IP makes sends a message to an endpoint under a ratelimit, the maxhits will be
+	 * increased instantly to prevent bypassing the rate limit by spamming messages faster than the host can
+	 * handle. When this function is called, the server removes the set hit again.
+	 * @since 8.6.0
+	*/ public skipRateLimit(): this {
+		if (!this.context.route || !this.context.route.ratelimit || this.context.route.ratelimit.maxHits === Infinity) return this
+
+		const data = this.context.global.rateLimits.get(`ws+${this.client.ip.usual()}-${this.context.route.ratelimit.sortTo}`, {
+			hits: 1,
+			end: Date.now() + this.context.route.ratelimit.timeWindow
+		})
+
+		this.context.global.rateLimits.set(`ws+${this.client.ip.usual()}-${this.context.route.ratelimit.sortTo}`, {
+			...data,
+			hits: data.hits - 1
+		})
+
+		return this
+	}
+
+	/**
+	 * Clear the active Ratelimit of the Client
+	 * 
+	 * This Clears the currently active Ratelimit (on this socket) of the Client, remember:
+	 * you cant call this in a normal message callback if the max hits are already reached since well...
+	 * they are already reached.
+	 * @since 8.6.0
+	*/ public clearRateLimit(): this {
+		if (!this.context.route || !this.context.route.ratelimit || this.context.route.ratelimit.maxHits === Infinity) return this
+
+		this.context.global.rateLimits.delete(`ws+${this.client.ip.usual()}-${this.context.route.ratelimit.sortTo}`)
+
+		return this
+	}
+
+	/**
+	 * Get Infos about the current Ratelimit
+	 * 
+	 * This will get all information about the currently applied ratelimit
+	 * to the socket. If none is active, will return `null`.
+	*/ public getRateLimit(): RatelimitInfos | null {
+		if (!this.context.route || !this.context.route.ratelimit || this.context.route.ratelimit.maxHits === Infinity) return null
+
+		const data = this.context.global.rateLimits.get(`ws+${this.client.ip}-${this.context.route.ratelimit.sortTo}`, {
+			hits: 0,
+			end: Date.now() + this.context.route.ratelimit.timeWindow
+		})
+
+		return {
+			hits: data.hits,
+			maxHits: this.context.route.ratelimit.maxHits,
+			hasPenalty: data.hits > this.context.route.ratelimit.maxHits,
+			penalty: this.context.route.ratelimit.penalty,
+			timeWindow: this.context.route.ratelimit.timeWindow,
+			get endsAt() { return new Date(data.end) },
+			endsIn: data.end - Date.now()
+		}
+	}	
 }
