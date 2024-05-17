@@ -1,5 +1,9 @@
 # Changelog
 
+## 9.5.4
+
+- Set `this.body.awaiting` to `false` when consuming body
+
 ## 9.5.3
 
 - Fix `<HttpRequestContext>.client.proxied` not being updated

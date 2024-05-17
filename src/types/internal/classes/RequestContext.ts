@@ -195,6 +195,8 @@ export default class RequestContext<MiddlewareData extends Record<any, any> = an
 			}
 		})
 
+		this.body.awaiting = false
+
 		return this.body.raw!
 	}
 
