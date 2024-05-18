@@ -1,5 +1,9 @@
 # Changelog
 
+## 9.5.5
+
+- Expose `<Server>.finish()` callbacks properly
+
 ## 9.5.4
 
 - Set `this.body.awaiting` to `false` when consuming body

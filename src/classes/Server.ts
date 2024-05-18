@@ -4,7 +4,7 @@ import { FullServerOptions, ServerOptions } from "@/types/structures/ServerOptio
 import { as, network, number, object, size, time } from "@rjweb/utils"
 import GlobalContext from "@/types/internal/classes/GlobalContext"
 import ContentTypes from "@/classes/router/ContentTypes"
-import { DataContext, EndFn, ErrorCallbacks, RatelimitCallbacks, RealAny } from "@/types/internal"
+import { DataContext, EndFn, ErrorCallbacks, FinishCallbacks, RatelimitCallbacks, RealAny } from "@/types/internal"
 import FileLoader from "@/classes/router/File"
 import { UsableMiddleware, currentVersion } from "@/classes/Middleware"
 import Validator from "@/classes/Validator"
@@ -182,6 +182,15 @@ export default class Server<const Options extends ServerOptions, Middlewares ext
 	 * @since 9.0.0
 	*/ public rateLimit<Key extends keyof RatelimitCallbacks<Middlewares, Context>>(key: Key, callback: RatelimitCallbacks<Middlewares, Context>[Key]): this {
 		this.global.rateLimitHandlers[key] = callback
+
+		return this
+	}
+
+	/**
+	 * Listen to Handler Finish Callbacks
+	 * @since 9.5.5
+	*/ public finish<Key extends keyof FinishCallbacks<Middlewares, Context>>(key: Key, callback: FinishCallbacks<Middlewares, Context>[Key]): this {
+		this.global.finishHandlers[key] = callback
 
 		return this
 	}
