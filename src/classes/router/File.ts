@@ -7,7 +7,7 @@ import RateLimit from "@/classes/router/RateLimit"
 import path from "path"
 import GlobalContext from "@/types/internal/classes/GlobalContext"
 import { filesystem, object } from "@rjweb/utils"
-import { OperationObject } from "openapi3-ts/oas31"
+import { oas31 } from "openapi3-ts"
 import Path from "@/classes/router/Path"
 import deepClone from "@/functions/deepClone"
 
@@ -15,7 +15,7 @@ export default class File<Middlewares extends UsableMiddleware[], Validators ext
 	protected _httpRatelimit: RateLimitConfig | null
 	protected _wsRatelimit: RateLimitConfig | null
 	protected promises: Promise<any>[]
-	protected openApi: OperationObject = {}
+	protected openApi: oas31.OperationObject = {}
 	private _global: GlobalContext
 	private prefix: string
 
@@ -46,7 +46,7 @@ export default class File<Middlewares extends UsableMiddleware[], Validators ext
 	/**
 	 * Add OpenAPI Documentation to all HTTP Endpoints in this Path (and all children)
 	 * @since 9.0.0
-	*/ public document(item: OperationObject): Omit<File<Middlewares, Validators, Context, [...Excluded, 'document']>, Excluded[number] | 'document'> {
+	*/ public document(item: oas31.OperationObject): Omit<File<Middlewares, Validators, Context, [...Excluded, 'document']>, Excluded[number] | 'document'> {
 		this.openApi = object.deepMerge(this.openApi, item)
 
 		return this as any

@@ -4,7 +4,7 @@ import parseURL from "@/functions/parseURL"
 import { EndFn, RateLimitConfig, RealAny } from "@/types/internal"
 import { isRegExp } from "util/types"
 import { UsableValidator } from "@/classes/Validator"
-import { OperationObject } from "openapi3-ts/oas31"
+import { oas31 } from "openapi3-ts"
 
 import HttpRequestContext from "@/classes/request/HttpRequestContext"
 import WsOpenContext from "@/classes/request/WsOpenContext"
@@ -104,7 +104,7 @@ export default class Route<Type extends RequestType> {
 	/**
 	 * The OpenAPI Schema of this Route
 	 * @since 9.0.0
-	*/ public openApi: OperationObject = {}
+	*/ public openApi: oas31.OperationObject = {}
 
 	/**
 	 * Test the Path against the Request Path

@@ -6,7 +6,7 @@ import { UsableMiddleware } from "@/classes/Middleware"
 import { UsableValidator } from "@/classes/Validator"
 import { DataContext, RateLimitConfig, RealAny, UnionToIntersection } from "@/types/internal"
 import HttpRequestContext from "@/classes/request/HttpRequestContext"
-import { OperationObject } from "openapi3-ts/oas31"
+import { oas31 } from "openapi3-ts"
 import deepClone from "@/functions/deepClone"
 
 export default class Http<_Method extends Method, Middlewares extends UsableMiddleware[] = [], Validators extends UsableValidator[] = [], Context extends Record<string, any> = {}, Excluded extends (keyof Http<_Method>)[] = []> {
@@ -23,7 +23,7 @@ export default class Http<_Method extends Method, Middlewares extends UsableMidd
 	/**
 	 * Add OpenAPI Documentation to all HTTP Endpoints in this Path (and all children)
 	 * @since 9.0.0
-	*/ public document(item: OperationObject): Omit<Http<_Method, Middlewares, Validators, Context, [...Excluded, 'document']>, Excluded[number] | 'document'> {
+	*/ public document(item: oas31.OperationObject): Omit<Http<_Method, Middlewares, Validators, Context, [...Excluded, 'document']>, Excluded[number] | 'document'> {
 		this.route.openApi = object.deepMerge(this.route.openApi, item)
 
 		return this as any

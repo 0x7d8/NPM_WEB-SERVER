@@ -1,5 +1,9 @@
 # Changelog
 
+## 9.5.6
+
+- Add Routing with unions using template literals
+
 ## 9.5.5
 
 - Expose `<Server>.finish()` callbacks properly

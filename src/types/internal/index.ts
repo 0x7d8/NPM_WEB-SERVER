@@ -5,6 +5,7 @@ import HttpRequestContext from "@/classes/request/HttpRequestContext"
 import WsCloseContext from "@/classes/request/WsCloseContext"
 import WsMessageContext from "@/classes/request/WsMessageContext"
 import WsOpenContext from "@/classes/request/WsOpenContext"
+import location from "@/functions/location"
 import { Method } from "@/types/global"
 import { z } from "zod"
 
@@ -14,8 +15,10 @@ export type EndFn = (...args: any[]) => void
 export type SetItemType<S> = S extends Set<infer T> ? T : never
 
 export type UnionToIntersection<U> =
-  (U extends any ? (k: U) => void : never) extends ((k: infer I) => void) ? I : never  
-	
+  (U extends any ? (k: U) => void : never) extends ((k: infer I) => void) ? I : never
+
+export type LocationCallback = (l: typeof location) => string[]
+
 export type ZodResponse<Schema extends z.ZodTypeAny> = [z.infer<Schema>, null] | [null, z.ZodError<z.infer<Schema>>]
 export type AnyClass = new (...args: any[]) => any
 

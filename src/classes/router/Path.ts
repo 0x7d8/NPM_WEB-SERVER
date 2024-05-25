@@ -4,14 +4,19 @@ import Http from "@/classes/router/Http"
 import parseURL from "@/functions/parseURL"
 import { UsableMiddleware } from "@/classes/Middleware"
 import { UsableValidator } from "@/classes/Validator"
-import { RateLimitConfig } from "@/types/internal"
+import { LocationCallback, RateLimitConfig } from "@/types/internal"
 import RateLimit from "@/classes/router/RateLimit"
 import path from "path"
 import GlobalContext from "@/types/internal/classes/GlobalContext"
 import { ArrayOrNot, filesystem, object } from "@rjweb/utils"
 import Ws from "@/classes/router/Ws"
-import { OperationObject } from "openapi3-ts/oas31"
+import { oas31 } from "openapi3-ts"
 import deepClone from "@/functions/deepClone"
+import location from "@/functions/location"
+
+function handlePath<Main extends string | RegExp = string>(path: ArrayOrNot<Main> | LocationCallback): (string | Main)[] {
+	return typeof path === 'function' ? path(location) : Array.isArray(path) ? path : [path]
+}
 
 export default class Path<Middlewares extends UsableMiddleware[], Validators extends UsableValidator[] = [], Context extends Record<string, any> = {}, Excluded extends (keyof Path<Middlewares>)[] = []> {
 	protected routesHttp: Route<'http'>[] = []
@@ -20,7 +25,7 @@ export default class Path<Middlewares extends UsableMiddleware[], Validators ext
 	protected _httpRatelimit: RateLimitConfig | null
 	protected _wsRatelimit: RateLimitConfig | null
 	protected promises: Promise<any>[]
-	protected openApi: OperationObject
+	protected openApi: oas31.OperationObject
 	private _global: GlobalContext
 	private prefix: string
 
@@ -33,7 +38,7 @@ export default class Path<Middlewares extends UsableMiddleware[], Validators ext
 	/**
 	 * Create a new Path
 	 * @since 6.0.0
-	*/ constructor(prefix: string, global: GlobalContext, private validators: Validators = [] as never, ratelimits?: [RateLimitConfig | null, RateLimitConfig | null], promises?: Promise<any>[], openApi?: OperationObject) {
+	*/ constructor(prefix: string, global: GlobalContext, private validators: Validators = [] as never, ratelimits?: [RateLimitConfig | null, RateLimitConfig | null], promises?: Promise<any>[], openApi?: oas31.OperationObject) {
 		this.prefix = prefix
 		this._global = global
 
@@ -52,7 +57,7 @@ export default class Path<Middlewares extends UsableMiddleware[], Validators ext
 	/**
 	 * Add OpenAPI Documentation to all HTTP Endpoints in this Path (and all children)
 	 * @since 9.0.0
-	*/ public document(item: OperationObject): Omit<Path<Middlewares, Validators, Context, [...Excluded, 'document']>, Excluded[number] | 'document'> {
+	*/ public document(item: oas31.OperationObject): Omit<Path<Middlewares, Validators, Context, [...Excluded, 'document']>, Excluded[number] | 'document'> {
 		this.openApi = object.deepMerge(this.openApi, item)
 
 		return this as any
@@ -163,13 +168,15 @@ export default class Path<Middlewares extends UsableMiddleware[], Validators ext
 	/**
 	 * Create a subpath of this Path
 	 * @since 6.0.0
-	*/ public path(prefix: string, callback: (path: Path<Middlewares, Validators, Context>) => any): this {
-		const path = new Path<Middlewares, Validators, Context>(this.prefix.concat('/', prefix), this._global, [...this.validators] as any, [this._httpRatelimit, this._wsRatelimit], this.promises, deepClone(this.openApi))
-		callback(path)
+	*/ public path(prefix: ArrayOrNot<string> | LocationCallback, callback: (path: Path<Middlewares, Validators, Context>) => any): this {
+		for (const prefixPath of handlePath(prefix)) {
+			const path = new Path<Middlewares, Validators, Context>(this.prefix.concat('/', prefixPath), this._global, [...this.validators] as any, [this._httpRatelimit, this._wsRatelimit], this.promises, deepClone(this.openApi))
+			callback(path)
 
-		this.routesHttp.push(...path.routesHttp)
-		this.routesStatic.push(...path.routesStatic)
-		this.routesWS.push(...path.routesWS)
+			this.routesHttp.push(...path.routesHttp)
+			this.routesStatic.push(...path.routesStatic)
+			this.routesWS.push(...path.routesWS)
+		}
 
 		return this
 	}
@@ -277,8 +284,8 @@ export default class Path<Middlewares extends UsableMiddleware[], Validators ext
 	 * )
 	 * ```
 	 * @since 6.0.0
-	*/ public http<_Method extends Method>(method: _Method, path: ArrayOrNot<string | RegExp>, callback: (http: Http<_Method, Middlewares, Validators, Context>) => any): this {
-		for (const p of Array.isArray(path) ? path : [path]) {
+	*/ public http<_Method extends Method>(method: _Method, path: ArrayOrNot<string | RegExp> | LocationCallback, callback: (http: Http<_Method, Middlewares, Validators, Context>) => any): this {
+		for (const p of handlePath<string | RegExp>(path)) {
 			const http = new Http<_Method, Middlewares, Validators, Context>(method, this.computePath(p), this._httpRatelimit)
 			http['route'].openApi = deepClone(this.openApi)
 
@@ -309,8 +316,8 @@ export default class Path<Middlewares extends UsableMiddleware[], Validators ext
 	 * )
 	 * ```
 	 * @since 6.0.0
-	*/ public ws(path: ArrayOrNot<string | RegExp>, callback: (ws: Ws<Middlewares, Validators, Context>) => any): this {
-		for (const p of Array.isArray(path) ? path : [path]) {
+	*/ public ws(path: ArrayOrNot<string | RegExp> | LocationCallback, callback: (ws: Ws<Middlewares, Validators, Context>) => any): this {
+		for (const p of handlePath<string | RegExp>(path)) {
 			const ws = new Ws<Middlewares, Validators, Context>(this.computePath(p), this._wsRatelimit)
 			ws['route'].openApi = deepClone(this.openApi)
 

@@ -5,7 +5,7 @@ import WsOpenContext from "@/classes/request/WsOpenContext"
 import WsMessageContext from "@/classes/request/WsMessageContext"
 import WsCloseContext from "@/classes/request/WsCloseContext"
 import { object } from "@rjweb/utils"
-import { OperationObject } from "openapi3-ts/oas31"
+import { oas31 } from "openapi3-ts"
 import deepClone from "@/functions/deepClone"
 
 type Listeners<Data extends Record<string, any>, Context extends Record<string, any>, Middlewares extends UsableMiddleware[] = []> = {
@@ -17,8 +17,8 @@ type Listeners<Data extends Record<string, any>, Context extends Record<string, 
 }
 
 export default class Validator<Data extends Record<string, any> = {}, Context extends Record<string, any> = {}, Middlewares extends UsableMiddleware[] = []> {
-	private openApi: OperationObject = {}
-	private openApiFn: ((data: Data) => OperationObject) | null = null
+	private openApi: oas31.OperationObject = {}
+	private openApiFn: ((data: Data) => oas31.OperationObject) | null = null
 	private listeners: Listeners<Data, Context, Middlewares> = {
 		httpRequest: new Set(),
 		wsOpen: new Set(),
@@ -86,7 +86,7 @@ export default class Validator<Data extends Record<string, any> = {}, Context ex
 	/**
 	 * Add OpenAPI Documentation to all Endpoints using this Validator
 	 * @since 9.0.0
-	*/ public document(item: OperationObject | ((data: Data) => OperationObject)): this {
+	*/ public document(item: oas31.OperationObject | ((data: Data) => oas31.OperationObject)): this {
 		if (typeof item !== 'function') this.openApi = object.deepMerge(this.openApi, item)
 		else this.openApiFn = item
 
@@ -171,5 +171,5 @@ export type UsableValidator<Context extends Record<string, any> = {}> = {
 	data: Record<string, any>
 	listeners: Listeners<any, any, any>
 	context: Context
-	openApi: OperationObject
+	openApi: oas31.OperationObject
 }

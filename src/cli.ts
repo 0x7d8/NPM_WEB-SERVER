@@ -108,7 +108,6 @@ const isX = (type: 'dir' | 'file', path: string) => {
 }
 
 yargs
-	.scriptName('rjweb')
 	.usage('$0 <command> [args]')
 	.version(version)
 	.command(

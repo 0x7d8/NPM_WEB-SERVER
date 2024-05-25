@@ -22,6 +22,7 @@ import parseURL from "@/functions/parseURL"
 import parseKV from "@/functions/parseKV"
 import writeHeaders from "@/functions/writeHeaders"
 import html, { HTMLContent } from "@/functions/html"
+import location from "@/functions/location"
 
 import Server, { defaultOptions } from "@/classes/Server"
 import ValueCollection from "@/classes/ValueCollection"
@@ -37,6 +38,7 @@ export {
 	parseKV,
 	writeHeaders,
 	html,
+	location,
 
 	defaultOptions,
 

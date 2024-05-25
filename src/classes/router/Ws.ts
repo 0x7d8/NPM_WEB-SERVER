@@ -8,7 +8,7 @@ import HttpRequestContext from "@/classes/request/HttpRequestContext"
 import WsOpenContext from "@/classes/request/WsOpenContext"
 import WsMessageContext from "@/classes/request/WsMessageContext"
 import WsCloseContext from "@/classes/request/WsCloseContext"
-import { OperationObject } from "openapi3-ts/oas31"
+import { oas31 } from "openapi3-ts"
 
 export default class Ws<Middlewares extends UsableMiddleware[] = [], Validators extends UsableValidator[] = [], Context extends Record<string, any> = {}, Excluded extends (keyof Ws)[] = []> {
 	protected route: Route<'ws'>
@@ -24,7 +24,7 @@ export default class Ws<Middlewares extends UsableMiddleware[] = [], Validators 
 	/**
 	 * Add OpenAPI Documentation to all HTTP Endpoints in this Path (and all children)
 	 * @since 9.0.0
-	*/ public document(item: OperationObject): Omit<Ws<Middlewares, Validators, Context, [...Excluded, 'document']>, Excluded[number] | 'document'> {
+	*/ public document(item: oas31.OperationObject): Omit<Ws<Middlewares, Validators, Context, [...Excluded, 'document']>, Excluded[number] | 'document'> {
 		this.route.openApi = object.deepMerge(this.route.openApi, item)
 
 		return this as any
