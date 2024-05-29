@@ -10,6 +10,7 @@ import HttpRequestContext from "@/classes/request/HttpRequestContext"
 import WsOpenContext from "@/classes/request/WsOpenContext"
 import WsMessageContext from "@/classes/request/WsMessageContext"
 import WsCloseContext from "@/classes/request/WsCloseContext"
+import Base from "@/classes/request/Base"
 
 type Segment = {
 	raw: string
@@ -33,6 +34,7 @@ type RequestType = 'http' | 'static' | 'ws'
 type Data<Type extends RequestType> = Type extends 'http' ? {
 	onRawBody?(ctr: HttpRequestContext, end: EndFn, chunk: ArrayBuffer, isLast: boolean): RealAny
 	onRequest?(ctr: HttpRequestContext): RealAny
+	onFinish?(ctr: Base, ms: number): RealAny
 } : Type extends 'static' ? {
 	folder: string
 	stripHtmlEnding: boolean
@@ -40,8 +42,11 @@ type Data<Type extends RequestType> = Type extends 'http' ? {
 	onUpgrade?(ctr: HttpRequestContext, end: EndFn): RealAny
 
 	onOpen?(ctr: WsOpenContext): RealAny
+	onOpenFinish?(ctr: Base, ms: number): RealAny
 	onMessage?(ctr: WsMessageContext): RealAny
+	onMessageFinish?(ctr: Base, ms: number): RealAny
 	onClose?(ctr: WsCloseContext): RealAny
+	onCloseFinish?(ctr: Base, ms: number): RealAny
 }
 
 export default class Route<Type extends RequestType> {

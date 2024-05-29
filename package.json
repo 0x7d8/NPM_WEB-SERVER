@@ -1,16 +1,15 @@
 {
   "name": "rjweb-server",
-  "version": "9.5.6",
+  "version": "9.6.0",
   "description": "Easy and Robust Way to create a Web Server with Many Easy-to-use Features in NodeJS",
   "main": "./lib/cjs/index.js",
   "module": "./lib/esm/index.js",
   "types": "./lib/typings/index.d.ts",
   "scripts": {
-    "build:full:test": "bun build:full && bun run test/index.ts",
     "build:esm": "ttsc --outDir lib/esm --module ESNext && mv lib/esm/src/* lib/esm && rm -rf lib/esm/src",
     "build:cjs": "ttsc --outDir lib/cjs --module CommonJS && mv lib/cjs/src/* lib/cjs && rm -rf lib/cjs/src",
     "build:typings": "ttsc --outDir lib/typings --emitDeclarationOnly --declaration && mv lib/typings/src/* lib/typings && rm -rf lib/typings/src",
-    "build:full": "rm -rf lib && npm run build:esm & npm run build:cjs & npm run build:typings && wait && sed -i -e 's|\"package.json\"|\"./package.json\"|' lib/**/*.js && echo \"Size $(du -sh lib)\"",
+    "build:full": "rm -rf lib && pnpm build:esm & pnpm build:cjs & pnpm build:typings && wait && sed -i -e 's|\"package.json\"|\"./package.json\"|' lib/**/*.js && echo \"Size $(du -sh lib)\"",
     "docs": "rm -rf docs && typedoc --githubPages false --includeVersion --out docs src/index.ts --plugin typedoc-material-theme --themeColor '#cb9820' && find docs -type f -name '*.html' -exec sed -i -e 's|<meta charSet=\"utf-8\"/>|<meta charSet=\"utf-8\"/><link rel=\"icon\" type=\"image/svg+xml\" href=\"https://cdn.rjns.dev/rjweb/icon.svg\">|' {} + && chmod -R a+rw docs",
     "cli": "node lib/cjs/cli.js"
   },

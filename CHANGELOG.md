@@ -1,5 +1,9 @@
 # Changelog
 
+## 9.6.0
+
+- Allow setting http finish handlers in more places
+
 ## 9.5.6
 
 - Add Routing with unions using template literals

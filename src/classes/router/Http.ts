@@ -8,6 +8,7 @@ import { DataContext, RateLimitConfig, RealAny, UnionToIntersection } from "@/ty
 import HttpRequestContext from "@/classes/request/HttpRequestContext"
 import { oas31 } from "openapi3-ts"
 import deepClone from "@/functions/deepClone"
+import Base from "@/classes/request/Base"
 
 export default class Http<_Method extends Method, Middlewares extends UsableMiddleware[] = [], Validators extends UsableValidator[] = [], Context extends Record<string, any> = {}, Excluded extends (keyof Http<_Method>)[] = []> {
 	protected route: Route<'http'>
@@ -114,6 +115,35 @@ export default class Http<_Method extends Method, Middlewares extends UsableMidd
 		callback: (ctr: DataContext<'HttpRequest', _Method, HttpRequestContext<Context & UnionToIntersection<Validators[number]['context']>>, Middlewares>) => RealAny
 	): Omit<Http<_Method, Middlewares, Validators, Context, [...Excluded, 'onRequest']>, Excluded[number] | 'onRequest'> {
 		this.route.data.onRequest = callback as any
+
+		return as<any>(this)
+	}
+
+	/**
+	 * Attach a Callback for when an HTTP request finishes executing
+	 * 
+	 * This will attach a callback for when the server recieves a http request and
+	 * finishes running all of your route code.
+	 * @example
+	 * ```
+	 * const server = new Server(...)
+	 * 
+	 * server.path('/', (path) => path
+	 *   .http('GET', '/hello', (http) => http
+	 *     .onRequest((ctr) => {
+	 *       ctr.print('Hello')
+	 *     })
+	 *     .onFinish((ctr, ms) => {
+	 *       console.log('Request for hello Finished in', ms, 'ms')
+	 *     })
+	 *   )
+	 * )
+	 * ```
+	 * @since 6.0.0
+	*/ public onFinish(
+		callback: (ctr: DataContext<'HttpRequest', _Method, Base<Context & UnionToIntersection<Validators[number]['context']>>, Middlewares>, ms: number) => RealAny
+	): Omit<Http<_Method, Middlewares, Validators, Context, [...Excluded, 'onRequest']>, Excluded[number] | 'onRequest'> {
+		this.route.data.onFinish = callback as any
 
 		return as<any>(this)
 	}

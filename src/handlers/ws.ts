@@ -132,8 +132,49 @@ export default async function wsHandler({ context, custom, aborter }: WebsocketD
 				}
 			}
 
+			if (context.route) for (let i = 0; i < context.route.validators.length; i++) {
+				const validator = context.route.validators[i]
+
+				const values = Array.from(validator.listeners.wsOpenFinish.values())
+				for (let j = 0; j < validator.listeners.wsOpenFinish.size; j++) {
+					const validate = values[j]
+
+					try {
+						await Promise.resolve(validate(ctr, context.elapsed()))
+					} catch (err) {
+						const error = context.handleError(err, `ws.handle.validator.${i}.listeners.${j}.wsOpenFinish`)
+
+						if (context.global.errorHandlers.wsOpen) {
+							try {
+								await Promise.resolve(context.global.errorHandlers.wsOpen(ctr, error))
+							} catch (err) {
+								context.global.logger.error(`An Error has occured on ${context.url.method} ${context.url.href}\n${error.toString()}`)
+							}
+						} else {
+							context.global.logger.error(`An Error has occured on ${context.url.method} ${context.url.href}\n${error.toString()}`)
+						}
+					}
+				}
+			}
+
 			if (context.global.finishHandlers.wsOpen) try {
 				await Promise.resolve(context.global.finishHandlers.wsOpen(ctr, context.elapsed()))
+			} catch (err) {
+				const error = context.handleError(err, 'ws.handle.onOpenFinish')
+
+				if (context.global.errorHandlers.wsOpen) {
+					try {
+						await Promise.resolve(context.global.errorHandlers.wsOpen(ctr, error))
+					} catch (err) {
+						context.global.logger.error(`An Error has occured on ${context.url.method} ${context.url.href}\n${error.toString()}`)
+					}
+				} else {
+					context.global.logger.error(`An Error has occured on ${context.url.method} ${context.url.href}\n${error.toString()}`)
+				}
+			}
+
+			if (context.route?.type === 'ws' && context.route.data.onOpenFinish) try {
+				await Promise.resolve(context.route.data.onOpenFinish(ctr, context.elapsed()))
 			} catch (err) {
 				const error = context.handleError(err, 'ws.handle.onOpenFinish')
 
@@ -283,8 +324,49 @@ export default async function wsHandler({ context, custom, aborter }: WebsocketD
 				}
 			}
 
+			if (context.route) for (let i = 0; i < context.route.validators.length; i++) {
+				const validator = context.route.validators[i]
+
+				const values = Array.from(validator.listeners.wsMessageFinish.values())
+				for (let j = 0; j < validator.listeners.wsMessageFinish.size; j++) {
+					const validate = values[j]
+
+					try {
+						await Promise.resolve(validate(ctr, context.elapsed()))
+					} catch (err) {
+						const error = context.handleError(err, `ws.handle.validator.${i}.listeners.${j}.wsMessageFinish`)
+
+						if (context.global.errorHandlers.wsMessage) {
+							try {
+								await Promise.resolve(context.global.errorHandlers.wsMessage(ctr, error))
+							} catch (err) {
+								context.global.logger.error(`An Error has occured on ${context.url.method} ${context.url.href}\n${error.toString()}`)
+							}
+						} else {
+							context.global.logger.error(`An Error has occured on ${context.url.method} ${context.url.href}\n${error.toString()}`)
+						}
+					}
+				}
+			}
+
 			if (context.global.finishHandlers.wsMessage) try {
 				await Promise.resolve(context.global.finishHandlers.wsMessage(ctr, context.elapsed()))
+			} catch (err) {
+				const error = context.handleError(err, 'ws.handle.onMessageFinish')
+
+				if (context.global.errorHandlers.wsMessage) {
+					try {
+						await Promise.resolve(context.global.errorHandlers.wsMessage(ctr, error))
+					} catch (err) {
+						context.global.logger.error(`An Error has occured on ${context.url.method} ${context.url.href}\n${error.toString()}`)
+					}
+				} else {
+					context.global.logger.error(`An Error has occured on ${context.url.method} ${context.url.href}\n${error.toString()}`)
+				}
+			}
+
+			if (context.route?.type === 'ws' && context.route.data.onMessageFinish) try {
+				await Promise.resolve(context.route.data.onMessageFinish(ctr, context.elapsed()))
 			} catch (err) {
 				const error = context.handleError(err, 'ws.handle.onMessageFinish')
 
@@ -399,8 +481,49 @@ export default async function wsHandler({ context, custom, aborter }: WebsocketD
 				}
 			}
 
+			if (context.route) for (let i = 0; i < context.route.validators.length; i++) {
+				const validator = context.route.validators[i]
+
+				const values = Array.from(validator.listeners.wsCloseFinish.values())
+				for (let j = 0; j < validator.listeners.wsCloseFinish.size; j++) {
+					const validate = values[j]
+
+					try {
+						await Promise.resolve(validate(ctr, context.elapsed()))
+					} catch (err) {
+						const error = context.handleError(err, `ws.handle.validator.${i}.listeners.${j}.wsCloseFinish`)
+
+						if (context.global.errorHandlers.wsClose) {
+							try {
+								await Promise.resolve(context.global.errorHandlers.wsClose(ctr, error))
+							} catch (err) {
+								context.global.logger.error(`An Error has occured on ${context.url.method} ${context.url.href}\n${error.toString()}`)
+							}
+						} else {
+							context.global.logger.error(`An Error has occured on ${context.url.method} ${context.url.href}\n${error.toString()}`)
+						}
+					}
+				}
+			}
+
 			if (context.global.finishHandlers.wsClose) try {
 				await Promise.resolve(context.global.finishHandlers.wsClose(ctr, context.elapsed()))
+			} catch (err) {
+				const error = context.handleError(err, 'ws.handle.onCloseFinish')
+
+				if (context.global.errorHandlers.wsClose) {
+					try {
+						await Promise.resolve(context.global.errorHandlers.wsClose(ctr, error))
+					} catch (err) {
+						context.global.logger.error(`An Error has occured on ${context.url.method} ${context.url.href}\n${error.toString()}`)
+					}
+				} else {
+					context.global.logger.error(`An Error has occured on ${context.url.method} ${context.url.href}\n${error.toString()}`)
+				}
+			}
+
+			if (context.route?.type === 'ws' && context.route.data.onCloseFinish) try {
+				await Promise.resolve(context.route.data.onCloseFinish(ctr, context.elapsed()))
 			} catch (err) {
 				const error = context.handleError(err, 'ws.handle.onCloseFinish')
 

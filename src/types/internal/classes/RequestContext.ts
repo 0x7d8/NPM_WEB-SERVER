@@ -144,8 +144,20 @@ export default class RequestContext<MiddlewareData extends Record<any, any> = an
 				} catch { }
 			}
 
+			if (this.route) for (let i = 0; i < this.route.validators.length; i++) {
+				const validator = this.route.validators[i]
+
+				for (const listener of validator.listeners.httpRequestFinish) try {
+					await Promise.resolve(listener(ctr, this.elapsed()))
+				} catch { }
+			}
+
 			if (this.global.finishHandlers.httpRequest) try {
 				await Promise.resolve(this.global.finishHandlers.httpRequest(ctr, this.elapsed()))
+			} catch { }
+
+			if (this.route?.type === 'http' && this.route.data.onFinish) try {
+				await Promise.resolve(this.route.data.onFinish(ctr, this.elapsed()))
 			} catch { }
 		}
 

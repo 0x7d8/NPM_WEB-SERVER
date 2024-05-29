@@ -45,7 +45,7 @@ import toArrayBuffer from "@/functions/toArrayBuffer"
 
 	if (req.aborted().aborted) return context.abort()
 
-	if (context.url.method === 'GET') {
+	if (context.url.method === 'GET' || context.url.method === 'HEAD') {
 		context.body.raw = Buffer.allocUnsafe(0)
 	}
 
