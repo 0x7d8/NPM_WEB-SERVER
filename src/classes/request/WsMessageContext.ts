@@ -1,11 +1,41 @@
 import InternalRequestContext from "@/types/internal/classes/RequestContext"
 import { WsContext } from "@/types/implementation/contexts/ws"
 import WsOpenContext from "@/classes/request/WsOpenContext"
-import { ParsedBody, RatelimitInfos } from "@/types/global"
+import { JSONParsed, ParsedBody, RatelimitInfos } from "@/types/global"
 
 export default class WsMessageContext<Context extends Record<any, any> = {}> extends WsOpenContext<'message', Context> {
 	constructor(context: InternalRequestContext, rawContext: WsContext, abort: AbortSignal) {
 		super(context, rawContext, abort, 'message')
+	}
+
+	/**
+	 * The Request Message as a Blob-like Object
+	 * @example
+	 * ```
+	 * const size = await ctr.$message().size()
+	 * 
+	 * return ctr.print(`The size of the message is ${size} bytes`)
+	 * ```
+	 * @since 9.7.0
+	*/ public $message() {
+		const self = this
+
+		return {
+			text() {
+				return self.rawMessage('utf-8')
+			}, json(): JSONParsed {
+				const data = self.message()
+
+				if (self.context.body.type === 'json') return data as JSONParsed
+				throw new Error('Message is not valid JSON')
+			}, arrayBuffer() {
+				return self.rawMessageBytes()
+			}, blob(): Blob {
+				return new Blob([ self.rawMessageBytes() ])
+			}, size(): number {
+				return self.rawMessageBytes().byteLength
+			}
+		}
 	}
 
 	/**
@@ -14,7 +44,10 @@ export default class WsMessageContext<Context extends Record<any, any> = {}> ext
 	*/ public message(): ParsedBody {
 		const stringified = this.context.body.raw!.toString()
 
-		if ((stringified.startsWith('{') && stringified.endsWith('}')) || (stringified.startsWith('[') && stringified.endsWith(']'))) {
+		if (
+			(stringified[0] === '{' && stringified[stringified.length - 1] === '}') ||
+			(stringified[0] === '[' && stringified[stringified.length - 1] === ']')
+		) {
 			try {
 				const json = JSON.parse(stringified)
 

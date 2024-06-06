@@ -21,12 +21,12 @@ const replace: Record<string, string> = {
  * const insecure = `
  *   <p>Message:</p>
  *   <p>${userInput}</p>
- * `
+ * ` // XSS Vulnerable
  * 
  * const secure = html`
  *   <p>Message:</p>
  *   <p>${userInput}</p>
- * `
+ * ` // XSS Safe
  * ```
  * @since 8.7.0
 */ export default function html(parts: TemplateStringsArray, ...variables: HTMLContent[]) {

@@ -1,6 +1,6 @@
 import InternalRequestContext from "@/types/internal/classes/RequestContext"
 import { HttpContext } from "@/types/implementation/contexts/http"
-import { Content, ParsedBody, RatelimitInfos, Status } from "@/types/global"
+import { Content, JSONParsed, ParsedBody, RatelimitInfos, Status } from "@/types/global"
 import Base from "@/classes/request/Base"
 import * as fs from "fs/promises"
 import * as path from "path"
@@ -42,6 +42,43 @@ export default class HttpRequestContext<Context extends Record<any, any> = {}> e
 		if (callback) this.abort.addEventListener('abort', callback)
 
 		return this.abort.aborted
+	}
+
+	/**
+	 * The Request Body as a Blob-like Object
+	 * @example
+	 * ```
+	 * const size = await ctr.$body().size()
+	 * 
+	 * return ctr.print(`The size of the body is ${size} bytes`)
+	 * ```
+	 * @since 9.7.0
+	*/ public $body() {
+		const self = this
+
+		return {
+			text() {
+				return self.rawBody('utf-8')
+			}, async json(): Promise<JSONParsed> {
+				const data = await self.body()
+
+				if (self.context.body.type === 'json') return data as JSONParsed
+				throw new Error('Body is not JSON (make sure the content-type sent is application/json)')
+			}, arrayBuffer() {
+				return self.rawBodyBytes()
+			}, async formData(): Promise<Record<string, string>> {
+				const data = await self.body()
+
+				if (self.context.body.type === 'url-encoded') return data as Record<string, string>
+				throw new Error('Body is not Form Data (make sure the content-type sent is application/x-www-form-urlencoded)')
+			}, async blob(): Promise<Blob> {
+				return new Blob([ await self.rawBodyBytes() ])
+			}, async size(): Promise<number> {
+				const data = await self.rawBodyBytes()
+
+				return data.byteLength
+			}
+		}
 	}
 
 	/**

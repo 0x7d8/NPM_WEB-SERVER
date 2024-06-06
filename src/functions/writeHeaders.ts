@@ -40,7 +40,7 @@ import { STATUS_CODES } from "http"
 
 		if (eTag) {
 			if (context.headers.get('if-none-match') === eTag) {
-				await rawContext.status(Status.NOT_MODIFIED, 'Not Modified').write(new ArrayBuffer(0))
+				await rawContext.status(Status.NOT_MODIFIED, 'Not Modified').write(context.global.cache.emptyArrayBuffer)
 
 				return false
 			}
@@ -55,7 +55,7 @@ import { STATUS_CODES } from "http"
 
 		await rawContext
 			.status(context.response.status, context.response.statusText || STATUS_CODES[context.response.status] || 'Unknown')
-			.write(new ArrayBuffer(0))
+			.write(context.global.cache.emptyArrayBuffer)
 
 		return false
 	}

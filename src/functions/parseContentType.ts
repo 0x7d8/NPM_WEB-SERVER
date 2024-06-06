@@ -1,6 +1,6 @@
 import GlobalContext from "@/types/internal/classes/GlobalContext"
 
-const mapping: Record<string, string> = {
+const mapping: Record<string, string> = Object.freeze({
 	pdf: 'application/pdf',
 	js: 'text/javascript',
 	html: 'text/html',
@@ -79,8 +79,10 @@ const mapping: Record<string, string> = {
 	xla: 'application/vnd.ms-excel',
 	eml: 'message/rfc822',
 	vcf: 'text/vcard',
-	ics: 'text/calendar'
-}
+	ics: 'text/calendar',
+	abw: 'application/x-abiword',
+	azw: 'application/vnd.amazon.ebook'
+})
 
 /**
  * Parse File Name into a Content Type or empty string
@@ -90,9 +92,11 @@ const mapping: Record<string, string> = {
 		if (name.endsWith(key)) return value
 	}
 
-	const end = name.split('.').at(-1)
+	const dot = name.lastIndexOf('.')
+	if (dot === -1) return 'application/octet-stream'
+
+	const end = name.slice(dot + 1)
 	if (!end) return 'application/octet-stream'
 
-	const type = mapping[end]
-	return type ?? 'application/octet-stream'
+	return mapping[end] ?? 'application/octet-stream'
 }

@@ -87,6 +87,10 @@ export default class GlobalContext {
 		 * @since 9.0.0
 		*/ proxyCredentials: '',
 		/**
+		 * An Empty ArrayBuffer
+		 * @since 9.7.0
+		*/ emptyArrayBuffer: new ArrayBuffer(0),
+		/**
 		 * Cached ArrayBuffer Texts
 		 * @since 9.0.0
 		*/ arrayBufferTexts: {

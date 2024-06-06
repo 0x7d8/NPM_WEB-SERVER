@@ -1,5 +1,12 @@
 # Changelog
 
+## 9.7.0
+
+- Fix windows route file importing
+- Cache empty arraybuffers
+- Add `<HttpRequestContext>.$body`
+- Add `<WsMessageContext>.$message`
+
 ## 9.6.0
 
 - Allow setting http finish handlers in more places

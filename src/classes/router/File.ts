@@ -10,6 +10,9 @@ import { filesystem, object } from "@rjweb/utils"
 import { oas31 } from "openapi3-ts"
 import Path from "@/classes/router/Path"
 import deepClone from "@/functions/deepClone"
+import os from "os"
+
+const platform = os.platform()
 
 export default class File<Middlewares extends UsableMiddleware[], Validators extends UsableValidator[] = [], Context extends Record<string, any> = {}, Excluded extends (keyof File<Middlewares>)[] = []> {
 	protected _httpRatelimit: RateLimitConfig | null
@@ -169,7 +172,8 @@ export default class File<Middlewares extends UsableMiddleware[], Validators ext
 				if (!options.filter?.(file.path)) continue
 
 				try {
-					const { default: router } = await eval(`import(${JSON.stringify(file.path)})`), // bypass ttsc converting to require() in cjs
+					const importPath = platform === 'win32' ? `file:///${file.path}` : file.path,
+						{ default: router } = await eval(`import(${JSON.stringify(importPath)})`), // bypass ttsc converting to require() in cjs
 						path = file.path.replace(resolved, '').replaceAll('index', '').replace(/\\/g, '/').split('.').slice(0, -1).join('.').concat('/')
 
 					if (router instanceof Path) {

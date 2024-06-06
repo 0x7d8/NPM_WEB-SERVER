@@ -12,6 +12,8 @@ import { Content, Method, ParsedBody } from "@/types/global"
 import { HttpContext } from "@/types/implementation/contexts/http"
 import GlobalContext from "@/types/internal/classes/GlobalContext"
 
+const empty = Buffer.allocUnsafe(0)
+
 export default class RequestContext<MiddlewareData extends Record<any, any> = any> {
 	protected executeSelf: () => Promise<boolean> | boolean = () => true
 	private middlewareData: Record<string, any> = {}
@@ -330,7 +332,7 @@ export default class RequestContext<MiddlewareData extends Record<any, any> = an
 		statusText: null,
 		headers: new ValueCollection(),
 		cookies: new ValueCollection(),
-		content: Buffer.allocUnsafe(0),
+		content: empty,
 		prettify: false
 	}
 }
