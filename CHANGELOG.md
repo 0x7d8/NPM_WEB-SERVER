@@ -1,5 +1,9 @@
 # Changelog
 
+## 9.7.1
+
+- Fix Websocket Json Parsing Issue
+
 ## 9.7.0
 
 - Fix windows route file importing

@@ -51,6 +51,7 @@ export default class WsMessageContext<Context extends Record<any, any> = {}> ext
 			try {
 				const json = JSON.parse(stringified)
 
+				this.context.body.type = 'json'
 				this.context.body.parsed = json
 			} catch {
 				this.context.body.parsed = stringified
