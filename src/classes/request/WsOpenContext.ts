@@ -4,10 +4,11 @@ import Base from "@/classes/request/Base"
 import { WsContext } from "@/types/implementation/contexts/ws"
 import parseContent from "@/functions/parseContent"
 import Channel from "@/classes/Channel"
+import Server from "@/classes/Server"
 
 export default class WsOpenContext<Type extends 'open' | 'message' = 'open', Context extends Record<any, any> = {}> extends Base<Context> {
-	constructor(context: InternalRequestContext, protected rawContext: WsContext, protected abort: AbortSignal, type: Type = 'open' as Type) {
-		super(context)
+	constructor(context: InternalRequestContext, server: Server<any, any>, protected rawContext: WsContext, protected abort: AbortSignal, type: Type = 'open' as Type) {
+		super(context, server)
 
 		this.type = type
 	}
@@ -79,6 +80,24 @@ export default class WsOpenContext<Type extends 'open' | 'message' = 'open', Con
 	}
 
 	/**
+	 * Print a Raw Message to the Client (ArrayBuffer only)
+	 * 
+	 * Same as `.print()` but only accepts ArrayBuffer as the content and therefore
+	 * skips the parsing process. This is useful for sending data synchronously.
+	 * @example
+	 * ```
+	 * const buffer = new ArrayBuffer(10)
+	 * 
+	 * ctr.printRaw('binary', buffer)
+	 * ```
+	 * @since 9.8.0
+	*/ public printRaw(type: 'text' | 'binary', content: ArrayBuffer): this {
+		this.rawContext.write(type, content, this.global.options.compression.ws.enabled && this.global.options.compression.ws.maxSize > content.byteLength)
+
+		return this
+	}
+
+	/**
 	 * Print a channels value to the client
 	 * 
 	 * This will print when the provided channel has a new value,
@@ -89,7 +108,7 @@ export default class WsOpenContext<Type extends 'open' | 'message' = 'open', Con
 	 * 
 	 * ctr.printChannel(channel)
 	 * 
-	 * ref.send('Ok')
+	 * ref.send('text', 'Ok')
 	 * ```
 	 * @since 9.0.0
 	*/ public printChannel(channel: Channel<Content>): this {
@@ -125,6 +144,54 @@ export default class WsOpenContext<Type extends 'open' | 'message' = 'open', Con
 	 * @since 9.0.0
 	*/ public removeChannel(channel: Channel<Content>): this {
 		this.rawContext.unsubscribe(channel.id)
+
+		return this
+	}
+
+	/**
+	 * Print a raw channels value to the client
+	 * 
+	 * This will print when the provided channel has a new value,
+	 * basically subscribing to the channel. This uses strings to
+	 * identify the channel instead of the channel object. (CAUTION)
+	 * @example
+	 * ```
+	 * ctr.printRawChannel('channel')
+	 * 
+	 * await ctr.$channel('channel').print('text', 'Ok')
+	 * ```
+	 * @since 9.8.0
+	*/ public printRawChannel(channel: string): this {
+		const channelObj = this.context.global.internalChannelStringIdentifiers.get(channel)
+		if (!channelObj) {
+			this.context.global.internalChannelStringIdentifiers.set(channel, new Channel())
+		}
+
+		this.rawContext.subscribe((channelObj || this.context.global.internalChannelStringIdentifiers.get(channel))!.id)
+
+		return this
+	}
+
+	/**
+	 * Remove a raw channel from the client
+	 * 
+	 * This will remove the subscription to the channel
+	 * from the client. No more messages will be sent. This
+	 * uses strings to identify the channel instead of the
+	 * channel object. (CAUTION)
+	 * @example
+	 * ```
+	 * ctr.printRawChannel('channel')
+	 * 
+	 * await ctr.$channel('channel').print('text', 'Ok')
+	 * 
+	 * ctr.removeRawChannel('channel')
+	 * 
+	 * await ctr.$channel('channel').print('text', 'No') // will not be sent
+	 * ```
+	 * @since 9.8.0
+	*/ public removeRawChannel(channel: string): this {
+		this.rawContext.unsubscribe(this.context.global.internalChannelStringIdentifiers.get(channel)!.id)
 
 		return this
 	}

@@ -2,10 +2,11 @@ import InternalRequestContext from "@/types/internal/classes/RequestContext"
 import { WsContext } from "@/types/implementation/contexts/ws"
 import WsOpenContext from "@/classes/request/WsOpenContext"
 import { JSONParsed, ParsedBody, RatelimitInfos } from "@/types/global"
+import Server from "@/classes/Server"
 
 export default class WsMessageContext<Context extends Record<any, any> = {}> extends WsOpenContext<'message', Context> {
-	constructor(context: InternalRequestContext, rawContext: WsContext, abort: AbortSignal) {
-		super(context, rawContext, abort, 'message')
+	constructor(context: InternalRequestContext, server: Server<any, any>, rawContext: WsContext, abort: AbortSignal) {
+		super(context, server, rawContext, abort, 'message')
 	}
 
 	/**
@@ -142,5 +143,5 @@ export default class WsMessageContext<Context extends Record<any, any> = {}> ext
 			get endsAt() { return new Date(data.end) },
 			endsIn: data.end - Date.now()
 		}
-	}	
+	}
 }

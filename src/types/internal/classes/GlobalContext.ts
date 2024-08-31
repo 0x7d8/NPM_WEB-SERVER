@@ -77,6 +77,10 @@ export default class GlobalContext {
 	 * Internal Request Identifiers
 	 * @since 9.3.0
 	*/ public internalRequestIdentifiers = new Set<number>()
+	/**
+	 * Internal Channel String Identifiers
+	 * @since 9.8.0
+	*/ public internalChannelStringIdentifiers = new Map<string, Channel<any>>()
 
 	/**
 	 * Caches for various methods

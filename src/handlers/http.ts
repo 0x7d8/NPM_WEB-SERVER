@@ -49,7 +49,7 @@ import toArrayBuffer from "@/functions/toArrayBuffer"
 		context.body.raw = Buffer.allocUnsafe(0)
 	}
 
-	const ctr = new context.global.classContexts.HttpRequest(context, req, req.aborted())
+	const ctr = new context.global.classContexts.HttpRequest(context, server, req, req.aborted())
 	Object.assign(ctr["@"], customContext)
 
 	if (context.global.options.proxy.enabled) {

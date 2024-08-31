@@ -1,5 +1,22 @@
 # Changelog
 
+## 9.8.0
+
+- Add `<WsOpenContext>.printRaw`
+- Add `<WsOpenContext>.printRawChannel`
+- Add `<WsOpenContext>.removeRawChannel`
+- Add `<WsOpenContext>.$channel`
+- Add `<WsOpenContext>.server`
+- Add `<WsMessageContext>.printRaw`
+- Add `<WsMessageContext>.printRawChannel`
+- Add `<WsMessageContext>.removeRawChannel`
+- Add `<WsMessageContext>.$channel`
+- Add `<WsMessageContext>.server`
+- Add `<WsCloseContext>.$channel`
+- Add `<WsCloseContext>.server`
+- Add `<HttpRequestContext>.$channel`
+- Add `<HttpRequestContext>.server`
+
 ## 9.7.1
 
 - Fix Websocket Json Parsing Issue

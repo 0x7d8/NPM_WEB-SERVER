@@ -13,7 +13,7 @@ export default async function wsHandler({ context, custom, aborter }: WebsocketD
 
 	switch (ws.type()) {
 		case "open": {
-			const ctr = new context.global.classContexts.WsOpen(context, ws, aborter.signal)
+			const ctr = new context.global.classContexts.WsOpen(context, server, ws, aborter.signal)
 			ctr["@"] = custom
 
 			for (let i = 0; i < middlewares.length; i++) {
@@ -193,7 +193,7 @@ export default async function wsHandler({ context, custom, aborter }: WebsocketD
 		}
 
 		case "message": {
-			const ctr = new context.global.classContexts.WsMessage(context, ws, aborter.signal)
+			const ctr = new context.global.classContexts.WsMessage(context, server, ws, aborter.signal)
 			ctr["@"] = custom
 
 			if (route.ratelimit && route.ratelimit.maxHits !== Infinity && route.ratelimit.timeWindow !== Infinity) {
@@ -385,7 +385,7 @@ export default async function wsHandler({ context, custom, aborter }: WebsocketD
 		}
 
 		case "close": {
-			const ctr = new context.global.classContexts.WsClose(context)
+			const ctr = new context.global.classContexts.WsClose(context, server)
 			ctr["@"] = custom
 
 			for (let i = 0; i < middlewares.length; i++) {

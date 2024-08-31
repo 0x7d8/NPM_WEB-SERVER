@@ -6,6 +6,8 @@ import RequestContext from "@/types/internal/classes/RequestContext"
 import GlobalContext from "@/types/internal/classes/GlobalContext"
 import parseKV from "@/functions/parseKV"
 import { as, network } from "@rjweb/utils"
+import Channel from "@/classes/Channel"
+import Server from "@/classes/Server"
 
 export default class Base<Context extends Record<any, any> = {}> {
 	/**
@@ -16,13 +18,18 @@ export default class Base<Context extends Record<any, any> = {}> {
 	 * The Global Context Object used by the server
 	 * @since 9.0.0
 	*/ public global: GlobalContext
+	/**
+	 * The Server Object that initialized this Request
+	 * @since 9.8.0
+	*/ public server: Server<{}, []>
 
 	/**
 	 * Initializes a new Instance of a Web Context
 	 * @since 7.0.0
-	*/ constructor(context: RequestContext) {
+	*/ constructor(context: RequestContext, server: Server<any, any>) {
 		this.context = context
 		this.global = context.global
+		this.server = server
 
 		this.params = as<any>(context.params)
 		this.headers = context.headers
@@ -106,6 +113,35 @@ export default class Base<Context extends Record<any, any> = {}> {
 		}
 
 		this.url = context.url
+	}
+
+	/**
+	 * Grab a Channel from either a string identifier or a Channel object
+	 * @example
+	 * ```
+	 * const channel = ctr.$channel('channel')
+	 * 
+	 * await channel.send('text', 'Ok')
+	 * 
+	 * // or
+	 * 
+	 * const ref = new Channel<string>()
+	 * const channel = ctr.$channel(ref)
+	 * 
+	 * await channel.send('text', 'Ok')
+	 * ```
+	 * @since 9.8.0
+	*/ public $channel<C extends Content = any>(channel: Channel<C> | string): Channel<C> {
+		if (typeof channel === 'string') {
+			const channelObj = this.context.global.internalChannelStringIdentifiers.get(channel)
+			if (!channelObj) {
+				this.context.global.internalChannelStringIdentifiers.set(channel, new Channel())
+			}
+
+			return channelObj || this.context.global.internalChannelStringIdentifiers.get(channel)!
+		}
+
+		return channel
 	}
 	
 	/**

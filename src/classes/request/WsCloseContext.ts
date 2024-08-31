@@ -1,9 +1,10 @@
 import InternalRequestContext from "@/types/internal/classes/RequestContext"
 import Base from "@/classes/request/Base"
+import Server from "@/classes/Server"
 
 export default class WsCloseContext<Context extends Record<any, any> = {}> extends Base<Context> {
-	constructor(context: InternalRequestContext) {
-		super(context)
+	constructor(context: InternalRequestContext, server: Server<any, any>) {
+		super(context, server)
 	}
 
 	/**

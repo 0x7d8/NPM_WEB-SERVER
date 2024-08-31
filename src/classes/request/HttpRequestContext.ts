@@ -18,10 +18,11 @@ import parseContent from "@/functions/parseContent"
 import { createHash } from "crypto"
 import YieldedResponse from "@/classes/YieldedResponse"
 import contentDisposition from "content-disposition"
+import Server from "@/classes/Server"
 
 export default class HttpRequestContext<Context extends Record<any, any> = {}> extends Base<Context> {
-	constructor(context: InternalRequestContext, protected rawContext: HttpContext, protected abort: AbortSignal) {
-		super(context)
+	constructor(context: InternalRequestContext, server: Server<any, any>, protected rawContext: HttpContext, protected abort: AbortSignal) {
+		super(context, server)
 
 		this.type = context.type
 	}
@@ -483,9 +484,9 @@ export default class HttpRequestContext<Context extends Record<any, any> = {}> e
 	 * @since 8.2.0
 	*/ public printChunked<Callback extends ((print: (content: Content) => Promise<void>) => Promise<any>) | null>(callback: Callback): Callback extends null ? Writable : this {
 		if (this.context.chunked) throw new Error('Cannot call printChunked multiple times')
-		
+
 		this.context.chunked = true
-		
+
 		let canStartReading: () => void = () => {},	
 			canStartReadingBool = false
 
@@ -564,7 +565,7 @@ export default class HttpRequestContext<Context extends Record<any, any> = {}> e
 		*/ name?: string
 		/**
 		 * Whether to download the file or display it in the browser
-		 * @default ctr.headers.get('content-type') === 'application/octet-stream'
+		 * @default ctr.context.response.headers.get('content-type') === 'application/octet-stream'
 		 * @since 9.1.4
 		*/ download?: boolean
 		/**
