@@ -1,5 +1,9 @@
 # Changelog
 
+## 9.8.1
+
+- Add `<Server>.$channel`
+
 ## 9.8.0
 
 - Add `<WsOpenContext>.printRaw`

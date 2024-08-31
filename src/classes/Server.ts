@@ -1,5 +1,5 @@
 import { BaseImplementation, Implementation } from "@/types/implementation"
-import { Method, ReverseProxyIps, ServerStatus } from "@/types/global"
+import { Content, Method, ReverseProxyIps, ServerStatus } from "@/types/global"
 import { FullServerOptions, ServerOptions } from "@/types/structures/ServerOptions"
 import { as, network, number, object, size, time } from "@rjweb/utils"
 import GlobalContext from "@/types/internal/classes/GlobalContext"
@@ -13,10 +13,12 @@ import Route from "@/classes/Route"
 import mergeClasses from "@/functions/mergeClasses"
 import parseURL from "@/functions/parseURL"
 import { oas31 } from "openapi3-ts"
+import Channel from "@/classes/Channel"
+
+import RequestContext from "@/types/internal/classes/RequestContext"
 
 import httpHandler from "@/handlers/http"
 import wsHandler from "@/handlers/ws"
-import RequestContext from "@/types/internal/classes/RequestContext"
 
 import HttpRequestContext from "@/classes/request/HttpRequestContext"
 import WsOpenContext from "@/classes/request/WsOpenContext"
@@ -115,6 +117,35 @@ export default class Server<const Options extends ServerOptions, Middlewares ext
 		} else {
 			this.global.logger.debug('  (None)')
 		}
+	}
+
+	/**
+	 * Grab a Channel from either a string identifier or a Channel object
+	 * @example
+	 * ```
+	 * const channel = ctr.$channel('channel')
+	 * 
+	 * await channel.send('text', 'Ok')
+	 * 
+	 * // or
+	 * 
+	 * const ref = new Channel<string>()
+	 * const channel = ctr.$channel(ref)
+	 * 
+	 * await channel.send('text', 'Ok')
+	 * ```
+	 * @since 9.8.1
+	*/ public $channel<C extends Content = any>(channel: Channel<C> | string): Channel<C> {
+		if (typeof channel === 'string') {
+			const channelObj = this.context.global.internalChannelStringIdentifiers.get(channel)
+			if (!channelObj) {
+				this.context.global.internalChannelStringIdentifiers.set(channel, new Channel())
+			}
+
+			return channelObj || this.context.global.internalChannelStringIdentifiers.get(channel)!
+		}
+
+		return channel
 	}
 
 	/**
