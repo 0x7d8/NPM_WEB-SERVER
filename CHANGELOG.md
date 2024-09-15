@@ -1,5 +1,9 @@
 # Changelog
 
+## 9.8.2
+
+- Automatically turn headers lowercase
+
 ## 9.8.1
 
 - Add `<Server>.$channel`

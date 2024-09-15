@@ -88,10 +88,6 @@ export type ParseContentReturns = Awaited<ReturnType<typeof parseContent>>
 		case "string":
 			returnObject.content = toArrayBuffer(content)
 
-			if ((content as any).json) {
-				returnObject.headers['content-type'] = 'application/json'
-			}
-
 			break
 
 		case "symbol":

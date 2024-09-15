@@ -34,16 +34,16 @@ export default class Base<Context extends Record<any, any> = {}> {
 		this.params = as<any>(context.params)
 		this.headers = context.headers
 
-		this.headers['modifyFn'] = (event, key, data) => {
+		this.headers['modifyFn'] = (event, key: string, data) => {
 			switch (event) {
 				case "set": {
-					context.response.headers.set(key, data)
+					context.response.headers.set(key.toLowerCase(), data)
 
 					break
 				}
 
 				case "delete": {
-					context.response.headers.delete(key)
+					context.response.headers.delete(key.toLowerCase())
 
 					break
 				}
@@ -52,7 +52,7 @@ export default class Base<Context extends Record<any, any> = {}> {
 					let keys = 0
 					for (const cKey in context.response.headers) {
 						if (!key.includes(cKey)) {
-							context.response.headers.delete(key)
+							context.response.headers.delete(key.toLowerCase())
 							keys++
 						}
 					}
