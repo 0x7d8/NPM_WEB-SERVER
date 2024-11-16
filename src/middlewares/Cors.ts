@@ -33,6 +33,8 @@ export default new Middleware<{
 					break
 				}
 			}
+
+			ctr.headers.set('access-control-allow-origin', config.origins.at(-1))
 		}
 
 		if (ctr.url.method === 'OPTIONS' && !context.route) {
