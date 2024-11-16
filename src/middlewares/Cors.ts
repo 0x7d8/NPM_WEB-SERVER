@@ -27,14 +27,16 @@ export default new Middleware<{
 		ctr.headers.set('access-control-allow-headers', ctr.headers.get('access-control-request-headers', '*'))
 
 		if (!config.allowAll && config.origins?.length) {
+			let setDefault = true
 			for (const origin of config.origins) {
 				if (origin.includes(ctr.client.origin)) {
+					setDefault = false
 					ctr.headers.set('access-control-allow-origin', origin)
 					break
 				}
 			}
 
-			ctr.headers.set('access-control-allow-origin', config.origins.at(-1))
+			if (setDefault) ctr.headers.set('access-control-allow-origin', config.origins.at(-1))
 		}
 
 		if (ctr.url.method === 'OPTIONS' && !context.route) {
