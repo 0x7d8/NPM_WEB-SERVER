@@ -36,7 +36,7 @@ import { STATUS_CODES } from "http"
 	if (context.vary.size && !context.response.headers.has('rjweb-server')) rawContext.header('vary', Array.from(context.vary).join(', '))
 
 	if (context.global.options.performance.eTag && body) {
-		const eTag = toETag(body, context.response.headers.json(), context.response.cookies.json(), context.response.status)
+		const eTag = toETag(body, context.response.cookies.json(), context.response.status)
 
 		if (eTag) {
 			if (context.headers.get('if-none-match') === eTag) {
@@ -45,7 +45,7 @@ import { STATUS_CODES } from "http"
 				return false
 			}
 
-			context.response.headers.set('etag', eTag)
+			rawContext.header('etag', eTag)
 		}
 	}
 

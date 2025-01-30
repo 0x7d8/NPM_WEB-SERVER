@@ -1,6 +1,6 @@
 {
   "name": "rjweb-server",
-  "version": "9.8.4",
+  "version": "9.8.5",
   "description": "Easy and Robust Way to create a Web Server with many easy-to-use Features in Node.js",
   "main": "./lib/cjs/index.js",
   "module": "./lib/esm/index.js",
