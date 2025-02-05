@@ -412,11 +412,11 @@ import toArrayBuffer from "@/functions/toArrayBuffer"
 		req.compress(getCompressMethod(true, context.headers.get('accept-encoding', ''), content.content.byteLength, context.ip.isProxied, context.global))
 
 		const continueWrites = await writeHeaders(content.content, context, req)
-		if (!continueWrites) return
-
-		await req
-			.status(context.response.status, context.response.statusText || STATUS_CODES[context.response.status] || 'Unknown')
-			.write(content.content)
+		if (continueWrites) {
+			await req
+				.status(context.response.status, context.response.statusText || STATUS_CODES[context.response.status] || 'Unknown')
+				.write(content.content)
+		}
 	}
 
 	return context.abort(ctr)
