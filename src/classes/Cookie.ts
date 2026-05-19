@@ -1,4 +1,4 @@
-import { Content } from "@/types/global"
+import type { Content } from "@/types/global"
 
 type CookieData = {
 	/**

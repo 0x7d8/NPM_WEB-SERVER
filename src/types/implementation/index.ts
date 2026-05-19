@@ -1,5 +1,5 @@
-import { FullServerOptions } from "@/types/structures/ServerOptions"
-import { HandleRecord } from "@/types/implementation/handle"
+import type { FullServerOptions } from "@/types/structures/ServerOptions"
+import type { HandleRecord } from "@/types/implementation/handle"
 
 export abstract class Implementation {
 	public readonly options: FullServerOptions

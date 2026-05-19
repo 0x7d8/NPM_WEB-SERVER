@@ -1,4 +1,4 @@
-import { RealAny } from "@/types/internal"
+import type { RealAny } from "@/types/internal"
 
 const inspectSymbol = Symbol.for('nodejs.util.inspect.custom')
 

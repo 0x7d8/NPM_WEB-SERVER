@@ -1,6 +1,6 @@
-import { HttpContext } from "@/types/implementation/contexts/http"
-import { WsContext } from "@/types/implementation/contexts/ws"
-import RequestContext from "@/types/internal/classes/RequestContext"
+import type { HttpContext } from "@/types/implementation/contexts/http"
+import type { WsContext } from "@/types/implementation/contexts/ws"
+import type RequestContext from "@/types/internal/classes/RequestContext"
 
 export type WebsocketData = {
 	context: RequestContext

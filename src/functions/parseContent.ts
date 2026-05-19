@@ -1,7 +1,7 @@
 import { Duplex } from "stream"
-import Logger from "@/classes/Logger"
+import type Logger from "@/classes/Logger"
 import { isArrayBuffer, isMap, isPromise, isSet } from "util/types"
-import { JSONParsed, JSONValue } from "@/types/global"
+import type { JSONParsed, JSONValue } from "@/types/global"
 import toArrayBuffer from "@/functions/toArrayBuffer"
 
 const failMessage = toArrayBuffer('Failed to parse provided Object')
@@ -100,11 +100,17 @@ export type ParseContentReturns = Awaited<ReturnType<typeof parseContent>>
 			returnObject.content = toArrayBuffer(String(content))
 			break
 
-		case "function":
-			const result = await Promise.resolve(content())
-			returnObject.content = (await parseContent(result, prettify, logger)).content
+		case "function": {
+			const result = content();
+			if (isPromise(result)) {
+				const awaited = await result
+				returnObject.content = (await parseContent(awaited as any, prettify, logger)).content
+			} else {
+				returnObject.content = (await parseContent(result, prettify, logger)).content
+			}
 
 			break
+		}
 
 		case "undefined":
 			returnObject.content = new ArrayBuffer(0)

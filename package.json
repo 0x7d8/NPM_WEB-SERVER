@@ -1,14 +1,14 @@
 {
   "name": "rjweb-server",
-  "version": "9.8.6",
+  "version": "9.9.0",
   "description": "Easy and Robust Way to create a Web Server with many easy-to-use Features in Node.js",
   "main": "./lib/cjs/index.js",
   "module": "./lib/esm/index.js",
   "types": "./lib/typings/index.d.ts",
   "scripts": {
-    "build:esm": "ttsc --outDir lib/esm --module ESNext && mv lib/esm/src/* lib/esm && rm -rf lib/esm/src",
-    "build:cjs": "ttsc --outDir lib/cjs --module CommonJS && mv lib/cjs/src/* lib/cjs && rm -rf lib/cjs/src",
-    "build:typings": "ttsc --outDir lib/typings --emitDeclarationOnly --declaration && mv lib/typings/src/* lib/typings && rm -rf lib/typings/src",
+    "build:esm": "tspc --outDir lib/esm --module ESNext --ignoreDeprecations 6.0 && mv lib/esm/src/* lib/esm && rm -rf lib/esm/src",
+    "build:cjs": "tspc --outDir lib/cjs --module CommonJS --ignoreDeprecations 6.0 && mv lib/cjs/src/* lib/cjs && rm -rf lib/cjs/src",
+    "build:typings": "tspc --outDir lib/typings --emitDeclarationOnly --declaration --ignoreDeprecations 6.0 && mv lib/typings/src/* lib/typings && rm -rf lib/typings/src",
     "build:full": "rm -rf lib && pnpm build:esm & pnpm build:cjs & pnpm build:typings && wait && sed -i -e 's|\"package.json\"|\"./package.json\"|' lib/**/*.js && echo \"Size $(du -sh lib)\"",
     "docs": "rm -rf docs && typedoc --githubPages false --includeVersion --out docs src/index.ts --plugin typedoc-material-theme --themeColor '#cb9820' && find docs -type f -name '*.html' -exec sed -i -e 's|<meta charSet=\"utf-8\"/>|<meta charSet=\"utf-8\"/><link rel=\"icon\" type=\"image/svg+xml\" href=\"https://cdn.rjns.dev/rjweb/icon.svg\">|' {} + && chmod -R a+rw docs",
     "cli": "node lib/cjs/cli.js"
@@ -21,7 +21,7 @@
     "rjweb": "lib/cjs/cli.js"
   },
   "engines": {
-    "node": ">=18.0.0"
+    "node": ">=22.0.0"
   },
   "keywords": [
     "webserver",
@@ -44,24 +44,24 @@
   },
   "homepage": "https://github.com/0x7d8/NPM_WEB-SERVER#readme",
   "devDependencies": {
-    "@types/content-disposition": "^0.5.8",
-    "@types/inquirer": "^9.0.7",
-    "@types/node": "^20.14.2",
-    "@types/yargs": "^17.0.32",
+    "@types/content-disposition": "^0.5.9",
+    "@types/node": "^22.0.0",
+    "@types/yargs": "^17.0.35",
     "rjweb-server": "link:",
+    "ts-patch": "^4.0.1",
     "tsc-progress": "^1.0.4",
-    "ttsc": "^0.3.1",
     "typedoc": "^0.25.13",
-    "typedoc-material-theme": "^1.0.2",
-    "typescript": "^5.4.5",
-    "typescript-transform-paths": "^3.4.7"
+    "typedoc-material-theme": "^1.4.1",
+    "typescript": "^6.0.3",
+    "typescript-transform-paths": "^4.0.0"
   },
   "dependencies": {
-    "@rjweb/utils": "^1.12.20",
+    "@inquirer/prompts": "^8.4.3",
+    "@rjweb/utils": "^1.12.29",
     "content-disposition": "^0.5.4",
-    "inquirer": "^9.2.23",
-    "openapi3-ts": "^4.3.2",
+    "inquirer": "^13.4.3",
+    "openapi3-ts": "^4.5.0",
     "yargs": "^17.7.2",
-    "zod": "^3.23.8"
+    "zod": "^4.4.3"
   }
 }

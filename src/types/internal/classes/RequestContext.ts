@@ -1,16 +1,16 @@
-import Cookie from "@/classes/Cookie"
-import Middleware, { UsableMiddleware } from "@/classes/Middleware"
-import Route from "@/classes/Route"
+import type Cookie from "@/classes/Cookie"
+import Middleware, { type UsableMiddleware } from "@/classes/Middleware"
+import type Route from "@/classes/Route"
 import RuntimeError from "@/classes/RuntimeError"
-import Server from "@/classes/Server"
+import type Server from "@/classes/Server"
 import URLObject from "@/classes/URLObject"
 import ValueCollection from "@/classes/ValueCollection"
-import YieldedResponse from "@/classes/YieldedResponse"
-import HttpRequestContext from "@/classes/request/HttpRequestContext"
+import type YieldedResponse from "@/classes/YieldedResponse"
+import type HttpRequestContext from "@/classes/request/HttpRequestContext"
 import parseURL from "@/functions/parseURL"
-import { Content, Method, ParsedBody } from "@/types/global"
-import { HttpContext } from "@/types/implementation/contexts/http"
-import GlobalContext from "@/types/internal/classes/GlobalContext"
+import type { Content, Method, ParsedBody } from "@/types/global"
+import type { HttpContext } from "@/types/implementation/contexts/http"
+import type GlobalContext from "@/types/internal/classes/GlobalContext"
 
 const empty = Buffer.allocUnsafe(0)
 
@@ -193,7 +193,7 @@ export default class RequestContext<MiddlewareData extends Record<any, any> = an
 
 			if (this.route?.type === 'http' && !this.route.data.onRawBody && concat) this.body.chunks.push(buffer)
 			else if (this.route?.type === 'http') try {
-				if (!this.endFn) await Promise.resolve(this.route.data.onRawBody?.(ctr, () => this.endFn = true, buffer, isLast))
+				if (!this.endFn) await Promise.resolve(this.route.data.onRawBody?.(ctr, () => {this.endFn = true}, chunk, isLast))
 			} catch (err) {
 				this.handleError(err, 'http.handle.onRawBody')
 			}

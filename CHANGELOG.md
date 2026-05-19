@@ -1,5 +1,13 @@
 # Changelog
 
+## 9.9.0
+
+- Bumped dependencies to latest versions
+- Some minor performance improvements
+- Some minor code cleanup
+- Remove SparkedHost IPs from default proxy IPs
+- Add ability to provide custom Logger Implementations via `options.logging.implementation`
+
 ## 9.8.2
 
 - Automatically turn headers lowercase

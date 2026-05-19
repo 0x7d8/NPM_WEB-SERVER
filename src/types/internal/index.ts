@@ -1,13 +1,13 @@
-import { UsableMiddleware } from "@/classes/Middleware"
-import RuntimeError from "@/classes/RuntimeError"
-import Base from "@/classes/request/Base"
-import HttpRequestContext from "@/classes/request/HttpRequestContext"
-import WsCloseContext from "@/classes/request/WsCloseContext"
-import WsMessageContext from "@/classes/request/WsMessageContext"
-import WsOpenContext from "@/classes/request/WsOpenContext"
-import location from "@/functions/location"
-import { Method } from "@/types/global"
-import { z } from "zod"
+import type { UsableMiddleware } from "@/classes/Middleware"
+import type RuntimeError from "@/classes/RuntimeError"
+import type Base from "@/classes/request/Base"
+import type HttpRequestContext from "@/classes/request/HttpRequestContext"
+import type WsCloseContext from "@/classes/request/WsCloseContext"
+import type WsMessageContext from "@/classes/request/WsMessageContext"
+import type WsOpenContext from "@/classes/request/WsOpenContext"
+import type location from "@/functions/location"
+import type { Method } from "@/types/global"
+import type { z } from "zod"
 
 export type RealAny = Promise<any> | any
 export type EndFn = (...args: any[]) => void

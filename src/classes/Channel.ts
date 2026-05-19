@@ -1,5 +1,5 @@
-import parseContent, { Content } from "@/functions/parseContent"
-import { RealAny } from "@/types/internal"
+import parseContent, { type Content } from "@/functions/parseContent"
+import type { RealAny } from "@/types/internal"
 import { array, as, number } from "@rjweb/utils"
 
 type Listener<Value extends Content> = (data: Value) => RealAny

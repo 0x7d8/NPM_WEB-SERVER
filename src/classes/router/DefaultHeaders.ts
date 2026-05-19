@@ -1,4 +1,4 @@
-import { Content } from "@/functions/parseContent"
+import type { Content } from "@/functions/parseContent"
 
 export default class RouteContentTypes {
 	private defaultHeaders: Record<string, Content>

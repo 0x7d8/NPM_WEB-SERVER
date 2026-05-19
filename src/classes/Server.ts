@@ -1,19 +1,20 @@
-import { BaseImplementation, Implementation } from "@/types/implementation"
-import { Content, Method, ReverseProxyIps, ServerStatus } from "@/types/global"
-import { FullServerOptions, ServerOptions } from "@/types/structures/ServerOptions"
-import { as, network, number, object, size, time } from "@rjweb/utils"
+import type { BaseImplementation, Implementation } from "@/types/implementation"
+import { type Content, type Method, ReverseProxyIps, type ServerStatus } from "@/types/global"
+import type { FullServerOptions, ServerOptions } from "@/types/structures/ServerOptions"
+import { as, type DeepRequired, network, number, object, size, time } from "@rjweb/utils"
 import GlobalContext from "@/types/internal/classes/GlobalContext"
 import ContentTypes from "@/classes/router/ContentTypes"
-import { DataContext, EndFn, ErrorCallbacks, FinishCallbacks, RatelimitCallbacks, RealAny } from "@/types/internal"
+import type { DataContext, EndFn, ErrorCallbacks, FinishCallbacks, RatelimitCallbacks, RealAny } from "@/types/internal"
 import FileLoader from "@/classes/router/File"
-import { UsableMiddleware, currentVersion } from "@/classes/Middleware"
+import { type UsableMiddleware, currentVersion } from "@/classes/Middleware"
 import Validator from "@/classes/Validator"
 import Path from "@/classes/router/Path"
-import Route from "@/classes/Route"
+import type Route from "@/classes/Route"
 import mergeClasses from "@/functions/mergeClasses"
 import parseURL from "@/functions/parseURL"
 import { oas31 } from "openapi3-ts"
 import Channel from "@/classes/Channel"
+import { type LoggerImpl, StockLogger } from "./Logger"
 
 import RequestContext from "@/types/internal/classes/RequestContext"
 
@@ -43,6 +44,7 @@ export const defaultOptions: FullServerOptions = {
 		eTag: true,
 		lastModified: true
 	}, logging: {
+		implementation: new StockLogger() as LoggerImpl,
 		debug: false,
 		error: true,
 		warn: true
@@ -91,7 +93,7 @@ export default class Server<const Options extends ServerOptions, Middlewares ext
 	*/ constructor(implementation: BaseImplementation, options: Options, middlewares?: Middlewares, private context: Context = {} as never) {
 		this.middlewares = middlewares ?? [] as never
 
-		this.options = object.deepParse(defaultOptions, options)
+		this.options = object.deepParse(defaultOptions, options as any)
 
 		this.implementation = new implementation(this.options)
 		this.global = new GlobalContext(this.options, this.implementation, {
@@ -358,7 +360,7 @@ export default class Server<const Options extends ServerOptions, Middlewares ext
 			ws: (ws) => wsHandler(ws.data(), ws, this, this.middlewares)
 		})
 
-		return new Promise(async(resolve, reject) => {
+		return (async() => {
 			try {
 				await this.implementation.start()
 				this._status = 'listening'
@@ -384,14 +386,14 @@ export default class Server<const Options extends ServerOptions, Middlewares ext
 					this.global.logger.debug(`Running 1min Interval ... Done ${(performance.now() - intervalStartTime).toFixed(2)}ms`)
 				}, time(1).m())
 
-				resolve(this.implementation.port())
+				return this.implementation.port()
 			} catch (err) {
 				this.implementation.stop()
 				this._status = 'stopped'
 
-				reject(err)
+				throw err
 			}
-		})
+		})()
 	}
 
 	/**

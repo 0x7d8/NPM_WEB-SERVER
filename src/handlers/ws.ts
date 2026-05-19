@@ -1,8 +1,8 @@
-import Route from "@/classes/Route"
-import { WsContext } from "@/types/implementation/contexts/ws"
-import { WebsocketData } from "@/types/implementation/handle"
-import { Server } from "@/index"
-import { UsableMiddleware } from "@/classes/Middleware"
+import type Route from "@/classes/Route"
+import type { WsContext } from "@/types/implementation/contexts/ws"
+import type { WebsocketData } from "@/types/implementation/handle"
+import type { Server } from "@/index"
+import type { UsableMiddleware } from "@/classes/Middleware"
 
 export default async function wsHandler({ context, custom, aborter }: WebsocketData, ws: WsContext, server: Server<any, any, any>, middlewares: UsableMiddleware[]) {
 	const route = context.route as Route<'ws'>
@@ -22,7 +22,7 @@ export default async function wsHandler({ context, custom, aborter }: WebsocketD
 
 				if (middleware.callbacks.wsOpen) {
 					try {
-						await Promise.resolve(middleware.callbacks.wsOpen(middleware.config, server, context, ctr, () => context.endFn = true))
+						await Promise.resolve(middleware.callbacks.wsOpen(middleware.config, server, context, ctr, () => {context.endFn = true}))
 					} catch (err) {
 						const error = context.handleError(err, `ws.handle.middleware.${i}.wsOpen`)
 
@@ -50,7 +50,7 @@ export default async function wsHandler({ context, custom, aborter }: WebsocketD
 					const validate = values[j]
 
 					try {
-						await Promise.resolve(validate(ctr, () => context.endFn = true, validator.data))
+						await Promise.resolve(validate(ctr, () => {context.endFn = true}, validator.data))
 					} catch (err) {
 						const error = context.handleError(err, `ws.handle.validator.${i}.listeners.${j}.wsOpen`)
 
@@ -91,7 +91,7 @@ export default async function wsHandler({ context, custom, aborter }: WebsocketD
 
 				if (middleware.callbacks.wsOpen) {
 					try {
-						await Promise.resolve(middleware.callbacks.wsOpen(middleware.config, server, context, ctr, () => context.endFn = true))
+						await Promise.resolve(middleware.callbacks.wsOpen(middleware.config, server, context, ctr, () => {context.endFn = true}))
 					} catch (err) {
 						const error = context.handleError(err, `ws.handle.middleware.${i}.wsOpen`)
 
@@ -239,7 +239,7 @@ export default async function wsHandler({ context, custom, aborter }: WebsocketD
 		
 				if (middleware.callbacks.wsMessage) {
 					try {
-						await Promise.resolve(middleware.callbacks.wsMessage(middleware.config, server, context, ctr, () => context.endFn = true))
+						await Promise.resolve(middleware.callbacks.wsMessage(middleware.config, server, context, ctr, () => {context.endFn = true}))
 					} catch (err) {
 						const error = context.handleError(err, `ws.handle.middleware.${i}.wsMessage`)
 
@@ -267,7 +267,7 @@ export default async function wsHandler({ context, custom, aborter }: WebsocketD
 					const validate = values[j]
 
 					try {
-						await Promise.resolve(validate(ctr, () => context.endFn = true, validator.data))
+						await Promise.resolve(validate(ctr, () => {context.endFn = true}, validator.data))
 					} catch (err) {
 						const error = context.handleError(err, `ws.handle.validator.${i}.listeners.${j}.wsMessage`)
 
@@ -394,7 +394,7 @@ export default async function wsHandler({ context, custom, aborter }: WebsocketD
 
 				if (middleware.callbacks.wsClose) {
 					try {
-						await Promise.resolve(middleware.callbacks.wsClose(middleware.config, server, context, ctr, () => context.endFn = true))
+						await Promise.resolve(middleware.callbacks.wsClose(middleware.config, server, context, ctr, () => {context.endFn = true}))
 					} catch (err) {
 						const error = context.handleError(err, `ws.handle.middleware.${i}.wsClose`)
 
@@ -422,7 +422,7 @@ export default async function wsHandler({ context, custom, aborter }: WebsocketD
 					const validate = values[j]
 
 					try {
-						await Promise.resolve(validate(ctr, () => context.endFn = true, validator.data))
+						await Promise.resolve(validate(ctr, () => {context.endFn = true}, validator.data))
 					} catch (err) {
 						const error = context.handleError(err, `ws.handle.validator.${i}.listeners.${j}.wsClose`)
 

@@ -1,5 +1,6 @@
-import { DeepRequired, network } from "@rjweb/utils"
-import { CompressionAlgorithm } from "@/types/global"
+import type { DeepRequired, network } from "@rjweb/utils"
+import type { CompressionAlgorithm } from "@/types/global"
+import type { LoggerImpl } from "@/classes/Logger"
 
 export type ServerOptions = {
 	/**
@@ -84,6 +85,10 @@ export type ServerOptions = {
 	 * Various Logging-Related Settings
 	 * @since 7.4.0
 	*/ logging?: {
+		/**
+		 * The Logger Implementation to use, by default it uses the built in Logger class that prints colored logs to the console, but you can provide your own implementation of the LoggerImpl interface to use your own logging system
+		 * @since 9.9.0
+		*/ implementation?: LoggerImpl
 		/**
 		 * Whether to enable `ERROR` Logs
 		 * @default true

@@ -1,16 +1,16 @@
-import { Method } from "@/types/global"
-import ValueCollection from "@/classes/ValueCollection"
+import type { Method } from "@/types/global"
+import type ValueCollection from "@/classes/ValueCollection"
 import parseURL from "@/functions/parseURL"
-import { EndFn, RateLimitConfig, RealAny } from "@/types/internal"
+import type { EndFn, RateLimitConfig, RealAny } from "@/types/internal"
 import { isRegExp } from "util/types"
-import { UsableValidator } from "@/classes/Validator"
-import { oas31 } from "openapi3-ts"
+import type { UsableValidator } from "@/classes/Validator"
+import type { oas31 } from "openapi3-ts"
 
-import HttpRequestContext from "@/classes/request/HttpRequestContext"
-import WsOpenContext from "@/classes/request/WsOpenContext"
-import WsMessageContext from "@/classes/request/WsMessageContext"
-import WsCloseContext from "@/classes/request/WsCloseContext"
-import Base from "@/classes/request/Base"
+import type HttpRequestContext from "@/classes/request/HttpRequestContext"
+import type WsOpenContext from "@/classes/request/WsOpenContext"
+import type WsMessageContext from "@/classes/request/WsMessageContext"
+import type WsCloseContext from "@/classes/request/WsCloseContext"
+import type Base from "@/classes/request/Base"
 
 type Segment = {
 	raw: string

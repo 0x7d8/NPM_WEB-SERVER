@@ -1,4 +1,4 @@
-import GlobalContext from "@/types/internal/classes/GlobalContext"
+import type GlobalContext from "@/types/internal/classes/GlobalContext"
 
 const mapping: Record<string, string> = Object.freeze({
 	pdf: 'application/pdf',

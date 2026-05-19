@@ -40,9 +40,4 @@ import { network } from "@rjweb/utils"
 		new network.Subnet('2a06:98c0::/29'),
 		new network.Subnet('2c0f:f248::/32'),
 	],
-
-	SPARKEDHOST: [
-		new network.IPAddress('23.230.3.203'), // North America
-		new network.IPAddress('128.140.127.215'), // Europe
-	],
 })

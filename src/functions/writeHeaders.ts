@@ -1,5 +1,5 @@
-import { HttpContext } from "@/types/implementation/contexts/http"
-import RequestContext from "@/types/internal/classes/RequestContext"
+import type { HttpContext } from "@/types/implementation/contexts/http"
+import type RequestContext from "@/types/internal/classes/RequestContext"
 import toETag from "@/functions/toETag"
 import Status from "@/enums/status"
 import parseContent from "@/functions/parseContent"

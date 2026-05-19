@@ -1,5 +1,5 @@
 import { createHash } from "crypto"
-import Cookie from "@/classes/Cookie"
+import type Cookie from "@/classes/Cookie"
 
 /**
  * Generate a Hash from a Body, Headers & Status Code to be used for caching using SHA1

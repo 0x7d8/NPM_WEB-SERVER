@@ -1,12 +1,12 @@
-import RequestContext from "@/types/internal/classes/RequestContext"
-import { HttpContext } from "@/types/implementation/contexts/http"
-import { Server, parseContent, version } from "@/index"
+import type RequestContext from "@/types/internal/classes/RequestContext"
+import type { HttpContext } from "@/types/implementation/contexts/http"
+import { type Server, parseContent, version } from "@/index"
 import { STATUS_CODES } from "http"
 import writeHeaders from "@/functions/writeHeaders"
 import getCompressMethod from "@/functions/getCompressMethod"
 import { network } from "@rjweb/utils"
 import { fileExists } from "@/functions/fileExists"
-import { UsableMiddleware } from "@/classes/Middleware"
+import type { UsableMiddleware } from "@/classes/Middleware"
 import YieldedResponse from "@/classes/YieldedResponse"
 import toArrayBuffer from "@/functions/toArrayBuffer"
 
@@ -113,7 +113,7 @@ import toArrayBuffer from "@/functions/toArrayBuffer"
 		if (req.aborted().aborted) return context.abort()
 		if (middleware.callbacks.httpRequest) {
 			try {
-				await Promise.resolve(middleware.callbacks.httpRequest(middleware.config, server, context, ctr, () => context.endFn = true))
+				await Promise.resolve(middleware.callbacks.httpRequest(middleware.config, server, context, ctr, () => {context.endFn = true}))
 			} catch (err) {
 				context.handleError(err, `http.handle.middleware.${i}.httpRequest`)
 			}
@@ -124,7 +124,7 @@ import toArrayBuffer from "@/functions/toArrayBuffer"
 
 	if (context.global.httpHandler) {
 		try {
-			await Promise.resolve(context.global.httpHandler(ctr, () => context.endFn = true))
+			await Promise.resolve(context.global.httpHandler(ctr, () => {context.endFn = true}))
 		} catch (err) {
 			context.handleError(err, 'http.handle.global.httpHandler')
 		}
@@ -199,7 +199,7 @@ import toArrayBuffer from "@/functions/toArrayBuffer"
 						const validate = values[j]
 		
 						try {
-							const response = await Promise.resolve(validate(ctr, () => context.endFn = true, validator.data))
+							const response = await Promise.resolve(validate(ctr, () => {context.endFn = true}, validator.data))
 
 							if (response instanceof YieldedResponse) {
 								context.yielded = response
@@ -249,7 +249,7 @@ import toArrayBuffer from "@/functions/toArrayBuffer"
 		
 					case "ws": {
 						if (context.route.data.onUpgrade) try {
-							const response = await Promise.resolve(context.route.data.onUpgrade(ctr, () => context.endFn = true))
+							const response = await Promise.resolve(context.route.data.onUpgrade(ctr, () => {context.endFn = true}))
 
 							if (response instanceof YieldedResponse) {
 								context.yielded = response

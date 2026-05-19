@@ -1,4 +1,4 @@
-import { FullServerOptions } from "@/types/structures/ServerOptions"
+import type { FullServerOptions } from "@/types/structures/ServerOptions"
 
 export const colors = {
 	reset: '\x1b[0m',
@@ -32,6 +32,32 @@ export const colors = {
 	}
 }
 
+export interface LoggerImpl {
+	error(...messages: any[]): this
+	warn(...messages: any[]): this
+	debug(...messages: any[]): this
+}
+
+export class StockLogger implements LoggerImpl {
+	public error(...messages: any[]): this {
+		console.error(`${colors.bg.red} ERROR ${colors.reset}`, ...messages)
+
+		return this
+	}
+
+	public warn(...messages: any[]): this {
+		console.warn(`${colors.bg.yellow}  WARN ${colors.reset}`, ...messages)
+
+		return this
+	}
+
+	public debug(...messages: any[]): this {
+		console.debug(`${colors.bg.blue} DEBUG ${colors.reset}`, ...messages)
+
+		return this
+	}
+}
+
 /**
  * A Logger used for automatically parsing messages from any place
  * @example
@@ -40,7 +66,6 @@ export const colors = {
  * ```
  * @since 7.4.0
 */ export default class Logger {
-	protected logs = 0
 	private options: FullServerOptions['logging']
 
 	/**
@@ -50,14 +75,17 @@ export const colors = {
 		this.options = options
 	}
 
+	private get implementation() {
+		return this.options.implementation as LoggerImpl
+	}
+
 	/**
 	 * Log an error message
 	 * @since 7.4.0
 	*/ public error(...messages: any[]): this {
 		if (!this.options.error) return this
 
-		console.error(`${colors.bg.red} ERROR ${colors.reset}`, ...messages)
-		this.logs++
+		this.implementation.error(...messages) ?? new StockLogger().error(...messages)
 
 		return this
 	}
@@ -68,8 +96,7 @@ export const colors = {
 	*/ public warn(...messages: any[]): this {
 		if (!this.options.warn) return this
 
-		console.warn(`${colors.bg.yellow}  WARN ${colors.reset}`, ...messages)
-		this.logs++
+		this.implementation.warn(...messages) ?? new StockLogger().warn(...messages)
 
 		return this
 	}
@@ -80,8 +107,7 @@ export const colors = {
 	*/ public debug(...messages: any[]): this {
 		if (!this.options.debug) return this
 
-		console.debug(`${colors.bg.blue} DEBUG ${colors.reset}`, ...messages)
-		this.logs++
+		this.implementation.debug(...messages) ?? new StockLogger().debug(...messages)
 
 		return this
 	}

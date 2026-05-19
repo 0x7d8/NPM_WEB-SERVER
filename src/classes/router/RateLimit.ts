@@ -1,4 +1,4 @@
-import { RateLimitConfig } from "@/types/internal"
+import type { RateLimitConfig } from "@/types/internal"
 import { as, time, number } from "@rjweb/utils"
 
 export default class RateLimit<Excluded extends (keyof RateLimit)[] = []> {

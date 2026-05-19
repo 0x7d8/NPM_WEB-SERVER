@@ -1,13 +1,13 @@
-import { AnyClass, EndFn, RealAny } from "@/types/internal"
+import type { AnyClass, EndFn, RealAny } from "@/types/internal"
 
 import HttpRequestContext from "@/classes/request/HttpRequestContext"
 import WsOpenContext from "@/classes/request/WsOpenContext"
 import WsMessageContext from "@/classes/request/WsMessageContext"
 import WsCloseContext from "@/classes/request/WsCloseContext"
-import Server from "@/classes/Server"
-import RequestContext from "@/types/internal/classes/RequestContext"
-import GlobalContext from "@/types/internal/classes/GlobalContext"
-import Base from "@/classes/request/Base"
+import type Server from "@/classes/Server"
+import type RequestContext from "@/types/internal/classes/RequestContext"
+import type GlobalContext from "@/types/internal/classes/GlobalContext"
+import type Base from "@/classes/request/Base"
 
 export type UsableMiddleware<
 	Config extends Record<any, any> = any,

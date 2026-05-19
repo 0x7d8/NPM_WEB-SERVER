@@ -1,16 +1,16 @@
 import Route from "@/classes/Route"
-import { Method } from "@/types/global"
+import type { Method } from "@/types/global"
 import Http from "@/classes/router/Http"
 import parseURL from "@/functions/parseURL"
-import { UsableMiddleware } from "@/classes/Middleware"
-import { UsableValidator } from "@/classes/Validator"
-import { LocationCallback, RateLimitConfig } from "@/types/internal"
+import type { UsableMiddleware } from "@/classes/Middleware"
+import type { UsableValidator } from "@/classes/Validator"
+import type { LocationCallback, RateLimitConfig } from "@/types/internal"
 import RateLimit from "@/classes/router/RateLimit"
 import path from "path"
-import GlobalContext from "@/types/internal/classes/GlobalContext"
-import { ArrayOrNot, filesystem, object } from "@rjweb/utils"
+import type GlobalContext from "@/types/internal/classes/GlobalContext"
+import { type ArrayOrNot, filesystem, object } from "@rjweb/utils"
 import Ws from "@/classes/router/Ws"
-import { oas31 } from "openapi3-ts"
+import type { oas31 } from "openapi3-ts"
 import deepClone from "@/functions/deepClone"
 import location from "@/functions/location"
 
@@ -235,7 +235,7 @@ export default class Path<Middlewares extends UsableMiddleware[], Validators ext
 		this.routesStatic.push(route)
 
 		if (options.preProcessFiles) {
-			this.promises.push(new Promise<void>(async(resolve) => {
+			this.promises.push((async() => {
 				for await (const file of filesystem.walk(route.data.folder, { async: true, recursive: true })) {
 					if (file.isDirectory() || !file.path) continue
 
@@ -244,26 +244,21 @@ export default class Path<Middlewares extends UsableMiddleware[], Validators ext
 					if (!route.data.stripHtmlEnding) {
 						this._global.cache.staticFiles.set(this.computePath($path).toString(), [path.posix.resolve(file.path), route])
 					} else {
-						{ // path/index.html
-							if (file.name.endsWith('index.html')) {
-								this._global.cache.staticFiles.set(this.computePath($path.replace('index.html', '')).toString(), [path.posix.resolve(file.path), route])
-							}
+						// path/index.html
+						if (file.name.endsWith('index.html')) {
+							this._global.cache.staticFiles.set(this.computePath($path.replace('index.html', '')).toString(), [path.posix.resolve(file.path), route])
 						}
 
-						{ // path.html
-							if (file.name.endsWith('.html')) {
-								this._global.cache.staticFiles.set(this.computePath($path.replace('.html', '')).toString(), [path.posix.resolve(file.path), route])
-							}
+						// path.html
+						if (file.name.endsWith('.html')) {
+							this._global.cache.staticFiles.set(this.computePath($path.replace('.html', '')).toString(), [path.posix.resolve(file.path), route])
 						}
 
-						{ // path
-							this._global.cache.staticFiles.set(this.computePath($path).toString(), [path.posix.resolve(file.path), route])
-						}
+						// path
+						this._global.cache.staticFiles.set(this.computePath($path).toString(), [path.posix.resolve(file.path), route])
 					}
 				}
-
-				resolve()
-			}))
+			})())
 		}
 
 		return this

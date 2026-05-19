@@ -1,4 +1,4 @@
-import { Method } from "@/types/global"
+import type { Method } from "@/types/global"
 import parseURL from "@/functions/parseURL"
 
 /**

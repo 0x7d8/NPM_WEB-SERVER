@@ -1,7 +1,7 @@
-import ValueCollection from "@/classes/ValueCollection"
-import { CompressionAlgorithm, type Method } from "@/types/global"
-import { WebsocketData } from "@/types/implementation/handle"
-import { Readable } from "stream"
+import type ValueCollection from "@/classes/ValueCollection"
+import type { CompressionAlgorithm, Method } from "@/types/global"
+import type { WebsocketData } from "@/types/implementation/handle"
+import type { Readable } from "stream"
 
 export abstract class HttpContext {
 	private compression: CompressionAlgorithm | null = null

@@ -1,13 +1,13 @@
 import Route from "@/classes/Route"
 import parseURL from "@/functions/parseURL"
-import { UsableMiddleware } from "@/classes/Middleware"
-import { UsableValidator } from "@/classes/Validator"
-import { RateLimitConfig } from "@/types/internal"
+import type { UsableMiddleware } from "@/classes/Middleware"
+import type { UsableValidator } from "@/classes/Validator"
+import type { RateLimitConfig } from "@/types/internal"
 import RateLimit from "@/classes/router/RateLimit"
 import path from "path"
-import GlobalContext from "@/types/internal/classes/GlobalContext"
+import type GlobalContext from "@/types/internal/classes/GlobalContext"
 import { filesystem, object } from "@rjweb/utils"
-import { oas31 } from "openapi3-ts"
+import type { oas31 } from "openapi3-ts"
 import Path from "@/classes/router/Path"
 import deepClone from "@/functions/deepClone"
 import os from "os"
@@ -164,7 +164,7 @@ export default class File<Middlewares extends UsableMiddleware[], Validators ext
 			...options
 		}
 
-		this.promises.push(new Promise<void>(async(resolve) => {
+		this.promises.push((async() => {
 			const resolved = path.resolve(directory)
 
 			for await (const file of filesystem.walk(resolved, { recursive: true, async: true })) {
@@ -269,9 +269,7 @@ export default class File<Middlewares extends UsableMiddleware[], Validators ext
 					this._global.logger.error(`Failed to load route file ${file.path}\n${err}`)
 				}
 			}
-
-			resolve()
-		}))
+		})())
 
 		return this
 	}

@@ -1,14 +1,14 @@
 import Route from "@/classes/Route"
 import RateLimit from "@/classes/router/RateLimit"
 import { as, object } from "@rjweb/utils"
-import { UsableMiddleware } from "@/classes/Middleware"
-import { UsableValidator } from "@/classes/Validator"
-import { DataContext, EndFn, RateLimitConfig, RealAny, UnionToIntersection } from "@/types/internal"
-import HttpRequestContext from "@/classes/request/HttpRequestContext"
-import WsOpenContext from "@/classes/request/WsOpenContext"
-import WsMessageContext from "@/classes/request/WsMessageContext"
-import WsCloseContext from "@/classes/request/WsCloseContext"
-import { oas31 } from "openapi3-ts"
+import type { UsableMiddleware } from "@/classes/Middleware"
+import type { UsableValidator } from "@/classes/Validator"
+import type { DataContext, EndFn, RateLimitConfig, RealAny, UnionToIntersection } from "@/types/internal"
+import type HttpRequestContext from "@/classes/request/HttpRequestContext"
+import type WsOpenContext from "@/classes/request/WsOpenContext"
+import type WsMessageContext from "@/classes/request/WsMessageContext"
+import type WsCloseContext from "@/classes/request/WsCloseContext"
+import type { oas31 } from "openapi3-ts"
 
 export default class Ws<Middlewares extends UsableMiddleware[] = [], Validators extends UsableValidator[] = [], Context extends Record<string, any> = {}, Excluded extends (keyof Ws)[] = []> {
 	protected route: Route<'ws'>

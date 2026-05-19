@@ -1,5 +1,5 @@
-import { CompressionAlgorithm } from "@/types/global"
-import GlobalContext from "@/types/internal/classes/GlobalContext"
+import type { CompressionAlgorithm } from "@/types/global"
+import type GlobalContext from "@/types/internal/classes/GlobalContext"
 import { as } from "@rjweb/utils"
 
 /**
@@ -58,7 +58,6 @@ import { as } from "@rjweb/utils"
 			}
 
 			mode = 'value'
-			tempValue = tempValue
 			highestValue = prio > highestPriority ? tempValue : highestValue
 			highestPriority = prio > highestPriority ? prio : highestPriority
 			tempPriority = ''

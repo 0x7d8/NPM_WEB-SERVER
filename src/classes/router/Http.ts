@@ -1,14 +1,14 @@
 import Route from "@/classes/Route"
-import { Method } from "@/types/global"
+import type { Method } from "@/types/global"
 import RateLimit from "@/classes/router/RateLimit"
 import { as, object } from "@rjweb/utils"
-import { UsableMiddleware } from "@/classes/Middleware"
-import { UsableValidator } from "@/classes/Validator"
-import { DataContext, RateLimitConfig, RealAny, UnionToIntersection } from "@/types/internal"
-import HttpRequestContext from "@/classes/request/HttpRequestContext"
-import { oas31 } from "openapi3-ts"
+import type { UsableMiddleware } from "@/classes/Middleware"
+import type { UsableValidator } from "@/classes/Validator"
+import type { DataContext, RateLimitConfig, RealAny, UnionToIntersection } from "@/types/internal"
+import type HttpRequestContext from "@/classes/request/HttpRequestContext"
+import type { oas31 } from "openapi3-ts"
 import deepClone from "@/functions/deepClone"
-import Base from "@/classes/request/Base"
+import type Base from "@/classes/request/Base"
 
 export default class Http<_Method extends Method, Middlewares extends UsableMiddleware[] = [], Validators extends UsableValidator[] = [], Context extends Record<string, any> = {}, Excluded extends (keyof Http<_Method>)[] = []> {
 	protected route: Route<'http'>

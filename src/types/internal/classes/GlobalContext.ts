@@ -1,13 +1,13 @@
-import Route from "@/classes/Route"
+import type Route from "@/classes/Route"
 import ValueCollection from "@/classes/ValueCollection"
-import { Implementation } from "@/types/implementation"
-import { FullServerOptions } from "@/types/structures/ServerOptions"
-import { ClassContexts, EndFn, ErrorCallbacks, FinishCallbacks, RatelimitCallbacks, RealAny } from "@/types/internal"
+import type { Implementation } from "@/types/implementation"
+import type { FullServerOptions } from "@/types/structures/ServerOptions"
+import type { ClassContexts, EndFn, ErrorCallbacks, FinishCallbacks, RatelimitCallbacks, RealAny } from "@/types/internal"
 import Logger from "@/classes/Logger"
-import Channel from "@/classes/Channel"
-import { CompressionAlgorithm } from "@/types/global"
+import type Channel from "@/classes/Channel"
+import type { CompressionAlgorithm } from "@/types/global"
 import toArrayBuffer from "@/functions/toArrayBuffer"
-import HttpRequestContext from "@/classes/request/HttpRequestContext"
+import type HttpRequestContext from "@/classes/request/HttpRequestContext"
 
 export default class GlobalContext {
 	constructor(options: FullServerOptions, public implementation: Implementation, classContexts: ClassContexts) {

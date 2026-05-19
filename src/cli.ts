@@ -205,7 +205,7 @@ yargs
 			})
 		),
 		(async(args) => {
-			const { default: inquirer } = await eval('import("inquirer")') as typeof import('inquirer')
+			const { select } = await eval('import("@inquirer/prompts")') as typeof import('@inquirer/prompts')
 
 			console.log(`${prefix} ${colors.fg.gray}Fetching Templates from GitHub...`)
 			const templates: Template[] = []
@@ -257,16 +257,9 @@ yargs
 				console.log(`${prefix} ${colors.fg.gray}Using ${colors.fg.cyan}${template}`)
 			} else {
 				if (args.template !== 'choose') console.log(`${prefix} ${colors.fg.cyan}${args.template} ${colors.fg.red}is not a valid template!`)
-				await inquirer.prompt([
-					{
-						name: 'Template',
-						type: 'list',
-						prefix,
-						choices: templates.map((t) => t.name),
-						askAnswered: true
-					}
-				]).then((answers) => {
-					template = answers.Template
+				template = await select({
+					message: 'Template',
+					choices: templates.map((t) => ({ name: t.name, value: t.name }))
 				})
 			}
 
@@ -275,16 +268,9 @@ yargs
 				console.log(`${prefix} ${colors.fg.gray}Using Variant ${colors.fg.cyan}${variant}`)
 			} else {
 				if (args.variant !== 'choose') console.log(`${prefix} ${colors.fg.cyan}${args.template} ${colors.fg.red}is not a valid template!`)
-				await inquirer.prompt([
-					{
-						name: 'Variant',
-						type: 'list',
-						prefix,
-						choices: templates.find((t) => t.name === template)!.variants.map((v) => v.name),
-						askAnswered: true
-					}
-				]).then((answers) => {
-					variant = answers.Variant
+				variant = await select({
+					message: 'Variant',
+					choices: templates.find((t) => t.name === template)!.variants.map((v) => ({ name: v.name, value: v.name }))
 				})
 			}
 
@@ -370,17 +356,9 @@ yargs
 				availablePackageManagers.push('bun')
 			} catch { }
 
-			let continueWith: PackageManager = 'npm'
-			await inquirer.prompt([
-				{
-					name: 'Continue with',
-					type: 'list',
-					prefix,
-					choices: availablePackageManagers,
-					askAnswered: true
-				}
-			]).then((answers) => {
-				continueWith = answers['Continue with']
+			const continueWith: PackageManager = await select({
+				message: 'Continue with',
+				choices: availablePackageManagers.map((pm) => ({ name: pm, value: pm }))
 			})
 
 			const spinner = new Spinner()

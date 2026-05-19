@@ -1,12 +1,12 @@
-import { DataContext, EndFn, RealAny, SetItemType } from "@/types/internal"
-import { UsableMiddleware } from "@/classes/Middleware"
-import HttpRequestContext from "@/classes/request/HttpRequestContext"
-import WsOpenContext from "@/classes/request/WsOpenContext"
-import WsMessageContext from "@/classes/request/WsMessageContext"
-import WsCloseContext from "@/classes/request/WsCloseContext"
-import Base from "@/classes/request/Base"
+import type { DataContext, EndFn, RealAny, SetItemType } from "@/types/internal"
+import type { UsableMiddleware } from "@/classes/Middleware"
+import type HttpRequestContext from "@/classes/request/HttpRequestContext"
+import type WsOpenContext from "@/classes/request/WsOpenContext"
+import type WsMessageContext from "@/classes/request/WsMessageContext"
+import type WsCloseContext from "@/classes/request/WsCloseContext"
+import type Base from "@/classes/request/Base"
 import { object } from "@rjweb/utils"
-import { oas31 } from "openapi3-ts"
+import type { oas31 } from "openapi3-ts"
 import deepClone from "@/functions/deepClone"
 
 
@@ -91,7 +91,7 @@ export default class Validator<Data extends Record<string, any> = {}, Context ex
 	 * server.start().then(() => console.log('Server Started!'))
 	 * ```
 	 * @since 9.0.0
-	*/ constructor() { }
+	*/ constructor() {}
 
 	/**
 	 * Add OpenAPI Documentation to all Endpoints using this Validator

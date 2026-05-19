@@ -1,4 +1,4 @@
-import { WebsocketData } from "@/types/implementation/handle"
+import type { WebsocketData } from "@/types/implementation/handle"
 
 export abstract class WsContext {
 	public abstract type(): 'open' | 'message' | 'close'
