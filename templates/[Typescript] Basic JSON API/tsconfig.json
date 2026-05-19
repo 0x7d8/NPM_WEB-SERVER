@@ -10,7 +10,7 @@
     "declaration": false,
     "esModuleInterop": true,
     "target": "ES2018",
-    "outDir": "lib",
+    "outDir": "lib"
   },
   "include": [
     "src/**/*"
