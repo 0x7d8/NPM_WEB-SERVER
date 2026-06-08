@@ -294,6 +294,20 @@ export default class Base<Context extends Record<any, any> = {}> {
 	*/ public readonly url: URLObject
 
 	/**
+	 * The current HTTP response status code
+	 * @since 9.9.0
+	*/ public get statusCode(): number {
+		return this.context.response.status
+	}
+
+	/**
+	 * The current HTTP response status text
+	 * @since 9.9.0
+	*/ public get statusText(): string | null {
+		return this.context.response.statusText
+	}
+
+	/**
 	 * Context Variables that are available anywhere in the requests lifespan
 	 * @since 1.2.1
 	*/ public '@': Context = {} as any
