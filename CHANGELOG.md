@@ -1,5 +1,11 @@
 # Changelog
 
+## 9.9.1
+
+- Fix path parameters in segments mixed with text (`{file}.{ext}`, `v{version}`), literals are now matched exactly and anchored, values split at the first occurrence of the following literal (`a.tar.gz` -> `a` / `tar.gz`)
+- Path parameter values are no longer trimmed of trailing whitespace and must not be empty
+- Tons of performance-related improvements and code cleanup
+
 ## 9.9.0
 
 - Bumped dependencies to latest versions

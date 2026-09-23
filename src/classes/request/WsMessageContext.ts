@@ -57,6 +57,8 @@ export default class WsMessageContext<Context extends Record<any, any> = {}> ext
 			} catch {
 				this.context.body.parsed = stringified
 			}
+		} else {
+			this.context.body.parsed = stringified
 		}
 
 		return this.context.body.parsed

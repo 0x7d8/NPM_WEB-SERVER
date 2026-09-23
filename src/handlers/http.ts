@@ -1,23 +1,35 @@
 import type RequestContext from "@/types/internal/classes/RequestContext"
 import type { HttpContext } from "@/types/implementation/contexts/http"
-import { type Server, parseContent, version } from "@/index"
+import { type Server, version } from "@/index"
 import { STATUS_CODES } from "http"
-import writeHeaders from "@/functions/writeHeaders"
+import { writeHeadersSync } from "@/functions/writeHeaders"
+import { parseContentSync } from "@/functions/parseContent"
 import getCompressMethod from "@/functions/getCompressMethod"
 import { network } from "@rjweb/utils"
+import { clientIp } from "@/classes/request/Base"
 import { fileExists } from "@/functions/fileExists"
 import type { UsableMiddleware } from "@/classes/Middleware"
 import YieldedResponse from "@/classes/YieldedResponse"
 import toArrayBuffer from "@/functions/toArrayBuffer"
+import httpDate from "@/functions/httpDate"
+
+const emptyBody = Buffer.allocUnsafe(0)
+
+function isThenable(value: any): value is Promise<any> {
+	return value !== null && typeof value === 'object' && typeof value.then === 'function'
+}
 
 /**
  * Handler for HTTP Requests
  * @since 9.0.0
 */ export default async function handle(context: RequestContext, req: HttpContext, server: Server<any, any, any>, middlewares: UsableMiddleware[], customContext: Record<string, any>) {
-	if (context.global.options.version) req.header('rjweb-server', version)
-	req.header('date', new Date().toUTCString())
+	const global = context.global, options = global.options
+	let method = context.url.method
 
-	if (context.url.method === 'TRACE' && context.global.options.methods.trace) {
+	if (options.version) req.header('rjweb-server', version)
+	req.header('date', httpDate())
+
+	if (method === 'TRACE' && options.methods.trace) {
 		let data = `HTTP/1.1 ${context.url.href}`
 
 		for (const [ key, value ] of context.headers) {
@@ -31,10 +43,12 @@ import toArrayBuffer from "@/functions/toArrayBuffer"
 		return
 	}
 
-	const internalIdentifier = parseInt(context.headers.get('rjweb-server-identifier'))
-	if (!isNaN(internalIdentifier)) {
-		if (context.global.internalRequestIdentifiers.has(internalIdentifier)) {
-			context.global.internalRequestIdentifiers.delete(internalIdentifier)
+	const internalIdentifierHeader = context.headers.get('rjweb-server-identifier')
+	if (internalIdentifierHeader) {
+		const internalIdentifier = parseInt(internalIdentifierHeader)
+
+		if (!isNaN(internalIdentifier) && global.internalRequestIdentifiers.has(internalIdentifier)) {
+			global.internalRequestIdentifiers.delete(internalIdentifier)
 
 			context.ip.isInternal = true
 		}
@@ -43,41 +57,41 @@ import toArrayBuffer from "@/functions/toArrayBuffer"
 	context.response.headers.set('content-type', 'text/plain')
 	context.response.headers.set('accept-ranges', 'none')
 
-	if (req.aborted().aborted) return context.abort()
+	if (req.isAborted()) return context.abort()
 
-	if (context.url.method === 'GET' || context.url.method === 'HEAD') {
-		context.body.raw = Buffer.allocUnsafe(0)
+	if (method === 'GET' || method === 'HEAD') {
+		context.body.raw = emptyBody
 	}
 
-	const ctr = new context.global.classContexts.HttpRequest(context, server, req, req.aborted())
+	const ctr = new global.classContexts.HttpRequest(context, server, req)
 	Object.assign(ctr["@"], customContext)
 
-	if (context.global.options.proxy.enabled) {
+	if (options.proxy.enabled) {
 		context.response.headers.set('proxy-authenticate', `Basic realm="Access rjweb-server@${version}"`)
 
-		if (context.global.options.proxy.force) {
+		if (options.proxy.force) {
 			if (!context.headers.has('proxy-authorization')) {
 				await req
 					.status(ctr.$status.PROXY_AUTHENTICATION_REQUIRED, STATUS_CODES[ctr.$status.PROXY_AUTHENTICATION_REQUIRED] || 'Unknown')
-					.write(context.global.cache.arrayBufferTexts.proxy_auth_required)
+					.write(global.cache.arrayBufferTexts.proxy_auth_required)
 
 				return
 			}
 		}
 
 
-		if (!context.global.options.proxy.credentials.authenticate) context.ip.isProxied = true
+		if (!options.proxy.credentials.authenticate) context.ip.isProxied = true
 		else if (context.headers.has('proxy-authorization')) {
-			let authcheck = context.global.cache.proxyCredentials
+			let authcheck = global.cache.proxyCredentials
 			if (!authcheck) {
-				authcheck = Buffer.from(`${context.global.options.proxy.credentials.username}:${context.global.options.proxy.credentials.password}`).toString('base64')
-				context.global.cache.proxyCredentials = authcheck
+				authcheck = Buffer.from(`${options.proxy.credentials.username}:${options.proxy.credentials.password}`).toString('base64')
+				global.cache.proxyCredentials = authcheck
 			}
 
 			if (context.headers.get('proxy-authorization') !== 'Basic '.concat(authcheck)) {
 				await req
 					.status(ctr.$status.UNAUTHORIZED, STATUS_CODES[ctr.$status.UNAUTHORIZED] || 'Unknown')
-					.write(context.global.cache.arrayBufferTexts.proxy_auth_invalid)
+					.write(global.cache.arrayBufferTexts.proxy_auth_invalid)
 
 				return
 			} else context.ip.isProxied = true
@@ -85,22 +99,22 @@ import toArrayBuffer from "@/functions/toArrayBuffer"
 
 		const oldIp = context.ip.value
 		if (context.ip.isProxied) {
-			context.ip.value = context.headers.get(context.global.options.proxy.header, context.ip.value).split(',')[0].trim()
+			context.ip.value = context.headers.get(options.proxy.header, context.ip.value).split(',')[0].trim()
 		}
 
-		if (context.ip.isProxied && context.global.options.proxy.ips.validate) {
-			if (context.global.options.proxy.ips.list.some((ip) => 'equals' in ip ? ip.equals(ctr.client.ip) : ip.includes(ctr.client.ip))) {
-				if (context.global.options.proxy.ips.mode === 'blacklist') {
-					if (context.global.options.proxy.force) {
+		if (context.ip.isProxied && options.proxy.ips.validate) {
+			if (options.proxy.ips.list.some((ip) => 'equals' in ip ? ip.equals(ctr.client.ip) : ip.includes(ctr.client.ip))) {
+				if (options.proxy.ips.mode === 'blacklist') {
+					if (options.proxy.force) {
 						await req
 							.status(ctr.$status.PROXY_AUTHENTICATION_REQUIRED, STATUS_CODES[ctr.$status.PROXY_AUTHENTICATION_REQUIRED] || 'Unknown')
-							.write(context.global.cache.arrayBufferTexts.proxy_auth_required)
+							.write(global.cache.arrayBufferTexts.proxy_auth_required)
 		
 						return
 					} else {
 						context.ip.isProxied = false
 						context.ip.value = oldIp
-						Object.assign(ctr.client, { ip: new network.IPAddress(oldIp) })
+						ctr.client[clientIp] = new network.IPAddress(oldIp)
 					}
 				}
 			}
@@ -110,10 +124,11 @@ import toArrayBuffer from "@/functions/toArrayBuffer"
 	for (let i = 0; i < middlewares.length; i++) {
 		const middleware = middlewares[i]
 
-		if (req.aborted().aborted) return context.abort()
+		if (req.isAborted()) return context.abort()
 		if (middleware.callbacks.httpRequest) {
 			try {
-				await Promise.resolve(middleware.callbacks.httpRequest(middleware.config, server, context, ctr, () => {context.endFn = true}))
+				const result = middleware.callbacks.httpRequest(middleware.config, server, context, ctr, () => {context.endFn = true})
+				if (isThenable(result)) await result
 			} catch (err) {
 				context.handleError(err, `http.handle.middleware.${i}.httpRequest`)
 			}
@@ -122,30 +137,52 @@ import toArrayBuffer from "@/functions/toArrayBuffer"
 		}
 	}
 
-	if (context.global.httpHandler) {
+	if (global.httpHandler) {
 		try {
-			await Promise.resolve(context.global.httpHandler(ctr, () => {context.endFn = true}))
+			const result = global.httpHandler(ctr, () => {context.endFn = true})
+			if (isThenable(result)) await result
 		} catch (err) {
 			context.handleError(err, 'http.handle.global.httpHandler')
 		}
 
-		if (req.aborted().aborted) return context.abort()
+		if (req.isAborted()) return context.abort()
 	}
 
-	const split = context.url.path.split('/')
+	method = context.url.method
+	const path = context.url.path
 	let ranBody = false
 
-	const headRoute = context.url.method === 'HEAD' ? context.findRoute('GET', context.url.path) : null,
-		routes = context.global.routes[context.type]
+	const headRoute = method === 'HEAD' ? context.findRoute('GET', path) : null,
+		routes = global.routes[context.type],
+		{ exact, dynamic, split } = global.cache.routeIndex[context.type].candidates(method, path)
 
-	for (let i = 0; i < routes.length + 1; i++) {
+	let e = 0, d = 0, exhausted = false
+	while (!exhausted) {
+		let i: number
+		if (e < exact.length && (d >= dynamic.length || exact[e] < dynamic[d])) i = exact[e++]
+		else if (d < dynamic.length) i = dynamic[d++]
+		else {
+			i = routes.length
+			exhausted = true
+		}
+
 		const route = routes[i]
+		let matched = false
 
-		if (route?.matches(context.url.method, context.params, context.url.path, split) || (i === routes.length && headRoute)) {
+		if (route) {
+			const urlData = route.urlData
+
+			if (urlData.type === 'normal' && urlData.static) matched = true
+			else matched = route.matches(method, context.params, path, split!)
+		}
+
+		if (matched || (exhausted && headRoute)) {
 			context.route = route ?? headRoute
 
 			if (context.route.ratelimit && context.route.ratelimit.maxHits !== Infinity && context.route.ratelimit.timeWindow !== Infinity) {
-				let data = context.global.rateLimits.get(`http+${ctr.client.ip.long()}-${context.route.ratelimit.sortTo}`, {
+				const ratelimitKey = `http+${ctr.client.ip.long()}-${context.route.ratelimit.sortTo}` as const
+
+				let data = global.rateLimits.get(ratelimitKey, {
 					hits: 0,
 					end: Date.now() + context.route.ratelimit.timeWindow
 				})
@@ -154,19 +191,20 @@ import toArrayBuffer from "@/functions/toArrayBuffer"
 					if (data.hits === context.route.ratelimit.maxHits) data.end += context.route.ratelimit.penalty
 		
 					context.endFn = true
-					if (context.global.rateLimitHandlers.httpRequest) {
+					if (global.rateLimitHandlers.httpRequest) {
 						try {
-							await Promise.resolve(context.global.rateLimitHandlers.httpRequest(ctr))
+							const result = global.rateLimitHandlers.httpRequest(ctr)
+							if (isThenable(result)) await result
 						} catch (err) {
 							context.handleError(err, 'http.handle.rateLimitHandlers.httpRequest')
 						}
 					} else {
 						context.response.status = 429
 						context.response.statusText = 'Too Many Requests'
-						context.response.content = context.global.cache.arrayBufferTexts.rate_limit_exceeded
+						context.response.content = global.cache.arrayBufferTexts.rate_limit_exceeded
 					}
 				} else if (data.end < Date.now()) {
-					context.global.rateLimits.delete(`http+${ctr.client.ip.long()}-${context.route.ratelimit.sortTo}`)
+					global.rateLimits.delete(ratelimitKey)
 		
 					data = {
 						hits: 0,
@@ -179,13 +217,13 @@ import toArrayBuffer from "@/functions/toArrayBuffer"
 				context.response.headers.set('x-ratelimit-reset', Math.floor(data.end / 1000).toString())
 				context.response.headers.set('x-ratelimit-policy', `${context.route.ratelimit.maxHits};w=${Math.floor(context.route.ratelimit.timeWindow / 1000)}`)
 		
-				context.global.rateLimits.set(`http+${ctr.client.ip.long()}-${context.route.ratelimit.sortTo}`, {
+				global.rateLimits.set(ratelimitKey, {
 					...data,
 					hits: data.hits + 1
 				})
 			}
 		
-			if (req.aborted().aborted) return context.abort()
+			if (req.isAborted()) return context.abort()
 		
 			if (context.route && !context.endFn) {
 				let yieldedNow = false
@@ -193,13 +231,13 @@ import toArrayBuffer from "@/functions/toArrayBuffer"
 				for (let i = 0; i < context.route.validators.length; i++) {
 					const validator = context.route.validators[i]
 
-					const values = Array.from(validator.listeners.httpRequest.values())
-					for (let j = 0; j < validator.listeners.httpRequest.size; j++) {
-						if (req.aborted().aborted) return
-						const validate = values[j]
+					let j = 0
+					for (const validate of validator.listeners.httpRequest) {
+						if (req.isAborted()) return
 		
 						try {
-							const response = await Promise.resolve(validate(ctr, () => {context.endFn = true}, validator.data))
+							const result = validate(ctr, () => {context.endFn = true}, validator.data)
+							const response = isThenable(result) ? await result : result
 
 							if (response instanceof YieldedResponse) {
 								context.yielded = response
@@ -208,6 +246,8 @@ import toArrayBuffer from "@/functions/toArrayBuffer"
 						} catch (err) {
 							context.handleError(err, `ws.handle.validator.${i}.listeners.${j}.httpRequest`)
 						}
+
+						j++
 
 						if (context.endFn) break
 						if (yieldedNow) {
@@ -222,7 +262,7 @@ import toArrayBuffer from "@/functions/toArrayBuffer"
 			}
 		
 			if (!context.endFn && context.route) {
-				if (req.aborted().aborted) return context.abort()
+				if (req.isAborted()) return context.abort()
 
 				let yieldedNow = false
 				switch (context.route.type) {
@@ -233,7 +273,8 @@ import toArrayBuffer from "@/functions/toArrayBuffer"
 						}
 		
 						if (context.route?.data.onRequest) try {
-							const response = await Promise.resolve(context.route.data.onRequest(ctr))
+							const result = context.route.data.onRequest(ctr)
+							const response = isThenable(result) ? await result : result
 
 							if (response instanceof YieldedResponse) {
 								context.route = null
@@ -249,7 +290,8 @@ import toArrayBuffer from "@/functions/toArrayBuffer"
 		
 					case "ws": {
 						if (context.route.data.onUpgrade) try {
-							const response = await Promise.resolve(context.route.data.onUpgrade(ctr, () => {context.endFn = true}))
+							const result = context.route.data.onUpgrade(ctr, () => {context.endFn = true})
+							const response = isThenable(result) ? await result : result
 
 							if (response instanceof YieldedResponse) {
 								context.yielded = response
@@ -259,15 +301,15 @@ import toArrayBuffer from "@/functions/toArrayBuffer"
 							context.handleError(err, 'http.handle.onUpgrade')
 						}
 		
-						context.response.status = 101
-						context.response.statusText = 'Switching Protocols'
-		
 						if (!context.endFn && !context.error) {
+							context.response.status = 101
+							context.response.statusText = 'Switching Protocols'
+
 							context.setExecuteSelf(async() => {
-								await writeHeaders(null, context, req)
+								await writeHeadersSync(null, context, req)
 		
 								context.body.chunks.length = 0
-								context.body.raw = Buffer.allocUnsafe(0)
+								context.body.raw = emptyBody
 		
 								const success = req
 									.status(101, 'Switching Protocols')
@@ -290,7 +332,7 @@ import toArrayBuffer from "@/functions/toArrayBuffer"
 					}
 				}
 
-				if (req.aborted().aborted) return context.abort()
+				if (req.isAborted()) return context.abort()
 				if (yieldedNow) continue
 			}
 
@@ -298,62 +340,62 @@ import toArrayBuffer from "@/functions/toArrayBuffer"
 		}
 	}
 
-	if (!context.endFn && !context.route && (context.url.method === 'GET' || (context.global.options.methods.head && context.url.method === 'HEAD'))) {
-		const cached = context.global.cache.staticFiles.get(context.url.path)
+	if (!context.endFn && !context.route && (method === 'GET' || (options.methods.head && method === 'HEAD'))) {
+		const cached = global.cache.staticFiles.get(path)
 
 		if (cached) {
 			context.file = cached[0]
 			context.route = cached[1]
 		}
 
-		if (!context.route) for (const route of context.global.routes.static) {
+		if (!context.route) for (const route of global.routes.static) {
 			if (typeof route.urlData.value !== 'string') continue
-			if (!context.url.path.startsWith(route.urlData.value)) continue
+			if (!path.startsWith(route.urlData.value)) continue
 
-			const path = context.url.path.slice(route.urlData.value.length)
+			const subPath = path.slice(route.urlData.value.length)
 
 			if (!route.data.stripHtmlEnding) {
-				const file = `${route.data.folder}/${path}`
+				const file = `${route.data.folder}/${subPath}`
 
 				if (await fileExists(file)) {
 					context.file = file
 					context.route = route
-					context.global.cache.staticFiles.set(context.url.path, [file, route])
+					global.cache.staticFiles.set(path, [file, route])
 
 					break
 				}
 			} else {
 				{ // path/index.html
-					const file = `${route.data.folder}/${path}/index.html`
+					const file = `${route.data.folder}/${subPath}/index.html`
 
 					if (await fileExists(file)) {
 						context.file = file
 						context.route = route
-						context.global.cache.staticFiles.set(context.url.path, [file, route])
+						global.cache.staticFiles.set(path, [file, route])
 
 						break
 					}
 				}
 
 				{ // path.html
-					const file = `${route.data.folder}/${path}.html`
+					const file = `${route.data.folder}/${subPath}.html`
 
 					if (await fileExists(file)) {
 						context.file = file
 						context.route = route
-						context.global.cache.staticFiles.set(context.url.path, [file, route])
+						global.cache.staticFiles.set(path, [file, route])
 
 						break
 					}
 				}
 
 				{ // path
-					const file = `${route.data.folder}/${path}`
+					const file = `${route.data.folder}/${subPath}`
 
 					if (await fileExists(file)) {
 						context.file = file
 						context.route = route
-						context.global.cache.staticFiles.set(context.url.path, [file, route])
+						global.cache.staticFiles.set(path, [file, route])
 
 						break
 					}
@@ -365,53 +407,61 @@ import toArrayBuffer from "@/functions/toArrayBuffer"
 			if (context.file) {
 				ctr.printFile(context.file)
 			} else {
-				context.global.logger.debug(`Static Route without File: ${context.url.path}`)
+				global.logger.debug(`Static Route without File: ${path}`)
 			}
 		}
 	}
 
 	if (!context.route && !context.endFn) {
-		if (context.global.notFoundHandler) {
+		if (global.notFoundHandler) {
 			try {
-				await Promise.resolve(context.global.notFoundHandler(ctr))
+				const result = global.notFoundHandler(ctr)
+				if (isThenable(result)) await result
 			} catch (err) {
 				context.handleError(err, 'http.handle.notFoundHandler')
 			}
 		} else {
 			context.response.status = 404
 			context.response.statusText = null
-			context.response.content = context.global.cache.arrayBufferTexts.route_not_found
+			context.response.content = global.cache.arrayBufferTexts.route_not_found
 		}
 	}
 
-	if (req.aborted().aborted) return context.abort()
+	if (req.isAborted()) return context.abort()
 
-	if (context.error || await Promise.resolve(context['executeSelf']())) {
+	let executeSelf: boolean | Promise<boolean> = context.error ? true : context['executeSelf']()
+	if (isThenable(executeSelf)) executeSelf = await executeSelf
+
+	if (executeSelf) {
 		if (context.error) {
-			if (context.global.errorHandlers.httpRequest) {
+			if (global.errorHandlers.httpRequest) {
 				try {
-					await Promise.resolve(context.global.errorHandlers.httpRequest(ctr, context.error))
+					const result = global.errorHandlers.httpRequest(ctr, context.error)
+					if (isThenable(result)) await result
 				} catch { }
 			} else {
 				context.response.status = 500
 				context.response.statusText = null
 				context.response.content = `An Error has occured:\n${context.error.toString()}`
 
-				context.global.logger.error(`An Error has occured on ${context.url.method} ${context.url.href}\n${context.error.toString()}`)
+				global.logger.error(`An Error has occured on ${method} ${context.url.href}\n${context.error.toString()}`)
 			}
 		}
 
-		const content = await parseContent(context.response.content, context.response.prettify, context.global.logger)
+		let content = parseContentSync(context.response.content, context.response.prettify, global.logger)
+		if (isThenable(content)) content = await content
 
-		if (req.aborted().aborted) return context.abort()
+		if (req.isAborted()) return context.abort()
 
-		for (const [ key, value ] of Object.entries(content.headers)) {
-			context.response.headers.set(key, value)
+		for (const key in content.headers) {
+			context.response.headers.set(key, content.headers[key])
 		}
 
-		req.compress(getCompressMethod(true, context.headers.get('accept-encoding', ''), content.content.byteLength, context.ip.isProxied, context.global))
+		req.compress(getCompressMethod(true, context.headers.get('accept-encoding', ''), content.content.byteLength, context.ip.isProxied, global))
 
-		const continueWrites = await writeHeaders(content.content, context, req)
+		let continueWrites = writeHeadersSync(content.content, context, req)
+		if (isThenable(continueWrites)) continueWrites = await continueWrites
+
 		if (continueWrites) {
 			await req
 				.status(context.response.status, context.response.statusText || STATUS_CODES[context.response.status] || 'Unknown')
@@ -419,5 +469,5 @@ import toArrayBuffer from "@/functions/toArrayBuffer"
 		}
 	}
 
-	return context.abort(ctr)
+	return await context.abort(ctr)
 }

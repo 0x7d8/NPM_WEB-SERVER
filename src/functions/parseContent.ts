@@ -5,6 +5,7 @@ import type { JSONParsed, JSONValue } from "@/types/global"
 import toArrayBuffer from "@/functions/toArrayBuffer"
 
 const failMessage = toArrayBuffer('Failed to parse provided Object')
+const emptyBuffer = new ArrayBuffer(0)
 
 export type Content =
 	| string
@@ -20,8 +21,6 @@ export type Content =
 	| Function
 	| JSONValue[]
 	| JSONParsed
-
-export type ParseContentReturns = Awaited<ReturnType<typeof parseContent>>
 
 /**
  * Parse almost anything into a Buffer that resolves to a string in a streamed manner
@@ -46,7 +45,7 @@ export type ParseContentReturns = Awaited<ReturnType<typeof parseContent>>
 		super({
 			writableObjectMode: true,
 			async write(chunk) {
-				const parsed = await parseContent(chunk, prettify, logger)
+				const parsed = await parseContentSync(chunk, prettify, logger)
 
 				this.push(parsed.content, 'binary')
 			}, read() {}
@@ -54,73 +53,80 @@ export type ParseContentReturns = Awaited<ReturnType<typeof parseContent>>
 	}
 }
 
-/**
- * Parse almost anything into a Buffer that resolves to a string
- * @since 5.0.0
-*/ export default async function parseContent(content: Content, prettify: boolean = false, logger?: Logger): Promise<{
+export type ParseContentReturns = {
 	headers: Record<string, string>
 	content: ArrayBuffer
-}> {
-	if (isPromise(content)) return parseContent(await content as any, prettify, logger)
+}
 
-	if (isArrayBuffer(content)) return { headers: {}, content }
-	if (Buffer.isBuffer(content)) return { headers: {}, content: toArrayBuffer(content) }
+function emptyHeaders(): Record<string, string> {
+	return {}
+}
 
-	if (isMap(content)) content = Object.fromEntries(content.entries())
-	if (isSet(content)) content = Array.from(content)
+function jsonHeaders(): Record<string, string> {
+	return { 'content-type': 'application/json' }
+}
 
-	const returnObject: ParseContentReturns = { headers: {}, content: new ArrayBuffer(0) }
+/**
+ * Parse almost anything into a Buffer that resolves to a string, synchronously when possible
+ * 
+ * Only returns a Promise when the content itself is (or produces) a Promise
+ * @since 9.9.1
+*/ export function parseContentSync(content: Content, prettify: boolean = false, logger?: Logger): ParseContentReturns | Promise<ParseContentReturns> {
+	if (isPromise(content)) return content.then((awaited) => parseContentSync(awaited as any, prettify, logger))
+
+	if (isArrayBuffer(content)) return { headers: emptyHeaders(), content }
+	if (Buffer.isBuffer(content)) return { headers: emptyHeaders(), content: toArrayBuffer(content) }
 
 	switch (typeof content) {
-		case "object":
-			try {
-				if (prettify) returnObject.content = toArrayBuffer(JSON.stringify(content, null, 2))
-				else returnObject.content = toArrayBuffer(JSON.stringify(content))
+		case "string":
+			return { headers: emptyHeaders(), content: toArrayBuffer(content) }
 
-				returnObject.headers['content-type'] = 'application/json'
+		case "object": {
+			if (content === null) return { headers: jsonHeaders(), content: toArrayBuffer('null') }
+
+			if (isMap(content)) content = Object.fromEntries(content.entries())
+			else if (isSet(content)) content = Array.from(content)
+
+			try {
+				return {
+					headers: jsonHeaders(),
+					content: toArrayBuffer(prettify ? JSON.stringify(content, null, 2) : JSON.stringify(content))
+				}
 			} catch (err) {
 				logger?.error('Failed to parse Object content:', err)
-				returnObject.content = failMessage
+				return { headers: emptyHeaders(), content: failMessage }
 			}
-
-			break
-
-		case "string":
-			returnObject.content = toArrayBuffer(content)
-
-			break
+		}
 
 		case "symbol":
-			returnObject.content = toArrayBuffer(content.toString())
-			break
+			return { headers: emptyHeaders(), content: toArrayBuffer(content.toString()) }
 
 		case "bigint":
 		case "number":
 		case "boolean":
-			returnObject.content = toArrayBuffer(String(content))
-			break
+			return { headers: emptyHeaders(), content: toArrayBuffer(String(content)) }
 
 		case "function": {
-			const result = content();
-			if (isPromise(result)) {
-				const awaited = await result
-				returnObject.content = (await parseContent(awaited as any, prettify, logger)).content
-			} else {
-				returnObject.content = (await parseContent(result, prettify, logger)).content
-			}
+			const result = content()
+			if (isPromise(result)) return result.then((awaited) => parseContentSync(awaited as any, prettify, logger)).then((parsed) => ({ headers: emptyHeaders(), content: parsed.content }))
 
-			break
+			const parsed = parseContentSync(result, prettify, logger)
+			if (isPromise(parsed)) return parsed.then((parsed) => ({ headers: emptyHeaders(), content: parsed.content }))
+
+			return { headers: emptyHeaders(), content: parsed.content }
 		}
 
 		case "undefined":
-			returnObject.content = new ArrayBuffer(0)
-			break
+			return { headers: emptyHeaders(), content: emptyBuffer }
 	}
 
-	if (!isArrayBuffer(returnObject.content)) {
-		logger?.error('Unknown Content Parsing Error occured (nB):', returnObject.content)
-		returnObject.content = toArrayBuffer('Unknown Parsing Error')
-	}
+	logger?.error('Unknown Content Parsing Error occured (nB):', content)
+	return { headers: emptyHeaders(), content: toArrayBuffer('Unknown Parsing Error') }
+}
 
-	return returnObject
+/**
+ * Parse almost anything into a Buffer that resolves to a string
+ * @since 5.0.0
+*/ export default async function parseContent(content: Content, prettify: boolean = false, logger?: Logger): Promise<ParseContentReturns> {
+	return parseContentSync(content, prettify, logger)
 }

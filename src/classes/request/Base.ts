@@ -9,6 +9,102 @@ import { as, network } from "@rjweb/utils"
 import Channel from "@/classes/Channel"
 import Server from "@/classes/Server"
 
+const clientContext: unique symbol = Symbol('rjweb.client.context')
+const clientOrigin: unique symbol = Symbol('rjweb.client.origin')
+export const clientIp: unique symbol = Symbol('rjweb.client.ip')
+
+/**
+ * Client Infos of a Request, resolved lazily from the request context
+ * @since 9.9.1
+*/ export class ClientInfo {
+	private [clientContext]: RequestContext
+	private [clientOrigin]: string | null = null
+	public [clientIp]: network.IPAddress | null = null
+
+	constructor(context: RequestContext) {
+		this[clientContext] = context
+	}
+
+	/**
+	 * The User Agent of the Client
+	 * @since 3.0.0
+	*/ public get userAgent(): string {
+		return this[clientContext].headers.get('user-agent', '')
+	}
+
+	/**
+	 * The Port that the Client is using
+	 * @since 3.0.0
+	*/ public get port(): number {
+		return this[clientContext].ip.port
+	}
+
+	/**
+	 * Whether the Client IP Address is proxied
+	 * @since 9.3.0
+	*/ public get proxied(): boolean {
+		return this[clientContext].ip.isProxied
+	}
+
+	/**
+	 * Whether the Client IP Address is from an internal fetch
+	 * @since 9.3.0
+	*/ public get internal(): boolean {
+		return this[clientContext].ip.isInternal
+	}
+
+	/**
+	 * The Origin of the Clients Request
+	 * @since 9.5.0
+	 * @example localhost:8000
+	*/ public get origin(): string {
+		if (this[clientOrigin] !== null) return this[clientOrigin]
+
+		const context = this[clientContext]
+		let origin = context.headers.get('origin', context.headers.get('host', ''))
+
+		if (origin.startsWith('https://')) origin = origin.slice(8)
+		else if (origin.startsWith('http://')) origin = origin.slice(7)
+
+		this[clientOrigin] = origin
+		return origin
+	}
+
+	/**
+	 * The Referrer of the Clients Request
+	 * @since 9.5.0
+	 * @example https://localhost:8000/me
+	*/ public get referrer(): string {
+		const context = this[clientContext]
+
+		return context.headers.get('referrer', context.headers.get('referer', ''))
+	}
+
+	/**
+	 * The IP Address that the Client is using
+	 * 
+	 * When a valid Proxy Request is made (and proxy is enabled) this will be the proper IP
+	 * @since 3.0.0
+	*/ public get ip(): network.IPAddress {
+		if (this[clientIp]) return this[clientIp]
+
+		this[clientIp] = new network.IPAddress(this[clientContext].ip.value)
+		return this[clientIp]
+	}
+
+	public toJSON(): Record<string, any> {
+		return {
+			userAgent: this.userAgent,
+			port: this.port,
+			proxied: this.proxied,
+			internal: this.internal,
+			origin: this.origin,
+			referrer: this.referrer,
+			ip: this.ip
+		}
+	}
+}
+
 export default class Base<Context extends Record<any, any> = {}> {
 	/**
 	 * The Request Context Object used by the server
@@ -62,56 +158,7 @@ export default class Base<Context extends Record<any, any> = {}> {
 			}
 		}
 
-		this.cookies['modifyFn'] = (event, key, data) => {
-			switch (event) {
-				case "set": {
-					context.response.cookies.set(key, data)
-
-					break
-				}
-
-				case "delete": {
-					context.response.cookies.set(key, new Cookie('remove', { expires: 1 }))
-
-					break
-				}
-
-				case "clear": {
-					let keys = 0
-					for (const [ cKey ] of this.cookies) {
-						if (!key.includes(cKey)) {
-							context.response.cookies.set(cKey, new Cookie('remove', { expires: 1 }))
-
-							keys++
-						}
-					}
-
-					return keys
-				}
-			}
-		}
-
-		let origin = context.headers.get('origin', context.headers.get('host', '')),
-			ip: network.IPAddress | null = null
-
-		if (origin.startsWith('https://')) origin = origin.slice(8)
-		else if (origin.startsWith('http://')) origin = origin.slice(7)
-
-		this.client = {
-			userAgent: context.headers.get('user-agent', ''),
-			port: context.ip.port,
-			get proxied() { return context.ip.isProxied },
-			get internal() { return context.ip.isInternal },
-			origin,
-			referrer: context.headers.get('referrer', context.headers.get('referer', '')),
-			get ip() {
-				if (ip) return ip
-
-				ip = new network.IPAddress(context.ip.value)
-				return ip
-			}
-		}
-
+		this.client = new ClientInfo(context)
 		this.url = context.url
 	}
 
@@ -193,7 +240,7 @@ export default class Base<Context extends Record<any, any> = {}> {
 				}
 
 				case "delete": {
-					this.context.response.cookies.set(key, new Cookie('remove', { expires: 0 }))
+					this.context.response.cookies.set(key, new Cookie('remove', { expires: 1 }))
 
 					break
 				}
@@ -202,7 +249,7 @@ export default class Base<Context extends Record<any, any> = {}> {
 					let keys = 0
 					for (const [ cKey ] of this.cookies) {
 						if (!key.includes(cKey)) {
-							this.context.response.cookies.set(cKey, new Cookie('remove', { expires: 0 }))
+							this.context.response.cookies.set(cKey, new Cookie('remove', { expires: 1 }))
 
 							keys++
 						}
@@ -253,40 +300,7 @@ export default class Base<Context extends Record<any, any> = {}> {
 	}
 
 
-	/** Client Infos */ public readonly client: {
-		/**
-		 * The User Agent of the Client
-		 * @since 3.0.0
-		*/ readonly userAgent: string
-		/**
-		 * The Port that the Client is using
-		 * @since 3.0.0
-		*/ readonly port: number
-		/**
-		 * Whether the Client IP Address is proxied
-		 * @since 9.3.0
-		*/ readonly proxied: boolean
-		/**
-		 * Whether the Client IP Address is from an internal fetch
-		 * @since 9.3.0
-		*/ readonly internal: boolean
-		/**
-		 * The Origin of the Clients Request
-		 * @since 9.5.0
-		 * @example localhost:8000
-		*/ readonly origin: string
-		/**
-		 * The Referrer of the Clients Request
-		 * @since 9.5.0
-		 * @example https://localhost:8000/me
-		*/ readonly referrer: string
-		/**
-		 * The IP Address that the Client is using
-		 * 
-		 * When a valid Proxy Request is made (and proxy is enabled) this will be the proper IP
-		 * @since 3.0.0
-		*/ readonly ip: network.IPAddress
-	}
+	/** Client Infos */ public readonly client: ClientInfo
 
 	/**
 	 * The Requested URL

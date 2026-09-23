@@ -16,6 +16,27 @@ type Segment = {
 	raw: string
 	paramsRegExp: RegExp
 	params: string[]
+	/**
+	 * Whether the segment is exactly one parameter (`{name}`), allowing values to skip the RegExp
+	*/ wholeParam: boolean
+}
+
+function escapeRegExp(text: string): string {
+	return text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+}
+
+/**
+ * Build the RegExp for a segment containing parameters, literals must match exactly,
+ * parameters are non-empty and lazy (split at the first occurrence of the following literal)
+*/ function segmentRegExp(segment: string): RegExp {
+	let source = '^', last = 0
+
+	for (const match of segment.matchAll(/{([^}]+)}/g)) {
+		source += escapeRegExp(segment.slice(last, match.index)) + '([^]+?)'
+		last = match.index! + match[0].length
+	}
+
+	return new RegExp(source + escapeRegExp(segment.slice(last)) + '$')
 }
 
 type URLData = {
@@ -27,6 +48,9 @@ type URLData = {
 	type: 'normal'
 	value: string
 	segments: Segment[]
+	/**
+	 * Whether no segment contains parameters, allowing a plain string comparison
+	*/ static: boolean
 }
 
 type RequestType = 'http' | 'static' | 'ws'
@@ -66,11 +90,13 @@ export default class Route<Type extends RequestType> {
 				segments: [{
 					raw: '',
 					paramsRegExp: new RegExp(''),
-					params: []
+					params: [],
+					wholeParam: false
 				}, {
 					raw: '',
 					paramsRegExp: new RegExp(''),
-					params: []
+					params: [],
+					wholeParam: false
 				}]
 			}
 		} else if (typeof path === 'string') {
@@ -79,14 +105,19 @@ export default class Route<Type extends RequestType> {
 			this.urlData = {
 				type: 'normal',
 				value: segments.join('/'),
-				segments: []
+				segments: [],
+				static: true
 			}
 
 			for (const segment of segments) {
+				const params = (segment.match(/{([^}]+)}/g) ?? []).map((m) => m.slice(1, -1))
+				if (params.length) this.urlData.static = false
+
 				this.urlData.segments.push({
 					raw: segment,
-					paramsRegExp: new RegExp(segment.replace(/{([^}]+)}/g, '(.*\\S)')),
-					params: (segment.match(/{([^}]+)}/g) ?? []).map((m) => m.slice(1, -1))
+					paramsRegExp: segmentRegExp(segment),
+					params,
+					wholeParam: params.length === 1 && segment === `{${params[0]}}`
 				})
 			}
 		} else {
@@ -117,43 +148,52 @@ export default class Route<Type extends RequestType> {
 	 * @since 9.0.0
 	*/ public matches(method: Method, collection: ValueCollection<string, string> | null, requestPath: string, requestPathSplit: string[]): boolean {
 		if (this.urlMethod !== method) return false
-		if (this.urlData.type === 'normal' && this.urlData.segments.length !== requestPathSplit.length) return false
-		if (this.urlData.type === 'regexp' && !this.urlData.value.test(parseURL(requestPath.slice(this.urlData.prefix.length)).path)) return false
-		if (this.urlData.type === 'regexp') return true
 
-		let found = false
+		const urlData = this.urlData
+		if (urlData.type === 'regexp') return urlData.value.test(parseURL(requestPath.slice(urlData.prefix.length)).path)
 
-		const pathParams: Record<string, string> = {}
-		for (let i = 1; i < requestPathSplit.length; i++) {
-			const reqSegment = requestPathSplit[i], segment = this.urlData.segments[i]
+		const segments = urlData.segments, length = requestPathSplit.length
+		if (segments.length !== length) return false
+		if (urlData.static) return urlData.value === requestPath
 
-			if (!segment) {
-				if (this.urlData.type === 'normal') break
+		let found = false, pathParams: string[] | null = null
 
-				found = true
-				break
-			}
+		for (let i = 1; i < length; i++) {
+			const reqSegment = requestPathSplit[i], segment = segments[i]
 
 			if (segment.params.length === 0) {
-				if (segment.raw === reqSegment) {
-					if (i === requestPathSplit.length - 1 && this.urlData.type === 'normal') {
-						found = true
-						break
-					}
-				} else break
+				if (segment.raw !== reqSegment) break
+				if (i === length - 1) found = true
+
+				continue
+			}
+
+			if (segment.wholeParam) {
+				if (reqSegment.length === 0) break
+				if (i === length - 1) found = true
+
+				if (!pathParams) pathParams = []
+				pathParams.push(segment.params[0], reqSegment)
+
+				continue
 			}
 
 			const params = reqSegment.match(segment.paramsRegExp)
-			if (params) {
-				if (i === requestPathSplit.length - 1) found = true
+			if (!params) break
 
-				for (let i = 0; i < segment.params.length; i++) {
-					pathParams[segment.params[i]] = params[i + 1]
-				}
-			} else break
+			if (i === length - 1) found = true
+
+			if (!pathParams) pathParams = []
+			for (let j = 0; j < segment.params.length; j++) {
+				pathParams.push(segment.params[j], params[j + 1])
+			}
 		}
 
-		if (found && collection) collection.import(Object.entries(pathParams))
+		if (found && collection && pathParams) {
+			for (let i = 0; i < pathParams.length; i += 2) {
+				collection.set(pathParams[i], pathParams[i + 1])
+			}
+		}
 
 		return found
 	}

@@ -8,6 +8,13 @@ export abstract class HttpContext {
 
 	public abstract aborted(): AbortSignal
 
+	/**
+	 * Whether the Request was aborted, override this when it can be answered without creating an AbortSignal
+	 * @since 9.9.1
+	*/ public isAborted(): boolean {
+		return this.aborted().aborted
+	}
+
 	public abstract type(): 'http' | 'ws'
 	public abstract method(): Method
 	public abstract path(): string

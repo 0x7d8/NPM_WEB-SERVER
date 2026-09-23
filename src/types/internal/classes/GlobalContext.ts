@@ -8,6 +8,7 @@ import type Channel from "@/classes/Channel"
 import type { CompressionAlgorithm } from "@/types/global"
 import toArrayBuffer from "@/functions/toArrayBuffer"
 import type HttpRequestContext from "@/classes/request/HttpRequestContext"
+import RouteIndex from "@/classes/RouteIndex"
 
 export default class GlobalContext {
 	constructor(options: FullServerOptions, public implementation: Implementation, classContexts: ClassContexts) {
@@ -110,6 +111,13 @@ export default class GlobalContext {
 		/**
 		 * The Cache for static files
 		 * @since 9.0.0
-		*/ staticFiles: new ValueCollection<string, [path: string, route: Route<'static'>]>(undefined, undefined, true, 1500)
+		*/ staticFiles: new ValueCollection<string, [path: string, route: Route<'static'>]>(undefined, undefined, true, 1500),
+		/**
+		 * Lookup tables for the http and ws routes
+		 * @since 9.9.1
+		*/ routeIndex: {
+			http: new RouteIndex(this.routes.http),
+			ws: new RouteIndex(this.routes.ws)
+		}
 	}
 }

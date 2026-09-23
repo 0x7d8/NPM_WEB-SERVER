@@ -21,7 +21,7 @@ import contentDisposition from "content-disposition"
 import Server from "@/classes/Server"
 
 export default class HttpRequestContext<Context extends Record<any, any> = {}> extends Base<Context> {
-	constructor(context: InternalRequestContext, server: Server<any, any>, protected rawContext: HttpContext, protected abort: AbortSignal) {
+	constructor(context: InternalRequestContext, server: Server<any, any>, protected rawContext: HttpContext) {
 		super(context, server)
 
 		this.type = context.type
@@ -42,7 +42,14 @@ export default class HttpRequestContext<Context extends Record<any, any> = {}> e
 	*/ public $abort(callback?: () => void): boolean {
 		if (callback) this.abort.addEventListener('abort', callback)
 
-		return this.abort.aborted
+		return this.rawContext.isAborted()
+	}
+
+	/**
+	 * The AbortSignal of the Request, only created when accessed
+	 * @since 9.9.1
+	*/ protected get abort(): AbortSignal {
+		return this.rawContext.aborted()
 	}
 
 	/**

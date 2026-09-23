@@ -13,10 +13,12 @@ import type { HttpContext } from "@/types/implementation/contexts/http"
 import type GlobalContext from "@/types/internal/classes/GlobalContext"
 
 const empty = Buffer.allocUnsafe(0)
+const defaultExecuteSelf = () => true
 
 export default class RequestContext<MiddlewareData extends Record<any, any> = any> {
-	protected executeSelf: () => Promise<boolean> | boolean = () => true
-	private middlewareData: Record<string, any> = {}
+	protected executeSelf: () => Promise<boolean> | boolean = defaultExecuteSelf
+	private middlewareData: Record<string, any> | null = null
+	private varyHeaders: Set<string> | null = null
 	private started = performance.now()
 	private aborted = false
 
@@ -70,7 +72,11 @@ export default class RequestContext<MiddlewareData extends Record<any, any> = an
 	/**
 	 * What headers affected the response (vary)
 	 * @since 9.3.4
-	*/ public vary: Set<string> = new Set()
+	*/ public get vary(): Set<string> {
+		if (!this.varyHeaders) this.varyHeaders = new Set()
+
+		return this.varyHeaders
+	}
 	/**
 	 * Whether the EndFn was called
 	 * @since 9.0.0
@@ -118,10 +124,10 @@ export default class RequestContext<MiddlewareData extends Record<any, any> = an
 	 * Get the Route that matches the input
 	 * @since 9.4.0
 	*/ public findRoute(method: Method, path: string): Route<'http'> | Route<'ws'> | null {
-		const split = parseURL(path).path.split('/')
+		const parsedPath = parseURL(path).path, split = parsedPath.split('/')
 
 		for (const route of this.global.routes[this.type]) {
-			if (route.matches(method, null, path, split) || (this.global.options.methods.head && route.matches('GET', null, this.url.path, split))) {
+			if (route.matches(method, null, parsedPath, split) || (this.global.options.methods.head && route.matches('GET', null, parsedPath, split))) {
 				return route
 			}
 		}
@@ -173,6 +179,7 @@ export default class RequestContext<MiddlewareData extends Record<any, any> = an
 	*/ public data(middleware: Middleware | UsableMiddleware<any, any, any, any, any> | { use(...args: any[]): UsableMiddleware<any, any, any, any, any> }): MiddlewareData {
 		const key = middleware instanceof Middleware ? middleware['name'] : 'use' in middleware ? middleware.use().infos.name : middleware.infos.name
 
+		if (!this.middlewareData) this.middlewareData = {}
 		if (!this.middlewareData[key]) this.middlewareData[key] = {}
 		return this.middlewareData[key]
 	}
@@ -181,7 +188,7 @@ export default class RequestContext<MiddlewareData extends Record<any, any> = an
 	 * Await the Body
 	 * @since 9.0.0
 	*/ public async awaitBody(ctr: HttpRequestContext<any>, concat = true): Promise<Buffer> {
-		if (this.url.method === 'GET') return Buffer.allocUnsafe(0)
+		if (this.url.method === 'GET') return empty
 		if (this.body.awaiting) return new Promise((resolve) => this.body.callbacks.push(resolve))
 		if (this.body.raw) return this.body.raw
 
@@ -189,7 +196,7 @@ export default class RequestContext<MiddlewareData extends Record<any, any> = an
 		await this.context.onBodyChunk(async(chunk, isLast) => {
 			const buffer = Buffer.from(chunk)
 
-			if (this.context.aborted().aborted) return this.abort()
+			if (this.context.isAborted()) return this.abort()
 
 			if (this.route?.type === 'http' && !this.route.data.onRawBody && concat) this.body.chunks.push(buffer)
 			else if (this.route?.type === 'http') try {

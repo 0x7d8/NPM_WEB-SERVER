@@ -40,13 +40,15 @@ export class BaseCollection<Key extends PropertyKey = PropertyKey, Value = any> 
 		allowModify: boolean = true,
 		maxElements: number = Infinity
 	) {
-		data = data ?? {} as any
-		parse = parse ?? ((value) => value)
 		this.maxElements = maxElements
 		this.allowModify = allowModify
-	
-		for (const key in data) {
-			this.data.set(key, parse(data[key]))
+
+		if (data) {
+			if (parse) for (const key in data) {
+				this.data.set(key, parse(data[key]))
+			} else for (const key in data) {
+				this.data.set(key, data[key])
+			}
 		}
 	}
 
