@@ -79,6 +79,12 @@ export type ServerOptions = {
 		 * @default true
 		 * @since 6.3.0
 		*/ lastModified?: boolean
+		/**
+		 * Whether the runtime may keep the contents of small files in memory to serve them without reading them from disk again,
+		 * files are still checked for changes on every request
+		 * @default true
+		 * @since 9.10.0
+		*/ fileCache?: boolean
 	}
 
 	/**

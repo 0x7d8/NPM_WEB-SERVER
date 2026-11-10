@@ -17,6 +17,7 @@ import { as } from "@rjweb/utils"
 
 	let highestValue = 'none', highestPriority = -Infinity, tempValue = '', tempPriority = ''
 
+	const cacheKey = header
 	header += ','
 
 	let progress = 0, mode: 'value' | 'prio' = 'value'
@@ -78,7 +79,7 @@ import { as } from "@rjweb/utils"
 	}
 
 	const result = highestValue === 'none' ? null : as<CompressionAlgorithm>(highestValue === 'br' ? 'brotli' : highestValue)
-	if (result) global.cache.compressionMethods.set(header, result)
+	if (result) global.cache.compressionMethods.set(cacheKey, result)
 
 	return result
 }

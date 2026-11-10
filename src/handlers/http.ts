@@ -152,32 +152,26 @@ function isThenable(value: any): value is Promise<any> {
 	const path = context.url.path
 	let ranBody = false
 
-	const headRoute = method === 'HEAD' ? context.findRoute('GET', path) : null,
-		routes = global.routes[context.type],
-		{ exact, dynamic, split } = global.cache.routeIndex[context.type].candidates(method, path)
+	const routes = global.routes[context.type], routeIndex = global.cache.routeIndex[context.type]
+	let matchMethod = method, { exact, dynamic, split } = routeIndex.candidates(matchMethod, path)
 
-	let e = 0, d = 0, exhausted = false
-	while (!exhausted) {
+	let e = 0, d = 0
+	while (true) {
 		let i: number
 		if (e < exact.length && (d >= dynamic.length || exact[e] < dynamic[d])) i = exact[e++]
 		else if (d < dynamic.length) i = dynamic[d++]
-		else {
-			i = routes.length
-			exhausted = true
-		}
+		else if (matchMethod === 'HEAD' && context.type === 'http') {
+			matchMethod = 'GET'
+			;({ exact, dynamic, split } = routeIndex.candidates(matchMethod, path))
+			e = d = 0
 
-		const route = routes[i]
-		let matched = false
+			continue
+		} else break
 
-		if (route) {
-			const urlData = route.urlData
+		const route = routes[i], urlData = route.urlData
 
-			if (urlData.type === 'normal' && urlData.static) matched = true
-			else matched = route.matches(method, context.params, path, split!)
-		}
-
-		if (matched || (exhausted && headRoute)) {
-			context.route = route ?? headRoute
+		if ((urlData.type === 'normal' && urlData.static) || route.matches(matchMethod, context.params, path, split!)) {
+			context.route = route
 
 			if (context.route.ratelimit && context.route.ratelimit.maxHits !== Infinity && context.route.ratelimit.timeWindow !== Infinity) {
 				const ratelimitKey = `http+${ctr.client.ip.long()}-${context.route.ratelimit.sortTo}` as const

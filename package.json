@@ -1,6 +1,6 @@
 {
   "name": "rjweb-server",
-  "version": "9.9.1",
+  "version": "9.10.0",
   "description": "Easy and Robust Way to create a Web Server with many easy-to-use Features in Node.js",
   "main": "./lib/cjs/index.js",
   "module": "./lib/esm/index.js",
@@ -45,7 +45,7 @@
   "homepage": "https://github.com/0x7d8/NPM_WEB-SERVER#readme",
   "devDependencies": {
     "@types/content-disposition": "^0.5.9",
-    "@types/node": "^22.20.4",
+    "@types/node": "^22.20.5",
     "@types/yargs": "^17.0.35",
     "rjweb-server": "link:",
     "ts-patch": "^4.0.1",
@@ -56,12 +56,12 @@
     "typescript-transform-paths": "^4.0.0"
   },
   "dependencies": {
-    "@inquirer/prompts": "^8.7.2",
+    "@inquirer/prompts": "^8.7.5",
     "@rjweb/utils": "^1.12.29",
     "content-disposition": "^0.5.4",
     "inquirer": "^13.4.3",
-    "openapi3-ts": "^4.6.1",
+    "openapi3-ts": "^4.6.2",
     "yargs": "^17.7.3",
-    "zod": "^4.6.5"
+    "zod": "^4.6.7"
   }
 }

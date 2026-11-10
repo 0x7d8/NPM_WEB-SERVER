@@ -42,7 +42,8 @@ export const defaultOptions: FullServerOptions = {
 		}
 	}, performance: {
 		eTag: true,
-		lastModified: true
+		lastModified: true,
+		fileCache: true
 	}, logging: {
 		implementation: new StockLogger() as LoggerImpl,
 		debug: false,

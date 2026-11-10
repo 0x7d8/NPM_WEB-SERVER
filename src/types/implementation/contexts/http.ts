@@ -47,6 +47,10 @@ export abstract class HttpContext {
 	public abstract status(code: number, message: string): this
 	public abstract header(key: string, value: string): this
 	public abstract write(data: ArrayBuffer | Readable): Promise<void>
-	public abstract writeFile(file: string, start?: number, end?: number): void
+	/**
+	 * Write a File as the response, `start` and `end` are both inclusive byte offsets and undefined for the whole file,
+	 * `stat` is passed when the file was already checked so the runtime can skip doing so itself
+	 * @since 9.0.0
+	*/ public abstract writeFile(file: string, start?: number, end?: number, stat?: { size: number, mtimeMs: number, ino: number }): void
 	public abstract upgrade(data: WebsocketData): boolean
 }

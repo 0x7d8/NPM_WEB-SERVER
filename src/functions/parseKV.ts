@@ -28,11 +28,13 @@ export function trimString(str: string): string {
 		let splitterPos = keyValue.indexOf(splitter, progress)
 		if (splitterPos === -1) splitterPos = keyValue.length
 
-		let equalPos = keyValue.slice(progress, splitterPos).indexOf(equal)
-		if (equalPos === -1) equalPos = splitterPos
+		let equalPos = keyValue.indexOf(equal, progress)
+		if (equalPos === -1 || equalPos >= splitterPos) equalPos = splitterPos
+		else equalPos -= progress
 
 		let sliced = keyValue.slice(progress + equalPos + 1, splitterPos), decodedVal: string
-		try {
+		if (decode === decodeURIComponent && !sliced.includes('%')) decodedVal = sliced
+		else try {
 			decodedVal = decode(sliced)
 		} catch {
 			decodedVal = sliced

@@ -1,5 +1,19 @@
 # Changelog
 
+## 9.10.0
+
+- Add `options.performance.fileCache`, runtimes may keep small files in memory (still checked for changes on every request)
+- Pass the file stat to `<ImplementationHttpContext>.writeFile` so runtimes do not have to stat again
+- Add `ValueCollection.fromObject` to read from an object without copying it, value collections no longer allocate until used
+- Fix the accept-encoding cache never being hit
+- Faster cookie & query parsing
+- Fix invalid `range` headers on files crashing the process
+- Fix ranged file responses sending the full file size as `content-length` and being compressed
+- Support `bytes=-n` ranges and `if-range`, out of bounds range ends are clamped, invalid or multiple ranges are ignored, `range` is ignored on `HEAD`
+- `<ImplementationHttpContext>.writeFile` now receives inclusive `start` / `end` offsets that are undefined for whole files
+- Fix `304` file responses having the wrong status text and no `last-modified` header
+- Fix `HEAD` requests falling back to `GET` routes scanning every route, not filling path parameters and not continuing after a yield
+
 ## 9.9.1
 
 - Fix path parameters in segments mixed with text (`{file}.{ext}`, `v{version}`), literals are now matched exactly and anchored, values split at the first occurrence of the following literal (`a.tar.gz` -> `a` / `tar.gz`)

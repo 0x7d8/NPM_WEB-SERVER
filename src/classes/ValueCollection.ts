@@ -4,7 +4,8 @@ const inspectSymbol = Symbol.for('nodejs.util.inspect.custom')
 
 export class BaseCollection<Key extends PropertyKey = PropertyKey, Value = any> {
 	protected modifyFn: ((event: 'set' | 'delete' | 'clear', key: any, value: any) => any) | null = null
-	protected data: Map<Key, Value> = new Map()
+	private store: Map<Key, Value> | null = null
+	private source: Record<Key, Value> | null = null
 	protected maxElements: number
 	protected allowModify: boolean
 
@@ -52,19 +53,59 @@ export class BaseCollection<Key extends PropertyKey = PropertyKey, Value = any> 
 		}
 	}
 
+	/**
+	 * Create a Collection that reads directly from an object instead of copying it,
+	 * the object is only copied once the collection is iterated or modified and must not be changed afterwards
+	 * @since 9.10.0
+	*/ public static fromObject<Key extends PropertyKey, Value>(data: Record<Key, Value>): ValueCollection<Key, Value> {
+		const collection = new ValueCollection<Key, Value>()
+		collection.source = data
+
+		return collection
+	}
+
+	protected get data(): Map<Key, Value> {
+		let store = this.store
+
+		if (store === null) {
+			store = this.store = new Map()
+
+			const source = this.source
+			if (source !== null) {
+				this.source = null
+
+				for (const key in source) {
+					store.set(key, source[key])
+				}
+			}
+		}
+
+		return store
+	}
+
 
 	/**
 	 * Check if a Key exists
 	 * @since 2.5.0
 	*/ public has(key: Key): boolean {
-		return this.data.has(key)
+		const store = this.store
+		if (store !== null) return store.has(key)
+
+		const source = this.source
+		return source !== null && Object.prototype.hasOwnProperty.call(source, key)
 	}
 
 	/**
 	 * Get a Key
 	 * @since 2.5.0
 	*/ public get<Fallback extends Value | null = null>(key: Key, fallback?: Fallback): Value | Fallback {
-		return this.data.get(key) ?? (fallback as any)
+		const store = this.store
+		if (store !== null) return store.get(key) ?? (fallback as any)
+
+		const source = this.source
+		if (source !== null && Object.prototype.hasOwnProperty.call(source, key)) return source[key] ?? (fallback as any)
+
+		return fallback as any
 	}
 
 	/**
@@ -204,6 +245,8 @@ export class BaseCollection<Key extends PropertyKey = PropertyKey, Value = any> 
 	 * Get the Size of this Collection
 	 * @since 9.3.0
 	*/ public size(): number {
+		if (this.store === null && this.source === null) return 0
+
 		return this.data.size
 	}
 

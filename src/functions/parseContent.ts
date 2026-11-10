@@ -72,6 +72,7 @@ function jsonHeaders(): Record<string, string> {
  * Only returns a Promise when the content itself is (or produces) a Promise
  * @since 9.9.1
 */ export function parseContentSync(content: Content, prettify: boolean = false, logger?: Logger): ParseContentReturns | Promise<ParseContentReturns> {
+	if (typeof content === 'string') return { headers: emptyHeaders(), content: toArrayBuffer(content) }
 	if (isPromise(content)) return content.then((awaited) => parseContentSync(awaited as any, prettify, logger))
 
 	if (isArrayBuffer(content)) return { headers: emptyHeaders(), content }

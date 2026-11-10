@@ -12,6 +12,7 @@ import { ZodResponse } from "@/types/internal"
 import { z } from "zod"
 import parseKV from "@/functions/parseKV"
 import getCompressMethod from "@/functions/getCompressMethod"
+import parseRange, { type Range } from "@/functions/parseRange"
 import status from "@/enums/status"
 import { Duplex, Writable } from "stream"
 import parseContent from "@/functions/parseContent"
@@ -592,82 +593,100 @@ export default class HttpRequestContext<Context extends Record<any, any> = {}> e
 		this.context.response.headers.set('accept-ranges', 'bytes')
 		if (addTypes && this.context.response.headers.get('content-type', 'text/plain') === 'text/plain') this.context.response.headers.set('content-type', parseContentType(file, this.global.contentTypes))
 
-		this.context.setExecuteSelf(() => new Promise(async(resolve) => {
-			file = path.resolve(file)
+		this.context.setExecuteSelf(async() => {
+			const response = this.context.response
+			let fileStat: Stats, sized: boolean, range: Range | null = null
 
-			let fileStat: Stats
 			try {
+				file = path.resolve(file)
 				fileStat = await fs.stat(file)
 
 				if (!fileStat.isFile() && !fileStat.isFIFO()) throw new Error('Not a File')
+				sized = fileStat.isFile()
 
-				this.headers.set('content-length', fileStat.size.toString())
-				if (!this.context.response.headers.has('content-disposition')) {
-					this.headers.set('content-disposition', contentDisposition(options.name ?? path.basename(file), {
-						type: options.download ?? this.context.response.headers.get('content-type') === 'application/octet-stream' ? 'attachment' : 'inline'
+				let lastModified: string | null = null
+				if (this.global.options.performance.lastModified) {
+					lastModified = fileStat.mtime.toUTCString()
+
+					if (this.context.headers.get('if-modified-since') === lastModified) {
+						await this.rawContext
+							.header('last-modified', lastModified)
+							.status(Status.NOT_MODIFIED, STATUS_CODES[Status.NOT_MODIFIED] || 'Unknown')
+							.write(new ArrayBuffer(0))
+
+						return false
+					}
+
+					response.headers.set('last-modified', lastModified)
+				}
+
+				if (sized) response.headers.set('content-length', fileStat.size.toString())
+				if (!response.headers.has('content-disposition')) {
+					response.headers.set('content-disposition', contentDisposition(options.name ?? path.basename(file), {
+						type: options.download ?? response.headers.get('content-type') === 'application/octet-stream' ? 'attachment' : 'inline'
 					}))
 				}
-			} catch (err) {
-				this.context.handleError(err, 'printFile.fs.stat')
-				return resolve(true)
-			}
 
-			let endEarly = false, start: number, end: number
+				const rangeHeader = sized && this.context.url.method === 'GET' ? this.context.headers.get('range') : null
+				if (rangeHeader) {
+					const ifRange = this.context.headers.get('if-range')
 
-			if (this.context.headers.has('range')) {
-				const match = this.context.headers.get('range', '').match(/bytes=\d+(-\d+)?/)
-				if (match) {
-					const firstExpression = match[0].substring(6)
-					const [ startExpect, endExpect ] = firstExpression.split('-')
+					if (!ifRange || ifRange === lastModified) {
+						const parsed = parseRange(rangeHeader, fileStat.size)
 
-					if (!startExpect) start = 0
-					else start = parseInt(startExpect)
-					if (!endExpect) end = fileStat.size
-					else end = parseInt(endExpect)
+						if (parsed === 'unsatisfiable') {
+							response.status = Status.RANGE_NOT_SATISFIABLE
+							response.statusText = null
+							response.headers.set('content-range', `bytes */${fileStat.size}`)
+							response.headers.delete('content-length')
+							response.headers.delete('content-disposition')
 
-					if (end > fileStat.size) {
-						this.context.response.status = Status.RANGE_NOT_SATISFIABLE
-						this.context.response.statusText = null
-						endEarly = true
-					} else if (start < 0 || start > end || start > fileStat.size || start > Number.MAX_SAFE_INTEGER || end > Number.MAX_SAFE_INTEGER) {
-						this.context.response.status = Status.RANGE_NOT_SATISFIABLE
-						this.context.response.statusText = null
-						endEarly = true
+							this.rawContext.compress(null)
+
+							const continueWrites = await writeHeaders(null, this.context, this.rawContext)
+							if (continueWrites) await this.rawContext
+								.status(Status.RANGE_NOT_SATISFIABLE, STATUS_CODES[Status.RANGE_NOT_SATISFIABLE] || 'Unknown')
+								.write(new ArrayBuffer(0))
+
+							return false
+						}
+
+						range = parsed
 					}
-
-					if (!endEarly) {
-						this.context.response.status = Status.PARTIAL_CONTENT
-						this.context.response.statusText = null
-					}
-				} else start = 0, end = fileStat.size
-			} else start = 0, end = fileStat.size
-
-			if (start !== 0 || end !== fileStat.size) {
-				this.headers.set('content-range', `bytes ${start}-${end}/${fileStat.size}`)
-			}
-
-			if (this.global.options.performance.lastModified) {
-				const lastModified = fileStat.mtime.toUTCString()
-
-				this.context.response.headers.set('last-modified', lastModified)
-
-				if (this.context.headers.get('if-modified-since') === lastModified) {
-					await this.rawContext.status(Status.NOT_MODIFIED, STATUS_CODES[this.context.response.status] || 'Unknown').write(new ArrayBuffer(0))
-					return resolve(false)
 				}
-			}
 
-			this.rawContext.compress(getCompressMethod(compress, this.headers.get('accept-encoding', ''), fileStat.size, this.context.ip.isProxied, this.global))
+				if (range) {
+					response.status = Status.PARTIAL_CONTENT
+					response.statusText = null
+					response.headers.set('content-range', `bytes ${range.start}-${range.end}/${fileStat.size}`)
+					response.headers.set('content-length', (range.end - range.start + 1).toString())
+				}
+
+				this.rawContext.compress(getCompressMethod(compress && !range, this.context.headers.get('accept-encoding', ''), fileStat.size, this.context.ip.isProxied, this.global))
+			} catch (err) {
+				response.headers.delete('content-length')
+				response.headers.delete('content-range')
+				response.headers.delete('content-disposition')
+				response.headers.delete('last-modified')
+
+				this.context.handleError(err, 'printFile.fs.stat')
+				return true
+			}
 
 			const continueWrites = await writeHeaders(null, this.context, this.rawContext)
-			if (!continueWrites) return resolve(false)
+			if (!continueWrites) return false
 
-			this.rawContext
-				.status(this.context.response.status, this.context.response.statusText || STATUS_CODES[this.context.response.status] || 'Unknown')
-				.writeFile(file, start, end)
+			try {
+				this.rawContext
+					.status(response.status, response.statusText || STATUS_CODES[response.status] || 'Unknown')
+					.writeFile(file, range?.start, range?.end, sized ? fileStat : undefined)
+			} catch (err) {
+				this.context.handleError(err, 'printFile.writeFile')
+				return true
+			}
 
-			return resolve(false)
-		}))
+			return false
+		})
 
 		return this
 	}
